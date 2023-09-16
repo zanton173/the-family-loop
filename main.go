@@ -8,7 +8,7 @@ import (
 
 func main() {
 	h1 := func(w http.ResponseWriter, r *http.Request) {
-
+		///http.Handle("/images/", http.FileServer(http.Dir("images")))
 		switch r.URL.Path {
 		case "/home":
 			tmpl := template.Must(template.ParseFiles("./index.html"))
@@ -22,5 +22,6 @@ func main() {
 	}
 
 	http.HandleFunc("/", h1)
+	http.Handle("/public/", http.StripPrefix("/public/", http.FileServer(http.Dir("public"))))
 	log.Fatal(http.ListenAndServe(":8040", nil))
 }

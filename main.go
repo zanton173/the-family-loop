@@ -8,7 +8,7 @@ import (
 
 func main() {
 
-	indexHandler := func(w http.ResponseWriter, r *http.Request) {
+	pagesHandler := func(w http.ResponseWriter, r *http.Request) {
 		///http.Handle("/images/", http.FileServer(http.Dir("images")))
 		switch r.URL.Path {
 		case "/home":
@@ -20,7 +20,7 @@ func main() {
 
 	}
 
-	http.HandleFunc("/", indexHandler)
+	http.HandleFunc("/", pagesHandler)
 	http.Handle("/public/", http.StripPrefix("/public/", http.FileServer(http.Dir("public"))))
-	log.Fatal(http.ListenAndServe(":83", nil))
+	log.Fatal(http.ListenAndServe(":80", nil))
 }

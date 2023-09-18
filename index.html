@@ -43,10 +43,12 @@
             <div class="modal-content p-4">
                 <form hx-post="/add-post/">
                     <div class="d-grid">
-                        <input class="my-2 shadow-sm border-0 text-center" type="text" placeholder="title your post" />
-                        <input class="my-2 shadow-sm border-0 text-center" type="text"
-                            placeholder="describe yourself" />
-                        <input class="my-2 shadow" type="file" accept="image/*" placeholder="Upload Photo" />
+                        <input class="my-2 shadow-sm border-0 text-center" name="title" id="posttitle" type="text"
+                            placeholder="title your post" maxlength="128" />
+                        <input class="my-2 shadow-sm border-0 text-center" name="desc" id="postdesc" type="text"
+                            placeholder="describe yourself" maxlength="420" />
+                        <input class="my-2 shadow" type="file" maxlength="64" accept="image/*"
+                            placeholder="Upload Photo" />
                     </div>
                 </form>
                 <button type="button" class="btn btn-secondary col" data-bs-dismiss="modal">close</button><br />

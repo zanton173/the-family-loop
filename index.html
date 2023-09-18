@@ -33,6 +33,28 @@
             </div>
         </div>
     </nav>
+    <div style="text-align: center; padding-top: 1%;">
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">
+            Create a Post!
+        </button>
+    </div>
+    <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content p-4">
+                <form hx-post="/add-post/">
+                    <div class="d-grid">
+                        <input class="my-2 shadow-sm border-0 text-center" type="text" placeholder="title your post" />
+                        <input class="my-2 shadow-sm border-0 text-center" type="text"
+                            placeholder="describe yourself" />
+                        <input class="my-2 shadow" type="file" accept="image/*" placeholder="Upload Photo" />
+                    </div>
+                </form>
+                <button type="button" class="btn btn-secondary col" data-bs-dismiss="modal">close</button><br />
+                <button type="button" class="btn btn-success col" data-bs-dismiss="modal">post</button>
+            </div>
+        </div>
+    </div>
+
     <div style="text-align: center; padding: 1%; padding-top: 3%;">
         <div class="row">
             <!-- potential div attribute background-image: url('/public/images/img-4668.png'); background-size: contain;-->

@@ -28,6 +28,7 @@ type postsrow struct {
 
 func main() {
 	err := godotenv.Load()
+	var homeposts []postsrow
 	if err != nil {
 		log.Fatal("Error loading .env file")
 		os.Exit(1)
@@ -45,22 +46,22 @@ func main() {
 		log.Fatal(err)
 	}
 	defer db.Close()
-	/*output, err := db.Query("select count(*) from tfldata.posts;")
+	output, err := db.Query("select * from tfldata.posts;")
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer output.Close()
-	resp := []postsrow{}
+
 	for output.Next() {
-		var row postsrow
-		if err := output.Scan(&row.id, &row.title, &row.description, &row.image_name); err != nil {
+		var postrows postsrow
+		if err := output.Scan(&postrows.id, &postrows.title, &postrows.description, &postrows.image_name); err != nil {
 			log.Fatal(err)
 		}
-		resp = append(resp, row)
+		homeposts = append(homeposts, postrows)
+		//fmt.Println(len(postrow))
 
 	}
-	fmt.Println(resp)*/
-
+	fmt.Println(homeposts[0])
 	pagesHandler := func(w http.ResponseWriter, r *http.Request) {
 		//tmpl := template.Must(template.ParseFiles("index.html"))
 		//tmpl.Execute(w, nil)
@@ -77,12 +78,11 @@ func main() {
 		_, filename, _ := r.FormFile("image_name")
 		fmt.Println(r.PostFormValue("title"))
 		fmt.Println(r.PostFormValue("description"))
-		resp, err := db.Exec(fmt.Sprintf("insert into tfldata.posts(\"title\", \"description\", \"image_name\") values('%s', '%s', '%s');", r.PostFormValue("title"), r.PostFormValue("description"), filename.Filename))
+		_, err := db.Exec(fmt.Sprintf("insert into tfldata.posts(\"title\", \"description\", \"image_name\") values('%s', '%s', '%s');", r.PostFormValue("title"), r.PostFormValue("description"), filename.Filename))
 		if err != nil {
-			fmt.Println(err)
+			log.Fatal(err)
 		}
-		fmt.Println(resp)
-
+		//fmt.Println(resp)
 	}
 	h3 := func(w http.ResponseWriter, r *http.Request) {
 		upload, filename, err := r.FormFile("image_name")

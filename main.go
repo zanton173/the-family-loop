@@ -1,13 +1,19 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"html/template"
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
@@ -26,6 +32,10 @@ func main() {
 		os.Exit(1)
 	}
 	dbpass := os.Getenv("DB_PASS")
+	awskey := os.Getenv("AWS_ACCESS_KEY")
+	awskeysecret := os.Getenv("AWS_ACCESS_SECRET")
+
+	createTFLBucket(awskey, awskeysecret, false)
 
 	connStr := fmt.Sprintf("postgresql://tfldbrole:%s@localhost/tfl?sslmode=disable", dbpass)
 	// Connect to database
@@ -80,4 +90,47 @@ func main() {
 	http.HandleFunc("/upload-file", h3)
 	http.Handle("/public/", http.StripPrefix("/public/", http.FileServer(http.Dir("public"))))
 	log.Fatal(http.ListenAndServe(":80", nil))
+}
+
+func createTFLBucket(k string, s string, bucketexists bool) {
+
+	cfg, err := config.LoadDefaultConfig(context.TODO(),
+		config.WithDefaultRegion("us-east-1"),
+		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(k, s, "")),
+	)
+
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(2)
+	}
+
+	client := s3.NewFromConfig(cfg)
+
+	listbuck, err := client.ListBuckets(context.TODO(), &s3.ListBucketsInput{})
+
+	if err != nil {
+		log.Fatal(err)
+	}
+	for _, val := range listbuck.Buckets {
+		if strings.Contains(*val.Name, *aws.String("the-family-loop" + "-customer-hash")) {
+			fmt.Println("Bucket exists!")
+			bucketexists = true
+			return
+		} else {
+			bucketexists = false
+			fmt.Println("lets create the bucket")
+		}
+	}
+	if !bucketexists {
+		result, err := client.CreateBucket(context.TODO(),
+			&s3.CreateBucketInput{
+				Bucket: aws.String("the-family-loop" + "-customer-hash"),
+			},
+		)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println(result)
+	}
+
 }

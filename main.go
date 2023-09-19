@@ -50,18 +50,28 @@ func main() {
 	}
 	fmt.Println(resp)*/
 	pagesHandler := func(w http.ResponseWriter, r *http.Request) {
-		///http.Handle("/images/", http.FileServer(http.Dir("images")))
-		switch r.URL.Path {
-		case "/home":
-			tmpl := template.Must(template.ParseFiles("index.html"))
-			tmpl.Execute(w, nil)
-		default:
-			http.Redirect(w, r, "/home", http.StatusPermanentRedirect)
-		}
+		tmpl := template.Must(template.ParseFiles("index.html"))
+		tmpl.Execute(w, nil)
+		/*
+			switch r.URL.Path {
+			case "/home":
+				tmpl := template.Must(template.ParseFiles("index.html"))
+				tmpl.Execute(w, nil)
 
+			default:
+				fmt.Println("nothing here")
+				//http.Redirect(w, r, "/home", http.StatusPermanentRedirect)
+			}
+		*/
 	}
-
+	h2 := func(w http.ResponseWriter, r *http.Request) {
+		log.Print(r.Header.Get("HX-Request"))
+		fmt.Println(r.PostFormValue("title"))
+		fmt.Println(r.PostFormValue("description"))
+		fmt.Println(r.PostFormValue("image_name"))
+	}
 	http.HandleFunc("/", pagesHandler)
+	http.HandleFunc("/create-post", h2)
 	http.Handle("/public/", http.StripPrefix("/public/", http.FileServer(http.Dir("public"))))
 	log.Fatal(http.ListenAndServe(":80", nil))
 }

@@ -49,29 +49,35 @@ func main() {
 
 	}
 	fmt.Println(resp)*/
-	pagesHandler := func(w http.ResponseWriter, r *http.Request) {
-		tmpl := template.Must(template.ParseFiles("index.html"))
-		tmpl.Execute(w, nil)
-		/*
-			switch r.URL.Path {
-			case "/home":
-				tmpl := template.Must(template.ParseFiles("index.html"))
-				tmpl.Execute(w, nil)
 
-			default:
-				fmt.Println("nothing here")
-				//http.Redirect(w, r, "/home", http.StatusPermanentRedirect)
-			}
-		*/
+	pagesHandler := func(w http.ResponseWriter, r *http.Request) {
+		//tmpl := template.Must(template.ParseFiles("index.html"))
+		//tmpl.Execute(w, nil)
+		switch r.URL.Path {
+		case "/home":
+			tmpl := template.Must(template.ParseFiles("index.html"))
+			tmpl.Execute(w, nil)
+		default:
+			http.Redirect(w, r, "/home", http.StatusPermanentRedirect)
+		}
+
 	}
 	h2 := func(w http.ResponseWriter, r *http.Request) {
-		log.Print(r.Header.Get("HX-Request"))
+
 		fmt.Println(r.PostFormValue("title"))
 		fmt.Println(r.PostFormValue("description"))
-		fmt.Println(r.PostFormValue("image_name"))
+
+	}
+	h3 := func(w http.ResponseWriter, r *http.Request) {
+		_, filename, err := r.FormFile("image_name")
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println(filename.Filename)
 	}
 	http.HandleFunc("/", pagesHandler)
 	http.HandleFunc("/create-post", h2)
+	http.HandleFunc("/upload-file", h3)
 	http.Handle("/public/", http.StripPrefix("/public/", http.FileServer(http.Dir("public"))))
 	log.Fatal(http.ListenAndServe(":80", nil))
 }

@@ -39,21 +39,39 @@
             Create a Post!
         </button>
     </div>
+
     <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
         <div class="modal-dialog">
-            <div class="modal-content p-4">
-                <form class="d-grid" hx-post="/create-post" hx-trigger="click from:#formsubmit">
+            <div id="post-div" class="modal-content p-4">
+
+                <form class="d-grid" hx-post="/create-post" hx-trigger="click from:#formsubmit"
+                    hx-encoding="multipart/form-data">
 
                     <input class="my-2 shadow-sm border-0 text-center" name="title" id="posttitle" type="text"
                         placeholder="title your post" maxlength="128" />
                     <input class="my-2 shadow-sm border-0 text-center" name="description" id="postdesc" type="text"
                         placeholder="describe yourself" maxlength="420" />
-                    <input class="my-2 shadow" type="file" maxlength="64" name="image_name" accept="image/*"
-                        placeholder="Upload Photo" />
+                    <input hx-post="/upload-file" hx-trigger="click from:#formsubmit" class="my-2 shadow" type="file"
+                        maxlength="64" name="image_name" accept="image/*" placeholder="Upload Photo" />
+
 
                 </form>
+                <div id="progressdiv" style="display: none; text-align: center;">
+                    <p>Image upload progress: </p><progress style="text-align: center;" id='progress' value='0'
+                        max='100'>
+
+                    </progress>
+                </div>
+                <script>
+
+                    htmx.on('#post-div', 'htmx:xhr:progress', function (evt) {
+                        document.getElementById('progressdiv').style.display = 'block'
+                        htmx.find('#progress').setAttribute('value', evt.detail.loaded / evt.detail.total * 100)
+                    });
+                </script>
+                <!--<progress style="text-align: center;" id='progress' value='0' max='100'></progress>-->
                 <button type="button" class="btn btn-dark col" data-bs-dismiss="modal">close</button><br />
-                <button type="submit" id="formsubmit" class="btn btn-success col" data-bs-dismiss="modal">post</button>
+                <button type="submit" id="formsubmit" class="btn btn-success col">post</button>
             </div>
         </div>
     </div>
@@ -89,6 +107,7 @@
         </div>
 
     </div>
+
 </body>
 
 </html>

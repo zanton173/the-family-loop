@@ -74,9 +74,14 @@ func main() {
 
 	}
 	h2 := func(w http.ResponseWriter, r *http.Request) {
-
+		_, filename, _ := r.FormFile("image_name")
 		fmt.Println(r.PostFormValue("title"))
 		fmt.Println(r.PostFormValue("description"))
+		resp, err := db.Exec(fmt.Sprintf("insert into tfldata.posts(\"title\", \"description\", \"image_name\") values('%s', '%s', '%s');", r.PostFormValue("title"), r.PostFormValue("description"), filename.Filename))
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println(resp)
 
 	}
 	h3 := func(w http.ResponseWriter, r *http.Request) {
@@ -84,7 +89,7 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		//fmt.Println(filename.Filename)
+
 		uploadPostPhotoTos3(upload, filename.Filename, s3_client)
 	}
 	http.HandleFunc("/", pagesHandler)

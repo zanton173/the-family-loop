@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"html/template"
 	"log"
+	"mime/multipart"
 	"net/http"
 	"os"
 	"strings"
@@ -35,7 +36,7 @@ func main() {
 	awskey := os.Getenv("AWS_ACCESS_KEY")
 	awskeysecret := os.Getenv("AWS_ACCESS_SECRET")
 
-	createTFLBucket(awskey, awskeysecret, false)
+	s3_client := createTFLBucket(awskey, awskeysecret, false)
 
 	connStr := fmt.Sprintf("postgresql://tfldbrole:%s@localhost/tfl?sslmode=disable", dbpass)
 	// Connect to database
@@ -79,11 +80,12 @@ func main() {
 
 	}
 	h3 := func(w http.ResponseWriter, r *http.Request) {
-		_, filename, err := r.FormFile("image_name")
+		upload, filename, err := r.FormFile("image_name")
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Println(filename.Filename)
+		//fmt.Println(filename.Filename)
+		uploadPostPhotoTos3(upload, filename.Filename, s3_client)
 	}
 	http.HandleFunc("/", pagesHandler)
 	http.HandleFunc("/create-post", h2)
@@ -92,7 +94,7 @@ func main() {
 	log.Fatal(http.ListenAndServe(":80", nil))
 }
 
-func createTFLBucket(k string, s string, bucketexists bool) {
+func createTFLBucket(k string, s string, bucketexists bool) *s3.Client {
 
 	cfg, err := config.LoadDefaultConfig(context.TODO(),
 		config.WithDefaultRegion("us-east-1"),
@@ -113,12 +115,11 @@ func createTFLBucket(k string, s string, bucketexists bool) {
 	}
 	for _, val := range listbuck.Buckets {
 		if strings.Contains(*val.Name, *aws.String("the-family-loop" + "-customer-hash")) {
-			fmt.Println("Bucket exists!")
+			//fmt.Println("Bucket exists!")
 			bucketexists = true
-			return
 		} else {
+			//fmt.Println("lets create the bucket")
 			bucketexists = false
-			fmt.Println("lets create the bucket")
 		}
 	}
 	if !bucketexists {
@@ -132,5 +133,15 @@ func createTFLBucket(k string, s string, bucketexists bool) {
 		}
 		fmt.Println(result)
 	}
+	return client
 
+}
+func uploadPostPhotoTos3(f multipart.File, fn string, client *s3.Client) {
+	defer f.Close()
+
+	client.PutObject(context.TODO(), &s3.PutObjectInput{
+		Bucket: aws.String("the-family-loop" + "-customer-hash"),
+		Key:    aws.String("posts/" + fn),
+		Body:   f,
+	})
 }

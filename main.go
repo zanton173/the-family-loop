@@ -76,7 +76,7 @@ func main() {
 
 	}
 	getPostsHandler := func(w http.ResponseWriter, r *http.Request) {
-		output, err := db.Query("select * from tfldata.posts;")
+		output, err := db.Query("select * from tfldata.posts order by id DESC;")
 
 		if err != nil {
 			log.Fatal(err)
@@ -90,7 +90,7 @@ func main() {
 
 			}
 
-			dataStr := fmt.Sprintf("<div class='card m-2' style='border-radius: 7px;'><img src='https://the-family-loop-customer-hash.s3.amazonaws.com/posts/%s'style='border-radius: 20px;' alt='babyboy' /><div class='card-body'><h5 class='card-title'>%s</h5><p class='card-text'>%s</p><a href='#' class='btn btn-primary'>Open a post</a></div></div>", postrows.Image_name, postrows.Title, postrows.Description)
+			dataStr := fmt.Sprintf("<div class='card m-2' style='border-radius: 7px;'><img src='https://the-family-loop-customer-hash.s3.amazonaws.com/posts/%s' style='border-radius: 20px;' alt='%s' /><div class='card-body'><h5 class='card-title'>%s</h5><p class='card-text'>%s</p><a href='#' class='btn btn-primary'>Open a post</a></div></div>", postrows.Image_name, postrows.Image_name, postrows.Title, postrows.Description)
 
 			postTmpl, tmerr = template.New("tem").Parse(dataStr)
 			if tmerr != nil {

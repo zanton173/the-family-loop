@@ -75,16 +75,16 @@
             </div>
         </div>
     </div>
-    <div class="row">
-        <div class="col" id="testdiv">
 
-        </div>
-    </div>
+
     <div style="text-align: center; padding: 1%; padding-top: 3%;" id="posts-div">
-        <ul class="list-group" hx-get="/get-posts" hx-trigger="click from:#posts-div" hx-target="#testdiv"
-            hx-swap="beforeend">
+        <div class="row" hx-get="/get-posts" hx-trigger="click from:#posts-div" hx-target="#post-items"
+            hx-swap="afterend">
 
-        </ul>
+            <div class="col" id="post-items">
+
+            </div>
+        </div>
 
         <!-- potential didv attribute background-image: url('/public/images/img-4668.png'); background-size: contain;-->
         <!--<div class="card col m-2" style="border-radius: 7px;">

@@ -45,14 +45,14 @@
             <div id="post-div" class="modal-content p-4">
 
                 <form class="d-grid" hx-post="/create-post" hx-trigger="click from:#formsubmit"
-                    hx-encoding="multipart/form-data">
+                    hx-encoding="multipart/form-data" hx-target="#posts-div" hx-swap="beforeend">
 
                     <input class="my-2 shadow-sm border-0 text-center" name="title" id="posttitle" type="text"
                         placeholder="title your post" maxlength="128" />
                     <input class="my-2 shadow-sm border-0 text-center" name="description" id="postdesc" type="text"
                         placeholder="describe yourself" maxlength="420" />
-                    <input hx-post="/upload-file" hx-trigger="click from:#formsubmit" class="my-2 shadow" type="file"
-                        maxlength="64" name="image_name" accept="image/*" placeholder="Upload Photo" />
+                    <input class="my-2 shadow" type="file" maxlength="64" name="image_name" accept="image/*"
+                        placeholder="Upload Photo" />
 
 
                 </form>
@@ -76,24 +76,23 @@
         </div>
     </div>
 
-    <div style="text-align: center; padding: 1%; padding-top: 3%;">
+    <div style="text-align: center; padding: 1%; padding-top: 3%;" id="posts-div">
         <div class="row">
             <!-- potential didv attribute background-image: url('/public/images/img-4668.png'); background-size: contain;-->
             <div class="card col m-2" style="border-radius: 7px;">
-                <img src="/public/images/img-4668.png" style="border-radius: 20px;" alt="babyboy" />
+                <img src="https://the-family-loop-customer-hash.s3.amazonaws.com/posts/img-4658.png"
+                    style="border-radius: 20px;" alt="babyboy" />
                 <div class="card-body">
-                    <h5 class="card-title">Social title</h5>
-                    <p class="card-text">Some quick example text to build on the card title and make up the bulk of
-                        the
-                        card's
-                        content.</p>
+                    <h5 class="card-title">title</h5>
+                    <p class="card-text">description</p>
                     <a href="#" class="btn btn-primary">Open a post</a>
 
                 </div>
             </div>
 
             <div class="card col m-2" style="border-radius: 7px;">
-                <img src="/public/images/img-4658.png" style="border-radius: 20px;" alt="ourbabyboy" />
+                <img src="https://the-family-loop-customer-hash.s3.amazonaws.com/posts/img-4668.png"
+                    style="border-radius: 20px;" alt="ourbabyboy" />
                 <div class="card-body">
                     <h5 class="card-title">Social title</h5>
                     <p class="card-text">Some quick example text to build on the card title and make up the bulk of

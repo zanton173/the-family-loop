@@ -15,6 +15,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
@@ -26,6 +27,9 @@ type postsrow struct {
 	image_name  string
 }
 
+var awskey string
+var awskeysecret string
+
 func main() {
 	err := godotenv.Load()
 	var homeposts []postsrow
@@ -34,10 +38,8 @@ func main() {
 		os.Exit(1)
 	}
 	dbpass := os.Getenv("DB_PASS")
-	awskey := os.Getenv("AWS_ACCESS_KEY")
-	awskeysecret := os.Getenv("AWS_ACCESS_SECRET")
-
-	s3_client := createTFLBucket(awskey, awskeysecret, false)
+	awskey = os.Getenv("AWS_ACCESS_KEY")
+	awskeysecret = os.Getenv("AWS_ACCESS_SECRET")
 
 	connStr := fmt.Sprintf("postgresql://tfldbrole:%s@localhost/tfl?sslmode=disable", dbpass)
 	// Connect to database
@@ -61,45 +63,47 @@ func main() {
 		//fmt.Println(len(postrow))
 
 	}
-	fmt.Println(homeposts[0])
+	//fmt.Println(homeposts[0].title)
 	pagesHandler := func(w http.ResponseWriter, r *http.Request) {
 		//tmpl := template.Must(template.ParseFiles("index.html"))
 		//tmpl.Execute(w, nil)
 		switch r.URL.Path {
 		case "/home":
 			tmpl := template.Must(template.ParseFiles("index.html"))
-			tmpl.Execute(w, nil)
+
+			tmpl.Execute(w, homeposts)
 		default:
 			http.Redirect(w, r, "/home", http.StatusPermanentRedirect)
 		}
 
 	}
+
 	h2 := func(w http.ResponseWriter, r *http.Request) {
-		_, filename, _ := r.FormFile("image_name")
-		fmt.Println(r.PostFormValue("title"))
-		fmt.Println(r.PostFormValue("description"))
+		upload, filename, _ := r.FormFile("image_name")
+		createTFLBucketAndUpload(awskey, awskeysecret, false, upload, filename.Filename)
 		_, err := db.Exec(fmt.Sprintf("insert into tfldata.posts(\"title\", \"description\", \"image_name\") values('%s', '%s', '%s');", r.PostFormValue("title"), r.PostFormValue("description"), filename.Filename))
 		if err != nil {
 			log.Fatal(err)
 		}
 		//fmt.Println(resp)
 	}
-	h3 := func(w http.ResponseWriter, r *http.Request) {
+	/*h3 := func(w http.ResponseWriter, r *http.Request) {
 		upload, filename, err := r.FormFile("image_name")
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		uploadPostPhotoTos3(upload, filename.Filename, s3_client)
-	}
+		//uploadPostPhotoTos3(upload, filename.Filename, s3_client)
+
+	}*/
 	http.HandleFunc("/", pagesHandler)
 	http.HandleFunc("/create-post", h2)
-	http.HandleFunc("/upload-file", h3)
-	http.Handle("/public/", http.StripPrefix("/public/", http.FileServer(http.Dir("public"))))
+	//http.HandleFunc("/upload-file", h3)
+	//http.Handle("/public/", http.StripPrefix("/public/", http.FileServer(http.Dir("public"))))
 	log.Fatal(http.ListenAndServe(":80", nil))
 }
 
-func createTFLBucket(k string, s string, bucketexists bool) *s3.Client {
+func createTFLBucketAndUpload(k string, s string, bucketexists bool, f multipart.File, fn string) {
 
 	cfg, err := config.LoadDefaultConfig(context.TODO(),
 		config.WithDefaultRegion("us-east-1"),
@@ -119,7 +123,7 @@ func createTFLBucket(k string, s string, bucketexists bool) *s3.Client {
 		log.Fatal(err)
 	}
 	for _, val := range listbuck.Buckets {
-		if strings.Contains(*val.Name, *aws.String("the-family-loop" + "-customer-hash")) {
+		if strings.EqualFold(*val.Name, *aws.String("the-family-loop" + "-customer-hash")) {
 			//fmt.Println("Bucket exists!")
 			bucketexists = true
 		} else {
@@ -128,7 +132,7 @@ func createTFLBucket(k string, s string, bucketexists bool) *s3.Client {
 		}
 	}
 	if !bucketexists {
-		result, err := client.CreateBucket(context.TODO(),
+		_, err := client.CreateBucket(context.TODO(),
 			&s3.CreateBucketInput{
 				Bucket: aws.String("the-family-loop" + "-customer-hash"),
 			},
@@ -136,17 +140,55 @@ func createTFLBucket(k string, s string, bucketexists bool) *s3.Client {
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Println(result)
 	}
-	return client
 
-}
-func uploadPostPhotoTos3(f multipart.File, fn string, client *s3.Client) {
-	defer f.Close()
+	_, err2 := client.PutPublicAccessBlock(context.TODO(),
+		&s3.PutPublicAccessBlockInput{
+			Bucket: aws.String("the-family-loop" + "-customer-hash"),
+			PublicAccessBlockConfiguration: &types.PublicAccessBlockConfiguration{
+				BlockPublicPolicy:     false,
+				BlockPublicAcls:       false,
+				RestrictPublicBuckets: false,
+				IgnorePublicAcls:      true,
+			},
+		})
+	if err2 != nil {
+		log.Fatal(err2)
 
-	client.PutObject(context.TODO(), &s3.PutObjectInput{
+	}
+	_, err3 := client.PutBucketPolicy(context.TODO(),
+		&s3.PutBucketPolicyInput{
+			Bucket: aws.String("the-family-loop" + "-customer-hash"),
+			Policy: aws.String(`{"Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "Statement",
+            "Effect": "Allow",
+            "Principal": "*",
+            "Action": [
+                "s3:GetObject",
+                "s3:PutObject"
+            ],
+            "Resource": "arn:aws:s3:::the-family-loop` + `-customer-hash/posts/*"
+        }
+    ]}`),
+		})
+	if err3 != nil {
+		fmt.Println(err3)
+	}
+	_, err4 := client.PutObject(context.TODO(), &s3.PutObjectInput{
 		Bucket: aws.String("the-family-loop" + "-customer-hash"),
 		Key:    aws.String("posts/" + fn),
 		Body:   f,
 	})
+
+	if err4 != nil {
+		fmt.Println("error on upload")
+		fmt.Println(err)
+	}
+	defer f.Close()
 }
+
+/*func uploadPostPhotoTos3(f multipart.File, fn string, client *s3.Client) {
+
+}*/

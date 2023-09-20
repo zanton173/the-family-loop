@@ -20,11 +20,11 @@ import (
 	_ "github.com/lib/pq"
 )
 
-type postsrow struct {
-	id          int64
-	title       string
-	description string
-	image_name  string
+type Postsrow struct {
+	Id          int64
+	Title       string
+	Description string
+	Image_name  string
 }
 
 var awskey string
@@ -32,7 +32,7 @@ var awskeysecret string
 
 func main() {
 	err := godotenv.Load()
-	var homeposts []postsrow
+	//var Homeposts []postsrow
 	if err != nil {
 		log.Fatal("Error loading .env file")
 		os.Exit(1)
@@ -40,30 +40,18 @@ func main() {
 	dbpass := os.Getenv("DB_PASS")
 	awskey = os.Getenv("AWS_ACCESS_KEY")
 	awskeysecret = os.Getenv("AWS_ACCESS_SECRET")
-
-	connStr := fmt.Sprintf("postgresql://tfldbrole:%s@localhost/tfl?sslmode=disable", dbpass)
 	// Connect to database
+	connStr := fmt.Sprintf("postgresql://tfldbrole:%s@localhost/tfl?sslmode=disable", dbpass)
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	defer db.Close()
-	output, err := db.Query("select * from tfldata.posts;")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer output.Close()
-
-	for output.Next() {
-		var postrows postsrow
-		if err := output.Scan(&postrows.id, &postrows.title, &postrows.description, &postrows.image_name); err != nil {
-			log.Fatal(err)
-		}
-		homeposts = append(homeposts, postrows)
-		//fmt.Println(len(postrow))
-
-	}
-	//fmt.Println(homeposts[0].title)
+	//fmt.Println(Homeposts[0].title)
+	//var posts map[string][]Postsrow
+	var postTmpl *template.Template
+	var tmerr error
 	pagesHandler := func(w http.ResponseWriter, r *http.Request) {
 		//tmpl := template.Must(template.ParseFiles("index.html"))
 		//tmpl.Execute(w, nil)
@@ -71,7 +59,7 @@ func main() {
 		case "/home":
 			tmpl := template.Must(template.ParseFiles("index.html"))
 
-			tmpl.Execute(w, homeposts)
+			tmpl.Execute(w, nil)
 		default:
 			http.Redirect(w, r, "/home", http.StatusPermanentRedirect)
 		}
@@ -85,7 +73,32 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		//fmt.Println(resp)
+
+	}
+	getPostsHandler := func(w http.ResponseWriter, r *http.Request) {
+		output, err := db.Query("select * from tfldata.posts;")
+
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer output.Close()
+		for output.Next() {
+			var postrows Postsrow
+
+			if err := output.Scan(&postrows.Id, &postrows.Title, &postrows.Description, &postrows.Image_name); err != nil {
+				log.Fatal(err)
+
+			}
+
+			dataStr := fmt.Sprintf("<div class='card m-2' style='border-radius: 7px;'><img src='https://the-family-loop-customer-hash.s3.amazonaws.com/posts/%s'style='border-radius: 20px;' alt='babyboy' /><div class='card-body'><h5 class='card-title'>%s</h5><p class='card-text'>%s</p><a href='#' class='btn btn-primary'>Open a post</a></div></div>", postrows.Image_name, postrows.Title, postrows.Description)
+
+			postTmpl, tmerr = template.New("tem").Parse(dataStr)
+			if tmerr != nil {
+				fmt.Print(tmerr)
+			}
+			postTmpl.Execute(w, nil)
+		}
+
 	}
 	/*h3 := func(w http.ResponseWriter, r *http.Request) {
 		upload, filename, err := r.FormFile("image_name")
@@ -98,6 +111,7 @@ func main() {
 	}*/
 	http.HandleFunc("/", pagesHandler)
 	http.HandleFunc("/create-post", h2)
+	http.HandleFunc("/get-posts", getPostsHandler)
 	//http.HandleFunc("/upload-file", h3)
 	//http.Handle("/public/", http.StripPrefix("/public/", http.FileServer(http.Dir("public"))))
 	log.Fatal(http.ListenAndServe(":80", nil))

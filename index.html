@@ -48,10 +48,10 @@
                     hx-encoding="multipart/form-data">
 
                     <input class="my-2 shadow-sm border-0 text-center" name="title" id="posttitle" type="text"
-                        placeholder="title your post" maxlength="128" />
+                        placeholder="title your post" required maxlength="128" />
                     <input class="my-2 shadow-sm border-0 text-center" name="description" id="postdesc" type="text"
-                        placeholder="describe yourself" maxlength="420" />
-                    <input class="my-2 shadow" type="file" maxlength="64" name="image_name" accept="image/*"
+                        placeholder="describe yourself" required maxlength="420" />
+                    <input class="my-2 shadow" type="file" required maxlength="64" name="image_name" accept="image/*"
                         placeholder="Upload Photo" />
 
 
@@ -66,8 +66,11 @@
 
                     htmx.on('#post-div', 'htmx:xhr:progress', function (evt) {
                         document.getElementById('progressdiv').style.display = 'block'
+                        document.getElementById("exampleModal")
                         htmx.find('#progress').setAttribute('value', evt.detail.loaded / evt.detail.total * 100)
+
                     });
+
                 </script>
                 <!--<progress style="text-align: center;" id='progress' value='0' max='100'></progress>-->
                 <button type="button" class="btn btn-dark col" data-bs-dismiss="modal">close</button><br />
@@ -77,11 +80,10 @@
     </div>
 
 
-    <div style="text-align: center; padding: 1%; padding-top: 3%;" id="posts-div">
-        <div class="row" hx-get="/get-posts" hx-trigger="click from:#posts-div" hx-target="#post-items"
-            hx-swap="afterend">
+    <div style="text-align: center; padding: 5%;" id="posts-div">
+        <div hx-get="/get-posts" hx-trigger="load" hx-target="#post-items" hx-swap="afterend">
 
-            <div class="col" id="post-items">
+            <div id="post-items">
 
             </div>
         </div>

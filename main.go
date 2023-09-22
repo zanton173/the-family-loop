@@ -74,12 +74,12 @@ func main() {
 			log.Fatal(errfile)
 		}
 
-		createTFLBucketAndUpload(awskey, awskeysecret, false, upload, filename.Filename, r)
+		// Returning a filetype from the createandupload function
+		// somehow gets the right filetype
+		filetype := createTFLBucketAndUpload(awskey, awskeysecret, false, upload, filename.Filename, r)
 
-		fileContents := make([]byte, filename.Size)
+		//fmt.Println(filetype)
 
-		upload.Read(fileContents)
-		filetype := http.DetectContentType(fileContents)
 		_, err := db.Exec(fmt.Sprintf("insert into tfldata.posts(\"title\", \"description\", \"file_name\", \"file_type\") values('%s', '%s', '%s', '%s');", r.PostFormValue("title"), r.PostFormValue("description"), filename.Filename, filetype))
 
 		if err != nil {
@@ -104,9 +104,11 @@ func main() {
 			}
 			if strings.Contains(postrows.File_type, "image") {
 				dataStr = fmt.Sprintf("<div class='card my-4' style='border-radius: 7px;'><img src='https://the-family-loop-customer-hash.s3.amazonaws.com/posts/images/%s' style='border-radius: 20px;' alt='%s' /><div class='card-body'><h5 class='card-title'>%s</h5><p class='card-text'>%s</p><a href='#' class='btn btn-primary'>Open a post</a></div></div>", postrows.File_name, postrows.File_name, postrows.Title, postrows.Description)
-			} else if strings.Contains(postrows.File_type, "image") {
+			} else if strings.Contains(postrows.File_type, "video") {
 				dataStr = fmt.Sprintf("<div class='card my-4' style='border-radius: 7px;'><video><source src='https://the-family-loop-customer-hash.s3.amazonaws.com/posts/videos/%s'></video><div class='card-body'><h5 class='card-title'>%s</h5><p class='card-text'>%s</p><a href='#' class='btn btn-primary'>Open a post</a></div></div>", postrows.File_name, postrows.Title, postrows.Description)
-			}
+			} /*else /* Only for testing image creation */ /* {
+				dataStr = fmt.Sprintf("<div class='card my-4' style='border-radius: 7px;'><img src='https://the-family-loop-customer-hash.s3.amazonaws.com/posts/images/%s' style='border-radius: 20px;' alt='%s' /><div class='card-body'><h5 class='card-title'>%s</h5><p class='card-text'>%s</p><a href='#' class='btn btn-primary'>Open a post</a></div></div>", postrows.File_name, postrows.File_name, postrows.Title, postrows.Description)
+			}*/
 
 			postTmpl, tmerr = template.New("tem").Parse(dataStr)
 			if tmerr != nil {
@@ -133,7 +135,7 @@ func main() {
 	log.Fatal(http.ListenAndServe(":80", nil))
 }
 
-func createTFLBucketAndUpload(k string, s string, bucketexists bool, f multipart.File, fn string, r *http.Request) {
+func createTFLBucketAndUpload(k string, s string, bucketexists bool, f multipart.File, fn string, r *http.Request) string {
 
 	cfg, err := config.LoadDefaultConfig(context.TODO(),
 		config.WithDefaultRegion("us-east-1"),
@@ -218,7 +220,11 @@ func createTFLBucketAndUpload(k string, s string, bucketexists bool, f multipart
 
 	ourfile.Read(fileContents)
 	filetype := http.DetectContentType(fileContents)
+	//fmt.Println(filetype)
 	defer ourfile.Close()
+
+	//fileChan := make(chan s3.GetObjectAttributesOutput, 1)
+
 	if strings.Contains(filetype, "image") {
 
 		_, err4 := client.PutObject(context.TODO(), &s3.PutObjectInput{
@@ -232,6 +238,22 @@ func createTFLBucketAndUpload(k string, s string, bucketexists bool, f multipart
 			fmt.Println("error on upload")
 			fmt.Println(err)
 		}
+		/*for range fileChan {
+			go func() {
+				nameOut, errname := client.GetObjectAttributes(context.TODO(), &s3.GetObjectAttributesInput{
+					Bucket: aws.String("the-family-loop" + "-customer-hash"),
+					Key:    aws.String("posts/images/" + fn),
+					ObjectAttributes: []types.ObjectAttributes{
+						"ObjectSize",
+					},
+				})
+				if errname != nil {
+					fmt.Println("Some sort of error :(")
+					log.Fatal(errname)
+				}
+				fileChan <- *nameOut
+			}()
+		}*/
 	} else if strings.Contains(filetype, "video") {
 
 		_, err4 := client.PutObject(context.TODO(), &s3.PutObjectInput{
@@ -246,10 +268,30 @@ func createTFLBucketAndUpload(k string, s string, bucketexists bool, f multipart
 			fmt.Println(err)
 		}
 
+		/* go func() {
+			nameOut, errname := client.GetObjectAttributes(context.TODO(), &s3.GetObjectAttributesInput{
+				Bucket: aws.String("the-family-loop" + "-customer-hash"),
+				Key:    aws.String("posts/videos/" + fn),
+				ObjectAttributes: []types.ObjectAttributes{
+					"ObjectSize",
+				},
+			})
+			if errname != nil {
+				fmt.Println("Some sort of error :(")
+				log.Fatal(errname)
+			}
+			fileChan <- *nameOut
+
+		}()
+		for val := range fileChan {
+			fmt.Println(val.ObjectSize)
+
+		}*/
+
 	} else {
 		fmt.Println("Unknown file type. How did this get here?")
 	}
-	defer f.Close()
+	return filetype
 }
 
 /*func uploadPostPhotoTos3(f multipart.File, fn string, client *s3.Client) {

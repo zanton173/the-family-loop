@@ -81,7 +81,7 @@
 
 
     <div style="text-align: center; padding: 5%;" id="posts-div">
-        <div hx-get="/get-posts" hx-trigger="load" hx-target="#post-items" hx-swap="afterend">
+        <div hx-get="/get-posts" hx-trigger="load, every 2s" hx-target="#post-items">
 
             <div id="post-items">
 

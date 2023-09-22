@@ -51,8 +51,8 @@
                         placeholder="title your post" required maxlength="128" />
                     <input class="my-2 shadow-sm border-0 text-center" name="description" id="postdesc" type="text"
                         placeholder="describe yourself" required maxlength="420" />
-                    <input class="my-2 shadow" type="file" required maxlength="64" name="image_name" accept="image/*"
-                        placeholder="Upload Photo" />
+                    <input class="my-2 shadow" type="file" required maxlength="64" name="file_name"
+                        accept="image/*,video/*" placeholder="Upload photo or video" />
 
 
                 </form>
@@ -79,10 +79,12 @@
         </div>
     </div>
 
-
+    <video height="300px" width="75%">
+        <source src='https://the-family-loop-customer-hash.s3.amazonaws.com/posts/videos/handlebars.mp4'>
+    </video>
     <div style="text-align: center; padding: 5%;" id="posts-div">
         <div hx-get="/get-posts" hx-trigger="load, every 2s" hx-target="#post-items">
-
+            <!--Add to load: load, every 2s-->
             <div id="post-items">
 
             </div>

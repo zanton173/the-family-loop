@@ -24,7 +24,8 @@ type Postsrow struct {
 	Id          int64
 	Title       string
 	Description string
-	Image_name  string
+	File_name   string
+	File_type   string
 }
 
 var awskey string
@@ -67,17 +68,29 @@ func main() {
 	}
 
 	h2 := func(w http.ResponseWriter, r *http.Request) {
-		upload, filename, _ := r.FormFile("image_name")
-		createTFLBucketAndUpload(awskey, awskeysecret, false, upload, filename.Filename)
-		_, err := db.Exec(fmt.Sprintf("insert into tfldata.posts(\"title\", \"description\", \"image_name\") values('%s', '%s', '%s');", r.PostFormValue("title"), r.PostFormValue("description"), filename.Filename))
+		upload, filename, errfile := r.FormFile("file_name")
+
+		if errfile != nil {
+			log.Fatal(errfile)
+		}
+
+		createTFLBucketAndUpload(awskey, awskeysecret, false, upload, filename.Filename, r)
+
+		fileContents := make([]byte, filename.Size)
+
+		upload.Read(fileContents)
+		filetype := http.DetectContentType(fileContents)
+		_, err := db.Exec(fmt.Sprintf("insert into tfldata.posts(\"title\", \"description\", \"file_name\", \"file_type\") values('%s', '%s', '%s', '%s');", r.PostFormValue("title"), r.PostFormValue("description"), filename.Filename, filetype))
+
 		if err != nil {
 			log.Fatal(err)
 		}
+		defer upload.Close()
 
 	}
 	getPostsHandler := func(w http.ResponseWriter, r *http.Request) {
 		output, err := db.Query("select * from tfldata.posts order by id DESC;")
-
+		var dataStr string
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -85,12 +98,15 @@ func main() {
 		for output.Next() {
 			var postrows Postsrow
 
-			if err := output.Scan(&postrows.Id, &postrows.Title, &postrows.Description, &postrows.Image_name); err != nil {
+			if err := output.Scan(&postrows.Id, &postrows.Title, &postrows.Description, &postrows.File_name, &postrows.File_type); err != nil {
 				log.Fatal(err)
 
 			}
-
-			dataStr := fmt.Sprintf("<div class='card my-4' style='border-radius: 7px;'><img src='https://the-family-loop-customer-hash.s3.amazonaws.com/posts/%s' style='border-radius: 20px;' alt='%s' /><div class='card-body'><h5 class='card-title'>%s</h5><p class='card-text'>%s</p><a href='#' class='btn btn-primary'>Open a post</a></div></div>", postrows.Image_name, postrows.Image_name, postrows.Title, postrows.Description)
+			if strings.Contains(postrows.File_type, "image") {
+				dataStr = fmt.Sprintf("<div class='card my-4' style='border-radius: 7px;'><img src='https://the-family-loop-customer-hash.s3.amazonaws.com/posts/images/%s' style='border-radius: 20px;' alt='%s' /><div class='card-body'><h5 class='card-title'>%s</h5><p class='card-text'>%s</p><a href='#' class='btn btn-primary'>Open a post</a></div></div>", postrows.File_name, postrows.File_name, postrows.Title, postrows.Description)
+			} else if strings.Contains(postrows.File_type, "image") {
+				dataStr = fmt.Sprintf("<div class='card my-4' style='border-radius: 7px;'><video><source src='https://the-family-loop-customer-hash.s3.amazonaws.com/posts/videos/%s'></video><div class='card-body'><h5 class='card-title'>%s</h5><p class='card-text'>%s</p><a href='#' class='btn btn-primary'>Open a post</a></div></div>", postrows.File_name, postrows.Title, postrows.Description)
+			}
 
 			postTmpl, tmerr = template.New("tem").Parse(dataStr)
 			if tmerr != nil {
@@ -101,7 +117,7 @@ func main() {
 
 	}
 	/*h3 := func(w http.ResponseWriter, r *http.Request) {
-		upload, filename, err := r.FormFile("image_name")
+		upload, filename, err := r.FormFile("file_name")
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -117,7 +133,7 @@ func main() {
 	log.Fatal(http.ListenAndServe(":80", nil))
 }
 
-func createTFLBucketAndUpload(k string, s string, bucketexists bool, f multipart.File, fn string) {
+func createTFLBucketAndUpload(k string, s string, bucketexists bool, f multipart.File, fn string, r *http.Request) {
 
 	cfg, err := config.LoadDefaultConfig(context.TODO(),
 		config.WithDefaultRegion("us-east-1"),
@@ -180,8 +196,8 @@ func createTFLBucketAndUpload(k string, s string, bucketexists bool, f multipart
             "Effect": "Allow",
             "Principal": "*",
             "Action": [
-                "s3:GetObject",
-                "s3:PutObject"
+                "s3:GetObject*",
+                "s3:PutObject*"
             ],
             "Resource": "arn:aws:s3:::the-family-loop` + `-customer-hash/posts/*"
         }
@@ -190,15 +206,48 @@ func createTFLBucketAndUpload(k string, s string, bucketexists bool, f multipart
 	if err3 != nil {
 		fmt.Println(err3)
 	}
-	_, err4 := client.PutObject(context.TODO(), &s3.PutObjectInput{
-		Bucket: aws.String("the-family-loop" + "-customer-hash"),
-		Key:    aws.String("posts/" + fn),
-		Body:   f,
-	})
 
-	if err4 != nil {
-		fmt.Println("error on upload")
-		fmt.Println(err)
+	defer f.Close()
+	ourfile, fileHeader, errfile := r.FormFile("file_name")
+
+	if errfile != nil {
+		log.Fatal(errfile)
+	}
+
+	fileContents := make([]byte, fileHeader.Size)
+
+	ourfile.Read(fileContents)
+	filetype := http.DetectContentType(fileContents)
+	defer ourfile.Close()
+	if strings.Contains(filetype, "image") {
+
+		_, err4 := client.PutObject(context.TODO(), &s3.PutObjectInput{
+			Bucket:      aws.String("the-family-loop" + "-customer-hash"),
+			Key:         aws.String("posts/images/" + fn),
+			Body:        f,
+			ContentType: &filetype,
+		})
+
+		if err4 != nil {
+			fmt.Println("error on upload")
+			fmt.Println(err)
+		}
+	} else if strings.Contains(filetype, "video") {
+
+		_, err4 := client.PutObject(context.TODO(), &s3.PutObjectInput{
+			Bucket:      aws.String("the-family-loop" + "-customer-hash"),
+			Key:         aws.String("posts/videos/" + fn),
+			Body:        f,
+			ContentType: &filetype,
+		})
+
+		if err4 != nil {
+			fmt.Println("error on upload")
+			fmt.Println(err)
+		}
+
+	} else {
+		fmt.Println("Unknown file type. How did this get here?")
 	}
 	defer f.Close()
 }

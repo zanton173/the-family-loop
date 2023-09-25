@@ -62,27 +62,35 @@
 
                     </progress>
                 </div>
-                <script>
 
-                    htmx.on('#post-div', 'htmx:xhr:progress', function (evt) {
-                        document.getElementById('progressdiv').style.display = 'block'
-                        htmx.find('#progress').setAttribute('value', evt.detail.loaded / evt.detail.total * 100)
 
-                    });
-
-                </script>
-                <!--<progress style="text-align: center;" id='progress' value='0' max='100'></progress>-->
                 <button type="button" class="btn btn-dark col" data-bs-dismiss="modal">close</button><br />
                 <button type="submit" id="formsubmit" class="btn btn-success col">post</button>
             </div>
         </div>
     </div>
+    <script>
+
+        var modalToToggle = new bootstrap.Modal(document.getElementById('exampleModal'), {
+
+        });
+        htmx.on('#post-div', 'htmx:xhr:progress', function (evt) {
+            document.getElementById('progressdiv').style.display = 'block'
+            htmx.find('#progress').setAttribute('value', evt.detail.loaded / evt.detail.total * 100)
+            if (document.getElementById('progress').value == 100) {
+                modalToToggle.toggle()
+            }
+        });
+
+    </script>
     <div style="text-align: center;" class="px-5" id="posts-div">
 
-        <div hx-get="/get-posts" hx-trigger="load, click from:#refresh-button" hx-target="#post-items" id="divofposts">
-            <div hx-get="/new-posts" hx-trigger="every 3s" hx-target="#refreshbutton">
-                <div id="refreshbutton">
+        <div hx-get="/get-posts" hx-trigger="load, click from:#formsubmit" hx-target="#post-items" id="divofposts">
 
+            <div hx-get="/new-posts" hx-trigger="every 3s" hx-target="#refreshbutton">
+                <div id="refreshbutton" style="display: none;">
+                    <button style='border-radius: 15%; color: black; box-shadow: 3px; display: inline;' class='bg-light'
+                        onclick='window.location.reload()' id='refresh-button'>refresh</button>
                 </div>
             </div>
 
@@ -90,7 +98,18 @@
 
 
                 <script>
+                    var dbCount = 0
+                    function returnCountOfPosts() {
+                        //console.log(document.getElementById('post-items').childElementCount)
+                        //console.log(dbCount)
+                        if (dbCount != document.getElementById('post-items').childElementCount) {
+                            console.log("need a refresh")
+                            document.getElementById('refreshbutton').style.display = 'inline'
+                        } else {
+                            console.log('no refresh')
 
+                        }
+                    }
                     /*
                                         var playingbool = 'load'
                     

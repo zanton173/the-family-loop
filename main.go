@@ -33,7 +33,6 @@ var awskeysecret string
 
 func main() {
 	err := godotenv.Load()
-	//var Homeposts []postsrow
 	if err != nil {
 		log.Fatal("Error loading .env file")
 		os.Exit(1)
@@ -41,21 +40,22 @@ func main() {
 	dbpass := os.Getenv("DB_PASS")
 	awskey = os.Getenv("AWS_ACCESS_KEY")
 	awskeysecret = os.Getenv("AWS_ACCESS_SECRET")
+	var storedCount string
+
 	// Connect to database
 	connStr := fmt.Sprintf("postgresql://tfldbrole:%s@localhost/tfl?sslmode=disable", dbpass)
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	defer db.Close()
-	//fmt.Println(Homeposts[0].title)
-	//var posts map[string][]Postsrow
+	db.QueryRow("select count(*) from tfldata.posts;").Scan(&storedCount)
 	var postTmpl *template.Template
 	var tmerr error
 	pagesHandler := func(w http.ResponseWriter, r *http.Request) {
 		//tmpl := template.Must(template.ParseFiles("index.html"))
 		//tmpl.Execute(w, nil)
+
 		switch r.URL.Path {
 		case "/home":
 			tmpl := template.Must(template.ParseFiles("index.html"))
@@ -67,6 +67,54 @@ func main() {
 
 	}
 
+	getPostsHandler := func(w http.ResponseWriter, r *http.Request) {
+		output, err := db.Query("select * from tfldata.posts order by id DESC;")
+		var count string
+		db.QueryRow("select count(*) from tfldata.posts;").Scan(&count)
+		fmt.Println("get post stored: " + storedCount)
+		var dataStr string
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		defer output.Close()
+
+		for output.Next() {
+			var postrows Postsrow
+
+			if err := output.Scan(&postrows.Id, &postrows.Title, &postrows.Description, &postrows.File_name, &postrows.File_type); err != nil {
+				log.Fatal(err)
+
+			}
+			if strings.Contains(postrows.File_type, "image") {
+				dataStr = fmt.Sprintf("<div class='card my-4' style='border-radius: 7px;'><img src='https://the-family-loop-customer-hash.s3.amazonaws.com/posts/images/%s' style='border-radius: 20px;' alt='%s' /><div class='card-body'><h5 class='card-title'>%s</h5><p class='card-text'>%s</p><a href='#' class='btn btn-primary'>Open a post</a></div></div>", postrows.File_name, postrows.File_name, postrows.Title, postrows.Description)
+			} else if strings.Contains(postrows.File_type, "video") {
+				dataStr = fmt.Sprintf("<div class='card my-4' style='border-radius: 7px;'><video controls id='video'><source src='https://the-family-loop-customer-hash.s3.amazonaws.com/posts/videos/%s' type='%s'></video><div class='card-body'><h5 class='card-title'>%s</h5><p class='card-text'>%s</p><a href='#' class='btn btn-primary'>Open a post</a></div></div>", postrows.File_name, postrows.File_type, postrows.Title, postrows.Description)
+			}
+
+			postTmpl, tmerr = template.New("tem").Parse(dataStr)
+			if tmerr != nil {
+				fmt.Print(tmerr)
+			}
+			postTmpl.Execute(w, nil)
+
+		}
+	}
+	getPostCountHandler := func(w http.ResponseWriter, r *http.Request) {
+		var tmp *template.Template
+		var count string
+		db.QueryRow("select count(*) from tfldata.posts;").Scan(&count)
+		fmt.Println("polling: " + storedCount)
+		if storedCount != count {
+			dataStr := "<button style='border-radius: 15%; color: black; box-shadow: 3px;' class='btn bg-light' onclick='window.location.reload()' id='refresh-button'>refresh</button>"
+			tmp, err = template.New("but").Parse(dataStr)
+			if err != nil {
+				fmt.Println(err)
+			}
+			tmp.Execute(w, nil)
+		}
+
+	}
 	h2 := func(w http.ResponseWriter, r *http.Request) {
 		upload, filename, errfile := r.FormFile("file_name")
 
@@ -88,36 +136,6 @@ func main() {
 		defer upload.Close()
 
 	}
-	getPostsHandler := func(w http.ResponseWriter, r *http.Request) {
-		output, err := db.Query("select * from tfldata.posts order by id DESC;")
-		var dataStr string
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer output.Close()
-		for output.Next() {
-			var postrows Postsrow
-
-			if err := output.Scan(&postrows.Id, &postrows.Title, &postrows.Description, &postrows.File_name, &postrows.File_type); err != nil {
-				log.Fatal(err)
-
-			}
-			if strings.Contains(postrows.File_type, "image") {
-				dataStr = fmt.Sprintf("<div class='card my-4' style='border-radius: 7px;'><img src='https://the-family-loop-customer-hash.s3.amazonaws.com/posts/images/%s' style='border-radius: 20px;' alt='%s' /><div class='card-body'><h5 class='card-title'>%s</h5><p class='card-text'>%s</p><a href='#' class='btn btn-primary'>Open a post</a></div></div>", postrows.File_name, postrows.File_name, postrows.Title, postrows.Description)
-			} else if strings.Contains(postrows.File_type, "video") {
-				dataStr = fmt.Sprintf("<div class='card my-4' style='border-radius: 7px;'><video controls><source src='https://the-family-loop-customer-hash.s3.amazonaws.com/posts/videos/%s' type='%s'></video><div class='card-body'><h5 class='card-title'>%s</h5><p class='card-text'>%s</p><a href='#' class='btn btn-primary'>Open a post</a></div></div>", postrows.File_name, postrows.File_type, postrows.Title, postrows.Description)
-			} /*else /* Only for testing image creation */ /* {
-				dataStr = fmt.Sprintf("<div class='card my-4' style='border-radius: 7px;'><img src='https://the-family-loop-customer-hash.s3.amazonaws.com/posts/images/%s' style='border-radius: 20px;' alt='%s' /><div class='card-body'><h5 class='card-title'>%s</h5><p class='card-text'>%s</p><a href='#' class='btn btn-primary'>Open a post</a></div></div>", postrows.File_name, postrows.File_name, postrows.Title, postrows.Description)
-			}*/
-
-			postTmpl, tmerr = template.New("tem").Parse(dataStr)
-			if tmerr != nil {
-				fmt.Print(tmerr)
-			}
-			postTmpl.Execute(w, nil)
-		}
-
-	}
 	/*h3 := func(w http.ResponseWriter, r *http.Request) {
 		upload, filename, err := r.FormFile("file_name")
 		if err != nil {
@@ -129,7 +147,10 @@ func main() {
 	}*/
 	http.HandleFunc("/", pagesHandler)
 	http.HandleFunc("/create-post", h2)
+
 	http.HandleFunc("/get-posts", getPostsHandler)
+	http.HandleFunc("/new-posts", getPostCountHandler)
+
 	//http.HandleFunc("/upload-file", h3)
 	//http.Handle("/public/", http.StripPrefix("/public/", http.FileServer(http.Dir("public"))))
 	log.Fatal(http.ListenAndServe(":80", nil))

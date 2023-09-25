@@ -34,7 +34,7 @@
             </div>
         </div>
     </nav>
-    <div style="text-align: center; padding-top: 1%;">
+    <div style="text-align: center; padding-top: 1%; padding-bottom: 1%;">
         <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">
             Create a Post!
         </button>
@@ -66,7 +66,6 @@
 
                     htmx.on('#post-div', 'htmx:xhr:progress', function (evt) {
                         document.getElementById('progressdiv').style.display = 'block'
-                        document.getElementById("exampleModal")
                         htmx.find('#progress').setAttribute('value', evt.detail.loaded / evt.detail.total * 100)
 
                     });
@@ -78,14 +77,46 @@
             </div>
         </div>
     </div>
-    <!--
-    <video height="300px" width="75%">
-        <source src='https://the-family-loop-customer-hash.s3.amazonaws.com/posts/videos/handlebars.mp4'>
-    </video>-->
-    <div style="text-align: center; padding: 5%;" id="posts-div">
-        <div hx-get="/get-posts" hx-trigger="load" hx-target="#post-items">
-            <!--Add to load: load, every 2s-->
-            <div id="post-items">
+    <div style="text-align: center;" class="px-5" id="posts-div">
+
+        <div hx-get="/get-posts" hx-trigger="load, click from:#refresh-button" hx-target="#post-items" id="divofposts">
+            <div hx-get="/new-posts" hx-trigger="every 3s" hx-target="#refreshbutton">
+                <div id="refreshbutton">
+
+                </div>
+            </div>
+
+            <div id="post-items" name="item-count">
+
+
+                <script>
+
+                    /*
+                                        var playingbool = 'load'
+                    
+                                        window.addEventListener('load', function (event) {
+                    
+                                            const vid = document.getElementById('video')
+                                            vid.addEventListener('play', () => {
+                                                playingbool = 'load'
+                                                console.log('playing')
+                    
+                                                htmx.find('#divofposts').setAttribute('hx-trigger', playingbool)
+                    
+                    
+                                            })
+                                            vid.addEventListener('pause', () => {
+                                                playingbool = 'load, every 2s'
+                                                console.log('paused')
+                    
+                                                htmx.find('#divofposts').setAttribute('hx-trigger', playingbool)
+                    
+                    
+                                            })
+                    
+                                        })*/
+
+                </script>
 
             </div>
         </div>

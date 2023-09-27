@@ -62,6 +62,11 @@ func main() {
 			tmpl := template.Must(template.ParseFiles("index.html"))
 
 			tmpl.Execute(w, nil)
+		case "calendar.html":
+			http.Redirect(w, r, "/calendar", http.StatusPermanentRedirect)
+			tmpl := template.Must(template.ParseFiles("calendar.html"))
+
+			tmpl.Execute(w, nil)
 		default:
 			http.Redirect(w, r, "/home", http.StatusPermanentRedirect)
 		}

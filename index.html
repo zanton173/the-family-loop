@@ -30,12 +30,14 @@
                 <ul class="navbar-nav nav-fill w-100" id="navlist">
                     <li class="nav-item"><a class="nav-link" href="/photos">pictures</a></li>
                     <li class="nav-item"><a class="nav-link" href="/posts">posts</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/calendar">calendar</a></li>
+                    <li class="nav-item"><a class="nav-link" href="calendar.html">calendar</a></li>
 
                 </ul>
+
+
             </div>
-            <p onclick='scrollToTop()' class="btn" hx-get="/get-posts" hx-trigger="click" hx-target="#post-items"
-                style="color: blue;" id="notification"></p>
+            <p onclick='scrollToTop()' class="btn" hx-get="/get-posts" style="display: contents;" hx-trigger="click"
+                hx-target="#post-items" style="color: blue;" id="notification"></p>
         </div>
     </nav>
     <div style="text-align: center; padding-top: 1%; padding-bottom: 1%;">

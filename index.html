@@ -19,27 +19,12 @@
 
 <body>
     <h3 style="text-align: center; padding: 1%;">Home</h3>
-    <nav class="navbar navbar-expand-sm sticky-top navbar-light bg-light">
+    <!-- NAV -->
 
-        <div class="container-fluid">
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarText"
-                aria-controls="navbarText" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarText">
-                <ul class="navbar-nav nav-fill w-100" id="navlist">
-                    <li class="nav-item"><a class="nav-link" href="/photos">pictures</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/posts">posts</a></li>
-                    <li class="nav-item"><a class="nav-link" href="calendar.html">calendar</a></li>
+    <div class="sticky-top" id="anchor">
 
-                </ul>
+    </div>
 
-
-            </div>
-            <p onclick='scrollToTop()' class="btn" hx-get="/get-posts" style="display: contents;" hx-trigger="click"
-                hx-target="#post-items" style="color: blue;" id="notification"></p>
-        </div>
-    </nav>
     <div style="text-align: center; padding-top: 1%; padding-bottom: 1%;">
         <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">
             Create a Post!
@@ -99,8 +84,7 @@
     <div hx-get="/new-posts" hx-trigger="load, every 3s" hx-target="#refreshbutton" style="text-align: center;"
         class="px-5" id="polling">
         <div id="refreshbutton">
-            <!-- Append later <button style='border-radius: 15%; color: black; box-shadow: 3px; display: none;' class='bg-light'
-                onclick='window.location.reload()' id='refresh-button'>refresh</button> -->
+
         </div>
     </div>
     <div style="text-align: center;" class="px-5" id="posts-div">

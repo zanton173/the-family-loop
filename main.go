@@ -28,6 +28,10 @@ type Postsrow struct {
 	File_type   string
 }
 
+type TemplateData struct {
+	Navt template.Template
+}
+
 var awskey string
 var awskeysecret string
 
@@ -54,23 +58,40 @@ func main() {
 	var postTmpl *template.Template
 	var tmerr error
 	pagesHandler := func(w http.ResponseWriter, r *http.Request) {
+
 		//tmpl := template.Must(template.ParseFiles("index.html"))
+
 		//tmpl.Execute(w, nil)
+
+		bs, _ := os.ReadFile("navigation.html")
+		navtmple := template.New("Navt")
+		tm, _ := navtmple.Parse(string(bs))
+		/*navtmpl := []TemplateData{
+			{
+				Navt: *tm,
+			},
+		}*/
+		//fmt.Println(navtmpl[0].Navt.Name())
+		//navtmpl, err := template.New("nav").Parse("<div>hello</div>")
+
+		if err != nil {
+			fmt.Println(err)
+		}
 
 		switch r.URL.Path {
 		case "/home":
 			tmpl := template.Must(template.ParseFiles("index.html"))
-
 			tmpl.Execute(w, nil)
-		case "calendar.html":
-			http.Redirect(w, r, "/calendar", http.StatusPermanentRedirect)
+			tm.ExecuteTemplate(w, "Navt", nil)
+		case "/calendar/":
 			tmpl := template.Must(template.ParseFiles("calendar.html"))
-
 			tmpl.Execute(w, nil)
+			tm.Execute(w, nil)
 		default:
-			http.Redirect(w, r, "/home", http.StatusPermanentRedirect)
+			tmpl := template.Must(template.ParseFiles("404.html"))
+			tmpl.Execute(w, nil)
+			tm.Execute(w, nil)
 		}
-
 	}
 
 	getPostsHandler := func(w http.ResponseWriter, r *http.Request) {

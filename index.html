@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
         crossorigin="anonymous"></script>
@@ -26,12 +27,14 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarText">
-                <ul class="navbar-nav nav-fill w-100">
+                <ul class="navbar-nav nav-fill w-100" id="navlist">
                     <li class="nav-item"><a class="nav-link" href="/photos">pictures</a></li>
                     <li class="nav-item"><a class="nav-link" href="/posts">posts</a></li>
                     <li class="nav-item"><a class="nav-link" href="/calendar">calendar</a></li>
+
                 </ul>
             </div>
+            <a href='window.location.reload()' id="notification"></a>
         </div>
     </nav>
     <div style="text-align: center; padding-top: 1%; padding-bottom: 1%;">
@@ -69,6 +72,7 @@
             </div>
         </div>
     </div>
+
     <script>
 
         var modalToToggle = new bootstrap.Modal(document.getElementById('exampleModal'), {
@@ -83,63 +87,48 @@
         });
 
     </script>
+    <div hx-get="/new-posts" hx-trigger="every 3s" hx-target="#refreshbutton" style="text-align: center;" class="px-5"
+        id="polling">
+        <div id="refreshbutton">
+            <!-- Append later <button style='border-radius: 15%; color: black; box-shadow: 3px; display: none;' class='bg-light'
+                onclick='window.location.reload()' id='refresh-button'>refresh</button> -->
+        </div>
+    </div>
     <div style="text-align: center;" class="px-5" id="posts-div">
 
-        <div hx-get="/get-posts" hx-trigger="load, click from:#formsubmit" hx-target="#post-items" id="divofposts">
-
-            <div hx-get="/new-posts" hx-trigger="every 3s" hx-target="#refreshbutton">
-                <div id="refreshbutton" style="display: none;">
-                    <button style='border-radius: 15%; color: black; box-shadow: 3px; display: inline;' class='bg-light'
-                        onclick='window.location.reload()' id='refresh-button'>refresh</button>
-                </div>
-            </div>
-
+        <div hx-get="/get-posts" hx-trigger="load" hx-target="#post-items" id="divofposts">
             <div id="post-items" name="item-count">
-
-
-                <script>
-                    var dbCount = 0
-                    function returnCountOfPosts() {
-                        //console.log(document.getElementById('post-items').childElementCount)
-                        //console.log(dbCount)
-                        if (dbCount != document.getElementById('post-items').childElementCount) {
-                            console.log("need a refresh")
-                            document.getElementById('refreshbutton').style.display = 'inline'
-                        } else {
-                            console.log('no refresh')
-
-                        }
-                    }
-                    /*
-                                        var playingbool = 'load'
-                    
-                                        window.addEventListener('load', function (event) {
-                    
-                                            const vid = document.getElementById('video')
-                                            vid.addEventListener('play', () => {
-                                                playingbool = 'load'
-                                                console.log('playing')
-                    
-                                                htmx.find('#divofposts').setAttribute('hx-trigger', playingbool)
-                    
-                    
-                                            })
-                                            vid.addEventListener('pause', () => {
-                                                playingbool = 'load, every 2s'
-                                                console.log('paused')
-                    
-                                                htmx.find('#divofposts').setAttribute('hx-trigger', playingbool)
-                    
-                    
-                                            })
-                    
-                                        })*/
-
-                </script>
 
             </div>
         </div>
 
+        <script>
+
+            //function returnCountOfPosts(count) {
+            //console.log(document.getElementById('post-items').childElementCount)
+            var dbCount = 0
+
+            htmx.on('#polling', 'htmx:afterRequest', function (event) {
+
+                let badge = document.createElement('i')
+                badge.setAttribute('class', 'bi bi-patch-exclamation')
+                console.log('document count: ' + document.getElementById('post-items').childElementCount)
+                if (dbCount != document.getElementById('post-items').childElementCount) {
+                    console.log("need a refresh")
+                    if (document.getElementById('notification').childElementCount == 0) {
+                        document.getElementById('notification').append(badge)
+                    }
+
+
+                } else {
+                    console.log('no refresh')
+
+                }
+            })
+            //}
+
+
+        </script>
         <!-- potential didv attribute background-image: url('/public/images/img-4668.png'); background-size: contain;-->
         <!--<div class="card col m-2" style="border-radius: 7px;">
                 <img src="https://the-family-loop-customer-hash.s3.amazonaws.com/posts/img-4658.png"

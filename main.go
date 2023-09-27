@@ -79,44 +79,39 @@ func main() {
 		}
 
 		defer output.Close()
-		if storedCount == count {
-			for output.Next() {
-				var postrows Postsrow
 
-				if err := output.Scan(&postrows.Id, &postrows.Title, &postrows.Description, &postrows.File_name, &postrows.File_type); err != nil {
-					log.Fatal(err)
+		for output.Next() {
+			var postrows Postsrow
 
-				}
-				if strings.Contains(postrows.File_type, "image") {
-					dataStr = fmt.Sprintf("<div class='card my-4' style='border-radius: 14px;'><img src='https://the-family-loop-customer-hash.s3.amazonaws.com/posts/images/%s' style='border-radius: 14px;' alt='%s' /><div class='card-body'><h5 class='card-title'>%s</h5><p class='card-text'>%s</p><a href='#' class='btn btn-primary'>Open a post</a></div></div>", postrows.File_name, postrows.File_name, postrows.Title, postrows.Description)
-				} else if strings.Contains(postrows.File_type, "video") {
-					dataStr = fmt.Sprintf("<div class='card my-4' style='border-radius: 14px;'><video controls id='video'><source src='https://the-family-loop-customer-hash.s3.amazonaws.com/posts/videos/%s' type='%s'></video><div class='card-body'><h5 class='card-title'>%s</h5><p class='card-text'>%s</p><a href='#' class='btn btn-primary'>Open a post</a></div></div>", postrows.File_name, postrows.File_type, postrows.Title, postrows.Description)
-				}
-
-				postTmpl, tmerr = template.New("tem").Parse(dataStr)
-				if tmerr != nil {
-					fmt.Print(tmerr)
-				}
-				postTmpl.Execute(w, nil)
+			if err := output.Scan(&postrows.Id, &postrows.Title, &postrows.Description, &postrows.File_name, &postrows.File_type); err != nil {
+				log.Fatal(err)
 
 			}
+			if strings.Contains(postrows.File_type, "image") {
+				dataStr = fmt.Sprintf("<div class='card my-4' style='border-radius: 14px;'><img src='https://the-family-loop-customer-hash.s3.amazonaws.com/posts/images/%s' style='border-radius: 14px;' alt='%s' /><div class='card-body'><h5 class='card-title'>%s</h5><p class='card-text'>%s</p><a href='#' class='btn btn-primary'>Open a post</a></div></div>", postrows.File_name, postrows.File_name, postrows.Title, postrows.Description)
+			} else if strings.Contains(postrows.File_type, "video") {
+				dataStr = fmt.Sprintf("<div class='card my-4' style='border-radius: 14px;'><video controls id='video'><source src='https://the-family-loop-customer-hash.s3.amazonaws.com/posts/videos/%s' type='%s'></video><div class='card-body'><h5 class='card-title'>%s</h5><p class='card-text'>%s</p><a href='#' class='btn btn-primary'>Open a post</a></div></div>", postrows.File_name, postrows.File_type, postrows.Title, postrows.Description)
+			}
 
+			postTmpl, tmerr = template.New("tem").Parse(dataStr)
+			if tmerr != nil {
+				fmt.Print(tmerr)
+			}
+			postTmpl.Execute(w, nil)
 		}
 
 	}
 	getPostCountHandler := func(w http.ResponseWriter, r *http.Request) {
 
-		dataStr := "<script>dbCount = " + storedCount + "; returnCountOfPosts()</script>"
+		var count string
+		db.QueryRow("select count(*) from tfldata.posts;").Scan(&count)
+
+		dataStr := "<script>var dbCount = " + count + "</script>"
 		tmp, err := template.New("but").Parse(dataStr)
 		if err != nil {
 			fmt.Println(err)
 		}
 		tmp.Execute(w, nil)
-		var count string
-
-		db.QueryRow("select count(*) from tfldata.posts;").Scan(&count)
-
-		storedCount = count
 
 	}
 	h2 := func(w http.ResponseWriter, r *http.Request) {

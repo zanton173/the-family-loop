@@ -34,7 +34,8 @@
 
                 </ul>
             </div>
-            <a href='window.location.reload()' id="notification"></a>
+            <p onclick='scrollToTop()' class="btn" hx-get="/get-posts" hx-trigger="click" hx-target="#post-items"
+                style="color: blue;" id="notification"></p>
         </div>
     </nav>
     <div style="text-align: center; padding-top: 1%; padding-bottom: 1%;">
@@ -85,10 +86,16 @@
                 modalToToggle.toggle()
             }
         });
+        function scrollToTop() {
+            window.scrollTo({ top: 0, behavior: "smooth" });
+            var p = document.getElementById('notification')
+            var c = document.getElementById('notebadge')
+            p.removeChild(c)
+        }
 
     </script>
-    <div hx-get="/new-posts" hx-trigger="every 3s" hx-target="#refreshbutton" style="text-align: center;" class="px-5"
-        id="polling">
+    <div hx-get="/new-posts" hx-trigger="load, every 3s" hx-target="#refreshbutton" style="text-align: center;"
+        class="px-5" id="polling">
         <div id="refreshbutton">
             <!-- Append later <button style='border-radius: 15%; color: black; box-shadow: 3px; display: none;' class='bg-light'
                 onclick='window.location.reload()' id='refresh-button'>refresh</button> -->
@@ -104,25 +111,28 @@
 
         <script>
 
+            var dbCount = null
+            htmx.on('#post-items', 'htmx:afterSettle', function (event) {
 
-            htmx.on('#polling', 'htmx:afterRequest', function (event) {
 
-                let badge = document.createElement('i')
-                badge.setAttribute('class', 'bi bi-patch-exclamation')
-                console.log('document count: ' + document.getElementById('post-items').childElementCount)
-                if (dbCount != document.getElementById('post-items').childElementCount) {
-                    console.log("need a refresh")
-                    if (document.getElementById('notification').childElementCount == 0) {
-                        document.getElementById('notification').append(badge)
+                htmx.on('#polling', 'htmx:afterRequest', function (event) {
+
+                    let badge = document.createElement('i')
+                    badge.setAttribute('class', 'bi bi-patch-exclamation')
+                    badge.setAttribute('id', 'notebadge')
+                    console.log('document count: ' + document.getElementById('post-items').childElementCount)
+                    if (dbCount !== document.getElementById('post-items').childElementCount) {
+                        //console.log("need a refresh")
+                        if (document.getElementById('notification').childElementCount == 0) {
+                            document.getElementById('notification').append(badge)
+                        }
+
+                    } else {
+                        //console.log('no refresh')
+
                     }
-
-
-                } else {
-                    console.log('no refresh')
-
-                }
+                })
             })
-
 
         </script>
     </div>

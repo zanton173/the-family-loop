@@ -106,7 +106,7 @@ func main() {
 		var count string
 		db.QueryRow("select count(*) from tfldata.posts;").Scan(&count)
 
-		dataStr := "<script>var dbCount = " + count + "</script>"
+		dataStr := "<script>dbCount = " + count + "</script>"
 		tmp, err := template.New("but").Parse(dataStr)
 		if err != nil {
 			fmt.Println(err)

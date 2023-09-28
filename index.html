@@ -19,7 +19,6 @@
 
 <body>
     <h3 style="text-align: center; padding: 1%;">Home</h3>
-    <!-- NAV -->
 
     <div class="sticky-top" id="anchor">
 
@@ -31,7 +30,7 @@
         </button>
     </div>
 
-    <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div id="post-div" class="modal-content p-4">
 
@@ -106,7 +105,7 @@
                     let badge = document.createElement('i')
                     badge.setAttribute('class', 'bi bi-patch-exclamation')
                     badge.setAttribute('id', 'notebadge')
-                    console.log('document count: ' + document.getElementById('post-items').childElementCount)
+
                     if (dbCount !== document.getElementById('post-items').childElementCount) {
                         //console.log("need a refresh")
                         if (document.getElementById('notification').childElementCount == 0) {

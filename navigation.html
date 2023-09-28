@@ -9,19 +9,114 @@
             <ul class="navbar-nav nav-fill w-100" id="navlist">
                 <li class="nav-item"><a class="nav-link" href="/calendar/">calendar</a></li>
                 <li class="nav-item"><a class="nav-link" href="/photos/">pictures</a></li>
-                <li class="nav-item"><a class="nav-link" href="/posts/">posts</a></li>
-
-
+                <li class="nav-item"><button class="nav-link"
+                        onclick='{loginModal.toggle(); showLoginForm()}'>login</button>
+                </li>
             </ul>
         </div>
         <p onclick='scrollToTop()' class="btn" hx-get="/get-posts" style="display: contents;" hx-trigger="click"
             hx-target="#post-items" style="color: blue;" id="notification"></p>
     </div>
 </nav>
+<div class="modal" tabindex="-1" id="login-modal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" style="text-align: center;">Login or Sign Up</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div style="display: flex; justify-content: space-around;">
+                    <button class="btn px-5 btn-outline-secondary" id="login-button"
+                        onclick='showLoginForm()'>Login</button>
+                    <button class="btn px-5 btn-outline-secondary" id="signup-button"
+                        onclick='showSignUpForm()'>Sign-up</button>
+                </div>
+                <div id="togglesignuplogin">
+                    <form id="login-form" name="loginform">
+                        <div class="p-3">
+                            <h5>Login</h5>
+                            <label>Username:</label>
+                            <input class="form-control" type="text" autocomplete="additional-name"
+                                placeholder="Username" required />
+                        </div>
+                        <div class="p-3">
+                            <label>Password:</label>
+                            <input class="form-control" type="password" autocomplete="new-password"
+                                placeholder="password" required />
+                        </div>
+                        <button type="button" class="btn btn-outline-success"
+                            onclick="{alert('You have logged in'); loginModal.toggle()}">Go!</button>
+                    </form>
+                    <form id="sign-up-form" name="signupform">
+                        <div class="p-3">
+                            <h5>Sign Up</h5>
+                            <label>Username:</label>
+                            <input class="form-control" type="text" autocomplete="additional-name"
+                                placeholder="Username" required />
+                        </div>
+                        <div class="p-3">
+                            <label>Password:</label>
+                            <input class="form-control" type="password" autocomplete="new-password"
+                                placeholder="password" required />
+                        </div>
+                        <div class="p-3">
+                            <label>Confirm Password:</label>
+                            <input class="form-control" type="password" autocomplete="new-password"
+                                placeholder="password" required />
+                        </div>
+                        <div class="p-3">
+                            <button type="button" class="btn btn-outline-success"
+                                onclick="{alert('Login with your new account'); showLoginForm()}">Go!</button>
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+            <!--  <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary">Save changes</button>
+            </div>-->
+        </div>
+    </div>
+
+</div>
 <script>
+
     let p = document.getElementById('anchor')
     let c = document.getElementById('ournav')
 
+    let signup = document.getElementById('sign-up-form')
+    let loginele = document.getElementById('login-form')
+    let parentauth = document.getElementById('togglesignuplogin')
+
+    let loginbtn = document.getElementById('login-button')
+    let signupbtn = document.getElementById('signup-button')
+
+    var loginModal = new bootstrap.Modal(document.getElementById('login-modal'), {});
+
     p.append(c)
+
+    function showSignUpForm() {
+
+        if (parentauth.childElementCount >= 1) {
+            signupbtn.setAttribute('class', 'btn px-5 btn-secondary')
+
+            loginbtn.setAttribute('class', 'btn px-5 btn-outline-secondary')
+            parentauth.removeChild(loginele)
+            parentauth.appendChild(signup)
+        }
+    }
+    function showLoginForm() {
+
+        if (parentauth.childElementCount >= 1) {
+            loginbtn.setAttribute('class', 'btn px-5 btn-secondary')
+            signupbtn.setAttribute('class', 'btn px-5 btn-outline-secondary')
+            parentauth.removeChild(signup)
+            parentauth.appendChild(loginele)
+        }
+    }
+
+
 
 </script>

@@ -33,41 +33,40 @@
                         onclick='showSignUpForm()'>Sign-up</button>
                 </div>
                 <div id="togglesignuplogin">
-                    <form id="login-form" name="loginform">
-                        <div class="p-3">
+                    <form class="form" id="login-form" name="loginform" hx-post="/login" hx-trigger="submit"
+                        hx-target="#togglesignuplogin">
+                        <div class="p-4">
                             <h5>Login</h5>
                             <label>Username:</label>
-                            <input class="form-control" type="text" autocomplete="additional-name"
+                            <input class="form-control" type="text" name="usernamelogin" autocomplete="additional-name"
                                 placeholder="Username" required />
                         </div>
-                        <div class="p-3">
+                        <div class="p-4">
                             <label>Password:</label>
-                            <input class="form-control" type="password" autocomplete="new-password"
-                                placeholder="password" required />
+                            <input class="form-control" name="passwordlogin" type="password" autocomplete="new-password"
+                                placeholder="Password" required />
                         </div>
-                        <button type="button" class="btn btn-outline-success"
-                            onclick="{alert('You have logged in'); loginModal.toggle()}">Go!</button>
+                        <button type="submit" class="btn btn-outline-success" data-bs-dismiss="modal">Go!</button>
                     </form>
-                    <form id="sign-up-form" name="signupform">
-                        <div class="p-3">
+                    <form class="form" id="sign-up-form" name="signupform" hx-post="/signup" hx-trigger="submit">
+                        <div class="p-4">
                             <h5>Sign Up</h5>
                             <label>Username:</label>
-                            <input class="form-control" type="text" autocomplete="additional-name"
+                            <input class="form-control" type="text" name="usernamesignup" autocomplete="additional-name"
                                 placeholder="Username" required />
                         </div>
-                        <div class="p-3">
+                        <div class="p-4">
                             <label>Password:</label>
-                            <input class="form-control" type="password" autocomplete="new-password"
-                                placeholder="password" required />
+                            <input class="form-control" type="password" name="passwordsignup"
+                                autocomplete="new-password" placeholder="Password" required />
                         </div>
-                        <div class="p-3">
+                        <div class="p-4">
                             <label>Confirm Password:</label>
                             <input class="form-control" type="password" autocomplete="new-password"
-                                placeholder="password" required />
+                                placeholder="Password" required />
                         </div>
-                        <div class="p-3">
-                            <button type="button" class="btn btn-outline-success"
-                                onclick="{alert('Login with your new account'); showLoginForm()}">Go!</button>
+                        <div class="p-4">
+                            <button type="submit" class="btn btn-outline-success">Go!</button>
                         </div>
                     </form>
                 </div>

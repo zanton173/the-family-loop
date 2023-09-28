@@ -18,6 +18,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type Postsrow struct {
@@ -26,10 +27,6 @@ type Postsrow struct {
 	Description string
 	File_name   string
 	File_type   string
-}
-
-type TemplateData struct {
-	Navt template.Template
 }
 
 var awskey string
@@ -44,7 +41,6 @@ func main() {
 	dbpass := os.Getenv("DB_PASS")
 	awskey = os.Getenv("AWS_ACCESS_KEY")
 	awskeysecret = os.Getenv("AWS_ACCESS_SECRET")
-	var storedCount string
 
 	// Connect to database
 	connStr := fmt.Sprintf("postgresql://tfldbrole:%s@localhost/tfl?sslmode=disable", dbpass)
@@ -53,10 +49,49 @@ func main() {
 		log.Fatal(err)
 	}
 	defer db.Close()
-	db.QueryRow("select count(*) from tfldata.posts;").Scan(&storedCount)
 
 	var postTmpl *template.Template
 	var tmerr error
+	signUpHandler := func(w http.ResponseWriter, r *http.Request) {
+		bs := []byte(r.PostFormValue("passwordsignup"))
+
+		bytesOfPass, err := bcrypt.GenerateFromPassword(bs, len(bs))
+
+		if err != nil {
+			fmt.Println(err)
+
+		}
+
+		_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.users(\"username\", \"password\") values('%s', '%s');", r.PostFormValue("usernamesignup"), bytesOfPass))
+		if errinsert != nil {
+			fmt.Println(errinsert)
+		}
+
+		if err == nil && errinsert == nil {
+			dataStr := "<script>alert('Sign up Successful! You can now login'); showLoginForm();</script>"
+			signUpTemplate, err := template.New("signup").Parse(dataStr)
+			if err != nil {
+				fmt.Println(err)
+			}
+			signUpTemplate.Execute(w, nil)
+
+		}
+
+	}
+	loginHandler := func(w http.ResponseWriter, r *http.Request) {
+		userStr := r.PostFormValue("usernamelogin")
+		var password string
+		db.QueryRow(fmt.Sprintf("select password from tfldata.users where username='%s';", userStr)).Scan(&password)
+
+		err := bcrypt.CompareHashAndPassword([]byte(password), []byte(r.PostFormValue("passwordlogin")))
+
+		if err == nil {
+			w.Header().Set("HX-Refresh", "true")
+		} else {
+			fmt.Println(err)
+		}
+	}
+
 	pagesHandler := func(w http.ResponseWriter, r *http.Request) {
 
 		//tmpl := template.Must(template.ParseFiles("index.html"))
@@ -66,13 +101,6 @@ func main() {
 		bs, _ := os.ReadFile("navigation.html")
 		navtmple := template.New("Navt")
 		tm, _ := navtmple.Parse(string(bs))
-		/*navtmpl := []TemplateData{
-			{
-				Navt: *tm,
-			},
-		}*/
-		//fmt.Println(navtmpl[0].Navt.Name())
-		//navtmpl, err := template.New("nav").Parse("<div>hello</div>")
 
 		if err != nil {
 			fmt.Println(err)
@@ -87,6 +115,8 @@ func main() {
 			tmpl := template.Must(template.ParseFiles("calendar.html"))
 			tmpl.Execute(w, nil)
 			tm.Execute(w, nil)
+		case "/":
+			http.Redirect(w, r, "/home", http.StatusMovedPermanently)
 		default:
 			tmpl := template.Must(template.ParseFiles("404.html"))
 			tmpl.Execute(w, nil)
@@ -175,6 +205,9 @@ func main() {
 
 	http.HandleFunc("/get-posts", getPostsHandler)
 	http.HandleFunc("/new-posts", getPostCountHandler)
+
+	http.HandleFunc("/signup", signUpHandler)
+	http.HandleFunc("/login", loginHandler)
 
 	//http.HandleFunc("/upload-file", h3)
 	//http.Handle("/public/", http.StripPrefix("/public/", http.FileServer(http.Dir("public"))))

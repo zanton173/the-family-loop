@@ -48,10 +48,9 @@
                                 placeholder="Password" oninput="checkForValidLoginSubmission()" required
                                 id="passwordlogininput" />
                         </div>
-                        <!-- <button type="submit" class="btn btn-outline-success" data-bs-dismiss="modal"
-                            id="gologin">Go!</button>-->
                     </form>
-                    <form class="form" id="sign-up-form" name="signupform" hx-post="/signup" hx-trigger="submit">
+                    <form class="form" id="sign-up-form" name="signupform" hx-post="/signup" hx-trigger="submit"
+                        hx-encoding="multipart/form-data">
                         <div class="p-4">
                             <h5>Sign Up</h5>
                             <label>Username:</label>
@@ -72,6 +71,8 @@
                                 id="confirmpasswordsignupinput" />
                         </div>
                         <div class="p-4">
+                            <label>Pick a profile picture</label>
+                            <input id="pfpimage" type="file" accept="image/*" name="pfpformfile" />
 
                         </div>
                     </form>
@@ -159,6 +160,10 @@
             signup.removeChild(gosignup)
 
         }
+    }
+
+    function imageLoad() {
+        alert("test")
     }
 
 </script>

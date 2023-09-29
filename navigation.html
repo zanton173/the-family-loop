@@ -139,11 +139,8 @@
             gologin.innerHTML = "Go!"
 
             loginele.append(gologin)
-        } else if (usernamelogininput.value == '' || passwordlogininput.value == '') {
-            if (loginele.contains(gologin)) {
-                loginele.removeChild(gologin)
-            }
-
+        } else if ((usernamelogininput.value == '' || passwordlogininput.value == '') && loginele.contains(gologin)) {
+            loginele.removeChild(gologin)
         }
     }
     function checkForValidSignUpSubmission() {
@@ -157,16 +154,11 @@
 
             signup.append(gosignup)
 
-        } else if (usernamesignupinput.value == '' || passwordsignupinput.value == '' || confirmpasswordsignupinput.value == '' || passwordsignupinput.value !== confirmpasswordsignupinput.value) {
+        } else if ((usernamesignupinput.value == '' || passwordsignupinput.value == '' || confirmpasswordsignupinput.value == '' || passwordsignupinput.value !== confirmpasswordsignupinput.value) && signup.contains(gosignup)) {
 
-            if (signup.contains(gosignup)) {
-                signup.removeChild(gosignup)
-
-            }
+            signup.removeChild(gosignup)
 
         }
     }
-
-
 
 </script>

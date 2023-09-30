@@ -87,6 +87,7 @@ func main() {
 		}
 
 	}
+
 	loginHandler := func(w http.ResponseWriter, r *http.Request) {
 		userStr := r.PostFormValue("usernamelogin")
 		var password string
@@ -94,11 +95,17 @@ func main() {
 
 		err := bcrypt.CompareHashAndPassword([]byte(password), []byte(r.PostFormValue("passwordlogin")))
 
-		if err == nil {
+		if err != nil {
+			w.Header().Set("HX-Trigger", "loginevent")
+		} else if err == nil {
 			w.Header().Set("HX-Refresh", "true")
-		} else {
-			fmt.Println(err)
+
+			/*http.SetCookie(w, &http.Cookie{
+
+			})*/
+
 		}
+
 	}
 
 	pagesHandler := func(w http.ResponseWriter, r *http.Request) {
@@ -228,6 +235,7 @@ func main() {
 	//http.Handle("/public/", http.StripPrefix("/public/", http.FileServer(http.Dir("public"))))
 	log.Fatal(http.ListenAndServe(":80", nil))
 }
+
 func uploadPfpToS3(k string, s string, bucketexists bool, f multipart.File, fn string, r *http.Request) {
 	cfg, err := config.LoadDefaultConfig(context.TODO(),
 		config.WithDefaultRegion("us-east-1"),

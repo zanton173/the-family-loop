@@ -32,11 +32,6 @@ type Postsrow struct {
 	Author      string
 }
 
-type session struct {
-	username string
-	expire   time.Time
-}
-
 var awskey string
 var awskeysecret string
 
@@ -107,16 +102,22 @@ func main() {
 			w.Header().Set("HX-Trigger", "loginevent")
 		} else if err == nil {
 			sessionToken := uuid.NewString()
-			expiresAt := time.Now().Add(300 * time.Second)
+			expiresAt := time.Now().Add(25 * time.Minute)
 
-			_, err := db.Exec(fmt.Sprintf("update tfldata.users set session_token='%s' where username='%s';", sessionToken, userStr))
-			if err != nil {
+			_, updateerr := db.Exec(fmt.Sprintf("update tfldata.users set session_token='%s' where username='%s';", sessionToken, userStr))
+			if updateerr != nil {
 				fmt.Println(err)
 			}
+			_, inserterr := db.Exec(fmt.Sprintf("insert into tfldata.sessions(\"username\", \"session_token\", \"expiry\") values('%s', '%s', '%s');", userStr, sessionToken, expiresAt.Format(time.TimeOnly)))
+			if inserterr != nil {
+				fmt.Println(err)
+			}
+			maxAge := time.Until(expiresAt)
+			fmt.Println(maxAge)
 			http.SetCookie(w, &http.Cookie{
 				Name:     "session_id",
 				Value:    sessionToken,
-				MaxAge:   (expiresAt.Minute() - time.Now().Minute()) * 60,
+				MaxAge:   int(maxAge.Seconds()),
 				HttpOnly: true,
 				SameSite: http.SameSiteStrictMode,
 			})
@@ -158,30 +159,7 @@ func main() {
 	}
 
 	getPostsHandler := func(w http.ResponseWriter, r *http.Request) {
-		// Cookie logic
-		/*c, err := r.Cookie("session_id")
-		if err != nil {
-			if err == http.ErrNoCookie {
-				sessionToken := uuid.NewString()
-				expiresAt := time.Now().Add(300 * time.Second)
 
-				sessions[sessionToken] = session{
-					username: "guest",
-					expire:   expiresAt,
-				}
-
-				http.SetCookie(w, &http.Cookie{
-					Name:     "session_id",
-					Value:    sessionToken,
-					MaxAge:   (expiresAt.Minute() - time.Now().Minute()) * 60,
-					HttpOnly: true,
-					SameSite: http.SameSiteStrictMode,
-				})
-				return
-			}
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}*/
 		output, err := db.Query("select * from tfldata.posts order by id DESC;")
 		var count string
 		db.QueryRow("select count(*) from tfldata.posts;").Scan(&count)
@@ -235,6 +213,7 @@ func main() {
 		tmp.Execute(w, nil)
 
 	}
+
 	createPostHandler := func(w http.ResponseWriter, r *http.Request) {
 		c, err := r.Cookie("session_id")
 		if err != nil {
@@ -287,10 +266,6 @@ func main() {
 	//http.HandleFunc("/upload-file", h3)
 	//http.Handle("/public/", http.StripPrefix("/public/", http.FileServer(http.Dir("public"))))
 	log.Fatal(http.ListenAndServe(":80", nil))
-}
-
-func (s session) isExpired() bool {
-	return s.expire.Before(time.Now())
 }
 
 func uploadPfpToS3(k string, s string, bucketexists bool, f multipart.File, fn string, r *http.Request) {

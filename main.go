@@ -29,6 +29,7 @@ type Postsrow struct {
 	Description string
 	File_name   string
 	File_type   string
+	Author      string
 }
 
 type session struct {
@@ -56,8 +57,6 @@ func main() {
 		log.Fatal(err)
 	}
 	defer db.Close()
-
-	var sessions = map[string]session{}
 
 	var postTmpl *template.Template
 	var tmerr error
@@ -110,11 +109,10 @@ func main() {
 			sessionToken := uuid.NewString()
 			expiresAt := time.Now().Add(300 * time.Second)
 
-			sessions[sessionToken] = session{
-				username: userStr,
-				expire:   expiresAt,
+			_, err := db.Exec(fmt.Sprintf("update tfldata.users set session_token='%s' where username='%s';", sessionToken, userStr))
+			if err != nil {
+				fmt.Println(err)
 			}
-
 			http.SetCookie(w, &http.Cookie{
 				Name:     "session_id",
 				Value:    sessionToken,
@@ -160,7 +158,8 @@ func main() {
 	}
 
 	getPostsHandler := func(w http.ResponseWriter, r *http.Request) {
-		c, err := r.Cookie("session_id")
+		// Cookie logic
+		/*c, err := r.Cookie("session_id")
 		if err != nil {
 			if err == http.ErrNoCookie {
 				sessionToken := uuid.NewString()
@@ -182,7 +181,7 @@ func main() {
 			}
 			w.WriteHeader(http.StatusBadRequest)
 			return
-		}
+		}*/
 		output, err := db.Query("select * from tfldata.posts order by id DESC;")
 		var count string
 		db.QueryRow("select count(*) from tfldata.posts;").Scan(&count)
@@ -197,7 +196,7 @@ func main() {
 		for output.Next() {
 			var postrows Postsrow
 
-			if err := output.Scan(&postrows.Id, &postrows.Title, &postrows.Description, &postrows.File_name, &postrows.File_type); err != nil {
+			if err := output.Scan(&postrows.Id, &postrows.Title, &postrows.Description, &postrows.File_name, &postrows.File_type, &postrows.Author); err != nil {
 				log.Fatal(err)
 
 			}
@@ -221,7 +220,6 @@ func main() {
 			}
 			postTmpl.Execute(w, nil)
 		}
-		fmt.Print(c.Value)
 
 	}
 	getPostCountHandler := func(w http.ResponseWriter, r *http.Request) {
@@ -237,7 +235,19 @@ func main() {
 		tmp.Execute(w, nil)
 
 	}
-	h2 := func(w http.ResponseWriter, r *http.Request) {
+	createPostHandler := func(w http.ResponseWriter, r *http.Request) {
+		c, err := r.Cookie("session_id")
+		if err != nil {
+			if err == http.ErrNoCookie {
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		var username string
+		row := db.QueryRow(fmt.Sprintf("select username from users where session_token='%s'", c))
+		row.Scan(&username)
 		upload, filename, errfile := r.FormFile("file_name")
 
 		if errfile != nil {
@@ -248,9 +258,9 @@ func main() {
 		// somehow gets the right filetype
 		filetype := createTFLBucketAndUpload(awskey, awskeysecret, false, upload, filename.Filename, r)
 
-		_, err := db.Exec(fmt.Sprintf("insert into tfldata.posts(\"title\", \"description\", \"file_name\", \"file_type\") values('%s', '%s', '%s', '%s');", r.PostFormValue("title"), r.PostFormValue("description"), filename.Filename, filetype))
+		_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.posts(\"title\", \"description\", \"file_name\", \"file_type\", \"author\") values('%s', '%s', '%s', '%s', '%s');", r.PostFormValue("title"), r.PostFormValue("description"), filename.Filename, filetype, username))
 
-		if err != nil {
+		if errinsert != nil {
 			log.Fatal(err)
 		}
 		defer upload.Close()
@@ -266,7 +276,7 @@ func main() {
 
 	}*/
 	http.HandleFunc("/", pagesHandler)
-	http.HandleFunc("/create-post", h2)
+	http.HandleFunc("/create-post", createPostHandler)
 
 	http.HandleFunc("/get-posts", getPostsHandler)
 	http.HandleFunc("/new-posts", getPostCountHandler)
@@ -368,7 +378,6 @@ func createTFLBucketAndUpload(k string, s string, bucketexists bool, f multipart
 			log.Fatal(err)
 		}
 	}
-
 	_, err2 := client.PutPublicAccessBlock(context.TODO(),
 		&s3.PutPublicAccessBlockInput{
 			Bucket: aws.String("the-family-loop" + "-customer-hash"),
@@ -396,9 +405,11 @@ func createTFLBucketAndUpload(k string, s string, bucketexists bool, f multipart
                 "s3:GetObject*",
                 "s3:PutObject*"
             ],
-            "Resource": "arn:aws:s3:::the-family-loop` + `-customer-hash/posts/*",
-			"Resource": "arn:aws:s3:::the-family-loop` + `-customer-hash/pfp/*"
-        }
+            "Resource": [
+				"arn:aws:s3:::the-family-loop` + `-customer-hash/posts/*",
+				"arn:aws:s3:::the-family-loop` + `-customer-hash/pfp/*"
+        ]
+			}
     ]}`),
 		})
 	if err3 != nil {

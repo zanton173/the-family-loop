@@ -34,8 +34,8 @@
         <div class="modal-dialog">
             <div id="post-div" class="modal-content p-4">
 
-                <form class="d-grid" hx-post="/create-post" hx-trigger="click from:#formsubmit"
-                    hx-encoding="multipart/form-data">
+                <form id="createpostele" class="d-grid" hx-post="/create-post" hx-trigger="click from:#formsubmit"
+                    hx-encoding="multipart/form-data" hx-swap="none">
 
                     <input class="my-2 shadow-sm border-0 text-center" name="title" id="posttitle" type="text"
                         placeholder="title your post" required maxlength="128" />
@@ -116,6 +116,15 @@
 
                     }
                 })
+            })
+            htmx.on("#createpostele", "htmx:afterRequest", function (event) {
+                if (event.detail.xhr.status == 401) {
+                    alert("Please login before creating a post.")
+                } else if (event.detail.xhr.status == 400) {
+                    alert("Some error happened. Please try again.")
+                } else if (event.detail.xhr.status == 200) {
+                    window.location.reload()
+                }
             })
 
         </script>

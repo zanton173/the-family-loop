@@ -107,13 +107,13 @@ func main() {
 			w.Header().Set("HX-Trigger", "loginevent")
 		} else if err == nil {
 			sessionToken := uuid.NewString()
-			expiresAt := time.Now().Add(25 * time.Minute)
-
+			expiresAt := time.Now().Add(4 * time.Minute)
+			fmt.Println(expiresAt.Format(time.DateTime))
 			_, updateerr := db.Exec(fmt.Sprintf("update tfldata.users set session_token='%s' where username='%s';", sessionToken, userStr))
 			if updateerr != nil {
 				fmt.Println(err)
 			}
-			_, inserterr := db.Exec(fmt.Sprintf("insert into tfldata.sessions(\"username\", \"session_token\", \"expiry\") values('%s', '%s', '%s');", userStr, sessionToken, expiresAt.Format(time.TimeOnly)))
+			_, inserterr := db.Exec(fmt.Sprintf("insert into tfldata.sessions(\"username\", \"session_token\", \"expiry\") values('%s', '%s', '%s') on conflict(username) do update set session_token='%s', expiry='%s';", userStr, sessionToken, expiresAt.Format(time.DateTime), sessionToken, expiresAt.Format(time.DateTime)))
 			if inserterr != nil {
 				fmt.Println(err)
 			}
@@ -147,7 +147,7 @@ func main() {
 
 		switch r.URL.Path {
 		case "/home":
-
+			cookieExpirationCheck(w, r)
 			tmpl := template.Must(template.ParseFiles("index.html"))
 			tmpl.Execute(w, nil)
 			tm.ExecuteTemplate(w, "Navt", nil)
@@ -273,7 +273,22 @@ func main() {
 	//http.Handle("/public/", http.StripPrefix("/public/", http.FileServer(http.Dir("public"))))
 	log.Fatal(http.ListenAndServe(":80", nil))
 }
+func cookieExpirationCheck(w http.ResponseWriter, rCookie *http.Request) {
+	c, err := rCookie.Cookie("session_id")
 
+	if err != nil {
+		if err == http.ErrNoCookie {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	if c.Valid() != nil {
+		fmt.Println("Cookie is dead")
+	}
+
+}
 func uploadPfpToS3(k string, s string, bucketexists bool, f multipart.File, fn string, r *http.Request) {
 	cfg, err := config.LoadDefaultConfig(context.TODO(),
 		config.WithDefaultRegion("us-east-1"),

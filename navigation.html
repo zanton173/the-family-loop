@@ -68,7 +68,7 @@
                             <label>Confirm Password:</label>
                             <input class="form-control" type="password" autocomplete="new-password"
                                 placeholder="Password" oninput="checkForValidSignUpSubmission()" required
-                                id="confirmpasswordsignupinput" />
+                                id="confirmpasswordsignupinput" name="confirmpasswordsignup" />
                         </div>
                         <div class="p-4">
                             <label>Pick a profile picture</label>
@@ -165,6 +165,12 @@
 
         }
     }
+
+    htmx.on("#sign-up-form", "htmx:afterRequest", function (event) {
+        if (event.detail.xhr.status == 401) {
+            alert("Are you trying to bypass client side validation??!?!?!")
+        }
+    })
 
     function loginFunction() {
         alert("username or password incorrect")

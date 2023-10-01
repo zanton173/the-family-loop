@@ -56,14 +56,12 @@ func main() {
 	var postTmpl *template.Template
 	var tmerr error
 	signUpHandler := func(w http.ResponseWriter, r *http.Request) {
-
-		upload, filename, errfile := r.FormFile("pfpformfile")
-
-		if errfile != nil {
-			log.Fatal(errfile)
+		var errinsert error
+		if r.PostFormValue("passwordsignup") != r.PostFormValue("confirmpasswordsignup") {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
 		}
-
-		uploadPfpToS3(awskey, awskeysecret, false, upload, filename.Filename, r)
+		upload, filename, errfile := r.FormFile("pfpformfile")
 
 		bs := []byte(r.PostFormValue("passwordsignup"))
 
@@ -73,12 +71,20 @@ func main() {
 			fmt.Println(err)
 
 		}
+		if errfile != nil {
+			fmt.Println(errfile)
+			_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.users(\"username\", \"password\", \"pfp_name\") values('%s', '%s', '%s');", r.PostFormValue("usernamesignup"), bytesOfPass, "no_profile_picture"))
+			if errinsert != nil {
+				fmt.Println(errinsert)
+			}
+		} else {
+			uploadPfpToS3(awskey, awskeysecret, false, upload, filename.Filename, r)
+			_, errinsert = db.Exec(fmt.Sprintf("insert into tfldata.users(\"username\", \"password\", \"pfp_name\") values('%s', '%s', '%s');", r.PostFormValue("usernamesignup"), bytesOfPass, filename.Filename))
+			if errinsert != nil {
+				fmt.Println(errinsert)
+			}
 
-		_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.users(\"username\", \"password\", \"pfp_name\") values('%s', '%s', '%s');", r.PostFormValue("usernamesignup"), bytesOfPass, filename.Filename))
-		if errinsert != nil {
-			fmt.Println(errinsert)
 		}
-
 		if err == nil && errinsert == nil {
 			dataStr := "<script>alert('Sign up Successful! You can now login'); showLoginForm();</script>"
 			signUpTemplate, err := template.New("signup").Parse(dataStr)
@@ -88,7 +94,6 @@ func main() {
 			signUpTemplate.Execute(w, nil)
 
 		}
-
 	}
 
 	loginHandler := func(w http.ResponseWriter, r *http.Request) {
@@ -142,6 +147,7 @@ func main() {
 
 		switch r.URL.Path {
 		case "/home":
+
 			tmpl := template.Must(template.ParseFiles("index.html"))
 			tmpl.Execute(w, nil)
 			tm.ExecuteTemplate(w, "Navt", nil)

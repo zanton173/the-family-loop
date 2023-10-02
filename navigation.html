@@ -9,7 +9,7 @@
             <ul class="navbar-nav nav-fill w-100" id="navlist">
                 <li class="nav-item"><a class="nav-link" href="/calendar/">calendar</a></li>
                 <li class="nav-item"><a class="nav-link" href="/photos/">pictures</a></li>
-                <li class="nav-item"><button id="loginlogoutnav" class="nav-link"
+                <li class="nav-item" id="navitemforwelcome"><button id="loginlogoutnav" class="nav-link"
                         onclick='{loginModal.toggle(); showLoginForm()}'>login</button>
                 </li>
             </ul>
@@ -71,10 +71,10 @@
                                 id="confirmpasswordsignupinput" name="confirmpasswordsignup" />
                         </div>
                         <div class="p-4">
-                            <!-- TODO: Add required PFP 
+                            <!-- TODO: Add required PFP -->
                             <label>Pick a profile picture</label>
                             <input id="pfpimage" type="file" accept="image/*" name="pfpformfile" />
-                            -->
+
                         </div>
                     </form>
                 </div>
@@ -110,6 +110,12 @@
     var loginModal = new bootstrap.Modal(document.getElementById('login-modal'), {});
 
     p.append(c)
+
+    document.body.addEventListener("htmx:afterSettle", function (event) {
+        var cook = document.cookie
+        console.log(cook)
+
+    })
 
     function showSignUpForm() {
 
@@ -170,8 +176,15 @@
     htmx.on("#sign-up-form", "htmx:afterRequest", function (event) {
         if (event.detail.xhr.status == 401) {
             alert("Are you trying to bypass client side validation??!?!?!")
+        } else if (event.detail.xhr.status == 200) {
+            alert('Sign up Successful! You can now login');
+            loginModal.toggle();
+            showLoginForm();
+        } else if (event.detail.xhr.status == 400) {
+            alert("Some error happened, try again.")
         }
     })
+
 
     function loginFunction() {
         alert("username or password incorrect")

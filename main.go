@@ -48,6 +48,7 @@ func main() {
 	// Connect to database
 	connStr := fmt.Sprintf("postgresql://tfldbrole:%s@localhost/tfl?sslmode=disable", dbpass)
 	db, err := sql.Open("postgres", connStr)
+
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -62,12 +63,12 @@ func main() {
 			return
 		}
 
-		//upload, filename, errfile := r.FormFile("pfpformfile")
-		/*if errfile != nil {
+		upload, filename, errfile := r.FormFile("pfpformfile")
+		if errfile != nil {
 			fmt.Println(errfile)
 
-		}*/
-		//uploadPfpToS3(awskey, awskeysecret, false, upload, filename.Filename, r)
+		}
+		uploadPfpToS3(awskey, awskeysecret, false, upload, filename.Filename, r)
 		bs := []byte(r.PostFormValue("passwordsignup"))
 
 		bytesOfPass, err := bcrypt.GenerateFromPassword(bs, len(bs))
@@ -80,16 +81,9 @@ func main() {
 
 		if errinsert != nil {
 			fmt.Println(errinsert)
+			w.WriteHeader(http.StatusBadRequest)
 		}
-		if err == nil && errinsert == nil {
-			dataStr := "<script>alert('Sign up Successful! You can now login'); showLoginForm();</script>"
-			signUpTemplate, err := template.New("signup").Parse(dataStr)
-			if err != nil {
-				fmt.Println(err)
-			}
-			signUpTemplate.Execute(w, nil)
 
-		}
 	}
 
 	loginHandler := func(w http.ResponseWriter, r *http.Request) {
@@ -250,6 +244,8 @@ func main() {
 	//http.HandleFunc("/upload-file", h3)
 	//http.Handle("/public/", http.StripPrefix("/public/", http.FileServer(http.Dir("public"))))
 	log.Fatal(http.ListenAndServe(":80", nil))
+	// For production
+	//log.Fatal(http.ListenAndServeTLS(":443", "./cert.key", "./cert.pem", nil))
 }
 func cookieExpirationCheck(w http.ResponseWriter, rCookie *http.Request, db *sql.DB) {
 	c, err := rCookie.Cookie("session_id")
@@ -271,14 +267,14 @@ func cookieExpirationCheck(w http.ResponseWriter, rCookie *http.Request, db *sql
 	row := db.QueryRow(fmt.Sprintf("select username, expiry from tfldata.sessions where session_token='%s'", c.Value))
 	row.Scan(&sessionUser, &expiryTemp)
 	fmt.Println(time.Until(expiryTemp))
-	if time.Until(expiryTemp) < (time.Minute * 2) {
+	if time.Until(expiryTemp) < (time.Minute * 5) {
 		setLoginCookie(w, db, sessionUser)
 	}
 
 }
 func setLoginCookie(w http.ResponseWriter, db *sql.DB, userStr string) {
 	sessionToken := uuid.NewString()
-	expiresAt := time.Now().Add(4 * time.Minute)
+	expiresAt := time.Now().Add(360 * time.Minute)
 	//fmt.Println(expiresAt.Local().Format(time.DateTime))
 	_, updateerr := db.Exec(fmt.Sprintf("update tfldata.users set session_token='%s' where username='%s';", sessionToken, userStr))
 	if updateerr != nil {
@@ -305,7 +301,7 @@ func uploadPfpToS3(k string, s string, bucketexists bool, f multipart.File, fn s
 
 	if err != nil {
 		log.Fatal(err)
-		os.Exit(2)
+		os.Exit(9)
 	}
 
 	client := s3.NewFromConfig(cfg)
@@ -353,7 +349,7 @@ func createTFLBucketAndUpload(k string, s string, bucketexists bool, f multipart
 
 	if err != nil {
 		log.Fatal(err)
-		os.Exit(2)
+		os.Exit(4)
 	}
 
 	client := s3.NewFromConfig(cfg)

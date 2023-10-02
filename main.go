@@ -56,34 +56,30 @@ func main() {
 	var postTmpl *template.Template
 	var tmerr error
 	signUpHandler := func(w http.ResponseWriter, r *http.Request) {
-		var errinsert error
+
 		if r.PostFormValue("passwordsignup") != r.PostFormValue("confirmpasswordsignup") {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
-		upload, filename, errfile := r.FormFile("pfpformfile")
 
+		//upload, filename, errfile := r.FormFile("pfpformfile")
+		/*if errfile != nil {
+			fmt.Println(errfile)
+
+		}*/
+		//uploadPfpToS3(awskey, awskeysecret, false, upload, filename.Filename, r)
 		bs := []byte(r.PostFormValue("passwordsignup"))
 
 		bytesOfPass, err := bcrypt.GenerateFromPassword(bs, len(bs))
 
 		if err != nil {
 			fmt.Println(err)
-
 		}
-		if errfile != nil {
-			fmt.Println(errfile)
-			_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.users(\"username\", \"password\", \"pfp_name\") values('%s', '%s', '%s');", r.PostFormValue("usernamesignup"), bytesOfPass, "no_profile_picture"))
-			if errinsert != nil {
-				fmt.Println(errinsert)
-			}
-		} else {
-			uploadPfpToS3(awskey, awskeysecret, false, upload, filename.Filename, r)
-			_, errinsert = db.Exec(fmt.Sprintf("insert into tfldata.users(\"username\", \"password\", \"pfp_name\") values('%s', '%s', '%s');", r.PostFormValue("usernamesignup"), bytesOfPass, filename.Filename))
-			if errinsert != nil {
-				fmt.Println(errinsert)
-			}
+		// TODO: Add pfp insert
+		_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.users(\"username\", \"password\") values('%s', '%s');", r.PostFormValue("usernamesignup"), bytesOfPass))
 
+		if errinsert != nil {
+			fmt.Println(errinsert)
 		}
 		if err == nil && errinsert == nil {
 			dataStr := "<script>alert('Sign up Successful! You can now login'); showLoginForm();</script>"
@@ -106,26 +102,7 @@ func main() {
 		if err != nil {
 			w.Header().Set("HX-Trigger", "loginevent")
 		} else if err == nil {
-			sessionToken := uuid.NewString()
-			expiresAt := time.Now().Add(4 * time.Minute)
-			fmt.Println(expiresAt.Format(time.DateTime))
-			_, updateerr := db.Exec(fmt.Sprintf("update tfldata.users set session_token='%s' where username='%s';", sessionToken, userStr))
-			if updateerr != nil {
-				fmt.Println(err)
-			}
-			_, inserterr := db.Exec(fmt.Sprintf("insert into tfldata.sessions(\"username\", \"session_token\", \"expiry\") values('%s', '%s', '%s') on conflict(username) do update set session_token='%s', expiry='%s';", userStr, sessionToken, expiresAt.Format(time.DateTime), sessionToken, expiresAt.Format(time.DateTime)))
-			if inserterr != nil {
-				fmt.Println(err)
-			}
-			maxAge := time.Until(expiresAt)
-			fmt.Println(maxAge)
-			http.SetCookie(w, &http.Cookie{
-				Name:     "session_id",
-				Value:    sessionToken,
-				MaxAge:   int(maxAge.Seconds()),
-				HttpOnly: true,
-				SameSite: http.SameSiteStrictMode,
-			})
+			setLoginCookie(w, db, userStr)
 			w.Header().Set("HX-Refresh", "true")
 		}
 
@@ -147,7 +124,8 @@ func main() {
 
 		switch r.URL.Path {
 		case "/home":
-			cookieExpirationCheck(w, r)
+
+			cookieExpirationCheck(w, r, db)
 			tmpl := template.Must(template.ParseFiles("index.html"))
 			tmpl.Execute(w, nil)
 			tm.ExecuteTemplate(w, "Navt", nil)
@@ -273,7 +251,7 @@ func main() {
 	//http.Handle("/public/", http.StripPrefix("/public/", http.FileServer(http.Dir("public"))))
 	log.Fatal(http.ListenAndServe(":80", nil))
 }
-func cookieExpirationCheck(w http.ResponseWriter, rCookie *http.Request) {
+func cookieExpirationCheck(w http.ResponseWriter, rCookie *http.Request, db *sql.DB) {
 	c, err := rCookie.Cookie("session_id")
 
 	if err != nil {
@@ -288,6 +266,37 @@ func cookieExpirationCheck(w http.ResponseWriter, rCookie *http.Request) {
 		fmt.Println("Cookie is dead")
 	}
 
+	var sessionUser string
+	var expiryTemp time.Time
+	row := db.QueryRow(fmt.Sprintf("select username, expiry from tfldata.sessions where session_token='%s'", c.Value))
+	row.Scan(&sessionUser, &expiryTemp)
+	fmt.Println(time.Until(expiryTemp))
+	if time.Until(expiryTemp) < (time.Minute * 2) {
+		setLoginCookie(w, db, sessionUser)
+	}
+
+}
+func setLoginCookie(w http.ResponseWriter, db *sql.DB, userStr string) {
+	sessionToken := uuid.NewString()
+	expiresAt := time.Now().Add(4 * time.Minute)
+	//fmt.Println(expiresAt.Local().Format(time.DateTime))
+	_, updateerr := db.Exec(fmt.Sprintf("update tfldata.users set session_token='%s' where username='%s';", sessionToken, userStr))
+	if updateerr != nil {
+		fmt.Println(updateerr)
+	}
+	_, inserterr := db.Exec(fmt.Sprintf("insert into tfldata.sessions(\"username\", \"session_token\", \"expiry\") values('%s', '%s', '%s') on conflict(username) do update set session_token='%s', expiry='%s';", userStr, sessionToken, expiresAt.Format(time.DateTime), sessionToken, expiresAt.Format(time.DateTime)))
+	if inserterr != nil {
+		fmt.Println(inserterr)
+	}
+	maxAge := time.Until(expiresAt)
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session_id",
+		Value:    sessionToken,
+		MaxAge:   int(maxAge.Seconds()),
+		HttpOnly: true,
+		SameSite: http.SameSiteStrictMode,
+	})
 }
 func uploadPfpToS3(k string, s string, bucketexists bool, f multipart.File, fn string, r *http.Request) {
 	cfg, err := config.LoadDefaultConfig(context.TODO(),

@@ -73,7 +73,7 @@
                         <div class="p-4">
                             <!-- TODO: Add required PFP -->
                             <label>Pick a profile picture</label>
-                            <input id="pfpimage" type="file" accept="image/*" name="pfpformfile" />
+                            <input id="pfpimage" type="file" accept="image/*" name="pfpformfile" required />
 
                         </div>
                     </form>
@@ -109,13 +109,49 @@
 
     var loginModal = new bootstrap.Modal(document.getElementById('login-modal'), {});
 
+    var navbarItems = document.getElementById('navbarText')
+
+    var navItemToReplace = document.getElementById('navitemforwelcome')
+    var navInnerToReplace = document.getElementById('loginlogoutnav')
+
+    const logoutButton = document.createElement('button')
+    logoutButton.setAttribute("class", "btn btn-outline-secondary px-2")
+    logoutButton.setAttribute("onclick", 'logoutFunction()')
+    logoutButton.innerHTML = "Logout"
+
+    const navItemWelcome = document.createElement('li')
+
+
     p.append(c)
 
-    document.body.addEventListener("htmx:afterSettle", function (event) {
-        var cook = document.cookie
-        console.log(cook)
+    document.body.addEventListener("htmx:afterSettle", function settleEvent(event) {
+
+        let name = "session_id=";
+        let decodedCookie = decodeURIComponent(document.cookie);
+        let ca = decodedCookie.split(';');
+        for (let i = 0; i < ca.length; i++) {
+            let c = ca[i];
+            while (c.charAt(0) == ' ') {
+                c = c.substring(1);
+            }
+            if (c.indexOf(name) == 0) {
+                //console.log(c.substring(name.length, c.length));
+                htmx.off("htmx:afterSettle", settleEvent)
+                navInnerToReplace.replaceWith(logoutButton)
+
+                break
+            }
+        }
+
+
+
 
     })
+
+    function logoutFunction() {
+        document.cookie = "session_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+        window.location.reload()
+    }
 
     function showSignUpForm() {
 

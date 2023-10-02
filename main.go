@@ -66,7 +66,7 @@ func main() {
 		upload, filename, errfile := r.FormFile("pfpformfile")
 		if errfile != nil {
 			fmt.Println(errfile)
-
+			w.WriteHeader(http.StatusBadRequest)
 		}
 		uploadPfpToS3(awskey, awskeysecret, false, upload, filename.Filename, r)
 		bs := []byte(r.PostFormValue("passwordsignup"))
@@ -260,13 +260,14 @@ func cookieExpirationCheck(w http.ResponseWriter, rCookie *http.Request, db *sql
 	}
 	if c.Valid() != nil {
 		fmt.Println("Cookie is dead")
+		return
 	}
 
 	var sessionUser string
 	var expiryTemp time.Time
 	row := db.QueryRow(fmt.Sprintf("select username, expiry from tfldata.sessions where session_token='%s'", c.Value))
 	row.Scan(&sessionUser, &expiryTemp)
-	fmt.Println(time.Until(expiryTemp))
+
 	if time.Until(expiryTemp) < (time.Minute * 5) {
 		setLoginCookie(w, db, sessionUser)
 	}
@@ -274,7 +275,7 @@ func cookieExpirationCheck(w http.ResponseWriter, rCookie *http.Request, db *sql
 }
 func setLoginCookie(w http.ResponseWriter, db *sql.DB, userStr string) {
 	sessionToken := uuid.NewString()
-	expiresAt := time.Now().Add(360 * time.Minute)
+	expiresAt := time.Now().Add(840 * time.Minute)
 	//fmt.Println(expiresAt.Local().Format(time.DateTime))
 	_, updateerr := db.Exec(fmt.Sprintf("update tfldata.users set session_token='%s' where username='%s';", sessionToken, userStr))
 	if updateerr != nil {
@@ -291,7 +292,9 @@ func setLoginCookie(w http.ResponseWriter, db *sql.DB, userStr string) {
 		Value:    sessionToken,
 		MaxAge:   int(maxAge.Seconds()),
 		SameSite: http.SameSiteStrictMode,
+		Path:     "/",
 	})
+
 }
 func uploadPfpToS3(k string, s string, bucketexists bool, f multipart.File, fn string, r *http.Request) {
 	cfg, err := config.LoadDefaultConfig(context.TODO(),

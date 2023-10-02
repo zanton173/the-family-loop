@@ -294,7 +294,6 @@ func setLoginCookie(w http.ResponseWriter, db *sql.DB, userStr string) {
 		Name:     "session_id",
 		Value:    sessionToken,
 		MaxAge:   int(maxAge.Seconds()),
-		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
 	})
 }

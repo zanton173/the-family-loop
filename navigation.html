@@ -115,15 +115,19 @@
     var navInnerToReplace = document.getElementById('loginlogoutnav')
 
     const logoutButton = document.createElement('button')
-    logoutButton.setAttribute("class", "btn btn-outline-secondary px-2")
+    logoutButton.setAttribute("class", "btn nav-item btn-outline-secondary px-2")
     logoutButton.setAttribute("onclick", 'logoutFunction()')
     logoutButton.innerHTML = "Logout"
 
     const navItemWelcome = document.createElement('li')
-    //class="nav-item" id="navitemforwelcome"><button id="loginlogoutnav" class="nav-link"
-    navItemWelcome.setAttribute("class", "nav-item")
-    navItemWelcome.setAttribute("id", "navitemforwelcome")
-    navItemWelcome.innerHTML = "Welcome, "
+
+    navItemWelcome.setAttribute("class", "nav-item px-2")
+    const navItemWelcomeAvatar = document.createElement('img')
+    navItemWelcomeAvatar.setAttribute("class", "nav-item px-2 img-thumbnail")
+    navItemWelcomeAvatar.setAttribute("style", "max-width: 15%;")
+    navItemWelcomeAvatar.setAttribute("src", "https://the-family-loop-customer-hash.s3.amazonaws.com/pfp/question.png")
+    navItemWelcomeAvatar.setAttribute("alt", "Your family loop pfp")
+    //navItemWelcome.innerHTML = "Welcome, "
     p.append(c)
 
     document.body.addEventListener("htmx:afterSettle", function settleEvent(event) {
@@ -139,8 +143,8 @@
             if (c.indexOf(name) == 0) {
 
                 htmx.off("htmx:afterSettle", settleEvent)
-                navInnerToReplace.replaceWith(logoutButton)
-                navInnerToReplace.append(navItemWelcome)
+                navItemToReplace.replaceWith(navItemWelcomeAvatar)
+                navbarItems.append(logoutButton)
                 break
             }
         }

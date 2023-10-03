@@ -71,12 +71,7 @@
                 modalToToggle.toggle()
             }
         });
-        function scrollToTop() {
-            window.scrollTo({ top: 0, behavior: "smooth" });
-            var p = document.getElementById('notification')
-            var c = document.getElementById('notebadge')
-            p.removeChild(c)
-        }
+
 
     </script>
     <div hx-get="/new-posts" hx-trigger="load, every 3s" hx-target="#refreshbutton" style="text-align: center;"
@@ -94,24 +89,30 @@
         </div>
 
         <script>
-
+            let badge = document.createElement('i')
+            badge.setAttribute('class', 'bi bi-patch-exclamation px-1')
+            badge.setAttribute('id', 'notebadge')
+            function scrollToTop() {
+                window.scrollTo({ top: 0, behavior: "smooth" });
+                document.getElementById('notification').removeChild(badge)
+            }
             var dbCount = null
             htmx.on('#post-items', 'htmx:afterSettle', function (event) {
 
                 htmx.on('#polling', 'htmx:afterRequest', function (data) {
 
-                    let badge = document.createElement('i')
-                    badge.setAttribute('class', 'bi bi-patch-exclamation')
-                    badge.setAttribute('id', 'notebadge')
-
                     if (dbCount !== document.getElementById('post-items').childElementCount) {
                         //console.log("need a refresh")
                         if (document.getElementById('notification').childElementCount == 0) {
+                            console.log("triggered")
                             document.getElementById('notification').append(badge)
                         }
 
                     } else {
                         //console.log('no refresh')
+                        if (document.getElementById('notification').contains(badge)) {
+                            document.getElementById('notification').removeChild(badge)
+                        }
 
                     }
                 })

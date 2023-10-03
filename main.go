@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"log"
@@ -30,6 +31,10 @@ type Postsrow struct {
 	File_name   string
 	File_type   string
 	Author      string
+}
+type seshStruct struct {
+	Username string
+	Pfpname  string
 }
 
 var awskey string
@@ -77,7 +82,7 @@ func main() {
 			fmt.Println(err)
 		}
 		// TODO: Add pfp insert
-		_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.users(\"username\", \"password\") values('%s', '%s');", r.PostFormValue("usernamesignup"), bytesOfPass))
+		_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.users(\"username\", \"password\", \"pfp_name\") values('%s', '%s', '%s');", r.PostFormValue("usernamesignup"), bytesOfPass, filename.Filename))
 
 		if errinsert != nil {
 			fmt.Println(errinsert)
@@ -226,6 +231,21 @@ func main() {
 		defer upload.Close()
 
 	}
+	getSessionDataHandler := func(w http.ResponseWriter, r *http.Request) {
+
+		var ourSeshStruct seshStruct
+		row := db.QueryRow(fmt.Sprintf("select username, pfp_name from tfldata.users where session_token='%s'", r.URL.Query().Get("id")))
+		row.Scan(&ourSeshStruct.Username, &ourSeshStruct.Pfpname)
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+
+		data, err := json.Marshal(&ourSeshStruct)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		w.Write(data)
+	}
+
 	/*h3 := func(w http.ResponseWriter, r *http.Request) {
 		upload, filename, err := r.FormFile("file_name")
 		if err != nil {
@@ -241,6 +261,8 @@ func main() {
 	http.HandleFunc("/get-posts", getPostsHandler)
 	http.HandleFunc("/new-posts", getPostCountHandler)
 
+	http.HandleFunc("/get-username-from-session", getSessionDataHandler)
+
 	http.HandleFunc("/signup", signUpHandler)
 	http.HandleFunc("/login", loginHandler)
 
@@ -250,6 +272,7 @@ func main() {
 	// For production
 	//log.Fatal(http.ListenAndServeTLS(":443", "./cert.key", "./cert.pem", nil))
 }
+
 func cookieExpirationCheck(w http.ResponseWriter, rCookie *http.Request, db *sql.DB) {
 	c, err := rCookie.Cookie("session_id")
 
@@ -262,6 +285,10 @@ func cookieExpirationCheck(w http.ResponseWriter, rCookie *http.Request, db *sql
 		return
 	}
 
+	if c.Valid() != nil {
+		fmt.Println("Cook is no longer valid")
+	}
+
 	var sessionUser string
 	var expiryTemp time.Time
 	row := db.QueryRow(fmt.Sprintf("select username, expiry from tfldata.sessions where session_token='%s'", c.Value))
@@ -269,6 +296,9 @@ func cookieExpirationCheck(w http.ResponseWriter, rCookie *http.Request, db *sql
 
 	if time.Until(expiryTemp) < (time.Minute * 5) {
 		setLoginCookie(w, db, sessionUser)
+	} else if time.Until(expiryTemp) == (time.Minute * 1) {
+		// TODO update DB records
+
 	}
 
 }

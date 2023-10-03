@@ -36,9 +36,9 @@
                 <form id="createpostele" class="d-grid" hx-post="/create-post" hx-trigger="click from:#formsubmit"
                     hx-encoding="multipart/form-data" hx-swap="none">
 
-                    <input class="my-2 shadow-sm border-0 text-center" name="title" id="posttitle" type="text"
+                    <input class="my-2 shadow-sm border-1 text-center" name="title" id="posttitle" type="text"
                         placeholder="title your post" required maxlength="128" />
-                    <input class="my-2 shadow-sm border-0 text-center" name="description" id="postdesc" type="text"
+                    <input class="my-2 shadow-sm border-1 text-center" name="description" id="postdesc" type="text"
                         placeholder="describe yourself" required maxlength="420" />
                     <input class="my-2 shadow" type="file" required maxlength="64" name="file_name"
                         accept="image/*,video/*" placeholder="Upload photo or video" />
@@ -74,7 +74,7 @@
 
 
     </script>
-    <div hx-get="/new-posts" hx-trigger="load, every 3s" hx-target="#refreshbutton" style="text-align: center;"
+    <div hx-get="/new-posts" hx-trigger="load, every 5s" hx-target="#refreshbutton" style="text-align: center;"
         class="px-5" id="polling">
         <div id="refreshbutton">
 

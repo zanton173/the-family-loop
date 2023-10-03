@@ -5,8 +5,8 @@
             aria-controls="navbarText" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
-        <div class="collapse navbar-collapse" id="navbarText">
-            <ul class="navbar-nav nav-fill w-100" id="navlist">
+        <div class="collapse navbar-collapse" style="text-align-last: center;" id="navbarText">
+            <ul class="navbar-nav nav-fill w-100" style="display: contents;" id="navlist">
                 <li class="nav-item"><a class="nav-link" href="/calendar/">calendar</a></li>
                 <li class="nav-item"><a class="nav-link" href="/photos/">pictures</a></li>
                 <li class="nav-item" id="navitemforwelcome"><button id="loginlogoutnav" class="nav-link"
@@ -115,16 +115,20 @@
     var navInnerToReplace = document.getElementById('loginlogoutnav')
 
     const logoutButton = document.createElement('button')
-    logoutButton.setAttribute("class", "btn nav-item btn-outline-secondary px-2")
+    logoutButton.setAttribute("class", "btn btn-outline-secondary")
+
     logoutButton.setAttribute("onclick", 'logoutFunction()')
     logoutButton.innerHTML = "Logout"
 
     const navItemWelcome = document.createElement('li')
+    const divToStickNav = document.createElement('div')
+    divToStickNav.setAttribute("style", "display: contents;")
 
-    navItemWelcome.setAttribute("class", "nav-item px-2")
+    navItemWelcome.setAttribute("class", "nav-item")
+
     const navItemWelcomeAvatar = document.createElement('img')
-    navItemWelcomeAvatar.setAttribute("class", "nav-item px-2 img-thumbnail")
-    navItemWelcomeAvatar.setAttribute("style", "max-width: 15%;")
+    navItemWelcomeAvatar.setAttribute("class", "img-thumbnail img-fluid mx-3")
+    navItemWelcomeAvatar.setAttribute("style", "width: 8%; height: auto; border-radius: 65%;")
     navItemWelcomeAvatar.setAttribute("src", "https://the-family-loop-customer-hash.s3.amazonaws.com/pfp/question.png")
     navItemWelcomeAvatar.setAttribute("alt", "Your family loop pfp")
     //navItemWelcome.innerHTML = "Welcome, "
@@ -143,8 +147,15 @@
             if (c.indexOf(name) == 0) {
 
                 htmx.off("htmx:afterSettle", settleEvent)
-                navItemToReplace.replaceWith(navItemWelcomeAvatar)
-                navbarItems.append(logoutButton)
+                divToStickNav.append(navItemWelcomeAvatar)
+                divToStickNav.append(logoutButton)
+                //navItemWelcome.append(divToStickNav)
+
+                document.getElementById('navlist').removeChild(navItemToReplace)
+                navbarItems.append(divToStickNav)
+                //navbarItems.append(navItemWelcomeAvatar)
+                //navbarItems.append(logoutButton)
+
                 break
             }
         }

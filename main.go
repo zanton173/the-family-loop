@@ -119,7 +119,7 @@ func main() {
 		switch r.URL.Path {
 		case "/home":
 
-			cookieExpirationCheck(w, r, db)
+			go cookieExpirationCheck(w, r, db)
 			tmpl := template.Must(template.ParseFiles("index.html"))
 			tmpl.Execute(w, nil)
 			tm.ExecuteTemplate(w, "Navt", nil)
@@ -156,16 +156,19 @@ func main() {
 				log.Fatal(err)
 
 			}
-			// Billing shows 6,034 GET requests on 5am sept 29
+
 			// TODO cache images
 			if strings.Contains(postrows.File_type, "image") {
 				imgclient := http.Client{}
 
 				imgreq, _ := http.NewRequest("GET", fmt.Sprintf("https://the-family-loop-customer-hash.s3.amazonaws.com/posts/images/%s", postrows.File_name), nil)
+
 				imgreq.Header.Set("Cache-Control", "max-age=86400")
 				resp, _ := imgclient.Do(imgreq)
 
 				dataStr = fmt.Sprintf("<div class='card my-4' style='border-radius: 14px;'><img src='%s' style='border-radius: 14px;' alt='%s' /><div class='card-body'><h5 class='card-title'>%s</h5><p class='card-text'>%s</p><a href='#' class='btn btn-primary'>Open a post</a></div></div>", resp.Request.URL, postrows.File_name, postrows.Title, postrows.Description)
+				imgclient.CloseIdleConnections()
+				defer resp.Body.Close()
 			} else if strings.Contains(postrows.File_type, "video") {
 				dataStr = fmt.Sprintf("<div class='card my-4' style='border-radius: 14px;'><video controls id='video'><source src='https://the-family-loop-customer-hash.s3.amazonaws.com/posts/videos/%s' type='%s'></video><div class='card-body'><h5 class='card-title'>%s</h5><p class='card-text'>%s</p><a href='#' class='btn btn-primary'>Open a post</a></div></div>", postrows.File_name, postrows.File_type, postrows.Title, postrows.Description)
 			}
@@ -256,10 +259,6 @@ func cookieExpirationCheck(w http.ResponseWriter, rCookie *http.Request, db *sql
 			return
 		}
 		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-	if c.Valid() != nil {
-		fmt.Println("Cookie is dead")
 		return
 	}
 

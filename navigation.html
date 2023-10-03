@@ -120,8 +120,10 @@
     logoutButton.innerHTML = "Logout"
 
     const navItemWelcome = document.createElement('li')
-
-
+    //class="nav-item" id="navitemforwelcome"><button id="loginlogoutnav" class="nav-link"
+    navItemWelcome.setAttribute("class", "nav-item")
+    navItemWelcome.setAttribute("id", "navitemforwelcome")
+    navItemWelcome.innerHTML = "Welcome, "
     p.append(c)
 
     document.body.addEventListener("htmx:afterSettle", function settleEvent(event) {
@@ -135,15 +137,13 @@
                 c = c.substring(1);
             }
             if (c.indexOf(name) == 0) {
-                //console.log(c.substring(name.length, c.length));
+
                 htmx.off("htmx:afterSettle", settleEvent)
                 navInnerToReplace.replaceWith(logoutButton)
-
+                navInnerToReplace.append(navItemWelcome)
                 break
             }
         }
-
-
 
 
     })

@@ -143,7 +143,7 @@ func main() {
 
 	getPostsHandler := func(w http.ResponseWriter, r *http.Request) {
 
-		output, err := db.Query("select * from tfldata.posts order by id DESC;")
+		output, err := db.Query("select id, title, description, file_name, file_type, author from tfldata.posts order by id DESC;")
 		var count string
 		db.QueryRow("select count(*) from tfldata.posts;").Scan(&count)
 
@@ -171,11 +171,11 @@ func main() {
 				imgreq.Header.Set("Cache-Control", "max-age=86400")
 				resp, _ := imgclient.Do(imgreq)
 
-				dataStr = fmt.Sprintf("<div class='card my-4' style='border-radius: 14px;'><img src='%s' style='border-radius: 14px;' alt='%s' /><div class='card-body'><h5 class='card-title'>%s</h5><p class='card-text'>%s</p><a href='#' class='btn btn-primary'>Open a post</a></div></div>", resp.Request.URL, postrows.File_name, postrows.Title, postrows.Description)
+				dataStr = fmt.Sprintf("<div class='card my-4' style='border-radius: 14px;'><img src='%s' style='border-radius: 14px;' alt='%s' /><div class='card-body'><h5 class='card-title'>%s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction()' hx-target='#post-comments' class='btn btn-primary'>Open a post</button></div></div>", resp.Request.URL, postrows.File_name, postrows.Title, postrows.Description, postrows.Id)
 				imgclient.CloseIdleConnections()
 				defer resp.Body.Close()
 			} else if strings.Contains(postrows.File_type, "video") {
-				dataStr = fmt.Sprintf("<div class='card my-4' style='border-radius: 14px;'><video controls id='video'><source src='https://the-family-loop-customer-hash.s3.amazonaws.com/posts/videos/%s' type='%s'></video><div class='card-body'><h5 class='card-title'>%s</h5><p class='card-text'>%s</p><a href='#' class='btn btn-primary'>Open a post</a></div></div>", postrows.File_name, postrows.File_type, postrows.Title, postrows.Description)
+				dataStr = fmt.Sprintf("<div class='card my-4' style='border-radius: 14px;'><video controls id='video'><source src='https://the-family-loop-customer-hash.s3.amazonaws.com/posts/videos/%s' type='%s'></video><div class='card-body'><h5 class='card-title'>%s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction()' hx-target='#post-comments' class='btn btn-primary'>Open a post</button></div></div>", postrows.File_name, postrows.File_type, postrows.Title, postrows.Description, postrows.Id)
 			}
 
 			postTmpl, tmerr = template.New("tem").Parse(dataStr)
@@ -231,6 +231,50 @@ func main() {
 		defer upload.Close()
 
 	}
+	getSelectedPostsComments := func(w http.ResponseWriter, r *http.Request) {
+		type postComment struct {
+			Comment string
+			Author  string
+		}
+
+		var commentTmpl *template.Template
+		/*var err error
+		row := db.QueryRow(fmt.Sprintf("select comment, author from tfldata.comments where post_id='%s'::integer;", r.URL.Query().Get("post-id")))
+		row.Scan(&postComment.Comment)
+		for _, val := range comment {
+
+			commentTmpl, err = template.New("com").Parse(val)
+			if err != nil {
+				fmt.Println(err)
+			}
+			commentTmpl.Execute(w, comment)
+		}*/
+		output, err := db.Query(fmt.Sprintf("select comment, author from tfldata.comments where post_id='%s'::integer order by post_id desc;", r.URL.Query().Get("post-id")))
+
+		var dataStr string
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		defer output.Close()
+
+		for output.Next() {
+			var posts postComment
+
+			if err := output.Scan(&posts.Comment, &posts.Author); err != nil {
+				log.Fatal(err)
+
+			}
+			dataStr = "<p>" + posts.Comment + " - " + posts.Author + "</p>"
+
+			commentTmpl, err = template.New("com").Parse(dataStr)
+			if err != nil {
+				fmt.Println(err)
+			}
+			commentTmpl.Execute(w, nil)
+		}
+
+	}
 	getSessionDataHandler := func(w http.ResponseWriter, r *http.Request) {
 
 		var ourSeshStruct seshStruct
@@ -274,6 +318,8 @@ func main() {
 	http.HandleFunc("/get-posts", getPostsHandler)
 	http.HandleFunc("/new-posts", getPostCountHandler)
 
+	http.HandleFunc("/get-selected-post", getSelectedPostsComments)
+
 	http.HandleFunc("/get-username-from-session", getSessionDataHandler)
 
 	http.HandleFunc("/clear-cookie", clearCookieHandler)
@@ -313,7 +359,14 @@ func cookieExpirationCheck(w http.ResponseWriter, rCookie *http.Request, db *sql
 		setLoginCookie(w, db, sessionUser)
 	} else if time.Until(expiryTemp) == (time.Minute * 1) {
 		// TODO update DB records
-
+		_, seshClearErr := db.Exec(fmt.Sprintf("delete from tfldata.sessions where session_token='%s';", c.Value))
+		if seshClearErr != nil {
+			fmt.Println(seshClearErr)
+		}
+		_, usersEditErr := db.Exec(fmt.Sprintf("update tfldata.users set session_token=null where session_token='%s';", c.Value))
+		if usersEditErr != nil {
+			fmt.Println(usersEditErr)
+		}
 	}
 
 }

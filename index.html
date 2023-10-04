@@ -24,12 +24,24 @@
     </div>
 
     <div style="text-align: center; padding-top: 1%; padding-bottom: 1%;">
-        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createPostModal">
             Create a Post!
         </button>
     </div>
+    <div class="modal" id="openPostModal" tabindex="-1" aria-labelledby="openPostModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div id="post-comments" class="modal-content p-4">
+                <!--hx-get="/get-selected-post"
+                    hx-trigger="shown.bs.modal from:#openPostModal" hx-swap="none" hx-target="this"-->
+                <div class="modal-content" id="modal-post-content">
+                    Test content
 
-    <div class="modal" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                    <button type="button" class="btn btn-dark col" data-bs-dismiss="modal">close</button><br />
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal" id="createPostModal" tabindex="-1" aria-labelledby="createPostModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div id="post-div" class="modal-content p-4">
 
@@ -57,18 +69,22 @@
                 <button type="submit" id="formsubmit" class="btn btn-success col">post</button>
             </div>
         </div>
+
     </div>
 
     <script>
 
-        var modalToToggle = new bootstrap.Modal(document.getElementById('exampleModal'), {
+        var createPostModalObj = new bootstrap.Modal(document.getElementById('createPostModal'), {});
 
-        });
+        var openPostModalObj = new bootstrap.Modal(document.getElementById('openPostModal'), {});
+
+        var openPostModalEle = document.getElementById('openPostModal')
+
         htmx.on('#post-div', 'htmx:xhr:progress', function (evt) {
             document.getElementById('progressdiv').style.display = 'block'
             htmx.find('#progress').setAttribute('value', evt.detail.loaded / evt.detail.total * 100)
             if (document.getElementById('progress').value == 100) {
-                modalToToggle.toggle()
+                createPostModalObj.toggle()
             }
         });
 
@@ -125,6 +141,21 @@
                 } else if (event.detail.xhr.status == 200) {
                     window.location.reload()
                 }
+            })
+
+            function openPostFunction() {
+
+                openPostModalObj.toggle()
+            }
+            openPostModalEle.addEventListener('shown.bs.modal', function modalOpen(event) {
+                //console.log('shown')
+
+
+            })
+
+            openPostModalEle.addEventListener('hidden.bs.modal', function modalClosed(event) {
+                //console.log('hidden')
+                history.pushState({}, "post", window.location.pathname)
             })
 
         </script>

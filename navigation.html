@@ -5,7 +5,7 @@
             aria-controls="navbarText" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
-        <div class="collapse navbar-collapse" style="text-align-last: center; font-size: x-large;" id="navbarText">
+        <div class="collapse navbar-collapse" style="text-align-last: center; font-size: medium;" id="navbarText">
             <ul class="navbar-nav nav-fill w-100" style="display: contents;" id="navlist">
                 <li class="nav-item"><a class="nav-link" href="/calendar/">calendar</a></li>
                 <li class="nav-item"><a class="nav-link" href="/photos/">pictures</a></li>
@@ -148,7 +148,7 @@
             if (c.indexOf(name) == 0) {
 
                 htmx.off("htmx:afterSettle", settleEvent)
-                console.log(c.substring(name.length, c.length))
+                //console.log(c.substring(name.length, c.length))
                 let session_token = c.substring(name.length, c.length)
                 fetchSeshDetails(session_token)
 
@@ -176,8 +176,16 @@
         const text = await resp.json()
         navItemWelcomeAvatar.setAttribute("src", "https://the-family-loop-customer-hash.s3.amazonaws.com/pfp/" + text.Pfpname)
     }
+    async function clearCookie() {
+        const resp = await fetch("/clear-cookie", {
+            method: "GET",
+        })
+        //console.log(resp)
+    }
     function logoutFunction() {
+        clearCookie()
         document.cookie = "session_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+
         window.location.reload()
     }
 

@@ -234,7 +234,7 @@ func main() {
 	getSessionDataHandler := func(w http.ResponseWriter, r *http.Request) {
 
 		var ourSeshStruct seshStruct
-		row := db.QueryRow(fmt.Sprintf("select username, pfp_name from tfldata.users where session_token='%s'", r.URL.Query().Get("id")))
+		row := db.QueryRow(fmt.Sprintf("select username, pfp_name from tfldata.users where session_token='%s';", r.URL.Query().Get("id")))
 		row.Scan(&ourSeshStruct.Username, &ourSeshStruct.Pfpname)
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 
@@ -245,7 +245,20 @@ func main() {
 
 		w.Write(data)
 	}
+	clearCookieHandler := func(w http.ResponseWriter, r *http.Request) {
 
+		c, _ := r.Cookie("session_id")
+
+		_, seshClearErr := db.Exec(fmt.Sprintf("delete from tfldata.sessions where session_token='%s';", c.Value))
+		if seshClearErr != nil {
+			fmt.Println(seshClearErr)
+		}
+		_, usersEditErr := db.Exec(fmt.Sprintf("update tfldata.users set session_token=null where session_token='%s';", c.Value))
+		if usersEditErr != nil {
+			fmt.Println(usersEditErr)
+		}
+
+	}
 	/*h3 := func(w http.ResponseWriter, r *http.Request) {
 		upload, filename, err := r.FormFile("file_name")
 		if err != nil {
@@ -262,6 +275,8 @@ func main() {
 	http.HandleFunc("/new-posts", getPostCountHandler)
 
 	http.HandleFunc("/get-username-from-session", getSessionDataHandler)
+
+	http.HandleFunc("/clear-cookie", clearCookieHandler)
 
 	http.HandleFunc("/signup", signUpHandler)
 	http.HandleFunc("/login", loginHandler)

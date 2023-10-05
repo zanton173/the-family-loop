@@ -7,8 +7,8 @@
         </button>
         <div class="collapse navbar-collapse" style="text-align-last: center; font-size: medium;" id="navbarText">
             <ul class="navbar-nav nav-fill w-100" style="display: contents;" id="navlist">
-                <li class="nav-item"><a class="nav-link" href="/calendar/">calendar</a></li>
-                <li class="nav-item"><a class="nav-link" href="/photos/">pictures</a></li>
+                <li class="nav-item"><a class="nav-link" href="/calendar">calendar</a></li>
+                <li class="nav-item"><a class="nav-link" href="/photos">pictures</a></li>
                 <li class="nav-item" id="navitemforwelcome"><button id="loginlogoutnav" class="nav-link"
                         onclick='{loginModal.toggle(); showLoginForm()}'>login</button>
                 </li>
@@ -136,8 +136,8 @@
     //navItemWelcome.innerHTML = "Welcome, "
     p.append(c)
 
-    document.body.addEventListener("htmx:afterSettle", function settleEvent(event) {
-
+    document.body.addEventListener("htmx:load", function settleEvent(event) {
+        console.log('settled')
         let name = "session_id=";
         let decodedCookie = decodeURIComponent(document.cookie);
         let ca = decodedCookie.split(';');
@@ -148,7 +148,7 @@
             }
             if (c.indexOf(name) == 0) {
 
-                htmx.off("htmx:afterSettle", settleEvent)
+                htmx.off("htmx:load", settleEvent)
                 //console.log(c.substring(name.length, c.length))
                 let session_token = c.substring(name.length, c.length)
                 fetchSeshDetails(session_token)

@@ -129,7 +129,7 @@ func main() {
 			tmpl := template.Must(template.ParseFiles("index.html"))
 			tmpl.Execute(w, nil)
 			tm.ExecuteTemplate(w, "Navt", nil)
-		case "/calendar/":
+		case "/calendar":
 			tmpl := template.Must(template.ParseFiles("calendar.html"))
 			tmpl.Execute(w, nil)
 			tm.Execute(w, nil)
@@ -302,6 +302,8 @@ func main() {
 		var author string
 		row := db.QueryRow(fmt.Sprintf("select username from tfldata.users where session_token='%s';", c.Value))
 		row.Scan(&author)
+		// https://stackoverflow.com/questions/2944297/postgresql-function-for-last-inserted-id
+		// For adding like / dislike button
 		dataStr := "<p class='p-2'>" + postData.Comment + " - " + author + "</p>"
 
 		commentTmpl, err := template.New("com").Parse(dataStr)

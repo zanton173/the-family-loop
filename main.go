@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"io"
 	"log"
 	"mime/multipart"
 	"net/http"
@@ -171,11 +172,11 @@ func main() {
 				imgreq.Header.Set("Cache-Control", "max-age=86400")
 				resp, _ := imgclient.Do(imgreq)
 
-				dataStr = fmt.Sprintf("<div class='card my-4' style='border-radius: 14px;'><img src='%s' style='border-radius: 14px;' alt='%s' /><div class='card-body'><h5 class='card-title'>%s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction()' hx-target='#post-comments' class='btn btn-primary'>Open a post</button></div></div>", resp.Request.URL, postrows.File_name, postrows.Title, postrows.Description, postrows.Id)
+				dataStr = fmt.Sprintf("<div class='card my-4' style='border-radius: 14px;'><img src='%s' style='border-radius: 14px;' alt='%s' /><div class='card-body'><h5 class='card-title'>%s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' class='btn btn-primary'>Open a post</button></div></div>", resp.Request.URL, postrows.File_name, postrows.Title, postrows.Description, postrows.Id, postrows.Id)
 				imgclient.CloseIdleConnections()
 				defer resp.Body.Close()
 			} else if strings.Contains(postrows.File_type, "video") {
-				dataStr = fmt.Sprintf("<div class='card my-4' style='border-radius: 14px;'><video controls id='video'><source src='https://the-family-loop-customer-hash.s3.amazonaws.com/posts/videos/%s' type='%s'></video><div class='card-body'><h5 class='card-title'>%s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction()' hx-target='#post-comments' class='btn btn-primary'>Open a post</button></div></div>", postrows.File_name, postrows.File_type, postrows.Title, postrows.Description, postrows.Id)
+				dataStr = fmt.Sprintf("<div class='card my-4' style='border-radius: 14px;'><video controls id='video'><source src='https://the-family-loop-customer-hash.s3.amazonaws.com/posts/videos/%s' type='%s'></video><div class='card-body'><h5 class='card-title'>%s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' class='btn btn-primary'>Open a post</button></div></div>", postrows.File_name, postrows.File_type, postrows.Title, postrows.Description, postrows.Id, postrows.Id)
 			}
 
 			postTmpl, tmerr = template.New("tem").Parse(dataStr)
@@ -238,17 +239,7 @@ func main() {
 		}
 
 		var commentTmpl *template.Template
-		/*var err error
-		row := db.QueryRow(fmt.Sprintf("select comment, author from tfldata.comments where post_id='%s'::integer;", r.URL.Query().Get("post-id")))
-		row.Scan(&postComment.Comment)
-		for _, val := range comment {
 
-			commentTmpl, err = template.New("com").Parse(val)
-			if err != nil {
-				fmt.Println(err)
-			}
-			commentTmpl.Execute(w, comment)
-		}*/
 		output, err := db.Query(fmt.Sprintf("select comment, author from tfldata.comments where post_id='%s'::integer order by post_id desc;", r.URL.Query().Get("post-id")))
 
 		var dataStr string
@@ -265,7 +256,7 @@ func main() {
 				log.Fatal(err)
 
 			}
-			dataStr = "<p>" + posts.Comment + " - " + posts.Author + "</p>"
+			dataStr = "<p class='p-2'>" + posts.Comment + " - " + posts.Author + "</p>"
 
 			commentTmpl, err = template.New("com").Parse(dataStr)
 			if err != nil {
@@ -274,6 +265,51 @@ func main() {
 			commentTmpl.Execute(w, nil)
 		}
 
+	}
+	createCommentHandler := func(w http.ResponseWriter, r *http.Request) {
+		c, err := r.Cookie("session_id")
+
+		if err != nil {
+			if err == http.ErrNoCookie {
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		if c.Valid() != nil {
+			fmt.Println("Cook is no longer valid")
+		}
+
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+
+		bs, _ := io.ReadAll(r.Body)
+		type postBody struct {
+			Comment        string
+			SelectedPostId int
+		}
+		var postData postBody
+		errmarsh := json.Unmarshal(bs, &postData)
+		if errmarsh != nil {
+			fmt.Println(errmarsh)
+		}
+
+		_, inserterr := db.Exec(fmt.Sprintf("insert into tfldata.comments(\"comment\", \"post_id\", \"author\") values('%s', '%d', (select username from tfldata.users where session_token='%s'));", postData.Comment, postData.SelectedPostId, c.Value))
+		if inserterr != nil {
+			fmt.Println(inserterr)
+		}
+		var author string
+		row := db.QueryRow(fmt.Sprintf("select username from tfldata.users where session_token='%s';", c.Value))
+		row.Scan(&author)
+		dataStr := "<p class='p-2'>" + postData.Comment + " - " + author + "</p>"
+
+		commentTmpl, err := template.New("com").Parse(dataStr)
+		if err != nil {
+			fmt.Println(err)
+		}
+		commentTmpl.Execute(w, nil)
+		w.WriteHeader(http.StatusOK)
 	}
 	getSessionDataHandler := func(w http.ResponseWriter, r *http.Request) {
 
@@ -319,6 +355,8 @@ func main() {
 	http.HandleFunc("/new-posts", getPostCountHandler)
 
 	http.HandleFunc("/get-selected-post", getSelectedPostsComments)
+
+	http.HandleFunc("/create-comment", createCommentHandler)
 
 	http.HandleFunc("/get-username-from-session", getSessionDataHandler)
 

@@ -13,6 +13,7 @@
     <script src="https://unpkg.com/htmx.org@1.9.5"
         integrity="sha384-xcuj3WpfgjlKF+FXhSQFQ0ZNr39ln+hwjN3npfM9VBnUskLolQAcN80McRIVOPuO"
         crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/htmx.org/dist/ext/json-enc.js"></script>
     <title>The Family Loop</title>
 </head>
 
@@ -30,14 +31,19 @@
     </div>
     <div class="modal" id="openPostModal" tabindex="-1" aria-labelledby="openPostModalLabel" aria-hidden="true">
         <div class="modal-dialog">
-            <div id="post-comments" class="modal-content p-4">
-                <!--hx-get="/get-selected-post"
-                    hx-trigger="shown.bs.modal from:#openPostModal" hx-swap="none" hx-target="this"-->
+            <div id="post-comments" class="modal-content p-3" style="border-radius: 5%;">
+
                 <div class="modal-content" id="modal-post-content">
-                    Test content
+                </div>
+                <form id="createcomment" class="d-grid" hx-post="/create-comment"
+                    hx-vals='js:{"selectedPostId": selectedPostId}' hx-ext='json-enc' hx-target="#modal-post-content"
+                    hx-swap="beforeend" hx-on:htmx:after-request="clearForm()">
+                    <input class="my-2 shadow-sm border-1 text-center" name="comment" id="commentnote" type="text"
+                        placeholder="add comment" required maxlength="280" oninput="checkCommentValidity()" />
+
 
                     <button type="button" class="btn btn-dark col" data-bs-dismiss="modal">close</button><br />
-                </div>
+                </form>
             </div>
         </div>
     </div>
@@ -88,6 +94,28 @@
             }
         });
 
+        function checkCommentValidity() {
+
+            const submitBtn = document.createElement('button')
+            if (document.getElementById('commentnote').value > '' && !document.getElementById('createcomment').contains(document.getElementById('submitCommentBtn'))) {
+
+                submitBtn.setAttribute('class', 'btn btn-success col')
+                submitBtn.setAttribute('type', 'submit')
+                submitBtn.setAttribute('id', 'submitCommentBtn')
+                submitBtn.innerHTML = 'comment'
+                document.getElementById('createcomment').append(submitBtn)
+            } else if (document.getElementById('commentnote').value == '' && document.getElementById('createcomment').contains(document.getElementById('submitCommentBtn'))) {
+                document.getElementById('createcomment').removeChild(document.getElementById('submitCommentBtn'))
+
+            }
+
+        }
+        function clearForm() {
+            if (document.getElementById('createcomment').contains(document.getElementById('submitCommentBtn'))) {
+                document.getElementById('createcomment').removeChild(document.getElementById('submitCommentBtn'))
+                document.getElementById('commentnote').value = ''
+            }
+        }
 
     </script>
     <div hx-get="/new-posts" hx-trigger="load, every 5s" hx-target="#refreshbutton" style="text-align: center;"
@@ -105,6 +133,7 @@
         </div>
 
         <script>
+            var selectedPostId = 0
             let badge = document.createElement('i')
             badge.setAttribute('class', 'bi bi-patch-exclamation px-1')
             badge.setAttribute('id', 'notebadge')
@@ -143,8 +172,8 @@
                 }
             })
 
-            function openPostFunction() {
-
+            function openPostFunction(id) {
+                selectedPostId = id
                 openPostModalObj.toggle()
             }
             openPostModalEle.addEventListener('shown.bs.modal', function modalOpen(event) {
@@ -155,7 +184,7 @@
 
             openPostModalEle.addEventListener('hidden.bs.modal', function modalClosed(event) {
                 //console.log('hidden')
-                history.pushState({}, "post", window.location.pathname)
+
             })
 
         </script>

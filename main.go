@@ -314,6 +314,48 @@ func main() {
 		commentTmpl.Execute(w, nil)
 		w.WriteHeader(http.StatusOK)
 	}
+	createEventHandler := func(w http.ResponseWriter, r *http.Request) {
+		c, err := r.Cookie("session_id")
+
+		if err != nil {
+			if err == http.ErrNoCookie {
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		if c.Valid() != nil {
+			fmt.Println("Cook is no longer valid")
+		}
+
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+
+		bs, _ := io.ReadAll(r.Body)
+		type PostBody struct {
+			Startdate string `json:"start_date"`
+			Enddate   string `json:"end_date"`
+		}
+
+		var postData PostBody
+
+		errmarsh := json.Unmarshal(bs, &postData)
+		if errmarsh != nil {
+			fmt.Println(errmarsh)
+		}
+
+		_, inserterr := db.Exec(fmt.Sprintf("insert into tfldata.calendar(\"start_date\", \"end_date\", \"event_owner\") values('%s', '%s', (select username from tfldata.users where session_token='%s'));", postData.Startdate, postData.Enddate, c.Value))
+		if inserterr != nil {
+			fmt.Println(inserterr)
+		}
+
+		var author string
+		row := db.QueryRow(fmt.Sprintf("select username from tfldata.users where session_token='%s';", c.Value))
+		row.Scan(&author)
+
+		w.WriteHeader(http.StatusOK)
+	}
 	getSessionDataHandler := func(w http.ResponseWriter, r *http.Request) {
 
 		var ourSeshStruct seshStruct
@@ -364,6 +406,8 @@ func main() {
 	http.HandleFunc("/get-username-from-session", getSessionDataHandler)
 
 	http.HandleFunc("/clear-cookie", clearCookieHandler)
+
+	http.HandleFunc("/create-event", createEventHandler)
 
 	http.HandleFunc("/signup", signUpHandler)
 	http.HandleFunc("/login", loginHandler)

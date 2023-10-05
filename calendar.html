@@ -58,10 +58,36 @@
             </ul>
             <ul class="calendar-dates"></ul>
         </div>
-        <button class="btn bg-outline-primary" onclick="testCurrentSelectedDate()">Test me!</button>
+        <div style="text-align: center;" id="add-button-to-submit">
+
+        </div>
+        <div class="py-5"></div>
     </div>
 </body>
 <script>
+
+    const divToAddSubmitTo = document.getElementById('add-button-to-submit')
+    const btnToAddEvent = document.createElement('button')
+
+    btnToAddEvent.setAttribute("class", "btn btn-outline-secondary")
+    btnToAddEvent.setAttribute("onclick", 'currentSelectedDate()')
+
+    btnToAddEvent.addEventListener("click", async function (event) {
+        showStartEndDate()
+        const postBody = {
+            "start_date": arrayOfDates[0],
+            "end_date": arrayOfDates[arrayOfDates.length - 1]
+        }
+        const resp = await fetch("/create-event", {
+            method: "POST",
+            headers: {
+                "Accept": "application/json",
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(postBody)
+        })
+    })
+    btnToAddEvent.innerHTML = "Create new event"
 
     const popoverTriggerList = document.querySelectorAll('[data-bs-toggle="popover"]')
     const popoverList = [...popoverTriggerList].map(popoverTriggerEl => new bootstrap.Popover(popoverTriggerEl))
@@ -138,12 +164,12 @@
         for (let i = 1; i <= lastdate; i++) {
 
             // Check if the current date is today
-            let isToday = i === date.getDate()
+            /*let isToday = i === date.getDate()
                 && month === new Date().getMonth()
                 && year === new Date().getFullYear()
                 ? "active"
-                : "";
-            lit += `<li id='${i}' onclick='toggleActiveElement(${i})' class="${isToday}">${i}</li>`;
+                : "";*/
+            lit += `<li id='${i}' onclick='toggleActiveElement(${i})'>${i}</li>`;
         }
 
         // Loop to add the first dates of the next month
@@ -161,7 +187,7 @@
     }
     function toggleActiveElement(data) {
 
-        if (document.getElementById(data).getAttribute("class") === "") {
+        if (document.getElementById(data).getAttribute("class") <= "") {
             document.getElementById(data).setAttribute("class", "active")
             listOfSelected.push(data)
         } else if (document.getElementById(data).getAttribute("class") >= "") {
@@ -169,9 +195,14 @@
             listOfSelected = listOfSelected.filter((filterout) => filterout !== data)
             arrayOfDates = []
         }
+        if (listOfSelected.length > 0 && !divToAddSubmitTo.contains(btnToAddEvent)) {
+            divToAddSubmitTo.append(btnToAddEvent)
+        } else if (listOfSelected.length == 0 && divToAddSubmitTo.contains(btnToAddEvent)) {
+            divToAddSubmitTo.removeChild(btnToAddEvent)
+        }
     }
 
-    function testCurrentSelectedDate() {
+    function currentSelectedDate() {
         var monthYear = currdate.innerHTML.split(" ")
         console.log(listOfSelected)
         listOfSelected.forEach(element => {
@@ -179,8 +210,11 @@
         });
         arrayOfDates = arrayOfDates.filter((item, index) => arrayOfDates.indexOf(item) === index)
 
-        alert("this is your event start date: " + arrayOfDates[0])
-        alert("this is your event start date: " + arrayOfDates[arrayOfDates.length - 1])
+
+    }
+    function showStartEndDate() {
+        alert("this is your event start date: " + arrayOfDates[0] + "\n" + "this is your event end date: " + arrayOfDates[arrayOfDates.length - 1])
+
     }
 
     manipulate();

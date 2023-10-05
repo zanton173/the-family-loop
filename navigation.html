@@ -137,7 +137,7 @@
     p.append(c)
 
     document.body.addEventListener("htmx:load", function settleEvent(event) {
-        console.log('settled')
+
         let name = "session_id=";
         let decodedCookie = decodeURIComponent(document.cookie);
         let ca = decodedCookie.split(';');

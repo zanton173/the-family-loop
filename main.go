@@ -133,6 +133,7 @@ func main() {
 			tmpl := template.Must(template.ParseFiles("calendar.html"))
 			tmpl.Execute(w, nil)
 			tm.Execute(w, nil)
+
 		case "/":
 			http.Redirect(w, r, "/home", http.StatusMovedPermanently)
 		default:
@@ -368,7 +369,7 @@ func main() {
 	http.HandleFunc("/login", loginHandler)
 
 	//http.HandleFunc("/upload-file", h3)
-	//http.Handle("/public/", http.StripPrefix("/public/", http.FileServer(http.Dir("public"))))
+	http.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("css"))))
 	log.Fatal(http.ListenAndServe(":80", nil))
 	// For production
 	//log.Fatal(http.ListenAndServeTLS(":443", "./cert.key", "./cert.pem", nil))

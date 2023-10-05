@@ -18,13 +18,22 @@
 </head>
 
 <body>
-    <h3>Calendar</h3>
+    <h3 style="text-align: center;">Calendar</h3>
     <div id="anchor">
 
+    </div>
+    <div style="text-align: center;">
+
+        <p id="cal-header-for-popover" data-bs-container="body" data-bs-placement="top" data-bs-toggle="popover"
+            data-bs-content="If the event is more than one day, you can select just the start & end date
+            and the event will be planned for the entire period between." style="font-size: small;">How to
+            use
+        </p>
     </div>
     <div class="calendar-container">
         <header class="calendar-header">
             <p class="calendar-current-date"></p>
+
             <div class="calendar-navigation">
                 <span id="calendar-prev" class="material-symbols-rounded">
                     <i class="bi bi-arrow-left"></i>
@@ -33,6 +42,8 @@
                     <i class="bi bi-arrow-right"></i>
                 </span>
             </div>
+            <br />
+
         </header>
 
         <div class="calendar-body">
@@ -47,9 +58,22 @@
             </ul>
             <ul class="calendar-dates"></ul>
         </div>
+        <button class="btn bg-outline-primary" onclick="testCurrentSelectedDate()">Test me!</button>
     </div>
 </body>
 <script>
+
+    const popoverTriggerList = document.querySelectorAll('[data-bs-toggle="popover"]')
+    const popoverList = [...popoverTriggerList].map(popoverTriggerEl => new bootstrap.Popover(popoverTriggerEl))
+
+    const headerEle = document.getElementById('cal-header-for-popover')
+    headerEle.addEventListener("mouseover", function (event) {
+        popoverList[0].toggle()
+    })
+    headerEle.addEventListener("mouseout", function (event) {
+        popoverList[0].toggle()
+    })
+
     let date = new Date();
     let year = date.getFullYear();
     let month = date.getMonth();
@@ -75,6 +99,11 @@
         "November",
         "December"
     ];
+    // Control item which is selected
+    var listOfSelected = []
+
+    // Formatted selected dates
+    var arrayOfDates = []
 
     // Function to generate the calendar
     const manipulate = () => {
@@ -94,6 +123,11 @@
         // Variable to store the generated calendar HTML
         let lit = "";
 
+        // Stored data for date selection
+        let selection = {
+            selectedDate: ''
+        }
+
         // Loop to add the last dates of the previous month
         for (let i = dayone; i > 0; i--) {
             lit +=
@@ -109,7 +143,7 @@
                 && year === new Date().getFullYear()
                 ? "active"
                 : "";
-            lit += `<li class="${isToday}">${i}</li>`;
+            lit += `<li id='${i}' onclick='toggleActiveElement(${i})' class="${isToday}">${i}</li>`;
         }
 
         // Loop to add the first dates of the next month
@@ -125,6 +159,29 @@
         // with the generated calendar
         day.innerHTML = lit;
     }
+    function toggleActiveElement(data) {
+
+        if (document.getElementById(data).getAttribute("class") === "") {
+            document.getElementById(data).setAttribute("class", "active")
+            listOfSelected.push(data)
+        } else if (document.getElementById(data).getAttribute("class") >= "") {
+            document.getElementById(data).setAttribute("class", "")
+            listOfSelected = listOfSelected.filter((filterout) => filterout !== data)
+            arrayOfDates = []
+        }
+    }
+
+    function testCurrentSelectedDate() {
+        var monthYear = currdate.innerHTML.split(" ")
+        console.log(listOfSelected)
+        listOfSelected.forEach(element => {
+            arrayOfDates.push(monthYear[0] + " " + element + ", " + monthYear[1])
+        });
+        arrayOfDates = arrayOfDates.filter((item, index) => arrayOfDates.indexOf(item) === index)
+
+        alert("this is your event start date: " + arrayOfDates[0])
+        alert("this is your event start date: " + arrayOfDates[arrayOfDates.length - 1])
+    }
 
     manipulate();
 
@@ -133,7 +190,7 @@
 
         // When an icon is clicked
         icon.addEventListener("click", () => {
-
+            listOfSelected = []
             // Check if the icon is "calendar-prev"
             // or "calendar-next"
             month = icon.id === "calendar-prev" ? month - 1 : month + 1;

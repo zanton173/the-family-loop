@@ -334,8 +334,9 @@ func main() {
 
 		bs, _ := io.ReadAll(r.Body)
 		type PostBody struct {
-			Startdate string `json:"start_date"`
-			Enddate   string `json:"end_date"`
+			Startdate    string `json:"start_date"`
+			Enddate      string `json:"end_date"`
+			Eventdetails string `json:"event_details"`
 		}
 
 		var postData PostBody
@@ -345,9 +346,10 @@ func main() {
 			fmt.Println(errmarsh)
 		}
 
-		_, inserterr := db.Exec(fmt.Sprintf("insert into tfldata.calendar(\"start_date\", \"end_date\", \"event_owner\") values('%s', '%s', (select username from tfldata.users where session_token='%s'));", postData.Startdate, postData.Enddate, c.Value))
+		_, inserterr := db.Exec(fmt.Sprintf("insert into tfldata.calendar(\"start_date\", \"end_date\", \"event_owner\", \"event_details\") values('%s', '%s', (select username from tfldata.users where session_token='%s'), '%s');", postData.Startdate, postData.Enddate, c.Value, postData.Eventdetails))
 		if inserterr != nil {
 			fmt.Println(inserterr)
+			w.WriteHeader(http.StatusBadRequest)
 		}
 
 		var author string

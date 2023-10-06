@@ -58,7 +58,7 @@
             </ul>
             <ul class="calendar-dates"></ul>
         </div>
-        <div style="text-align: center;" id="add-button-to-submit">
+        <div style="text-align: center; display: grid;" class="px-5" id="add-button-to-submit">
 
         </div>
         <div class="py-5"></div>
@@ -69,14 +69,21 @@
     const divToAddSubmitTo = document.getElementById('add-button-to-submit')
     const btnToAddEvent = document.createElement('button')
 
-    btnToAddEvent.setAttribute("class", "btn btn-outline-secondary")
+    const txtAreaToAddEvent = document.createElement('textarea')
+    txtAreaToAddEvent.setAttribute("placeholder", "Put your event details here.")
+    txtAreaToAddEvent.setAttribute("class", "pb-4")
+    txtAreaToAddEvent.setAttribute("maxlength", "220")
+
+    btnToAddEvent.setAttribute("class", "btn btn-outline-secondary w-50")
+    btnToAddEvent.setAttribute("style", "margin-left: 25%; margin-top: 2%;")
     btnToAddEvent.setAttribute("onclick", 'currentSelectedDate()')
 
     btnToAddEvent.addEventListener("click", async function (event) {
         showStartEndDate()
         const postBody = {
             "start_date": arrayOfDates[0],
-            "end_date": arrayOfDates[arrayOfDates.length - 1]
+            "end_date": arrayOfDates[arrayOfDates.length - 1],
+            "event_details": txtAreaToAddEvent.value
         }
         const resp = await fetch("/create-event", {
             method: "POST",
@@ -86,6 +93,14 @@
             },
             body: JSON.stringify(postBody)
         })
+        if (resp.status == 200) {
+            divToAddSubmitTo.removeChild(btnToAddEvent)
+            divToAddSubmitTo.removeChild(txtAreaToAddEvent)
+            var getActive = document.querySelectorAll('li.active')
+            getActive.forEach(ele => ele.setAttribute('class', ''))
+        } else if (resp.status == 400) {
+            alert("something went wrong, please try again")
+        }
     })
     btnToAddEvent.innerHTML = "Create new event"
 
@@ -195,16 +210,18 @@
             listOfSelected = listOfSelected.filter((filterout) => filterout !== data)
             arrayOfDates = []
         }
-        if (listOfSelected.length > 0 && !divToAddSubmitTo.contains(btnToAddEvent)) {
+        if (listOfSelected.length > 0 && !divToAddSubmitTo.contains(btnToAddEvent) && !divToAddSubmitTo.contains(txtAreaToAddEvent)) {
+            divToAddSubmitTo.append(txtAreaToAddEvent)
             divToAddSubmitTo.append(btnToAddEvent)
-        } else if (listOfSelected.length == 0 && divToAddSubmitTo.contains(btnToAddEvent)) {
+        } else if (listOfSelected.length == 0 && divToAddSubmitTo.contains(btnToAddEvent) && divToAddSubmitTo.contains(txtAreaToAddEvent)) {
             divToAddSubmitTo.removeChild(btnToAddEvent)
+            divToAddSubmitTo.removeChild(txtAreaToAddEvent)
         }
     }
 
     function currentSelectedDate() {
         var monthYear = currdate.innerHTML.split(" ")
-        console.log(listOfSelected)
+
         listOfSelected.forEach(element => {
             arrayOfDates.push(monthYear[0] + " " + element + ", " + monthYear[1])
         });
@@ -213,7 +230,7 @@
 
     }
     function showStartEndDate() {
-        alert("this is your event start date: " + arrayOfDates[0] + "\n" + "this is your event end date: " + arrayOfDates[arrayOfDates.length - 1])
+        //alert("this is your event start date: " + arrayOfDates[0] + "\n" + "this is your event end date: " + arrayOfDates[arrayOfDates.length - 1])
 
     }
 

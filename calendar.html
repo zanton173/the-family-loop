@@ -63,11 +63,37 @@
         </div>
         <div class="py-5"><!--<button onclick='testClick()'>me me mee</button>--></div>
     </div>
+    <div class="modal" id="openEventDetail" tabindex="-1" aria-labelledby="openEventDetailLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div id="event-comments" class="modal-content p-3" style="border-radius: 5%;">
+
+                <div class="modal-content" id="modal-event-content">
+                    <h3 id="eventtitleele"></h3>
+                    <h7 id="eventdateele"></h7>
+
+                    <p id="eventdetailsele"></p>
+                </div>
+                <!--
+                <form id="createcomment" class="d-grid" hx-post="/create-comment"
+                    hx-vals='js:{"selectedEventId": selectedPostId}' hx-ext='json-enc' hx-target="#modal-event-content"
+                    hx-swap="beforeend" hx-on:htmx:after-request="clearForm()">
+                    <input class="my-2 shadow-sm border-1 text-center" name="eventcomment" id="commentnoteevent"
+                        type="text" placeholder="add comment" required maxlength="280"
+                        oninput="checkCommentValidity()" />
+
+
+                    <button type="button" class="btn btn-dark col" data-bs-dismiss="modal">close</button><br />
+                </form>-->
+            </div>
+        </div>
+    </div>
 </body>
 <script>
     var allEvents = []
-    var filteredDates = []
-    var filteredStartDates = []
+    var eventDetailModal = new bootstrap.Modal(document.getElementById('openEventDetail'), {});
+
+    const modalContentDiv = document.getElementById("modal-event-content")
+
     document.body.addEventListener("htmx:load", async function (event) {
 
         const eventResp = await fetch("/get-events", {
@@ -87,14 +113,6 @@
 
         setDatesThatHaveEvents()
 
-        /* filteredDates = allEvents.filter((data) =>
-             data.Startdate[0] === year.toString()
-             && Number(data.Startdate[1]) === (month + 1)
- 
-         )
-         filteredDates.forEach(element => {
-             filteredStartDates = element.Startdate[2]
-         })*/
     })
 
     function setDatesThatHaveEvents() {
@@ -102,26 +120,25 @@
         //listOfActive = document.getElementById('listOfActiveDates').children
         listOfActive = document.querySelectorAll("[style='background: #fff']")
         for (var i = 0; i < listOfActive.length; i++) {
-            if (listOfActive[i].getAttribute("class") !== "inactive") {
+            for (var j = 0; j < allEvents.length; j++) {
 
+                if (new Date(year.toString(), (month).toString(), (i).toString()).toDateString() === new Date(allEvents[j].Startdate[0], Number(allEvents[j].Startdate[1]) - 1, allEvents[j].Startdate[2]).toDateString()
+                ) {
 
-                for (var j = 0; j < allEvents.length; j++) {
-
-
-                    if (new Date(year.toString(), (month).toString(), (i).toString()).toDateString() === new Date(allEvents[j].Startdate[0], Number(allEvents[j].Startdate[1]) - 1, allEvents[j].Startdate[2]).toDateString()
-                    ) {
-                        //console.log(allEvents[j].Startdate)
-
-
-                        //console.log(new Date(allEvents[j].Startdate).toDateString())
-                        //listOfActive[i].setAttribute("class", "has-an-event")
-                        document.getElementById(`${i}`).setAttribute("style", "background-color: #fffd84;")
-
-                    }
+                    document.getElementById(`${i}`).setAttribute("style", "background-color: #837dff; border-radius: 25%;")
+                    document.getElementById(`${i}`).setAttribute("onclick", `openEventModal(${JSON.stringify(allEvents[j])})`)
 
                 }
             }
         }
+    }
+
+    function openEventModal(data) {
+        eventDetailModal.toggle()
+        document.getElementById('eventtitleele').innerHTML = data.Eventtitle + " - " + data.Eventowner
+        document.getElementById('eventdateele').innerHTML = new Date(data.Startdate[0], data.Startdate[1], data.Startdate[2]).toDateString() + " - " + new Date(data.Enddate).toDateString()
+
+        document.getElementById('eventdetailsele').innerHTML = data.Eventdetails
     }
 
     const divToAddSubmitTo = document.getElementById('add-button-to-submit')
@@ -132,6 +149,14 @@
     txtAreaToAddEvent.setAttribute("class", "pb-4")
     txtAreaToAddEvent.setAttribute("maxlength", "220")
 
+    const titleInputToAddEvent = document.createElement('input')
+    titleInputToAddEvent.setAttribute("type", "text")
+    titleInputToAddEvent.setAttribute("name", "eventtitle")
+    titleInputToAddEvent.setAttribute("placeholder", 'event title')
+    titleInputToAddEvent.setAttribute("maxlength", "42")
+    titleInputToAddEvent.setAttribute("class", "my-2")
+    titleInputToAddEvent.setAttribute("id", "eventtitleid")
+
     btnToAddEvent.setAttribute("class", "btn btn-outline-secondary w-50")
     btnToAddEvent.setAttribute("style", "margin-left: 25%; margin-top: 2%;")
     btnToAddEvent.setAttribute("onclick", 'currentSelectedDate()')
@@ -141,7 +166,8 @@
         const postBody = {
             "start_date": arrayOfDates[0],
             "end_date": arrayOfDates[arrayOfDates.length - 1],
-            "event_details": txtAreaToAddEvent.value
+            "event_details": txtAreaToAddEvent.value,
+            "event_title": titleInputToAddEvent.value
         }
         const resp = await fetch("/create-event", {
             method: "POST",
@@ -155,6 +181,7 @@
             alert("success")
             divToAddSubmitTo.removeChild(btnToAddEvent)
             divToAddSubmitTo.removeChild(txtAreaToAddEvent)
+            divToAddSubmitTo.removeChild(titleInputToAddEvent)
             var getActive = document.querySelectorAll('li.active')
             getActive.forEach(ele => ele.setAttribute('class', ''))
         } else if (resp.status == 400) {
@@ -273,10 +300,6 @@
     }
 
     function toggleActiveElement(data) {
-        // Works!!
-        //console.log(new Date(year.toString(), (month).toString(), (data).toString()).toDateString() === new Date(allEvents[0].Startdate).toDateString())
-
-
         if (document.getElementById(data).getAttribute("class") <= "") {
             document.getElementById(data).setAttribute("class", "active")
             listOfSelected.push(data)
@@ -287,18 +310,19 @@
         } else if (document.getElementById(data).getAttribute("class") >= "has-an-event") {
             document.getElementById(data).setAttribute("class", "has-an-event")
         }
-        if (listOfSelected.length > 0 && !divToAddSubmitTo.contains(btnToAddEvent) && !divToAddSubmitTo.contains(txtAreaToAddEvent)) {
+        if (listOfSelected.length > 0 && !divToAddSubmitTo.contains(btnToAddEvent)
+            && !divToAddSubmitTo.contains(txtAreaToAddEvent)
+            && !divToAddSubmitTo.contains(titleInputToAddEvent)) {
+            divToAddSubmitTo.append(titleInputToAddEvent)
             divToAddSubmitTo.append(txtAreaToAddEvent)
             divToAddSubmitTo.append(btnToAddEvent)
-        } else if (listOfSelected.length == 0 && divToAddSubmitTo.contains(btnToAddEvent) && divToAddSubmitTo.contains(txtAreaToAddEvent)) {
+        } else if (listOfSelected.length == 0 && divToAddSubmitTo.contains(btnToAddEvent)
+            && divToAddSubmitTo.contains(txtAreaToAddEvent)
+            && divToAddSubmitTo.contains(titleInputToAddEvent)) {
+            divToAddSubmitTo.removeChild(titleInputToAddEvent)
             divToAddSubmitTo.removeChild(btnToAddEvent)
             divToAddSubmitTo.removeChild(txtAreaToAddEvent)
         }
-
-        /*filteredDates.filter((eventdat) =>
-            Number(eventdat.Startdate[2]) === data ? document.getElementById(data).setAttribute("class", "has-an-event") : console.log("no")
-        )*/
-
 
     }
 

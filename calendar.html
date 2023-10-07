@@ -30,7 +30,7 @@
             use
         </p>
     </div>
-    <div class="calendar-container">
+    <div class="calendar-container" id="caldiv">
         <header class="calendar-header">
             <p class="calendar-current-date"></p>
 
@@ -56,15 +56,73 @@
                 <li>Fri</li>
                 <li>Sat</li>
             </ul>
-            <ul class="calendar-dates"></ul>
+            <ul class="calendar-dates" id="listOfActiveDates"></ul>
         </div>
         <div style="text-align: center; display: grid;" class="px-5" id="add-button-to-submit">
 
         </div>
-        <div class="py-5"></div>
+        <div class="py-5"><!--<button onclick='testClick()'>me me mee</button>--></div>
     </div>
 </body>
 <script>
+    var allEvents = []
+    var filteredDates = []
+    var filteredStartDates = []
+    document.body.addEventListener("htmx:load", async function (event) {
+
+        const eventResp = await fetch("/get-events", {
+            method: "GET",
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        allEvents = await eventResp.json().then((jsondata) => {
+
+            return jsondata
+        })
+        allEvents = allEvents.map((ele) =>
+            /*({ ...ele, Startdate: ele.Startdate.split("T", 1)[0].split("-", 3), Enddate: ele.Enddate.split("T", 1)[0].split("-", 3) })*/
+            ({ ...ele, Startdate: ele.Startdate.split("T", 1)[0].split("-", 3), Enddate: ele.Enddate.split("T", 1)[0] })
+        )
+
+        setDatesThatHaveEvents()
+
+        /* filteredDates = allEvents.filter((data) =>
+             data.Startdate[0] === year.toString()
+             && Number(data.Startdate[1]) === (month + 1)
+ 
+         )
+         filteredDates.forEach(element => {
+             filteredStartDates = element.Startdate[2]
+         })*/
+    })
+
+    function setDatesThatHaveEvents() {
+
+        //listOfActive = document.getElementById('listOfActiveDates').children
+        listOfActive = document.querySelectorAll("[style='background: #fff']")
+        for (var i = 0; i < listOfActive.length; i++) {
+            if (listOfActive[i].getAttribute("class") !== "inactive") {
+
+
+                for (var j = 0; j < allEvents.length; j++) {
+
+
+                    if (new Date(year.toString(), (month).toString(), (i).toString()).toDateString() === new Date(allEvents[j].Startdate[0], Number(allEvents[j].Startdate[1]) - 1, allEvents[j].Startdate[2]).toDateString()
+                    ) {
+                        //console.log(allEvents[j].Startdate)
+
+
+                        //console.log(new Date(allEvents[j].Startdate).toDateString())
+                        //listOfActive[i].setAttribute("class", "has-an-event")
+                        document.getElementById(`${i}`).setAttribute("style", "background-color: #fffd84;")
+
+                    }
+
+                }
+            }
+        }
+    }
 
     const divToAddSubmitTo = document.getElementById('add-button-to-submit')
     const btnToAddEvent = document.createElement('button')
@@ -94,6 +152,7 @@
             body: JSON.stringify(postBody)
         })
         if (resp.status == 200) {
+            alert("success")
             divToAddSubmitTo.removeChild(btnToAddEvent)
             divToAddSubmitTo.removeChild(txtAreaToAddEvent)
             var getActive = document.querySelectorAll('li.active')
@@ -184,7 +243,9 @@
                 && year === new Date().getFullYear()
                 ? "active"
                 : "";*/
-            lit += `<li id='${i}' onclick='toggleActiveElement(${i})'>${i}</li>`;
+
+            lit += `<li id='${i}' style='background: #fff' onclick='toggleActiveElement(${i})'>${i}</li>`;
+
         }
 
         // Loop to add the first dates of the next month
@@ -199,8 +260,22 @@
         // update the HTML of the dates element 
         // with the generated calendar
         day.innerHTML = lit;
+
+
+        setDatesThatHaveEvents()
     }
+
+    function findCurrentList() {
+        for (var i = 1; i <= lastdate; i++) {
+
+            console.log(document.getElementById(`${i}`))
+        }
+    }
+
     function toggleActiveElement(data) {
+        // Works!!
+        //console.log(new Date(year.toString(), (month).toString(), (data).toString()).toDateString() === new Date(allEvents[0].Startdate).toDateString())
+
 
         if (document.getElementById(data).getAttribute("class") <= "") {
             document.getElementById(data).setAttribute("class", "active")
@@ -209,6 +284,8 @@
             document.getElementById(data).setAttribute("class", "")
             listOfSelected = listOfSelected.filter((filterout) => filterout !== data)
             arrayOfDates = []
+        } else if (document.getElementById(data).getAttribute("class") >= "has-an-event") {
+            document.getElementById(data).setAttribute("class", "has-an-event")
         }
         if (listOfSelected.length > 0 && !divToAddSubmitTo.contains(btnToAddEvent) && !divToAddSubmitTo.contains(txtAreaToAddEvent)) {
             divToAddSubmitTo.append(txtAreaToAddEvent)
@@ -217,6 +294,12 @@
             divToAddSubmitTo.removeChild(btnToAddEvent)
             divToAddSubmitTo.removeChild(txtAreaToAddEvent)
         }
+
+        /*filteredDates.filter((eventdat) =>
+            Number(eventdat.Startdate[2]) === data ? document.getElementById(data).setAttribute("class", "has-an-event") : console.log("no")
+        )*/
+
+
     }
 
     function currentSelectedDate() {

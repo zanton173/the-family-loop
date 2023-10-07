@@ -314,6 +314,40 @@ func main() {
 		commentTmpl.Execute(w, nil)
 		w.WriteHeader(http.StatusOK)
 	}
+	getEventsHandler := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+
+		type EventData struct {
+			Startdate    string
+			Enddate      string
+			Eventowner   string
+			Eventdetails string
+		}
+
+		ourEvents := []EventData{}
+		output, err := db.Query("select start_date, end_date, event_owner, event_details from tfldata.calendar;")
+		if err != nil {
+			fmt.Println(err)
+		}
+		defer output.Close()
+		for output.Next() {
+			var tempData EventData
+			scnerr := output.Scan(&tempData.Startdate, &tempData.Enddate, &tempData.Eventowner, &tempData.Eventdetails)
+			if scnerr != nil {
+				fmt.Println(scnerr)
+				w.WriteHeader(http.StatusBadRequest)
+			}
+			ourEvents = append(ourEvents, tempData)
+		}
+		data, marshErr := json.Marshal(ourEvents)
+
+		if marshErr != nil {
+			fmt.Println(marshErr)
+			w.WriteHeader(http.StatusBadRequest)
+		}
+		w.Write(data)
+	}
+
 	createEventHandler := func(w http.ResponseWriter, r *http.Request) {
 		c, err := r.Cookie("session_id")
 
@@ -402,6 +436,7 @@ func main() {
 	http.HandleFunc("/new-posts", getPostCountHandler)
 
 	http.HandleFunc("/get-selected-post", getSelectedPostsComments)
+	http.HandleFunc("/get-events", getEventsHandler)
 
 	http.HandleFunc("/create-comment", createCommentHandler)
 

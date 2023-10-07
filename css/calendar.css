@@ -105,3 +105,8 @@ header .calendar-current-date {
 .calendar-dates li:not(.active):hover::before {
     background: #e4e1e1;
 }
+
+.has-an-event {
+    background: #fffd84;
+    border-radius: 50%;
+}

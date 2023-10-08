@@ -317,9 +317,6 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 	}
 	getSelectedEventsComments := func(w http.ResponseWriter, r *http.Request) {
-		type getBody struct {
-			CommentSelectedEventId int `json:"commentSelectedEventID"`
-		}
 
 		var commentTmpl *template.Template
 
@@ -480,6 +477,26 @@ func main() {
 
 		w.WriteHeader(http.StatusOK)
 	}
+	getGroupChatMessagesHandler := func(w http.ResponseWriter, r *http.Request) {
+		output, err := db.Query("select chat, author from tfldata.gchat order by id DESC limit 20;")
+		if err != nil {
+			fmt.Println(err)
+		}
+		defer output.Close()
+		for output.Next() {
+
+			var message string
+			var author string
+			output.Scan(&message, &author)
+			dataStr := "<p>" + message + " - " + author + "</p>"
+			chattmp, tmperr := template.New("gchat").Parse(dataStr)
+			if tmperr != nil {
+				fmt.Println(tmperr)
+			}
+			chattmp.Execute(w, nil)
+
+		}
+	}
 	getSessionDataHandler := func(w http.ResponseWriter, r *http.Request) {
 
 		var ourSeshStruct seshStruct
@@ -535,6 +552,8 @@ func main() {
 	http.HandleFunc("/clear-cookie", clearCookieHandler)
 
 	http.HandleFunc("/create-event", createEventHandler)
+
+	http.HandleFunc("/group-chat-messages", getGroupChatMessagesHandler)
 
 	http.HandleFunc("/signup", signUpHandler)
 	http.HandleFunc("/login", loginHandler)

@@ -133,7 +133,10 @@ func main() {
 			tmpl := template.Must(template.ParseFiles("calendar.html"))
 			tmpl.Execute(w, nil)
 			tm.Execute(w, nil)
-
+		case "/group-chat":
+			tmpl := template.Must(template.ParseFiles("groupchat.html"))
+			tmpl.Execute(w, nil)
+			tm.Execute(w, nil)
 		case "/":
 			http.Redirect(w, r, "/home", http.StatusMovedPermanently)
 		default:

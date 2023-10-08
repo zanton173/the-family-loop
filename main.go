@@ -267,6 +267,88 @@ func main() {
 		}
 
 	}
+	createEventCommentHandler := func(w http.ResponseWriter, r *http.Request) {
+		c, err := r.Cookie("session_id")
+
+		if err != nil {
+			if err == http.ErrNoCookie {
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		if c.Valid() != nil {
+			fmt.Println("Cook is no longer valid")
+		}
+
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		bs, _ := io.ReadAll(r.Body)
+
+		type postBody struct {
+			Eventcomment           string `json:"eventcomment"`
+			CommentSelectedEventId int    `json:"commentSelectedEventID"`
+		}
+		var postData postBody
+		errmarsh := json.Unmarshal(bs, &postData)
+		if errmarsh != nil {
+			fmt.Println(errmarsh)
+		}
+
+		_, inserterr := db.Exec(fmt.Sprintf("insert into tfldata.comments(\"comment\", \"event_id\", \"author\") values('%s', '%d', (select username from tfldata.users where session_token='%s'));", postData.Eventcomment, postData.CommentSelectedEventId, c.Value))
+		if inserterr != nil {
+			fmt.Println(inserterr)
+		}
+		var author string
+		row := db.QueryRow(fmt.Sprintf("select username from tfldata.users where session_token='%s';", c.Value))
+		row.Scan(&author)
+
+		dataStr := "<p class='p-2'>" + postData.Eventcomment + " - " + author + "</p>"
+
+		commentTmpl, err := template.New("com").Parse(dataStr)
+		if err != nil {
+			fmt.Println(err)
+		}
+		commentTmpl.Execute(w, nil)
+		w.WriteHeader(http.StatusOK)
+	}
+	getSelectedEventsComments := func(w http.ResponseWriter, r *http.Request) {
+		type getBody struct {
+			CommentSelectedEventId int `json:"commentSelectedEventID"`
+		}
+
+		var commentTmpl *template.Template
+
+		output, err := db.Query(fmt.Sprintf("select comment, author from tfldata.comments where event_id='%s'::integer order by event_id desc;", r.URL.Query().Get("commentSelectedEventID")))
+
+		var dataStr string
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		defer output.Close()
+
+		for output.Next() {
+			var posts struct {
+				Comment string
+				Author  string
+			}
+
+			if err := output.Scan(&posts.Comment, &posts.Author); err != nil {
+				log.Fatal(err)
+
+			}
+			dataStr = "<p class='p-2'>" + posts.Comment + " - " + posts.Author + "</p>"
+
+			commentTmpl, err = template.New("com").Parse(dataStr)
+			if err != nil {
+				fmt.Println(err)
+			}
+			commentTmpl.Execute(w, nil)
+		}
+
+	}
 	createCommentHandler := func(w http.ResponseWriter, r *http.Request) {
 		c, err := r.Cookie("session_id")
 
@@ -318,6 +400,7 @@ func main() {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 
 		type EventData struct {
+			Eventid      int
 			Startdate    string
 			Enddate      string
 			Eventowner   string
@@ -326,14 +409,14 @@ func main() {
 		}
 
 		ourEvents := []EventData{}
-		output, err := db.Query("select start_date, end_date, event_owner, event_details, event_title from tfldata.calendar;")
+		output, err := db.Query("select start_date, end_date, event_owner, event_details, event_title, id from tfldata.calendar;")
 		if err != nil {
 			fmt.Println(err)
 		}
 		defer output.Close()
 		for output.Next() {
 			var tempData EventData
-			scnerr := output.Scan(&tempData.Startdate, &tempData.Enddate, &tempData.Eventowner, &tempData.Eventdetails, &tempData.Eventtitle)
+			scnerr := output.Scan(&tempData.Startdate, &tempData.Enddate, &tempData.Eventowner, &tempData.Eventdetails, &tempData.Eventtitle, &tempData.Eventid)
 			if scnerr != nil {
 				fmt.Println(scnerr)
 				w.WriteHeader(http.StatusBadRequest)
@@ -439,8 +522,10 @@ func main() {
 
 	http.HandleFunc("/get-selected-post", getSelectedPostsComments)
 	http.HandleFunc("/get-events", getEventsHandler)
+	http.HandleFunc("/get-event-comments", getSelectedEventsComments)
 
 	http.HandleFunc("/create-comment", createCommentHandler)
+	http.HandleFunc("/create-event-comment", createEventCommentHandler)
 
 	http.HandleFunc("/get-username-from-session", getSessionDataHandler)
 

@@ -13,6 +13,7 @@
     <script src="https://unpkg.com/htmx.org@1.9.5"
         integrity="sha384-xcuj3WpfgjlKF+FXhSQFQ0ZNr39ln+hwjN3npfM9VBnUskLolQAcN80McRIVOPuO"
         crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/htmx.org/dist/ext/json-enc.js"></script>
     <link rel="stylesheet" type="text/css" href="./css/calendar.css" />
     <title>The Family Loop - Calendar</title>
 </head>
@@ -24,11 +25,11 @@
     </div>
     <div style="text-align: center;">
 
-        <p id="cal-header-for-popover" data-bs-container="body" data-bs-placement="top" data-bs-toggle="popover"
+        <!--<p id="cal-header-for-popover" data-bs-container="body" data-bs-placement="top" data-bs-toggle="popover"
             data-bs-content="If the event is more than one day, you can select just the start & end date
             and the event will be planned for the entire period between." style="font-size: small;">How to
             use
-        </p>
+        </p>-->
     </div>
     <div class="calendar-container" id="caldiv">
         <header class="calendar-header">
@@ -61,29 +62,30 @@
         <div style="text-align: center; display: grid;" class="px-5" id="add-button-to-submit">
 
         </div>
-        <div class="py-5"><!--<button onclick='testClick()'>me me mee</button>--></div>
+        <div class="py-5"></div>
     </div>
     <div class="modal" id="openEventDetail" tabindex="-1" aria-labelledby="openEventDetailLabel" aria-hidden="true">
         <div class="modal-dialog">
-            <div id="event-comments" class="modal-content p-3" style="border-radius: 5%;">
+            <div id="event-comments" class="modal-content p-2" style="border-radius: 2%;">
 
                 <div class="modal-content" id="modal-event-content">
                     <h3 id="eventtitleele"></h3>
                     <h7 id="eventdateele"></h7>
 
                     <p id="eventdetailsele"></p>
+                    <div id="eventappendcomments"></div>
                 </div>
-                <!--
-                <form id="createcomment" class="d-grid" hx-post="/create-comment"
-                    hx-vals='js:{"selectedEventId": selectedPostId}' hx-ext='json-enc' hx-target="#modal-event-content"
-                    hx-swap="beforeend" hx-on:htmx:after-request="clearForm()">
+
+                <form id="createeventcomment" class="d-grid" hx-post="/create-event-comment"
+                    hx-vals='js:{"commentSelectedEventID": commentSelectedEventId}' hx-ext='json-enc'
+                    hx-target="#eventappendcomments" hx-swap="beforeend" hx-on:htmx:after-request="clearForm()">
                     <input class="my-2 shadow-sm border-1 text-center" name="eventcomment" id="commentnoteevent"
                         type="text" placeholder="add comment" required maxlength="280"
                         oninput="checkCommentValidity()" />
 
 
-                    <button type="button" class="btn btn-dark col" data-bs-dismiss="modal">close</button><br />
-                </form>-->
+                    <!--<button type="button" class="btn btn-dark col" data-bs-dismiss="modal">close</button><br />-->
+                </form>
             </div>
         </div>
     </div>
@@ -91,6 +93,8 @@
 <script>
     var allEvents = []
     var eventDetailModal = new bootstrap.Modal(document.getElementById('openEventDetail'), {});
+
+    var commentSelectedEventId = 0
 
     const modalContentDiv = document.getElementById("modal-event-content")
 
@@ -116,8 +120,6 @@
     })
 
     function setDatesThatHaveEvents() {
-
-        //listOfActive = document.getElementById('listOfActiveDates').children
         listOfActive = document.querySelectorAll("[style='background: #fff']")
         for (var i = 0; i < listOfActive.length; i++) {
             for (var j = 0; j < allEvents.length; j++) {
@@ -136,11 +138,38 @@
     function openEventModal(data) {
         eventDetailModal.toggle()
         document.getElementById('eventtitleele').innerHTML = data.Eventtitle + " - " + data.Eventowner
-        document.getElementById('eventdateele').innerHTML = new Date(data.Startdate[0], data.Startdate[1], data.Startdate[2]).toDateString() + " - " + new Date(data.Enddate).toDateString()
-
+        document.getElementById('eventdateele').innerHTML = new Date(data.Startdate[0], data.Startdate[1] - 1, data.Startdate[2]).toDateString() + " - " + new Date(data.Enddate).toDateString()
         document.getElementById('eventdetailsele').innerHTML = data.Eventdetails
+        commentSelectedEventId = data.Eventid
+        document.getElementById('eventappendcomments').innerHTML = ''
     }
 
+    if (document.getElementById('createeventcomment').contains(document.getElementById('submitEventCommentBtn'))) {
+        document.getElementById('createeventcomment').removeChild(document.getElementById('submitEventCommentBtn'))
+        document.getElementById('commentnoteevent').value = ''
+    }
+    const submitBtn = document.createElement('button')
+    function checkCommentValidity() {
+
+        if (document.getElementById('commentnoteevent').value > '' && !document.getElementById('createeventcomment').contains(document.getElementById('submitEventCommentBtn'))) {
+
+            submitBtn.setAttribute('class', 'btn btn-success col')
+            submitBtn.setAttribute('type', 'submit')
+            submitBtn.setAttribute('id', 'submitEventCommentBtn')
+            submitBtn.innerHTML = 'comment'
+            document.getElementById('createeventcomment').append(submitBtn)
+        } else if (document.getElementById('commentnoteevent').value == '' && document.getElementById('createeventcomment').contains(document.getElementById('submitEventCommentBtn'))) {
+            document.getElementById('createeventcomment').removeChild(submitBtn)
+
+        }
+
+    }
+    function clearForm() {
+        if (document.getElementById('createeventcomment').contains(document.getElementById('submitEventCommentBtn'))) {
+            document.getElementById('createeventcomment').removeChild(submitBtn)
+            document.getElementById('commentnoteevent').value = ''
+        }
+    }
     const divToAddSubmitTo = document.getElementById('add-button-to-submit')
     const btnToAddEvent = document.createElement('button')
 
@@ -190,16 +219,16 @@
     })
     btnToAddEvent.innerHTML = "Create new event"
 
-    const popoverTriggerList = document.querySelectorAll('[data-bs-toggle="popover"]')
-    const popoverList = [...popoverTriggerList].map(popoverTriggerEl => new bootstrap.Popover(popoverTriggerEl))
+    //const popoverTriggerList = document.querySelectorAll('[data-bs-toggle="popover"]')
+    //const popoverList = [...popoverTriggerList].map(popoverTriggerEl => new bootstrap.Popover(popoverTriggerEl))
 
-    const headerEle = document.getElementById('cal-header-for-popover')
+    /*const headerEle = document.getElementById('cal-header-for-popover')
     headerEle.addEventListener("mouseover", function (event) {
         popoverList[0].toggle()
     })
     headerEle.addEventListener("mouseout", function (event) {
         popoverList[0].toggle()
-    })
+    })*/
 
     let date = new Date();
     let year = date.getFullYear();
@@ -271,7 +300,7 @@
                 ? "active"
                 : "";*/
 
-            lit += `<li id='${i}' style='background: #fff' onclick='toggleActiveElement(${i})'>${i}</li>`;
+            lit += `<li id='${i}' hx-get='/get-event-comments' hx-vals='js:{"commentSelectedEventID": commentSelectedEventId}' hx-ext='json-enc' hx-target='#eventappendcomments' hx-swap='beforeend' style='background: #fff' onclick='toggleActiveElement(${i})'>${i}</li>`;
 
         }
 

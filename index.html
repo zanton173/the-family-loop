@@ -49,17 +49,17 @@
     </div>
     <div class="modal" id="createPostModal" tabindex="-1" aria-labelledby="createPostModalLabel" aria-hidden="true">
         <div class="modal-dialog">
-            <div id="post-div" class="modal-content p-4">
+            <div id="post-div" class="modal-content p-2">
 
-                <form id="createpostele" class="d-grid" hx-post="/create-post" hx-trigger="click from:#formsubmit"
-                    hx-encoding="multipart/form-data" hx-swap="none">
+                <form id="createpostele" class="d-inline-grid" hx-post="/create-post"
+                    hx-trigger="click from:#formsubmit" hx-encoding="multipart/form-data" hx-swap="none">
 
-                    <input class="my-2 shadow-sm border-1 text-center" name="title" id="posttitle" type="text"
-                        placeholder="title your post" required maxlength="128" />
-                    <input class="my-2 shadow-sm border-1 text-center" name="description" id="postdesc" type="text"
-                        placeholder="describe the post" required maxlength="420" />
-                    <input class="my-2 shadow" type="file" required name="file_name" accept="image/*,video/*"
-                        placeholder="Upload photo or video" />
+                    <input class="my-2 shadow-sm border-1 text-center" style="width: 100%" name="title" id="posttitle"
+                        type="text" placeholder="title your post" required maxlength="128" />
+                    <input class="my-2 shadow-sm border-1 text-center" style="width: 100%" name="description"
+                        id="postdesc" type="text" placeholder="describe the post" required maxlength="420" />
+                    <input class="my-2 shadow" type="file" required style="width: 100%" name="file_name"
+                        accept="image/*,video/*" placeholder="Upload photo or video" />
 
 
                 </form>

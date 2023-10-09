@@ -6,3 +6,4 @@
 *.mpeg
 *.jpeg
 .DS_Store
+*.sql

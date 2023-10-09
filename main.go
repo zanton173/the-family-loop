@@ -124,7 +124,6 @@ func main() {
 
 		switch r.URL.Path {
 		case "/home":
-
 			go cookieExpirationCheck(w, r, db)
 			tmpl := template.Must(template.ParseFiles("index.html"))
 			tmpl.Execute(w, nil)

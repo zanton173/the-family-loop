@@ -406,21 +406,20 @@ func main() {
 		type EventData struct {
 			Eventid      int
 			Startdate    string
-			Enddate      string
 			Eventowner   string
 			Eventdetails string
 			Eventtitle   string
 		}
 
 		ourEvents := []EventData{}
-		output, err := db.Query("select start_date, end_date, event_owner, event_details, event_title, id from tfldata.calendar;")
+		output, err := db.Query("select start_date, event_owner, event_details, event_title, id from tfldata.calendar;")
 		if err != nil {
 			fmt.Println(err)
 		}
 		defer output.Close()
 		for output.Next() {
 			var tempData EventData
-			scnerr := output.Scan(&tempData.Startdate, &tempData.Enddate, &tempData.Eventowner, &tempData.Eventdetails, &tempData.Eventtitle, &tempData.Eventid)
+			scnerr := output.Scan(&tempData.Startdate, &tempData.Eventowner, &tempData.Eventdetails, &tempData.Eventtitle, &tempData.Eventid)
 			if scnerr != nil {
 				fmt.Println(scnerr)
 				w.WriteHeader(http.StatusBadRequest)
@@ -457,7 +456,6 @@ func main() {
 		bs, _ := io.ReadAll(r.Body)
 		type PostBody struct {
 			Startdate    string `json:"start_date"`
-			Enddate      string `json:"end_date"`
 			Eventdetails string `json:"event_details"`
 			Eventtitle   string `json:"event_title"`
 		}
@@ -469,7 +467,7 @@ func main() {
 			fmt.Println(errmarsh)
 		}
 
-		_, inserterr := db.Exec(fmt.Sprintf("insert into tfldata.calendar(\"start_date\", \"end_date\", \"event_owner\", \"event_details\", \"event_title\") values('%s', '%s', (select username from tfldata.users where session_token='%s'), '%s', '%s');", postData.Startdate, postData.Enddate, c.Value, postData.Eventdetails, postData.Eventtitle))
+		_, inserterr := db.Exec(fmt.Sprintf("insert into tfldata.calendar(\"start_date\", \"event_owner\", \"event_details\", \"event_title\") values('%s', (select username from tfldata.users where session_token='%s'), '%s', '%s');", postData.Startdate, c.Value, postData.Eventdetails, postData.Eventtitle))
 		if inserterr != nil {
 			fmt.Println(inserterr)
 			w.WriteHeader(http.StatusBadRequest)

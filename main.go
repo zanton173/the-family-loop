@@ -216,7 +216,7 @@ func main() {
 			return
 		}
 		var username string
-		row := db.QueryRow(fmt.Sprintf("select username from users where session_token='%s'", c))
+		row := db.QueryRow(fmt.Sprintf("select username from tfldata.users where session_token='%s'", c))
 		row.Scan(&username)
 		upload, filename, errfile := r.FormFile("file_name")
 
@@ -477,8 +477,39 @@ func main() {
 
 		w.WriteHeader(http.StatusOK)
 	}
+	createGroupChatMessageHandler := func(w http.ResponseWriter, r *http.Request) {
+		c, err := r.Cookie("session_id")
+		chatMessage := r.PostFormValue("gchatmessage")
+		var userName string
+
+		if err != nil {
+			if err == http.ErrNoCookie {
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		if c.Valid() != nil {
+			fmt.Println("Cook is no longer valid")
+			return
+		}
+
+		userNameRow := db.QueryRow(fmt.Sprintf("select username from tfldata.users where session_token='%s';", c.Value))
+		userNameRow.Scan(&userName)
+
+		_, inserr := db.Exec(fmt.Sprintf("insert into tfldata.gchat(\"chat\", \"author\") values('%s', '%s');", chatMessage, userName))
+		if inserr != nil {
+			fmt.Println(err)
+			w.WriteHeader(http.StatusBadRequest)
+		}
+		w.Header().Set("HX-Trigger", "success-send")
+		w.WriteHeader(http.StatusOK)
+
+	}
 	getGroupChatMessagesHandler := func(w http.ResponseWriter, r *http.Request) {
-		output, err := db.Query("select chat, author from tfldata.gchat order by id DESC limit 20;")
+		output, err := db.Query("select chat, author from (select * from tfldata.gchat order by id DESC limit 20) as tmp order by id asc;")
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -488,7 +519,7 @@ func main() {
 			var message string
 			var author string
 			output.Scan(&message, &author)
-			dataStr := "<p>" + message + " - " + author + "</p>"
+			dataStr := "<p class='py-1'>" + message + " - " + author + "</p>"
 			chattmp, tmperr := template.New("gchat").Parse(dataStr)
 			if tmperr != nil {
 				fmt.Println(tmperr)
@@ -554,6 +585,7 @@ func main() {
 	http.HandleFunc("/create-event", createEventHandler)
 
 	http.HandleFunc("/group-chat-messages", getGroupChatMessagesHandler)
+	http.HandleFunc("/create-a-group-chat-message", createGroupChatMessageHandler)
 
 	http.HandleFunc("/signup", signUpHandler)
 	http.HandleFunc("/login", loginHandler)
@@ -589,7 +621,7 @@ func cookieExpirationCheck(w http.ResponseWriter, rCookie *http.Request, db *sql
 	if time.Until(expiryTemp) < (time.Minute * 5) {
 		setLoginCookie(w, db, sessionUser)
 	} else if time.Until(expiryTemp) == (time.Minute * 1) {
-		// TODO update DB records
+
 		_, seshClearErr := db.Exec(fmt.Sprintf("delete from tfldata.sessions where session_token='%s';", c.Value))
 		if seshClearErr != nil {
 			fmt.Println(seshClearErr)
@@ -761,8 +793,6 @@ func createTFLBucketAndUpload(k string, s string, bucketexists bool, f multipart
 	//fmt.Println(filetype)
 	defer ourfile.Close()
 
-	//fileChan := make(chan s3.GetObjectAttributesOutput, 1)
-
 	if strings.Contains(filetype, "image") {
 
 		_, err4 := client.PutObject(context.TODO(), &s3.PutObjectInput{
@@ -777,22 +807,6 @@ func createTFLBucketAndUpload(k string, s string, bucketexists bool, f multipart
 			fmt.Println("error on upload")
 			fmt.Println(err)
 		}
-		/*for range fileChan {
-			go func() {
-				nameOut, errname := client.GetObjectAttributes(context.TODO(), &s3.GetObjectAttributesInput{
-					Bucket: aws.String("the-family-loop" + "-customer-hash"),
-					Key:    aws.String("posts/images/" + fn),
-					ObjectAttributes: []types.ObjectAttributes{
-						"ObjectSize",
-					},
-				})
-				if errname != nil {
-					fmt.Println("Some sort of error :(")
-					log.Fatal(errname)
-				}
-				fileChan <- *nameOut
-			}()
-		}*/
 	} else if strings.Contains(filetype, "video") {
 
 		_, err4 := client.PutObject(context.TODO(), &s3.PutObjectInput{
@@ -806,26 +820,6 @@ func createTFLBucketAndUpload(k string, s string, bucketexists bool, f multipart
 			fmt.Println("error on upload")
 			fmt.Println(err)
 		}
-
-		/* go func() {
-			nameOut, errname := client.GetObjectAttributes(context.TODO(), &s3.GetObjectAttributesInput{
-				Bucket: aws.String("the-family-loop" + "-customer-hash"),
-				Key:    aws.String("posts/videos/" + fn),
-				ObjectAttributes: []types.ObjectAttributes{
-					"ObjectSize",
-				},
-			})
-			if errname != nil {
-				fmt.Println("Some sort of error :(")
-				log.Fatal(errname)
-			}
-			fileChan <- *nameOut
-
-		}()
-		for val := range fileChan {
-			fmt.Println(val.ObjectSize)
-
-		}*/
 
 	} else {
 		fmt.Println("Unknown file type. How did this get here?")

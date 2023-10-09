@@ -23,10 +23,26 @@
     <div id="anchor">
 
     </div>
-    <div hx-get="/group-chat-messages" hx-trigger="load, every 7s" class="border-1 d-block mx-2"
-        style="justify-content: center; text-align: center; background-color: rgb(205, 205, 206); border-radius: 2%;">
+    <div hx-get="/group-chat-messages" hx-trigger="load, every 5s, success-send from:#messageform"
+        class="border-1 d-block m-2"
+        style="justify-content: center; text-align: center; background-color: rgb(205, 205, 206); border-radius: 1%;">
 
     </div>
+    <form hx-post="/create-a-group-chat-message" hx-swap="afterend" hx-target="this"
+        hx-on::after-request="clearFormGetMessages()" id="messageform">
+        <div class="d-flex" style="justify-content: center; margin-bottom: 8%;">
+            <input class="my-0 border-2 text-center" style="border-radius: 3%; width: 75%;" name="gchatmessage"
+                id="gchatinput" type="text" placeholder="Enter message" required maxlength="420" />
+            <button type="submit" class="btn btn-outline-success"><i class="bi bi-send"></i></button>
+        </div>
+    </form>
+    <script>
+        function clearFormGetMessages() {
+            document.getElementById('gchatinput').value = ""
+            console.log('success')
+            console.log()
+        }
+    </script>
 </body>
 
 

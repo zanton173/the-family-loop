@@ -125,6 +125,11 @@ func main() {
 		switch r.URL.Path {
 		case "/home":
 			go cookieExpirationCheck(w, r, db)
+
+			_, err := db.Exec(fmt.Sprintf("insert into tfldata.inclog(\"ip_addr\") values('%s');", strings.Split(r.RemoteAddr, ":")[0]))
+			if err != nil {
+				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('%s');", err))
+			}
 			tmpl := template.Must(template.ParseFiles("index.html"))
 			tmpl.Execute(w, nil)
 			tm.ExecuteTemplate(w, "Navt", nil)

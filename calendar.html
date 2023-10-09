@@ -112,7 +112,7 @@
         })
         allEvents = allEvents.map((ele) =>
             /*({ ...ele, Startdate: ele.Startdate.split("T", 1)[0].split("-", 3), Enddate: ele.Enddate.split("T", 1)[0].split("-", 3) })*/
-            ({ ...ele, Startdate: ele.Startdate.split("T", 1)[0].split("-", 3), Enddate: ele.Enddate.split("T", 1)[0] })
+            ({ ...ele, Startdate: ele.Startdate.split("T", 1)[0].split("-", 3) })
         )
 
         setDatesThatHaveEvents()
@@ -191,7 +191,7 @@
     btnToAddEvent.setAttribute("onclick", 'currentSelectedDate()')
 
     btnToAddEvent.addEventListener("click", async function (event) {
-        showStartEndDate()
+
         const postBody = {
             "start_date": arrayOfDates[0],
             "event_details": txtAreaToAddEvent.value,
@@ -367,10 +367,7 @@
 
 
     }
-    function showStartEndDate() {
-        //alert("this is your event start date: " + arrayOfDates[0] + "\n" + "this is your event end date: " + arrayOfDates[arrayOfDates.length - 1])
 
-    }
 
     manipulate();
 

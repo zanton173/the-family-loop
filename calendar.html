@@ -138,7 +138,7 @@
     function openEventModal(data) {
         eventDetailModal.toggle()
         document.getElementById('eventtitleele').innerHTML = data.Eventtitle + " - " + data.Eventowner
-        document.getElementById('eventdateele').innerHTML = new Date(data.Startdate[0], data.Startdate[1] - 1, data.Startdate[2]).toDateString() + " - " + new Date(data.Enddate).toDateString()
+        document.getElementById('eventdateele').innerHTML = new Date(data.Startdate[0], data.Startdate[1] - 1, data.Startdate[2]).toDateString()
         document.getElementById('eventdetailsele').innerHTML = data.Eventdetails
         commentSelectedEventId = data.Eventid
         document.getElementById('eventappendcomments').innerHTML = ''
@@ -194,7 +194,6 @@
         showStartEndDate()
         const postBody = {
             "start_date": arrayOfDates[0],
-            "end_date": arrayOfDates[arrayOfDates.length - 1],
             "event_details": txtAreaToAddEvent.value,
             "event_title": titleInputToAddEvent.value
         }
@@ -329,6 +328,9 @@
     }
 
     function toggleActiveElement(data) {
+        if (document.querySelector('.active')) {
+            document.querySelector('.active').setAttribute("class", "")
+        }
         if (document.getElementById(data).getAttribute("class") <= "") {
             document.getElementById(data).setAttribute("class", "active")
             listOfSelected.push(data)

@@ -72,6 +72,7 @@ func main() {
 		upload, filename, errfile := r.FormFile("pfpformfile")
 		if errfile != nil {
 			fmt.Println(errfile)
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('%s');", errfile))
 			w.WriteHeader(http.StatusBadRequest)
 		}
 		uploadPfpToS3(awskey, awskeysecret, false, upload, filename.Filename, r)
@@ -87,6 +88,7 @@ func main() {
 
 		if errinsert != nil {
 			fmt.Println(errinsert)
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('%s');", errinsert))
 			w.WriteHeader(http.StatusBadRequest)
 		}
 
@@ -100,6 +102,7 @@ func main() {
 		err := bcrypt.CompareHashAndPassword([]byte(password), []byte(r.PostFormValue("passwordlogin")))
 
 		if err != nil {
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('%s');", err))
 			w.Header().Set("HX-Trigger", "loginevent")
 		} else if err == nil {
 			setLoginCookie(w, db, userStr)
@@ -118,18 +121,9 @@ func main() {
 		navtmple := template.New("Navt")
 		tm, _ := navtmple.Parse(string(bs))
 
-		if err != nil {
-			fmt.Println(err)
-		}
-
 		switch r.URL.Path {
 		case "/home":
 			go cookieExpirationCheck(w, r, db)
-
-			_, err := db.Exec(fmt.Sprintf("insert into tfldata.inclog(\"ip_addr\") values('%s');", strings.Split(r.RemoteAddr, ":")[0]))
-			if err != nil {
-				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('%s');", err))
-			}
 			tmpl := template.Must(template.ParseFiles("index.html"))
 			tmpl.Execute(w, nil)
 			tm.ExecuteTemplate(w, "Navt", nil)
@@ -152,7 +146,7 @@ func main() {
 
 	getPostsHandler := func(w http.ResponseWriter, r *http.Request) {
 
-		output, err := db.Query("select id, title, description, file_name, file_type, author from tfldata.posts order by id DESC;")
+		output, err := db.Query("select id, title, description, file_name, file_type, author from tfldata.posts order by id DESC limit 10;")
 		var count string
 		db.QueryRow("select count(*) from tfldata.posts;").Scan(&count)
 
@@ -167,29 +161,29 @@ func main() {
 			var postrows Postsrow
 
 			if err := output.Scan(&postrows.Id, &postrows.Title, &postrows.Description, &postrows.File_name, &postrows.File_type, &postrows.Author); err != nil {
-				log.Fatal(err)
-
+				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('%s');", err))
+				w.WriteHeader(http.StatusBadRequest)
 			}
 
 			// TODO cache images
 			if strings.Contains(postrows.File_type, "image") {
-				imgclient := http.Client{}
+				/*imgclient := http.Client{}
 
 				imgreq, _ := http.NewRequest("GET", fmt.Sprintf("https://the-family-loop-customer-hash.s3.amazonaws.com/posts/images/%s", postrows.File_name), nil)
 
 				imgreq.Header.Set("Cache-Control", "max-age=86400")
-				resp, _ := imgclient.Do(imgreq)
+				resp, _ := imgclient.Do(imgreq)*/
 
-				dataStr = fmt.Sprintf("<div class='card my-4' style='border-radius: 14px;'><img src='%s' style='border-radius: 14px;' alt='%s' /><div class='card-body'><h5 class='card-title'>%s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' class='btn btn-primary'>Open a post</button></div></div>", resp.Request.URL, postrows.File_name, postrows.Title, postrows.Description, postrows.Id, postrows.Id)
-				imgclient.CloseIdleConnections()
-				defer resp.Body.Close()
+				dataStr = fmt.Sprintf("<div class='card my-4' style='border-radius: 14px;'><img src='https://the-family-loop-customer-hash.s3.amazonaws.com/posts/images/%s' style='border-radius: 14px;' alt='%s' /><div class='card-body'><h5 class='card-title'>%s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' class='btn btn-primary'>Comments</button></div></div>", postrows.File_name, postrows.File_name, postrows.Title, postrows.Description, postrows.Id, postrows.Id)
+				//imgclient.CloseIdleConnections()
+				//defer resp.Body.Close()
 			} else if strings.Contains(postrows.File_type, "video") || strings.Contains(postrows.File_type, "octet-stream") {
-				dataStr = fmt.Sprintf("<div class='card my-4' style='border-radius: 14px;'><video controls id='video'><source src='https://the-family-loop-customer-hash.s3.amazonaws.com/posts/videos/%s'></video><div class='card-body'><h5 class='card-title'>%s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' class='btn btn-primary'>Open a post</button></div></div>", postrows.File_name, postrows.Title, postrows.Description, postrows.Id, postrows.Id)
+				dataStr = fmt.Sprintf("<div class='card my-4' style='border-radius: 14px;'><video controls id='video'><source src='https://the-family-loop-customer-hash.s3.amazonaws.com/posts/videos/%s'></video><div class='card-body'><h5 class='card-title'>%s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' class='btn btn-primary'>Comments</button></div></div>", postrows.File_name, postrows.Title, postrows.Description, postrows.Id, postrows.Id)
 			}
 
 			postTmpl, tmerr = template.New("tem").Parse(dataStr)
 			if tmerr != nil {
-				fmt.Print(tmerr)
+				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('%s');", tmerr))
 			}
 			postTmpl.Execute(w, nil)
 		}
@@ -213,9 +207,11 @@ func main() {
 		c, err := r.Cookie("session_id")
 		if err != nil {
 			if err == http.ErrNoCookie {
+				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('%s');", err))
 				w.WriteHeader(http.StatusUnauthorized)
 				return
 			}
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('%s');", err))
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
@@ -225,7 +221,8 @@ func main() {
 		upload, filename, errfile := r.FormFile("file_name")
 
 		if errfile != nil {
-			log.Fatal(errfile)
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('%s');", err))
+			w.WriteHeader(http.StatusBadRequest)
 		}
 
 		// Returning a filetype from the createandupload function
@@ -235,7 +232,7 @@ func main() {
 		_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.posts(\"title\", \"description\", \"file_name\", \"file_type\", \"author\") values('%s', '%s', '%s', '%s', '%s');", r.PostFormValue("title"), r.PostFormValue("description"), filename.Filename, filetype, username))
 
 		if errinsert != nil {
-			log.Fatal(err)
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('%s');", errinsert))
 		}
 		defer upload.Close()
 
@@ -252,7 +249,7 @@ func main() {
 
 		var dataStr string
 		if err != nil {
-			log.Fatal(err)
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('%s');", err))
 		}
 
 		defer output.Close()
@@ -261,14 +258,14 @@ func main() {
 			var posts postComment
 
 			if err := output.Scan(&posts.Comment, &posts.Author); err != nil {
-				log.Fatal(err)
+				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('%s');", err))
 
 			}
 			dataStr = "<p class='p-2'>" + posts.Comment + " - " + posts.Author + "</p>"
 
 			commentTmpl, err = template.New("com").Parse(dataStr)
 			if err != nil {
-				fmt.Println(err)
+				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('%s');", err))
 			}
 			commentTmpl.Execute(w, nil)
 		}
@@ -288,6 +285,8 @@ func main() {
 
 		if c.Valid() != nil {
 			fmt.Println("Cook is no longer valid")
+			w.WriteHeader(http.StatusUnauthorized)
+			return
 		}
 
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
@@ -301,11 +300,13 @@ func main() {
 		errmarsh := json.Unmarshal(bs, &postData)
 		if errmarsh != nil {
 			fmt.Println(errmarsh)
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('%s');", errmarsh))
 		}
 
 		_, inserterr := db.Exec(fmt.Sprintf("insert into tfldata.comments(\"comment\", \"event_id\", \"author\") values('%s', '%d', (select username from tfldata.users where session_token='%s'));", postData.Eventcomment, postData.CommentSelectedEventId, c.Value))
 		if inserterr != nil {
 			fmt.Println(inserterr)
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('%s');", inserterr))
 		}
 		var author string
 		row := db.QueryRow(fmt.Sprintf("select username from tfldata.users where session_token='%s';", c.Value))
@@ -783,7 +784,7 @@ func createTFLBucketAndUpload(k string, s string, bucketexists bool, f multipart
 
 	ourfile.Read(fileContents)
 	filetype := http.DetectContentType(fileContents)
-	//fmt.Println(filetype)
+
 	defer ourfile.Close()
 
 	if strings.Contains(filetype, "image") {

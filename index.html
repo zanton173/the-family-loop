@@ -166,7 +166,7 @@
                 if (event.detail.xhr.status == 401) {
                     alert("Please login before creating a post.")
                 } else if (event.detail.xhr.status == 400) {
-                    alert("Some error happened. Please try again.")
+                    alert("Something was wrong with the file you provided.")
                 } else if (event.detail.xhr.status == 200) {
                     window.location.reload()
                 }

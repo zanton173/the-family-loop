@@ -174,11 +174,11 @@ func main() {
 				imgreq.Header.Set("Cache-Control", "max-age=86400")
 				resp, _ := imgclient.Do(imgreq)*/
 
-				dataStr = fmt.Sprintf("<div class='card my-4' style='border-radius: 14px;'><img src='https://the-family-loop-customer-hash.s3.amazonaws.com/posts/images/%s' style='border-radius: 14px;' alt='%s' /><div class='card-body'><h5 class='card-title'>%s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' class='btn btn-primary'>Comments</button></div></div>", postrows.File_name, postrows.File_name, postrows.Title, postrows.Description, postrows.Id, postrows.Id)
+				dataStr = fmt.Sprintf("<div class='card my-4' style='border-radius: 14px;'><img src='https://the-family-loop-customer-hash.s3.amazonaws.com/posts/images/%s' style='border-radius: 14px;' alt='%s' /><div class='card-body'><h5 class='card-title'>%s - %s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' class='btn btn-primary'>Comments</button></div></div>", postrows.File_name, postrows.File_name, postrows.Title, postrows.Author, postrows.Description, postrows.Id, postrows.Id)
 				//imgclient.CloseIdleConnections()
 				//defer resp.Body.Close()
 			} else if strings.Contains(postrows.File_type, "video") || strings.Contains(postrows.File_type, "octet-stream") {
-				dataStr = fmt.Sprintf("<div class='card my-4' style='border-radius: 14px;'><video controls id='video'><source src='https://the-family-loop-customer-hash.s3.amazonaws.com/posts/videos/%s'></video><div class='card-body'><h5 class='card-title'>%s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' class='btn btn-primary'>Comments</button></div></div>", postrows.File_name, postrows.Title, postrows.Description, postrows.Id, postrows.Id)
+				dataStr = fmt.Sprintf("<div class='card my-4' style='border-radius: 14px;'><video controls id='video'><source src='https://the-family-loop-customer-hash.s3.amazonaws.com/posts/videos/%s'></video><div class='card-body'><h5 class='card-title'>%s - %s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' class='btn btn-primary'>Comments</button></div></div>", postrows.File_name, postrows.Title, postrows.Author, postrows.Description, postrows.Id, postrows.Id)
 			}
 
 			postTmpl, tmerr = template.New("tem").Parse(dataStr)
@@ -216,7 +216,7 @@ func main() {
 			return
 		}
 		var username string
-		row := db.QueryRow(fmt.Sprintf("select username from tfldata.users where session_token='%s'", c))
+		row := db.QueryRow(fmt.Sprintf("select username from tfldata.users where session_token='%s';", c.Value))
 		row.Scan(&username)
 		upload, filename, errfile := r.FormFile("file_name")
 

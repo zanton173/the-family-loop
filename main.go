@@ -97,8 +97,8 @@ func main() {
 	loginHandler := func(w http.ResponseWriter, r *http.Request) {
 		userStr := r.PostFormValue("usernamelogin")
 		var password string
-		db.QueryRow(fmt.Sprintf("select password from tfldata.users where username='%s';", userStr)).Scan(&password)
-
+		passScan := db.QueryRow(fmt.Sprintf("select password from tfldata.users where username='%s';", userStr))
+		passScan.Scan(&password)
 		err := bcrypt.CompareHashAndPassword([]byte(password), []byte(r.PostFormValue("passwordlogin")))
 
 		if err != nil {

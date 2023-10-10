@@ -180,7 +180,7 @@
         if (text.Pfpname === '') {
             navItemWelcomeAvatar.setAttribute("src", "https://the-family-loop-customer-hash.s3.amazonaws.com/pfp/question.png")
         }
-        navItemWelcomeAvatar.setAttribute("src", "https://the-family-loop-customer-hash.s3.amazonaws.com/pfp/" + text.Pfpname)
+        navItemWelcomeAvatar.setAttribute("src", "https://the-family-loop-customer-hash.s3.amazonaws.com/pfp/question.png" + text.Pfpname)
     }
     async function clearCookie() {
         const resp = await fetch("/clear-cookie", {

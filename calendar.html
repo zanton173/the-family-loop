@@ -121,9 +121,10 @@
 
     function setDatesThatHaveEvents() {
         listOfActive = document.querySelectorAll("[style='background: #fff']")
-        for (var i = 0; i <= listOfActive.length; i++) {
-            for (var j = 0; j < allEvents.length; j++) {
+        for (var i = 1; i < listOfActive.length; i++) {
 
+            for (var j = 0; j < allEvents.length; j++) {
+                //console.log(i)
                 if (new Date(year.toString(), (month).toString(), (i).toString()).toDateString()
                     ===
                     new Date(allEvents[j].Startdate[0], Number(allEvents[j].Startdate[1]) - 1, allEvents[j].Startdate[2]).toDateString()
@@ -131,6 +132,7 @@
 
                     document.getElementById(`${i}`).setAttribute("style", "background-color: #837dff; border-radius: 25%;")
                     document.getElementById(`${i}`).setAttribute("onclick", `openEventModal(${JSON.stringify(allEvents[j])})`)
+
 
                 }
             }
@@ -283,15 +285,10 @@
         // Variable to store the generated calendar HTML
         let lit = "";
 
-        // Stored data for date selection
-        let selection = {
-            selectedDate: ''
-        }
-
         // Loop to add the last dates of the previous month
         for (let i = dayone; i > 0; i--) {
             lit +=
-                `<li class="inactive">${monthlastdate - i + 1}</li>`;
+                `<li class="inactive" >${monthlastdate - i + 1}</li>`;
         }
 
         // Loop to add the dates of the current month

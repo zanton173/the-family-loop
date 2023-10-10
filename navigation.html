@@ -8,8 +8,8 @@
         <div class="collapse navbar-collapse" style="text-align-last: center; font-size: medium;" id="navbarText">
             <ul class="navbar-nav nav-fill w-100" style="display: contents;" id="navlist">
                 <li class="nav-item"><a class="nav-link" href="/calendar">calendar</a></li>
-                <li class="nav-item"><a class="nav-link" href="/group-chat">chat</a></li>
-                <li class="nav-item"><a class="nav-link" href="/home">posts</a></li>
+                <li class="nav-item"><a class="nav-link" href="/home">chat</a></li>
+                <li class="nav-item"><a class="nav-link" href="/posts">posts</a></li>
                 <li class="nav-item" id="navitemforwelcome"><button id="loginlogoutnav" class="nav-link"
                         onclick='{loginModal.toggle(); showLoginForm()}'>login</button>
                 </li>
@@ -39,9 +39,9 @@
                         <div class="p-4">
                             <h5>Login</h5>
                             <label>Username:</label>
-                            <input class="form-control" type="text" style="width: 100%" name="usernamelogin"
-                                autocomplete="additional-name" placeholder="Username"
-                                oninput="checkForValidLoginSubmission()" required id="usernamelogininput" />
+                            <input class="form-control" autocomplete="username" type="text" style="width: 100%"
+                                name="usernamelogin" placeholder="Username" oninput="checkForValidLoginSubmission()"
+                                required id="usernamelogininput" />
                         </div>
                         <div class="p-4">
                             <label>Password:</label>
@@ -55,7 +55,7 @@
                         <div class="p-4">
                             <h5>Sign Up</h5>
                             <label>Username:</label>
-                            <input class="form-control" type="text" name="usernamesignup" autocomplete="additional-name"
+                            <input class="form-control" autocomplete="username" type="text" name="usernamesignup"
                                 placeholder="Username" oninput="checkForValidSignUpSubmission()" required
                                 id="usernamesignupinput" />
                         </div>
@@ -177,10 +177,10 @@
 
         const text = await resp.json()
 
-        if (text.Pfpname === '') {
-            navItemWelcomeAvatar.setAttribute("src", "https://the-family-loop-customer-hash.s3.amazonaws.com/pfp/question.png")
-        }
-        navItemWelcomeAvatar.setAttribute("src", "https://the-family-loop-customer-hash.s3.amazonaws.com/pfp/question.png" + text.Pfpname)
+        text.Pfpname === ""
+            ? navItemWelcomeAvatar.setAttribute("src", "https://the-family-loop-customer-hash.s3.amazonaws.com/pfp/question.png")
+            : navItemWelcomeAvatar.setAttribute("src", "https://the-family-loop-customer-hash.s3.amazonaws.com/pfp/" + text.Pfpname)
+
     }
     async function clearCookie() {
         const resp = await fetch("/clear-cookie", {

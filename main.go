@@ -50,6 +50,11 @@ func main() {
 	dbpass := os.Getenv("DB_PASS")
 	awskey = os.Getenv("AWS_ACCESS_KEY")
 	awskeysecret = os.Getenv("AWS_ACCESS_SECRET")
+	// favicon
+	faviconHandler := func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "assets/favicon.ico")
+	}
+	http.HandleFunc("/favicon.ico", faviconHandler)
 
 	// Connect to database
 	connStr := fmt.Sprintf("postgresql://tfldbrole:%s@localhost/tfl?sslmode=disable", dbpass)
@@ -62,6 +67,7 @@ func main() {
 
 	var postTmpl *template.Template
 	var tmerr error
+
 	signUpHandler := func(w http.ResponseWriter, r *http.Request) {
 
 		if r.PostFormValue("passwordsignup") != r.PostFormValue("confirmpasswordsignup") {
@@ -120,25 +126,24 @@ func main() {
 		bs, _ := os.ReadFile("navigation.html")
 		navtmple := template.New("Navt")
 		tm, _ := navtmple.Parse(string(bs))
+		fmt.Println(r.URL.Path)
 
 		switch r.URL.Path {
-		case "/home":
-			go cookieExpirationCheck(w, r, db)
-			tmpl := template.Must(template.ParseFiles("groupchat.html"))
-			tmpl.Execute(w, nil)
-			tm.ExecuteTemplate(w, "Navt", nil)
-		case "/calendar":
-			tmpl := template.Must(template.ParseFiles("calendar.html"))
-			tmpl.Execute(w, nil)
-			tm.Execute(w, nil)
 		case "/posts":
 			tmpl := template.Must(template.ParseFiles("index.html"))
 			tmpl.Execute(w, nil)
 			tm.Execute(w, nil)
-		case "/":
-			http.Redirect(w, r, "/home", http.StatusMovedPermanently)
+		case "/home":
+			go cookieExpirationCheck(w, r, db)
+			tmpl := template.Must(template.ParseFiles("groupchat.html"))
+			tmpl.Execute(w, nil)
+			tm.Execute(w, nil)
+		case "/calendar":
+			tmpl := template.Must(template.ParseFiles("calendar.html"))
+			tmpl.Execute(w, nil)
+			tm.Execute(w, nil)
 		default:
-			tmpl := template.Must(template.ParseFiles("404.html"))
+			tmpl := template.Must(template.ParseFiles("index.html"))
 			tmpl.Execute(w, nil)
 			tm.Execute(w, nil)
 		}
@@ -593,6 +598,7 @@ func main() {
 
 	//http.HandleFunc("/upload-file", h3)
 	http.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("css"))))
+	http.Handle("/assets/", http.StripPrefix("/assets/", http.FileServer(http.Dir("assets"))))
 	log.Fatal(http.ListenAndServe(":80", nil))
 	// For production
 	//log.Fatal(http.ListenAndServeTLS(":443", "./cert.key", "./cert.pem", nil))

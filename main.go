@@ -126,7 +126,6 @@ func main() {
 		bs, _ := os.ReadFile("navigation.html")
 		navtmple := template.New("Navt")
 		tm, _ := navtmple.Parse(string(bs))
-		fmt.Println(r.URL.Path)
 
 		switch r.URL.Path {
 		case "/posts":

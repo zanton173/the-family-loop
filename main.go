@@ -183,8 +183,8 @@ func main() {
 				dataStr = fmt.Sprintf("<div class='card my-4' style='border-radius: 14px;'><img src='%s' style='border-radius: 14px;' alt='%s' /><div class='card-body'><h5 class='card-title'>%s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' class='btn btn-primary'>Open a post</button></div></div>", resp.Request.URL, postrows.File_name, postrows.Title, postrows.Description, postrows.Id, postrows.Id)
 				imgclient.CloseIdleConnections()
 				defer resp.Body.Close()
-			} else if strings.Contains(postrows.File_type, "video") {
-				dataStr = fmt.Sprintf("<div class='card my-4' style='border-radius: 14px;'><video controls id='video'><source src='https://the-family-loop-customer-hash.s3.amazonaws.com/posts/videos/%s' type='%s'></video><div class='card-body'><h5 class='card-title'>%s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' class='btn btn-primary'>Open a post</button></div></div>", postrows.File_name, postrows.File_type, postrows.Title, postrows.Description, postrows.Id, postrows.Id)
+			} else if strings.Contains(postrows.File_type, "video") || strings.Contains(postrows.File_type, "octet-stream") {
+				dataStr = fmt.Sprintf("<div class='card my-4' style='border-radius: 14px;'><video controls id='video'><source src='https://the-family-loop-customer-hash.s3.amazonaws.com/posts/videos/%s'></video><div class='card-body'><h5 class='card-title'>%s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' class='btn btn-primary'>Open a post</button></div></div>", postrows.File_name, postrows.Title, postrows.Description, postrows.Id, postrows.Id)
 			}
 
 			postTmpl, tmerr = template.New("tem").Parse(dataStr)
@@ -401,6 +401,7 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 	}
 	getEventsHandler := func(w http.ResponseWriter, r *http.Request) {
+
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 
 		type EventData struct {
@@ -443,14 +444,15 @@ func main() {
 				w.WriteHeader(http.StatusUnauthorized)
 				return
 			}
-			w.WriteHeader(http.StatusBadRequest)
+			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
 
 		if c.Valid() != nil {
 			fmt.Println("Cook is no longer valid")
+			w.WriteHeader(http.StatusUnauthorized)
+			return
 		}
-
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 
 		bs, _ := io.ReadAll(r.Body)
@@ -472,11 +474,6 @@ func main() {
 			fmt.Println(inserterr)
 			w.WriteHeader(http.StatusBadRequest)
 		}
-
-		var author string
-		row := db.QueryRow(fmt.Sprintf("select username from tfldata.users where session_token='%s';", c.Value))
-		row.Scan(&author)
-
 		w.WriteHeader(http.StatusOK)
 	}
 	createGroupChatMessageHandler := func(w http.ResponseWriter, r *http.Request) {
@@ -685,23 +682,17 @@ func uploadPfpToS3(k string, s string, bucketexists bool, f multipart.File, fn s
 
 	defer ourfile.Close()
 
-	if strings.Contains(filetype, "image") {
+	_, err4 := client.PutObject(context.TODO(), &s3.PutObjectInput{
+		Bucket:       aws.String("the-family-loop" + "-customer-hash"),
+		Key:          aws.String("pfp/" + fn),
+		Body:         f,
+		ContentType:  &filetype,
+		CacheControl: aws.String("max-age=86400"),
+	})
 
-		_, err4 := client.PutObject(context.TODO(), &s3.PutObjectInput{
-			Bucket:       aws.String("the-family-loop" + "-customer-hash"),
-			Key:          aws.String("pfp/" + fn),
-			Body:         f,
-			ContentType:  &filetype,
-			CacheControl: aws.String("max-age=86400"),
-		})
-
-		if err4 != nil {
-			fmt.Println("error on upload")
-			fmt.Println(err)
-		}
-
-	} else {
-		fmt.Println("Unknown file type. How did this get here?")
+	if err4 != nil {
+		fmt.Println("error on upload")
+		fmt.Println(err)
 	}
 
 }
@@ -809,7 +800,7 @@ func createTFLBucketAndUpload(k string, s string, bucketexists bool, f multipart
 			fmt.Println("error on upload")
 			fmt.Println(err)
 		}
-	} else if strings.Contains(filetype, "video") {
+	} else {
 
 		_, err4 := client.PutObject(context.TODO(), &s3.PutObjectInput{
 			Bucket:      aws.String("the-family-loop" + "-customer-hash"),
@@ -823,8 +814,6 @@ func createTFLBucketAndUpload(k string, s string, bucketexists bool, f multipart
 			fmt.Println(err)
 		}
 
-	} else {
-		fmt.Println("Unknown file type. How did this get here?")
 	}
 	return filetype
 }

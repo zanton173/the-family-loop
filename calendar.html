@@ -121,10 +121,12 @@
 
     function setDatesThatHaveEvents() {
         listOfActive = document.querySelectorAll("[style='background: #fff']")
-        for (var i = 0; i < listOfActive.length; i++) {
+        for (var i = 0; i <= listOfActive.length; i++) {
             for (var j = 0; j < allEvents.length; j++) {
 
-                if (new Date(year.toString(), (month).toString(), (i).toString()).toDateString() === new Date(allEvents[j].Startdate[0], Number(allEvents[j].Startdate[1]) - 1, allEvents[j].Startdate[2]).toDateString()
+                if (new Date(year.toString(), (month).toString(), (i).toString()).toDateString()
+                    ===
+                    new Date(allEvents[j].Startdate[0], Number(allEvents[j].Startdate[1]) - 1, allEvents[j].Startdate[2]).toDateString()
                 ) {
 
                     document.getElementById(`${i}`).setAttribute("style", "background-color: #837dff; border-radius: 25%;")
@@ -206,12 +208,15 @@
             body: JSON.stringify(postBody)
         })
         if (resp.status == 200) {
-            alert("success")
+            /*
             divToAddSubmitTo.removeChild(btnToAddEvent)
             divToAddSubmitTo.removeChild(txtAreaToAddEvent)
             divToAddSubmitTo.removeChild(titleInputToAddEvent)
             var getActive = document.querySelectorAll('li.active')
-            getActive.forEach(ele => ele.setAttribute('class', ''))
+            getActive.forEach(ele => ele.setAttribute('class', ''))*/
+            window.location.reload()
+        } else if (resp.status == 401) {
+            alert("You may not be logged in. Try logging in and refreshing the page.")
         } else if (resp.status == 400) {
             alert("something went wrong, please try again")
         }

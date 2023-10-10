@@ -146,7 +146,7 @@ func main() {
 
 	getPostsHandler := func(w http.ResponseWriter, r *http.Request) {
 
-		output, err := db.Query("select id, title, description, file_name, file_type, author from tfldata.posts order by id DESC limit 10;")
+		output, err := db.Query("select id, title, description, file_name, file_type, author from tfldata.posts order by id DESC;")
 		var count string
 		db.QueryRow("select count(*) from tfldata.posts;").Scan(&count)
 

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
+        crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.5"
+        integrity="sha384-xcuj3WpfgjlKF+FXhSQFQ0ZNr39ln+hwjN3npfM9VBnUskLolQAcN80McRIVOPuO"
+        crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/htmx.org/dist/ext/json-enc.js"></script>
+
+    <title>The Family Loop - Bug Report</title>
+</head>
+
+<body>
+    <h3 style="text-align: center;">Report an Issue</h3>
+    <div id="anchor">
+
+    </div>
+
+    <form class="was-validated" hx-post="/create-an-issue" hx-swap="afterend" hx-target="this"
+        hx-on::after-request="clearFormGetMessages()" id="messageform">
+        <div class="d-lg-inline" style="margin-bottom: 15%; padding: 5%;">
+
+            <input class="my-0 border-1 text-center" style="border-radius: 3%; width: 100%;" name="bugissue"
+                id="bugissueinput" type="text" placeholder="What was the issue?" required maxlength="420" /><br /><br />
+            <input class="my-0 border-1 text-center" style="border-radius: 3%; width: 100%;" name="bugdesc"
+                id="bugdescinput" type="text" placeholder="What were you expecting?" required
+                maxlength="420" /><br /><br />
+            <button type="submit" style="width: 100%;" class="btn btn-outline-success"><i
+                    class="bi bi-send"></i></button>
+
+        </div>
+    </form>
+    <script>
+
+    </script>
+</body>
+
+
+</html>

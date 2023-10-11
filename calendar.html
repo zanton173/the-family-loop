@@ -182,6 +182,7 @@
     txtAreaToAddEvent.setAttribute("class", "pb-4")
     txtAreaToAddEvent.setAttribute("maxlength", "220")
 
+
     const titleInputToAddEvent = document.createElement('input')
     titleInputToAddEvent.setAttribute("type", "text")
     titleInputToAddEvent.setAttribute("name", "eventtitle")
@@ -190,12 +191,18 @@
     titleInputToAddEvent.setAttribute("class", "my-2")
     titleInputToAddEvent.setAttribute("id", "eventtitleid")
 
+
     btnToAddEvent.setAttribute("class", "btn btn-outline-secondary w-50")
     btnToAddEvent.setAttribute("style", "margin-left: 25%; margin-top: 2%;")
     btnToAddEvent.setAttribute("onclick", 'currentSelectedDate()')
 
     btnToAddEvent.addEventListener("click", async function (event) {
-
+        if (txtAreaToAddEvent.value === '' || titleInputToAddEvent.value === '') {
+            txtAreaToAddEvent.setAttribute("class", "pb-4 is-invalid")
+            titleInputToAddEvent.setAttribute("class", "my-2 is-invalid")
+            alert("Please fill out title & description")
+            return
+        }
         const postBody = {
             "start_date": arrayOfDates[0],
             "event_details": txtAreaToAddEvent.value,
@@ -216,12 +223,14 @@
             divToAddSubmitTo.removeChild(titleInputToAddEvent)
             var getActive = document.querySelectorAll('li.active')
             getActive.forEach(ele => ele.setAttribute('class', ''))*/
+
             window.location.reload()
         } else if (resp.status == 401) {
             alert("You may not be logged in. Try logging in and refreshing the page.")
         } else if (resp.status == 400) {
             alert("something went wrong, please try again")
         }
+
     })
     btnToAddEvent.innerHTML = "Create new event"
 

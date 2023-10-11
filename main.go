@@ -141,6 +141,10 @@ func main() {
 			tmpl := template.Must(template.ParseFiles("calendar.html"))
 			tmpl.Execute(w, nil)
 			tm.Execute(w, nil)
+		case "/bugreport":
+			tmpl := template.Must(template.ParseFiles("bugreport.html"))
+			tmpl.Execute(w, nil)
+			tm.Execute(w, nil)
 		default:
 			tmpl := template.Must(template.ParseFiles("index.html"))
 			tmpl.Execute(w, nil)
@@ -473,7 +477,10 @@ func main() {
 		if errmarsh != nil {
 			fmt.Println(errmarsh)
 		}
-
+		if postData.Eventdetails == "" || postData.Eventtitle == "" {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
 		_, inserterr := db.Exec(fmt.Sprintf("insert into tfldata.calendar(\"start_date\", \"event_owner\", \"event_details\", \"event_title\") values('%s', (select username from tfldata.users where session_token='%s'), '%s', '%s');", postData.Startdate, c.Value, postData.Eventdetails, postData.Eventtitle))
 		if inserterr != nil {
 			fmt.Println(inserterr)

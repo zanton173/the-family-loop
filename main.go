@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -19,6 +20,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
+	"github.com/google/go-github/github"
 	"github.com/google/uuid"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
@@ -40,6 +42,7 @@ type seshStruct struct {
 
 var awskey string
 var awskeysecret string
+var ghissuetoken string
 
 func main() {
 	err := godotenv.Load()
@@ -50,6 +53,7 @@ func main() {
 	dbpass := os.Getenv("DB_PASS")
 	awskey = os.Getenv("AWS_ACCESS_KEY")
 	awskeysecret = os.Getenv("AWS_ACCESS_SECRET")
+	ghissuetoken = os.Getenv("GH_BEARER")
 	// favicon
 	faviconHandler := func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "assets/favicon.ico")
@@ -569,9 +573,46 @@ func main() {
 
 	}
 	createIssueHandler := func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println(r.PostFormValue("bugissue"))
-		fmt.Println(r.PostFormValue("radio"))
-		fmt.Println(r.PostFormValue("bugerrmessages"))
+		bs, _ := io.ReadAll(r.Body)
+		type PostBody struct {
+			Issuetitle string   `json:"bugissue"`
+			Descdetail []string `json:"bugerrmessages"`
+		}
+
+		var postData PostBody
+
+		labels := []string{"bug"}
+
+		errmarsh := json.Unmarshal(bs, &postData)
+		if errmarsh != nil {
+			fmt.Println(errmarsh)
+		}
+		bodyText := fmt.Sprintf("%s on %s page", postData.Descdetail[1], postData.Descdetail[0])
+		issueJson := github.IssueRequest{
+			Title:  &postData.Issuetitle,
+			Body:   &bodyText,
+			Labels: &labels,
+		}
+
+		jsonMarshed, errMarsh := json.Marshal(issueJson)
+		if errMarsh != nil {
+			fmt.Println(errMarsh)
+		}
+
+		req, reqerr := http.NewRequest("POST", "https://api.github.com/repos/zanton173/the-family-loop/issues", bytes.NewReader(jsonMarshed))
+		if reqerr != nil {
+			fmt.Println(reqerr)
+		}
+		req.Header.Set("Authorization", "token "+ghissuetoken)
+		req.Header.Set("Content-Type", "application/json")
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			fmt.Println(err)
+		}
+		resp.Body.Close()
+		w.WriteHeader(http.StatusOK)
+
 	}
 	/*h3 := func(w http.ResponseWriter, r *http.Request) {
 		upload, filename, err := r.FormFile("file_name")

@@ -40,6 +40,10 @@
         function clearFormGetMessages() {
             document.getElementById('gchatinput').value = ""
         }
+        htmx.on('#messageform', 'htmx:afterRequest', function (event) {
+            event.detail.xhr.status === 401
+                && alert("Please login first.")
+        })
     </script>
 </body>
 

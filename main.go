@@ -534,7 +534,7 @@ func main() {
 			var message string
 			var author string
 			output.Scan(&message, &author)
-			dataStr := "<p class='py-1'>" + message + " - " + author + "</p>"
+			dataStr := "<div style='display: flex; justify-content: center;'><b>" + author + "&nbsp;&nbsp;&nbsp;&nbsp;" + "</b><p>" + message + "</p></div>"
 			chattmp, tmperr := template.New("gchat").Parse(dataStr)
 			if tmperr != nil {
 				fmt.Println(tmperr)

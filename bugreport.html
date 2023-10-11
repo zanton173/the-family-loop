@@ -24,20 +24,43 @@
 
     </div>
 
-    <form class="was-validated" hx-post="/create-an-issue" hx-swap="afterend" hx-target="this"
-        hx-on::after-request="clearFormGetMessages()" id="messageform">
-        <div class="d-lg-inline" style="margin-bottom: 15%; padding: 5%;">
 
-            <input class="my-0 border-1 text-center" style="border-radius: 3%; width: 100%;" name="bugissue"
-                id="bugissueinput" type="text" placeholder="What was the issue?" required maxlength="420" /><br /><br />
-            <input class="my-0 border-1 text-center" style="border-radius: 3%; width: 100%;" name="bugdesc"
-                id="bugdescinput" type="text" placeholder="What were you expecting?" required
-                maxlength="420" /><br /><br />
-            <button type="submit" style="width: 100%;" class="btn btn-outline-success"><i
+    <div style="display: grid; justify-content: center; margin: auto; padding: 5%;">
+        <form style="width: auto; margin: auto;" hx-swap="none" hx-post="/create-issue">
+            <input class="my-3 border-1 text-center" style="border-radius: 3%; width: 85%; margin: auto;"
+                name="bugissue" id="bugissueinput" type="text" placeholder="What was the issue?" required
+                maxlength="420" />
+            <h3>Which page were you seeing the issue?</h3>
+            <div style="display: block;">
+                <div class="form-check">
+
+                    <input class="form-check-input" type="radio" value="posts" name="radio" id="postsradio" checked>
+                    <label class="form-check-label" for="postsradiolabel">
+                        Posts
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" value="chat" name="radio" id="chatradio">
+                    <label class="form-check-label" for="chatradiolabel">
+                        Chat
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" value="calendar" name="radio" id="calendarradio">
+                    <label class="form-check-label" for="calendarradiolabel">
+                        Calendar
+                    </label>
+                </div>
+            </div>
+            <h3>Provide any error messages if you had any</h3>
+            <input class="my-3 border-1 text-center" style="border-radius: 3%; width: 85%; margin: auto;"
+                name="bugerrmessages" id="bugerrmessagesinput" type="text" placeholder="Any relevant error messages"
+                maxlength="420" />
+            <button type="submit" style="width: 75%; margin: auto;" class="btn btn-outline-success my-4"><i
                     class="bi bi-send"></i></button>
+        </form>
+    </div>
 
-        </div>
-    </form>
     <script>
 
     </script>

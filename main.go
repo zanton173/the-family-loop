@@ -568,6 +568,11 @@ func main() {
 		}
 
 	}
+	createIssueHandler := func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println(r.PostFormValue("bugissue"))
+		fmt.Println(r.PostFormValue("radio"))
+		fmt.Println(r.PostFormValue("bugerrmessages"))
+	}
 	/*h3 := func(w http.ResponseWriter, r *http.Request) {
 		upload, filename, err := r.FormFile("file_name")
 		if err != nil {
@@ -598,6 +603,8 @@ func main() {
 
 	http.HandleFunc("/group-chat-messages", getGroupChatMessagesHandler)
 	http.HandleFunc("/create-a-group-chat-message", createGroupChatMessageHandler)
+
+	http.HandleFunc("/create-issue", createIssueHandler)
 
 	http.HandleFunc("/signup", signUpHandler)
 	http.HandleFunc("/login", loginHandler)

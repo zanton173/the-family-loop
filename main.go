@@ -127,6 +127,22 @@ func main() {
 
 		//tmpl.Execute(w, nil)
 
+		_, err := r.Cookie("session_id")
+		if err != nil {
+			bs, _ := os.ReadFile("login.html")
+			logintmpl := template.New("LoginTmpl")
+			tm, _ := logintmpl.Parse(string(bs))
+			if err == http.ErrNoCookie {
+				http.RedirectHandler("/login", http.StatusPermanentRedirect)
+				tm.Execute(w, nil)
+				return
+			}
+			tm.Execute(w, nil)
+			http.RedirectHandler("/login", http.StatusPermanentRedirect)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
 		bs, _ := os.ReadFile("navigation.html")
 		navtmple := template.New("Navt")
 		tm, _ := navtmple.Parse(string(bs))
@@ -654,6 +670,7 @@ func main() {
 	http.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("css"))))
 	http.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir("js"))))
 	http.Handle("/assets/", http.StripPrefix("/assets/", http.FileServer(http.Dir("assets"))))
+
 	log.Fatal(http.ListenAndServe(":80", nil))
 	// For production
 	//log.Fatal(http.ListenAndServeTLS(":443", "./cert.key", "./cert.pem", nil))
@@ -698,7 +715,7 @@ func cookieExpirationCheck(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 }
 func setLoginCookie(w http.ResponseWriter, db *sql.DB, userStr string, r *http.Request) {
 	sessionToken := uuid.NewString()
-	expiresAt := time.Now().Add(840 * time.Minute)
+	expiresAt := time.Now().Add(4320 * time.Minute)
 	//fmt.Println(expiresAt.Local().Format(time.DateTime))
 
 	_, inserterr := db.Exec(fmt.Sprintf("insert into tfldata.sessions(\"username\", \"session_token\", \"expiry\", \"ip_addr\") values('%s', '%s', '%s', '%s') on conflict(ip_addr) do update set session_token='%s', expiry='%s';", userStr, sessionToken, expiresAt.Format(time.DateTime), strings.Split(r.RemoteAddr, ":")[0], sessionToken, expiresAt.Format(time.DateTime)))

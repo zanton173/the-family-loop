@@ -187,7 +187,9 @@ func main() {
 				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('%s');", err))
 				w.WriteHeader(http.StatusBadRequest)
 			}
-
+			comment := db.QueryRow(fmt.Sprintf("select count(*) from tfldata.comments where post_id='%d';", postrows.Id))
+			var commentCount string
+			comment.Scan(&commentCount)
 			// TODO cache images
 			if strings.Contains(postrows.File_type, "image") {
 				/*imgclient := http.Client{}
@@ -197,11 +199,11 @@ func main() {
 				imgreq.Header.Set("Cache-Control", "max-age=86400")
 				resp, _ := imgclient.Do(imgreq)*/
 
-				dataStr = fmt.Sprintf("<div class='card my-4' style='border-radius: 14px;'><img src='https://the-family-loop-customer-hash.s3.amazonaws.com/posts/images/%s' style='border-radius: 14px;' alt='%s' /><div class='card-body'><h5 class='card-title'>%s - %s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' class='btn btn-primary'>Comments</button></div></div>", postrows.File_name, postrows.File_name, postrows.Title, postrows.Author, postrows.Description, postrows.Id, postrows.Id)
+				dataStr = fmt.Sprintf("<div class='card my-4' style='border-radius: 14px;'><img src='https://the-family-loop-customer-hash.s3.amazonaws.com/posts/images/%s' style='border-radius: 14px;' alt='%s' /><div class='card-body'><h5 class='card-title'>%s - %s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' class='btn btn-primary'>Comments</button>(%s)</div></div>", postrows.File_name, postrows.File_name, postrows.Title, postrows.Author, postrows.Description, postrows.Id, postrows.Id, commentCount)
 				//imgclient.CloseIdleConnections()
 				//defer resp.Body.Close()
 			} else if strings.Contains(postrows.File_type, "video") || strings.Contains(postrows.File_type, "octet-stream") {
-				dataStr = fmt.Sprintf("<div class='card my-4' style='border-radius: 14px;'><video controls id='video'><source src='https://the-family-loop-customer-hash.s3.amazonaws.com/posts/videos/%s'></video><div class='card-body'><h5 class='card-title'>%s - %s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' class='btn btn-primary'>Comments</button></div></div>", postrows.File_name, postrows.Title, postrows.Author, postrows.Description, postrows.Id, postrows.Id)
+				dataStr = fmt.Sprintf("<div class='card my-4' style='border-radius: 14px;'><video controls id='video'><source src='https://the-family-loop-customer-hash.s3.amazonaws.com/posts/videos/%s'></video><div class='card-body'><h5 class='card-title'>%s - %s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' class='btn btn-primary'>Comments</button>(%s)</div></div>", postrows.File_name, postrows.Title, postrows.Author, postrows.Description, postrows.Id, postrows.Id, commentCount)
 			}
 
 			postTmpl, tmerr = template.New("tem").Parse(dataStr)

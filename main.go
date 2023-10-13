@@ -584,6 +584,10 @@ func main() {
 
 	}
 	createIssueHandler := func(w http.ResponseWriter, r *http.Request) {
+		c, _ := r.Cookie("session_id")
+		var username string
+		row := db.QueryRow(fmt.Sprintf("select username from tfldata.users where session_token='%s';", c.Value))
+		row.Scan(&username)
 		bs, _ := io.ReadAll(r.Body)
 		type PostBody struct {
 			Issuetitle string   `json:"bugissue"`
@@ -598,7 +602,7 @@ func main() {
 		if errmarsh != nil {
 			fmt.Println(errmarsh)
 		}
-		bodyText := fmt.Sprintf("%s on %s page", postData.Descdetail[1], postData.Descdetail[0])
+		bodyText := fmt.Sprintf("%s on %s page - %s", postData.Descdetail[1], postData.Descdetail[0], username)
 		issueJson := github.IssueRequest{
 			Title:  &postData.Issuetitle,
 			Body:   &bodyText,

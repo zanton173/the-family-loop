@@ -132,14 +132,9 @@ func main() {
 			bs, _ := os.ReadFile("login.html")
 			logintmpl := template.New("LoginTmpl")
 			tm, _ := logintmpl.Parse(string(bs))
-			if err == http.ErrNoCookie {
-				http.RedirectHandler("/login", http.StatusPermanentRedirect)
-				tm.Execute(w, nil)
-				return
-			}
+
 			tm.Execute(w, nil)
 			http.RedirectHandler("/login", http.StatusPermanentRedirect)
-			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 

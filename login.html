@@ -1,4 +1,5 @@
 <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="css/bootstrap.min.css" rel="stylesheet">
     <script src="js/bootstrap.bundle.min.js"></script>
     <!--<script src="https://unpkg.com/htmx.org@1.9.5"
@@ -8,18 +9,19 @@
     <script src="js/htmx.min.js"></script>
     <script src="js/htmx_json-enc.js"></script>
 </head>
-<div class="modal" tabindex="-1" id="login-modal">
+<div class="modal" data-bs-backdrop="static" tabindex="-1" id="login-modal">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
                 <h4 class="modal-title" style="text-align: center;">Login or Sign Up</h4>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+
             </div>
             <div class="modal-body">
-                <div style="display: flex; justify-content: space-around;">
-                    <button class="btn px-5 btn-outline-secondary" id="login-button"
-                        onclick='showLoginForm()'>Login</button>
-                    <button class="btn px-5 btn-outline-secondary" id="signup-button"
+                <div
+                    style="display: flex; justify-content: space-around; width: 90%; margin-left: 5%; margin-right: 5%;">
+                    <button class="btn px-2 btn-outline-secondary" id="login-button" onclick='showLoginForm()'>Login
+                    </button>
+                    <button class="btn px-2 btn-outline-secondary" id="signup-button"
                         onclick='showSignUpForm()'>Sign-up</button>
                 </div>
                 <div id="togglesignuplogin">
@@ -76,7 +78,9 @@
 
 </div>
 <script>
-    var loginModal = new bootstrap.Modal(document.getElementById('login-modal'), {});
+    var loginModal = new bootstrap.Modal(document.getElementById('login-modal'), {
+
+    });
 
     let signup = document.getElementById('sign-up-form')
     let loginele = document.getElementById('login-form')
@@ -99,26 +103,26 @@
 
     function showSignUpForm() {
 
-        if (parentauth.childElementCount >= 1) {
+        //if (parentauth.childElementCount >= 1) {
+        if (parentauth.contains(loginele)) {
             signupbtn.setAttribute('class', 'btn px-5 btn-secondary')
 
             loginbtn.setAttribute('class', 'btn px-5 btn-outline-secondary')
-            if (parentauth.contains(loginele)) {
-                parentauth.removeChild(loginele)
-            }
+            parentauth.removeChild(loginele)
             parentauth.appendChild(signup)
         }
+        //}
     }
     function showLoginForm() {
 
-        if (parentauth.childElementCount >= 1) {
+        //if (parentauth.childElementCount >= 1) {
+        if (parentauth.contains(signup)) {
             loginbtn.setAttribute('class', 'btn px-5 btn-secondary')
             signupbtn.setAttribute('class', 'btn px-5 btn-outline-secondary')
-            if (parentauth.contains(signup)) {
-                parentauth.removeChild(signup)
-            }
+            parentauth.removeChild(signup)
             parentauth.appendChild(loginele)
         }
+        //}
     }
     function checkForValidLoginSubmission() {
 

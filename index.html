@@ -7,6 +7,7 @@
     <!--<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">-->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
     <!--<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
         crossorigin="anonymous"></script>-->
@@ -62,8 +63,6 @@
                         type="text" placeholder="title your post" required maxlength="128" />
                     <input class="my-2 shadow-sm border-1 text-center" style="width: 100%" name="description"
                         id="postdesc" type="text" placeholder="describe the post" required maxlength="420" />
-                    <input class="my-2 shadow" type="file" required style="width: 100%" name="file_name"
-                        accept="image/*,video/*" placeholder="Upload photo or video" />
 
 
                 </form>
@@ -73,10 +72,12 @@
 
                     </progress>
                 </div>
-
+                <input id="postinput" class="my-2 shadow" oninput="checkValidityOfFiles()" multiple type="file" required
+                    style="width: 100%" name="file_name" accept="image/*,video/*"
+                    placeholder="Upload photos or video" />
 
                 <button type="button" class="btn btn-dark col" data-bs-dismiss="modal">close</button><br />
-                <button type="submit" id="formsubmit" class="btn btn-success col">post</button>
+                <!--<button type="submit" id="formsubmit" class="btn btn-success col">post</button>-->
             </div>
         </div>
 
@@ -89,6 +90,40 @@
         var openPostModalObj = new bootstrap.Modal(document.getElementById('openPostModal'), {});
 
         var openPostModalEle = document.getElementById('openPostModal')
+
+        var divForFormBtns = document.getElementById('post-div')
+
+        var createPostSubmitBtn = document.createElement('button')
+        createPostSubmitBtn.setAttribute("type", "submit")
+        createPostSubmitBtn.setAttribute("class", "btn btn-success col")
+        createPostSubmitBtn.setAttribute("id", "formsubmit")
+        createPostSubmitBtn.innerHTML = "post"
+        var errorMessage = document.createElement('p')
+        errorMessage.setAttribute("style", "color: red;")
+        errorMessage.innerHTML = "You cannot post a video and pictures together"
+        const createPostEle = document.getElementById('createpostele')
+        var fileList = []
+
+        function checkValidityOfFiles() {
+            fileList = []
+            for (var i = 0; i < document.getElementById('postinput').files.length; i++) {
+                fileList.push(document.getElementById('postinput').files[i].name.split(".", 2)[1])
+            }
+
+            if (fileList.includes("mov", "jpg", "png", "mp4", "jpeg", "mkv", "mpeg", "avi", "webm", "flv", "wmv", "3gpp", "tiff") && fileList.length > 1) {
+                if (divForFormBtns.contains(createPostSubmitBtn)) {
+                    divForFormBtns.removeChild(createPostSubmitBtn)
+                }
+
+                divForFormBtns.append(errorMessage)
+            } else {
+                // append form button again
+                if (divForFormBtns.contains(errorMessage)) {
+                    divForFormBtns.removeChild(errorMessage)
+                }
+                divForFormBtns.append(createPostSubmitBtn)
+            }
+        }
 
         htmx.on('#post-div', 'htmx:xhr:progress', function (evt) {
             document.getElementById('progressdiv').style.display = 'block'
@@ -128,70 +163,120 @@
 
         </div>
     </div>
-    <div style="text-align: center;" class="px-5" id="posts-div">
 
+    <div style="text-align: center;" class="px-5" id="posts-div">
         <div hx-get="/get-posts" hx-trigger="load" hx-target="#post-items" id="divofposts">
             <div id="post-items" name="item-count">
 
             </div>
         </div>
+    </div>
 
-        <script>
-            var selectedPostId = 0
-            let badge = document.createElement('i')
-            badge.setAttribute('class', 'bi bi-patch-exclamation px-1')
-            badge.setAttribute('id', 'notebadge')
-            function scrollToTop() {
-                window.scrollTo({ top: 0, behavior: "smooth" });
-                document.getElementById('notification').removeChild(badge)
+    <script>
+        var iter = 0
+        const listOfImageObj = []
+        htmx.on("#divofposts", "htmx:load", async function getImgs(event) {
+            var imgListUUId = event.detail.elt.children[0].getAttribute("id")
+            if (imgListUUId != 'video') {
+                listOfImageObj.push({ id: imgListUUId, imgs: await getListOfImgs(imgListUUId) })
+
             }
-            var dbCount = null
-            htmx.on('#post-items', 'htmx:afterSettle', function (event) {
-
-                htmx.on('#polling', 'htmx:afterRequest', function (data) {
-
-                    if (dbCount !== document.getElementById('post-items').childElementCount) {
-                        //console.log("need a refresh")
-                        if (document.getElementById('notification').childElementCount == 0) {
-
-                            document.getElementById('notification').append(badge)
-                        }
-
-                    } else {
-                        //console.log('no refresh')
-                        if (document.getElementById('notification').contains(badge)) {
-                            document.getElementById('notification').removeChild(badge)
-                        }
-
-                    }
-                })
-            })
-            htmx.on("#createpostele", "htmx:afterRequest", function (event) {
-                if (event.detail.xhr.status == 401) {
-                    alert("Please login before creating a post.")
-                } else if (event.detail.xhr.status == 400) {
-                    alert("Something was wrong with the file you provided.")
-                } else if (event.detail.xhr.status == 200) {
-                    window.location.reload()
+        })
+        async function getListOfImgs(imgListUUId) {
+            const resp = await fetch("/get-post-images?id=" + imgListUUId, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json"
                 }
             })
+            var output = resp.json()
+            return output
+        }
+        function nextLeftImage(id) {
 
-            function openPostFunction(id) {
-                selectedPostId = id
-                openPostModalObj.toggle()
+            var imgCaro = document.getElementById(id)
+            const imgArray = listOfImageObj.filter((data) => data.id === imgCaro.getAttribute('id'))[0].imgs
+
+            if (iter == 0) {
+                iter = imgArray.length - 1
+                imgCaro.setAttribute("src", "https://the-family-loop-customer-hash.s3.amazonaws.com/posts/images/" + imgArray[iter])
             }
-            openPostModalEle.addEventListener('shown.bs.modal', function modalOpen(event) {
-                //console.log('shown')
+            else {
+                imgCaro.setAttribute("src", "https://the-family-loop-customer-hash.s3.amazonaws.com/posts/images/" + imgArray[iter - 1])
+                iter--
+            }
+        }
+        function nextRightImage(id) {
+
+            var imgCaro = document.getElementById(id)
+            const imgArray = listOfImageObj.filter((data) => data.id === imgCaro.getAttribute('id'))[0].imgs
+
+            if (iter == imgArray.length - 1) {
+                iter = 0
+                imgCaro.setAttribute("src", "https://the-family-loop-customer-hash.s3.amazonaws.com/posts/images/" + imgArray[iter])
+            }
+            else {
+                imgCaro.setAttribute("src", "https://the-family-loop-customer-hash.s3.amazonaws.com/posts/images/" + imgArray[iter + 1])
+                iter++
+            }
 
 
+        }
+        var selectedPostId = 0
+        let badge = document.createElement('i')
+        badge.setAttribute('class', 'bi bi-patch-exclamation px-1')
+        badge.setAttribute('id', 'notebadge')
+        function scrollToTop() {
+            window.scrollTo({ top: 0, behavior: "smooth" });
+            document.getElementById('notification').removeChild(badge)
+        }
+        var dbCount = null
+        htmx.on('#post-items', 'htmx:afterSettle', function (event) {
+
+            htmx.on('#polling', 'htmx:afterRequest', function (data) {
+
+                if (dbCount !== document.getElementById('post-items').childElementCount) {
+                    //console.log("need a refresh")
+                    if (document.getElementById('notification').childElementCount == 0) {
+
+                        document.getElementById('notification').append(badge)
+                    }
+
+                } else {
+                    //console.log('no refresh')
+                    if (document.getElementById('notification').contains(badge)) {
+                        document.getElementById('notification').removeChild(badge)
+                    }
+
+                }
             })
+        })
+        htmx.on("#createpostele", "htmx:afterRequest", function (event) {
+            if (event.detail.xhr.status == 401) {
+                alert("Please login before creating a post.")
+            } else if (event.detail.xhr.status == 400) {
+                alert("Something was wrong with the file you provided.")
+            } else if (event.detail.xhr.status == 200) {
+                window.location.reload()
+            }
+        })
 
-            openPostModalEle.addEventListener('hidden.bs.modal', function modalClosed(event) {
-                //console.log('hidden')
+        function openPostFunction(id) {
+            selectedPostId = id
+            openPostModalObj.toggle()
+        }
+        openPostModalEle.addEventListener('shown.bs.modal', function modalOpen(event) {
+            //console.log('shown')
 
-            })
 
-        </script>
+        })
+
+        openPostModalEle.addEventListener('hidden.bs.modal', function modalClosed(event) {
+            //console.log('hidden')
+
+        })
+
+    </script>
     </div>
 
     </div>

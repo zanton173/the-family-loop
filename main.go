@@ -28,12 +28,16 @@ import (
 )
 
 type Postsrow struct {
-	Id          int64
-	Title       string
-	Description string
-	File_name   string
-	File_type   string
-	Author      string
+	Id           int64
+	Title        string
+	Description  string
+	Author       string
+	Postfileskey string
+}
+type Postjoin struct {
+	Filename     string
+	Filetype     string
+	Postfileskey string
 }
 type seshStruct struct {
 	Username string
@@ -143,13 +147,13 @@ func main() {
 		tm, _ := navtmple.Parse(string(bs))
 
 		switch r.URL.Path {
-		case "/posts":
-			tmpl := template.Must(template.ParseFiles("index.html"))
+		case "/groupchat":
+			tmpl := template.Must(template.ParseFiles("groupchat.html"))
 			tmpl.Execute(w, nil)
 			tm.Execute(w, nil)
 		case "/home":
 			go cookieExpirationCheck(w, r, db)
-			tmpl := template.Must(template.ParseFiles("groupchat.html"))
+			tmpl := template.Must(template.ParseFiles("index.html"))
 			tmpl.Execute(w, nil)
 			tm.Execute(w, nil)
 		case "/calendar":
@@ -169,7 +173,7 @@ func main() {
 
 	getPostsHandler := func(w http.ResponseWriter, r *http.Request) {
 
-		output, err := db.Query("select id, title, description, file_name, file_type, author from tfldata.posts order by id DESC;")
+		output, err := db.Query("select id, title, description, author, post_files_key from tfldata.posts order by id DESC;")
 		var count string
 		db.QueryRow("select count(*) from tfldata.posts;").Scan(&count)
 
@@ -183,27 +187,42 @@ func main() {
 		for output.Next() {
 			var postrows Postsrow
 
-			if err := output.Scan(&postrows.Id, &postrows.Title, &postrows.Description, &postrows.File_name, &postrows.File_type, &postrows.Author); err != nil {
+			//if err := output.Scan(&postrows.Id, &postrows.Title, &postrows.Description, &postrows.File_name, &postrows.File_type, &postrows.Author); err != nil {
+			if err := output.Scan(&postrows.Id, &postrows.Title, &postrows.Description, &postrows.Author, &postrows.Postfileskey); err != nil {
 				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('%s');", err))
-				w.WriteHeader(http.StatusBadRequest)
+
 			}
+
 			comment := db.QueryRow(fmt.Sprintf("select count(*) from tfldata.comments where post_id='%d';", postrows.Id))
 			var commentCount string
 			comment.Scan(&commentCount)
+			var countOfImg int32
+			rowCount := db.QueryRow(fmt.Sprintf("select count(*) from tfldata.postfiles where post_files_key='%s';", postrows.Postfileskey))
+			rowCount.Scan(&countOfImg)
+			var firstImg struct {
+				filename string
+				filetype string
+			}
+			firstRow := db.QueryRow(fmt.Sprintf("select file_name, file_type from tfldata.postfiles where post_files_key='%s' order by id desc limit 1;", postrows.Postfileskey))
+			firstRow.Scan(&firstImg.filename, &firstImg.filetype)
+
 			// TODO cache images
-			if strings.Contains(postrows.File_type, "image") {
+			if strings.Contains(firstImg.filetype, "image") {
 				/*imgclient := http.Client{}
 
 				imgreq, _ := http.NewRequest("GET", fmt.Sprintf("https://the-family-loop-customer-hash.s3.amazonaws.com/posts/images/%s", postrows.File_name), nil)
 
 				imgreq.Header.Set("Cache-Control", "max-age=86400")
 				resp, _ := imgclient.Do(imgreq)*/
-
-				dataStr = fmt.Sprintf("<div class='card my-4' style='border-radius: 14px;'><img src='https://the-family-loop-customer-hash.s3.amazonaws.com/posts/images/%s' style='border-radius: 14px;' alt='%s' /><div class='card-body'><h5 class='card-title'>%s - %s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' class='btn btn-primary'>Comments (%s)</button></div></div>", postrows.File_name, postrows.File_name, postrows.Title, postrows.Author, postrows.Description, postrows.Id, postrows.Id, commentCount)
+				if countOfImg > 1 {
+					dataStr = fmt.Sprintf("<div class='card my-4' style='border-radius: 14px;'><img id='%s' src='https://the-family-loop-customer-hash.s3.amazonaws.com/posts/images/%s' alt='%s' style='border-radius: 14px;' alt='default' /><div class='p-2' style='display: flex; justify-content: space-around;'><i onclick='nextLeftImage(`%s`)' class='bi bi-arrow-90deg-left'></i><i onclick='nextRightImage(`%s`)' class='bi bi-arrow-90deg-right'></i></div><div class='card-body'><h5 class='card-title'>%s - %s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' class='btn btn-primary'>Comments (%s)</button></div></div>", postrows.Postfileskey, firstImg.filename, firstImg.filename, postrows.Postfileskey, postrows.Postfileskey, postrows.Title, postrows.Author, postrows.Description, postrows.Id, postrows.Id, commentCount)
+				} else if countOfImg == 1 {
+					dataStr = fmt.Sprintf("<div class='card my-4' style='border-radius: 14px;'><img id='%s' src='https://the-family-loop-customer-hash.s3.amazonaws.com/posts/images/%s' alt='%s' style='border-radius: 14px;' alt='default' /><div class='p-2' style='display: flex; justify-content: space-around;'></div><div class='card-body'><h5 class='card-title'>%s - %s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' class='btn btn-primary'>Comments (%s)</button></div></div>", postrows.Postfileskey, firstImg.filename, firstImg.filename, postrows.Title, postrows.Author, postrows.Description, postrows.Id, postrows.Id, commentCount)
+				}
 				//imgclient.CloseIdleConnections()
 				//defer resp.Body.Close()
-			} else if strings.Contains(postrows.File_type, "video") || strings.Contains(postrows.File_type, "octet-stream") {
-				dataStr = fmt.Sprintf("<div class='card my-4' style='border-radius: 14px;'><video controls id='video'><source src='https://the-family-loop-customer-hash.s3.amazonaws.com/posts/videos/%s'></video><div class='card-body'><h5 class='card-title'>%s - %s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' class='btn btn-primary'>Comments (%s)</button></div></div>", postrows.File_name, postrows.Title, postrows.Author, postrows.Description, postrows.Id, postrows.Id, commentCount)
+			} else if strings.Contains(firstImg.filetype, "video") || strings.Contains(firstImg.filetype, "octet-stream") {
+				dataStr = fmt.Sprintf("<div class='card my-4' style='border-radius: 14px;'><video controls id='video'><source src='https://the-family-loop-customer-hash.s3.amazonaws.com/posts/videos/%s'></video><div class='p-2' style='display: flex; justify-content: space-around;'></div><div class='card-body'><h5 class='card-title'>%s - %s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' class='btn btn-primary'>Comments (%s)</button></div></div>", firstImg.filename, postrows.Title, postrows.Author, postrows.Description, postrows.Id, postrows.Id, commentCount)
 			}
 
 			postTmpl, tmerr = template.New("tem").Parse(dataStr)
@@ -214,6 +233,7 @@ func main() {
 		}
 
 	}
+
 	getPostCountHandler := func(w http.ResponseWriter, r *http.Request) {
 
 		var count string
@@ -243,23 +263,53 @@ func main() {
 		var username string
 		row := db.QueryRow(fmt.Sprintf("select username from tfldata.users where session_token='%s';", c.Value))
 		row.Scan(&username)
-		upload, filename, errfile := r.FormFile("file_name")
 
-		if errfile != nil {
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('%s');", err))
-			w.WriteHeader(http.StatusBadRequest)
-		}
+		postFilesKey := uuid.NewString()
 
-		// Returning a filetype from the createandupload function
-		// somehow gets the right filetype
-		filetype := createTFLBucketAndUpload(awskey, awskeysecret, false, upload, filename.Filename, r)
-
-		_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.posts(\"title\", \"description\", \"file_name\", \"file_type\", \"author\") values('%s', '%s', '%s', '%s', '%s');", r.PostFormValue("title"), r.PostFormValue("description"), filename.Filename, filetype, username))
+		_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.posts(\"title\", \"description\", \"author\", \"post_files_key\") values('%s', '%s', '%s', '%s');", r.PostFormValue("title"), r.PostFormValue("description"), username, postFilesKey))
 
 		if errinsert != nil {
 			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('%s');", errinsert))
 		}
-		defer upload.Close()
+
+		parseerr := r.ParseMultipartForm(10 << 20)
+		if parseerr != nil {
+			// handle error
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('memory error multi file upload %s');", err))
+		}
+		//upload, filename, errfile := r.FormFile("file_name")
+		for _, fh := range r.MultipartForm.File["file_name"] {
+
+			f, err := fh.Open()
+			if err != nil {
+				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('%s');", err))
+				w.WriteHeader(http.StatusBadRequest)
+			}
+			filetype := createTFLBucketAndUpload(awskey, awskeysecret, false, f, fh.Filename, r)
+
+			_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.postfiles(\"file_name\", \"file_type\", \"post_files_key\") values('%s', '%s', '%s');", fh.Filename, filetype, postFilesKey))
+
+			if errinsert != nil {
+				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('%s');", errinsert))
+			}
+
+			defer f.Close()
+		}
+		/*if errfile != nil {
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('%s');", err))
+			w.WriteHeader(http.StatusBadRequest)
+		}*/
+		/*
+			// Returning a filetype from the createandupload function
+			// somehow gets the right filetype
+			filetype := createTFLBucketAndUpload(awskey, awskeysecret, false, upload, filename.Filename, r)
+
+			_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.posts(\"title\", \"description\", \"file_name\", \"file_type\", \"author\") values('%s', '%s', '%s', '%s', '%s');", r.PostFormValue("title"), r.PostFormValue("description"), filename.Filename, filetype, username))
+
+			if errinsert != nil {
+				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('%s');", errinsert))
+			}*/
+		//defer upload.Close()
 
 	}
 	getSelectedPostsComments := func(w http.ResponseWriter, r *http.Request) {
@@ -556,6 +606,28 @@ func main() {
 
 		}
 	}
+	getPostImagesHandler := func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		var imgList []string
+		rows, err := db.Query(fmt.Sprintf("select file_name from tfldata.postfiles where post_files_key='%s';", r.URL.Query().Get("id")))
+		if err != nil {
+			fmt.Println(err)
+		}
+		defer rows.Close()
+		for rows.Next() {
+			var filename string
+			rows.Scan(&filename)
+			imgList = append(imgList, filename)
+
+		}
+		data, jsonerr := json.Marshal(&imgList)
+		if jsonerr != nil {
+			fmt.Println(jsonerr)
+		}
+		w.Write(data)
+
+	}
 	getSessionDataHandler := func(w http.ResponseWriter, r *http.Request) {
 
 		var ourSeshStruct seshStruct
@@ -649,6 +721,8 @@ func main() {
 	http.HandleFunc("/get-selected-post", getSelectedPostsComments)
 	http.HandleFunc("/get-events", getEventsHandler)
 	http.HandleFunc("/get-event-comments", getSelectedEventsComments)
+
+	http.HandleFunc("/get-post-images", getPostImagesHandler)
 
 	http.HandleFunc("/create-comment", createCommentHandler)
 	http.HandleFunc("/create-event-comment", createEventCommentHandler)

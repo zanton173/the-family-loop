@@ -98,7 +98,7 @@ func main() {
 			fmt.Println(err)
 		}
 		// TODO: Add pfp insert
-		_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.users(\"username\", \"password\", \"pfp_name\") values('%s', '%s', '%s');", r.PostFormValue("usernamesignup"), bytesOfPass, filename.Filename))
+		_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.users(\"username\", \"password\", \"pfp_name\") values('%s', '%s', '%s');", strings.ToLower(r.PostFormValue("usernamesignup")), bytesOfPass, filename.Filename))
 
 		if errinsert != nil {
 			fmt.Println(errinsert)
@@ -111,10 +111,10 @@ func main() {
 	loginHandler := func(w http.ResponseWriter, r *http.Request) {
 		userStr := r.PostFormValue("usernamelogin")
 		var password string
-		passScan := db.QueryRow(fmt.Sprintf("select password from tfldata.users where username='%s';", userStr))
+		passScan := db.QueryRow(fmt.Sprintf("select password from tfldata.users where username='%s';", strings.ToLower(userStr)))
 		scnerr := passScan.Scan(&password)
 		if scnerr != nil {
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('this was the scan error %s with dbpassword %s and form user is %s');", scnerr, password, userStr))
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('this was the scan error %s with dbpassword %s and form user is %s');", scnerr, password, strings.ToLower(userStr)))
 			fmt.Print(scnerr)
 		}
 		err := bcrypt.CompareHashAndPassword([]byte(password), []byte(r.PostFormValue("passwordlogin")))

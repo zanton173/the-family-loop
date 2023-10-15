@@ -152,7 +152,7 @@ func main() {
 			tmpl.Execute(w, nil)
 			tm.Execute(w, nil)
 		case "/home":
-			go cookieExpirationCheck(w, r, db)
+			//go cookieExpirationCheck(w, r, db)
 			tmpl := template.Must(template.ParseFiles("index.html"))
 			tmpl.Execute(w, nil)
 			tm.Execute(w, nil)
@@ -649,10 +649,10 @@ func main() {
 
 		c, _ := r.Cookie("session_id")
 
-		_, seshClearErr := db.Exec(fmt.Sprintf("delete from tfldata.sessions where session_token='%s';", c.Value))
+		/*_, seshClearErr := db.Exec(fmt.Sprintf("delete from tfldata.sessions where session_token='%s';", c.Value))
 		if seshClearErr != nil {
 			fmt.Println(seshClearErr)
-		}
+		}*/
 		_, usersEditErr := db.Exec(fmt.Sprintf("update tfldata.users set session_token=null where session_token='%s';", c.Value))
 		if usersEditErr != nil {
 			fmt.Println(usersEditErr)
@@ -753,53 +753,55 @@ func main() {
 	//log.Fatal(http.ListenAndServeTLS(":443", "./cert.key", "./cert.pem", nil))
 }
 
-func cookieExpirationCheck(w http.ResponseWriter, r *http.Request, db *sql.DB) {
-	c, err := r.Cookie("session_id")
+/*
+	func cookieExpirationCheck(w http.ResponseWriter, r *http.Request, db *sql.DB) {
+		c, err := r.Cookie("session_id")
 
-	if err != nil {
-		if err == http.ErrNoCookie {
-			w.WriteHeader(http.StatusUnauthorized)
+		if err != nil {
+			if err == http.ErrNoCookie {
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
 
-	if c.Valid() != nil {
-		fmt.Println("Cook is no longer valid")
-	}
-
-	var sessionUser string
-	var expiryTemp time.Time
-	//var ipAddr string
-	row := db.QueryRow(fmt.Sprintf("select username, expiry from tfldata.sessions where session_token='%s';", c.Value))
-	row.Scan(&sessionUser, &expiryTemp)
-
-	if time.Until(expiryTemp) < (time.Minute * 5) {
-		setLoginCookie(w, db, sessionUser, r)
-	} else if time.Until(expiryTemp) <= (time.Minute * 1) {
-
-		_, seshClearErr := db.Exec(fmt.Sprintf("delete from tfldata.sessions where session_token='%s';", c.Value))
-		if seshClearErr != nil {
-			fmt.Println(seshClearErr)
+		if c.Valid() != nil {
+			fmt.Println("Cook is no longer valid")
 		}
-		_, usersEditErr := db.Exec(fmt.Sprintf("update tfldata.users set session_token=null where session_token='%s';", c.Value))
-		if usersEditErr != nil {
-			fmt.Println(usersEditErr)
+
+		var sessionUser string
+		var expiryTemp time.Time
+		//var ipAddr string
+		row := db.QueryRow(fmt.Sprintf("select username, expiry from tfldata.sessions where session_token='%s';", c.Value))
+		row.Scan(&sessionUser, &expiryTemp)
+
+		if time.Until(expiryTemp) < (time.Minute * 5) {
+			setLoginCookie(w, db, sessionUser, r)
+		} else if time.Until(expiryTemp) <= (time.Minute * 1) {
+
+			_, seshClearErr := db.Exec(fmt.Sprintf("delete from tfldata.sessions where session_token='%s';", c.Value))
+			if seshClearErr != nil {
+				fmt.Println(seshClearErr)
+			}
+			_, usersEditErr := db.Exec(fmt.Sprintf("update tfldata.users set session_token=null where session_token='%s';", c.Value))
+			if usersEditErr != nil {
+				fmt.Println(usersEditErr)
+			}
 		}
-	}
 
 }
+*/
 func setLoginCookie(w http.ResponseWriter, db *sql.DB, userStr string, r *http.Request) {
 	sessionToken := uuid.NewString()
 	expiresAt := time.Now().Add(4320 * time.Minute)
 	//fmt.Println(expiresAt.Local().Format(time.DateTime))
-
-	_, inserterr := db.Exec(fmt.Sprintf("insert into tfldata.sessions(\"username\", \"session_token\", \"expiry\", \"ip_addr\") values('%s', '%s', '%s', '%s') on conflict(ip_addr) do update set session_token='%s', expiry='%s';", userStr, sessionToken, expiresAt.Format(time.DateTime), strings.Split(r.RemoteAddr, ":")[0], sessionToken, expiresAt.Format(time.DateTime)))
+	//fmt.Println(userStr)
+	/*_, inserterr := db.Exec(fmt.Sprintf("insert into tfldata.sessions(\"username\", \"session_token\", \"expiry\", \"ip_addr\") values('%s', '%s', '%s', '%s') on conflict(ip_addr) do update set session_token='%s', expiry='%s';", userStr, sessionToken, expiresAt.Format(time.DateTime), strings.Split(r.RemoteAddr, ":")[0], sessionToken, expiresAt.Format(time.DateTime)))
 	if inserterr != nil {
 		db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('%s');", inserterr))
 		fmt.Println(inserterr)
-	}
+	}*/
 	_, updateerr := db.Exec(fmt.Sprintf("update tfldata.users set session_token='%s' where username='%s';", sessionToken, userStr))
 	if updateerr != nil {
 		db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('%s');", updateerr))

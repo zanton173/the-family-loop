@@ -114,7 +114,7 @@ func main() {
 		passScan := db.QueryRow(fmt.Sprintf("select password from tfldata.users where username='%s';", userStr))
 		scnerr := passScan.Scan(&password)
 		if scnerr != nil {
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('this was the scan error %s with dbpassword %s and form password %s');", scnerr, password, r.PostFormValue("passwordlogin")))
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('this was the scan error %s with dbpassword %s and form user is %s');", scnerr, password, userStr))
 			fmt.Print(scnerr)
 		}
 		err := bcrypt.CompareHashAndPassword([]byte(password), []byte(r.PostFormValue("passwordlogin")))

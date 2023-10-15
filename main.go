@@ -112,7 +112,11 @@ func main() {
 		userStr := r.PostFormValue("usernamelogin")
 		var password string
 		passScan := db.QueryRow(fmt.Sprintf("select password from tfldata.users where username='%s';", userStr))
-		passScan.Scan(&password)
+		scnerr := passScan.Scan(&password)
+		if scnerr != nil {
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('this was the scan error %s with dbpassword %s and form password %s');", scnerr, password, r.PostFormValue("passwordlogin")))
+			fmt.Print(scnerr)
+		}
 		err := bcrypt.CompareHashAndPassword([]byte(password), []byte(r.PostFormValue("passwordlogin")))
 
 		if err != nil {
@@ -131,43 +135,44 @@ func main() {
 
 		//tmpl.Execute(w, nil)
 
-		_, err := r.Cookie("session_id")
+		c, err := r.Cookie("session_id")
 		if err != nil {
 			bs, _ := os.ReadFile("login.html")
 			logintmpl := template.New("LoginTmpl")
 			tm, _ := logintmpl.Parse(string(bs))
 
 			tm.Execute(w, nil)
-			http.RedirectHandler("/login", http.StatusPermanentRedirect)
+			//http.RedirectHandler("/login", http.StatusPermanentRedirect)
 			return
 		}
+		if c.Valid() == nil {
+			bs, _ := os.ReadFile("navigation.html")
+			navtmple := template.New("Navt")
+			tm, _ := navtmple.Parse(string(bs))
 
-		bs, _ := os.ReadFile("navigation.html")
-		navtmple := template.New("Navt")
-		tm, _ := navtmple.Parse(string(bs))
-
-		switch r.URL.Path {
-		case "/groupchat":
-			tmpl := template.Must(template.ParseFiles("groupchat.html"))
-			tmpl.Execute(w, nil)
-			tm.Execute(w, nil)
-		case "/home":
-			//go cookieExpirationCheck(w, r, db)
-			tmpl := template.Must(template.ParseFiles("index.html"))
-			tmpl.Execute(w, nil)
-			tm.Execute(w, nil)
-		case "/calendar":
-			tmpl := template.Must(template.ParseFiles("calendar.html"))
-			tmpl.Execute(w, nil)
-			tm.Execute(w, nil)
-		case "/bugreport":
-			tmpl := template.Must(template.ParseFiles("bugreport.html"))
-			tmpl.Execute(w, nil)
-			tm.Execute(w, nil)
-		default:
-			tmpl := template.Must(template.ParseFiles("index.html"))
-			tmpl.Execute(w, nil)
-			tm.Execute(w, nil)
+			switch r.URL.Path {
+			case "/groupchat":
+				tmpl := template.Must(template.ParseFiles("groupchat.html"))
+				tmpl.Execute(w, nil)
+				tm.Execute(w, nil)
+			case "/home":
+				//go cookieExpirationCheck(w, r, db)
+				tmpl := template.Must(template.ParseFiles("index.html"))
+				tmpl.Execute(w, nil)
+				tm.Execute(w, nil)
+			case "/calendar":
+				tmpl := template.Must(template.ParseFiles("calendar.html"))
+				tmpl.Execute(w, nil)
+				tm.Execute(w, nil)
+			case "/bugreport":
+				tmpl := template.Must(template.ParseFiles("bugreport.html"))
+				tmpl.Execute(w, nil)
+				tm.Execute(w, nil)
+			default:
+				tmpl := template.Must(template.ParseFiles("index.html"))
+				tmpl.Execute(w, nil)
+				tm.Execute(w, nil)
+			}
 		}
 	}
 
@@ -396,7 +401,7 @@ func main() {
 			fmt.Println(err)
 		}
 		commentTmpl.Execute(w, nil)
-		w.WriteHeader(http.StatusOK)
+
 	}
 	getSelectedEventsComments := func(w http.ResponseWriter, r *http.Request) {
 
@@ -476,7 +481,7 @@ func main() {
 			fmt.Println(err)
 		}
 		commentTmpl.Execute(w, nil)
-		w.WriteHeader(http.StatusOK)
+
 	}
 	getEventsHandler := func(w http.ResponseWriter, r *http.Request) {
 
@@ -555,7 +560,7 @@ func main() {
 			fmt.Println(inserterr)
 			w.WriteHeader(http.StatusBadRequest)
 		}
-		w.WriteHeader(http.StatusOK)
+
 	}
 	createGroupChatMessageHandler := func(w http.ResponseWriter, r *http.Request) {
 		c, err := r.Cookie("session_id")
@@ -585,7 +590,6 @@ func main() {
 			w.WriteHeader(http.StatusBadRequest)
 		}
 		w.Header().Set("HX-Trigger", "success-send")
-		w.WriteHeader(http.StatusOK)
 
 	}
 	getGroupChatMessagesHandler := func(w http.ResponseWriter, r *http.Request) {
@@ -702,7 +706,6 @@ func main() {
 			fmt.Println(err)
 		}
 		resp.Body.Close()
-		w.WriteHeader(http.StatusOK)
 
 	}
 	/*h3 := func(w http.ResponseWriter, r *http.Request) {

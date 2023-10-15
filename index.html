@@ -56,14 +56,16 @@
         <div class="modal-dialog">
             <div id="post-div" class="modal-content p-2">
 
-                <form id="createpostele" class="d-inline-grid" hx-post="/create-post"
-                    hx-trigger="click from:#formsubmit" hx-encoding="multipart/form-data" hx-swap="none">
+                <form id="createpostele" class="d-inline-grid" hx-post="/create-post" hx-encoding="multipart/form-data"
+                    hx-swap="none">
 
                     <input class="my-2 shadow-sm border-1 text-center" style="width: 100%" name="title" id="posttitle"
                         type="text" placeholder="title your post" required maxlength="128" />
                     <input class="my-2 shadow-sm border-1 text-center" style="width: 100%" name="description"
                         id="postdesc" type="text" placeholder="describe the post" required maxlength="420" />
-
+                    <input id="postinput" class="my-2 shadow" oninput="checkValidityOfFiles()" multiple type="file"
+                        required style="width: 100%" name="file_name" accept="image/*,video/*"
+                        placeholder="Upload photos or video" />
 
                 </form>
                 <div id="progressdiv" style="display: none; text-align: center;">
@@ -72,9 +74,7 @@
 
                     </progress>
                 </div>
-                <input id="postinput" class="my-2 shadow" oninput="checkValidityOfFiles()" multiple type="file" required
-                    style="width: 100%" name="file_name" accept="image/*,video/*"
-                    placeholder="Upload photos or video" />
+
 
                 <button type="button" class="btn btn-dark col" data-bs-dismiss="modal">close</button><br />
                 <!--<button type="submit" id="formsubmit" class="btn btn-success col">post</button>-->
@@ -95,7 +95,7 @@
 
         var createPostSubmitBtn = document.createElement('button')
         createPostSubmitBtn.setAttribute("type", "submit")
-        createPostSubmitBtn.setAttribute("class", "btn btn-success col")
+        createPostSubmitBtn.setAttribute("class", "btn btn-success col my-2")
         createPostSubmitBtn.setAttribute("id", "formsubmit")
         createPostSubmitBtn.innerHTML = "post"
         var errorMessage = document.createElement('p')
@@ -111,17 +111,17 @@
             }
 
             if (fileList.includes("mov", "jpg", "png", "mp4", "jpeg", "mkv", "mpeg", "avi", "webm", "flv", "wmv", "3gpp", "tiff") && fileList.length > 1) {
-                if (divForFormBtns.contains(createPostSubmitBtn)) {
-                    divForFormBtns.removeChild(createPostSubmitBtn)
+                if (createPostEle.contains(createPostSubmitBtn)) {
+                    createPostEle.removeChild(createPostSubmitBtn)
                 }
 
-                divForFormBtns.append(errorMessage)
+                createPostEle.append(errorMessage)
             } else {
                 // append form button again
-                if (divForFormBtns.contains(errorMessage)) {
-                    divForFormBtns.removeChild(errorMessage)
+                if (createPostEle.contains(errorMessage)) {
+                    createPostEle.removeChild(errorMessage)
                 }
-                divForFormBtns.append(createPostSubmitBtn)
+                createPostEle.append(createPostSubmitBtn)
             }
         }
 
@@ -257,6 +257,7 @@
             } else if (event.detail.xhr.status == 400) {
                 alert("Something was wrong with the file you provided.")
             } else if (event.detail.xhr.status == 200) {
+                alert('success')
                 window.location.reload()
             }
         })

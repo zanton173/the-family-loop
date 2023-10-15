@@ -270,6 +270,8 @@ func main() {
 
 		if errinsert != nil {
 			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('%s');", errinsert))
+			w.WriteHeader(http.StatusBadRequest)
+			return
 		}
 
 		parseerr := r.ParseMultipartForm(10 << 20)

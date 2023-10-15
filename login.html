@@ -25,8 +25,8 @@
                         onclick='showSignUpForm()'>Sign-up</button>
                 </div>
                 <div id="togglesignuplogin">
-                    <form class="form" id="login-form" name="loginform" hx-post="/login" hx-trigger="submit"
-                        hx-on="loginevent: loginFunction()" hx-swap="none">
+                    <form method="post" class="form" id="login-form" name="loginform" hx-post="/login"
+                        hx-trigger="submit" hx-on="loginevent: loginFunction()" hx-swap="none">
                         <div class="p-4">
                             <h5>Login</h5>
                             <label>Username:</label>
@@ -41,8 +41,8 @@
                                 oninput="checkForValidLoginSubmission()" required id="passwordlogininput" />
                         </div>
                     </form>
-                    <form class="form" id="sign-up-form" name="signupform" hx-post="/signup" hx-trigger="submit"
-                        hx-encoding="multipart/form-data" hx-swap="none">
+                    <form method="post" class="form" id="sign-up-form" name="signupform" hx-post="/signup"
+                        hx-trigger="submit" hx-encoding="multipart/form-data" hx-swap="none">
                         <div class="p-4">
                             <h5>Sign Up</h5>
                             <label>Username:</label>

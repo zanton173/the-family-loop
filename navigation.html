@@ -74,7 +74,7 @@
                                 id="confirmpasswordsignupinput" name="confirmpasswordsignup" />
                         </div>
                         <div class="p-4">
-                            <!-- TODO: Add required PFP -->
+
                             <label>Pick a profile picture</label>
                             <input id="pfpimage" type="file" accept="image/*" name="pfpformfile" required />
 
@@ -92,6 +92,7 @@
 
     let p = document.getElementById('anchor')
     let c = document.getElementById('ournav')
+    p.append(c)
 
     let signup = document.getElementById('sign-up-form')
     let loginele = document.getElementById('login-form')
@@ -141,6 +142,12 @@
 
     document.body.addEventListener("htmx:load", function settleEvent(event) {
 
+        if (document.cookie < ' ') {
+            loginModal.toggle()
+            showLoginForm()
+            document.getElementById('login-modal').setAttribute('data-bs-backdrop', 'static')
+            return
+        }
         let name = "session_id=";
         let decodedCookie = decodeURIComponent(document.cookie);
         let ca = decodedCookie.split(';');
@@ -166,8 +173,8 @@
             }
         }
 
-
     })
+
     async function fetchSeshDetails(token) {
         //console.log(token)
         const resp = await fetch("/get-username-from-session?id=" + token, {

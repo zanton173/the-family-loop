@@ -93,7 +93,6 @@ func main() {
 		bs := []byte(r.PostFormValue("passwordsignup"))
 
 		bytesOfPass, err := bcrypt.GenerateFromPassword(bs, len(bs))
-
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -109,6 +108,7 @@ func main() {
 	}
 
 	loginHandler := func(w http.ResponseWriter, r *http.Request) {
+
 		userStr := r.PostFormValue("usernamelogin")
 		var password string
 		passScan := db.QueryRow(fmt.Sprintf("select password from tfldata.users where username='%s';", strings.ToLower(userStr)))
@@ -134,46 +134,34 @@ func main() {
 		//tmpl := template.Must(template.ParseFiles("index.html"))
 
 		//tmpl.Execute(w, nil)
+		bs, _ := os.ReadFile("navigation.html")
+		navtmple := template.New("Navt")
+		tm, _ := navtmple.Parse(string(bs))
 
-		c, err := r.Cookie("session_id")
-		if err != nil {
-			bs, _ := os.ReadFile("login.html")
-			logintmpl := template.New("LoginTmpl")
-			tm, _ := logintmpl.Parse(string(bs))
-
+		switch r.URL.Path {
+		case "/groupchat":
+			tmpl := template.Must(template.ParseFiles("groupchat.html"))
+			tmpl.Execute(w, nil)
 			tm.Execute(w, nil)
-			//http.RedirectHandler("/login", http.StatusPermanentRedirect)
-			return
+		case "/home":
+			//go cookieExpirationCheck(w, r, db)
+			tmpl := template.Must(template.ParseFiles("index.html"))
+			tmpl.Execute(w, nil)
+			tm.Execute(w, nil)
+		case "/calendar":
+			tmpl := template.Must(template.ParseFiles("calendar.html"))
+			tmpl.Execute(w, nil)
+			tm.Execute(w, nil)
+		case "/bugreport":
+			tmpl := template.Must(template.ParseFiles("bugreport.html"))
+			tmpl.Execute(w, nil)
+			tm.Execute(w, nil)
+		default:
+			tmpl := template.Must(template.ParseFiles("index.html"))
+			tmpl.Execute(w, nil)
+			tm.Execute(w, nil)
 		}
-		if c.Valid() == nil {
-			bs, _ := os.ReadFile("navigation.html")
-			navtmple := template.New("Navt")
-			tm, _ := navtmple.Parse(string(bs))
 
-			switch r.URL.Path {
-			case "/groupchat":
-				tmpl := template.Must(template.ParseFiles("groupchat.html"))
-				tmpl.Execute(w, nil)
-				tm.Execute(w, nil)
-			case "/home":
-				//go cookieExpirationCheck(w, r, db)
-				tmpl := template.Must(template.ParseFiles("index.html"))
-				tmpl.Execute(w, nil)
-				tm.Execute(w, nil)
-			case "/calendar":
-				tmpl := template.Must(template.ParseFiles("calendar.html"))
-				tmpl.Execute(w, nil)
-				tm.Execute(w, nil)
-			case "/bugreport":
-				tmpl := template.Must(template.ParseFiles("bugreport.html"))
-				tmpl.Execute(w, nil)
-				tm.Execute(w, nil)
-			default:
-				tmpl := template.Must(template.ParseFiles("index.html"))
-				tmpl.Execute(w, nil)
-				tm.Execute(w, nil)
-			}
-		}
 	}
 
 	getPostsHandler := func(w http.ResponseWriter, r *http.Request) {

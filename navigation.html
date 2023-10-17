@@ -21,12 +21,13 @@
             hx-target="#post-items" style="color: blue;" id="notification"></p>
     </div>
 </nav>
-<div class="modal" tabindex="-1" id="login-modal">
+<div class="modal" data-bs-backdrop="static" tabindex="-1" id="login-modal">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header">
+            <div class="modal-header" id="login-modal-header">
                 <h4 class="modal-title" style="text-align: center;">Login or Sign Up</h4>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button id="modalclose" type="button" class="btn-close" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <div style="display: flex; justify-content: space-around;">
@@ -138,16 +139,9 @@
 
     navItemWelcomeAvatar.setAttribute("alt", "Your family loop pfp")
     //navItemWelcome.innerHTML = "Welcome, "
-    p.append(c)
 
     document.body.addEventListener("htmx:load", function settleEvent(event) {
 
-        if (document.cookie < ' ') {
-            loginModal.toggle()
-            showLoginForm()
-            document.getElementById('login-modal').setAttribute('data-bs-backdrop', 'static')
-            return
-        }
         let name = "session_id=";
         let decodedCookie = decodeURIComponent(document.cookie);
         let ca = decodedCookie.split(';');
@@ -159,6 +153,7 @@
             if (c.indexOf(name) == 0) {
 
                 htmx.off("htmx:load", settleEvent)
+                document.getElementById('login-modal').removeAttribute('data-bs-backdrop')
                 //console.log(c.substring(name.length, c.length))
                 let session_token = c.substring(name.length, c.length)
                 fetchSeshDetails(session_token)
@@ -170,6 +165,13 @@
                 navbarItems.append(divToStickNav)
 
                 break
+            } else {
+                loginModal.toggle()
+                showLoginForm()
+                //document.getElementById('login-modal').setAttribute('data-bs-backdrop', 'static')
+                //document.getElementById('login-modal').setAttribute('data-bs-keyboard', 'false')
+                document.getElementById('login-modal-header').contains(document.getElementById('modalclose')) &&
+                    document.getElementById('login-modal-header').removeChild(document.getElementById('modalclose'))
             }
         }
 

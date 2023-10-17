@@ -165,7 +165,7 @@
                 navbarItems.append(divToStickNav)
 
                 break
-            } else {
+            } else if (!document.cookie.includes("session_id")) {
                 loginModal.toggle()
                 showLoginForm()
                 //document.getElementById('login-modal').setAttribute('data-bs-backdrop', 'static')

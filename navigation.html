@@ -22,7 +22,7 @@
             hx-target="#post-items" style="color: blue;" id="notification"></p>
     </div>
 </nav>
-<button onclick="testNotify()">test me please</button>
+<!--<button onclick="testNotify()">test me please</button>-->
 <div class="modal" data-bs-backdrop="static" tabindex="-1" id="login-modal">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -145,7 +145,7 @@
         credentials: "same-origin"
     })*/
 
-    function testNotify() {
+    /*function testNotify() {
         console.log("tesklfds")
         Notification.requestPermission().then((permission) => {
             if (permission === 'granted') {
@@ -164,7 +164,7 @@
             }
         });
 
-    }
+    }*/
 
     document.body.addEventListener("htmx:load", function settleEvent(event) {
 

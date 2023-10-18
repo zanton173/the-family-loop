@@ -145,26 +145,19 @@
         credentials: "same-origin"
     })*/
 
-    /*function testNotify() {
-        console.log("tesklfds")
-        Notification.requestPermission().then((permission) => {
-            if (permission === 'granted') {
-                // get service worker
-                navigator.serviceWorker.ready.then((sw) => {
-                    // subscribe
-                    sw.pushManager.subscribe({
-                        userVisibleOnly: true,
+    function testNotify() {
 
-                    }).then((subscription) => {
-                        console.log(JSON.stringify(subscription));
-                    });
-                });
-            } else {
-                console.log("not granted :()")
-            }
+        // get service worker
+        this.serviceWorker.ready.then((sw) => {
+            // subscribe
+            sw.pushManager.subscribe({
+                userVisibleOnly: true,
+
+            }).then((subscription) => {
+                console.log(JSON.stringify(subscription));
+            });
         });
-
-    }*/
+    }
 
     document.body.addEventListener("htmx:load", function settleEvent(event) {
 
@@ -180,10 +173,10 @@
             if (c.indexOf(name) == 0) {
 
                 htmx.off("htmx:load", settleEvent)
-                navigator.serviceWorker.register("js/worker.js")
+
                 notify = Notification.requestPermission().then((res) => {
                     if (res == 'granted')
-                        return true
+                        navigator.serviceWorker.register("js/worker.js")
                     else
                         return false
                 });

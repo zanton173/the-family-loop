@@ -741,7 +741,7 @@ func main() {
 
 	log.Fatal(http.ListenAndServe(":80", nil))
 	// For production
-	//log.Fatal(http.ListenAndServeTLS(":443", "./cert.key", "./cert.pem", nil))
+	//log.Fatal(http.ListenAndServeTLS(":443", "../tflserver.crt", "../tflserver.key", nil))
 }
 
 /*

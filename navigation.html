@@ -153,6 +153,7 @@
             if (c.indexOf(name) == 0) {
 
                 htmx.off("htmx:load", settleEvent)
+
                 document.getElementById('login-modal').removeAttribute('data-bs-backdrop')
                 //console.log(c.substring(name.length, c.length))
                 let session_token = c.substring(name.length, c.length)
@@ -166,13 +167,15 @@
 
                 break
             } else if (!document.cookie.includes("session_id")) {
+                htmx.off("htmx:load", settleEvent)
+
                 loginModal.toggle()
                 showLoginForm()
                 //document.getElementById('login-modal').setAttribute('data-bs-backdrop', 'static')
                 //document.getElementById('login-modal').setAttribute('data-bs-keyboard', 'false')
                 document.getElementById('login-modal-header').contains(document.getElementById('modalclose')) &&
                     document.getElementById('login-modal-header').removeChild(document.getElementById('modalclose'))
-                return
+                break
             }
         }
 
@@ -180,6 +183,7 @@
 
     async function fetchSeshDetails(token) {
         //console.log(token)
+        Notification.requestPermission();
         const resp = await fetch("/get-username-from-session?id=" + token, {
             method: "GET",
             headers: {

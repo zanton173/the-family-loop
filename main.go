@@ -624,10 +624,17 @@ func main() {
 	}
 	getSessionDataHandler := func(w http.ResponseWriter, r *http.Request) {
 
+		_, upderr := db.Exec(fmt.Sprintf("update tfldata.users set allow_notification=%s where session_token='%s';", r.URL.Query().Get("notify"), r.URL.Query().Get("id")))
+		if upderr != nil {
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('%s')", upderr))
+		}
 		var ourSeshStruct seshStruct
 
 		row := db.QueryRow(fmt.Sprintf("select username, pfp_name from tfldata.users where session_token='%s';", r.URL.Query().Get("id")))
-		row.Scan(&ourSeshStruct.Username, &ourSeshStruct.Pfpname)
+		scnerr := row.Scan(&ourSeshStruct.Username, &ourSeshStruct.Pfpname)
+		if scnerr != nil {
+			fmt.Println(scnerr)
+		}
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 
 		data, err := json.Marshal(&ourSeshStruct)

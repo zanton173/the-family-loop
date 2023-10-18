@@ -91,7 +91,7 @@
         var openPostModalObj = new bootstrap.Modal(document.getElementById('openPostModal'), {});
 
         var openPostModalEle = document.getElementById('openPostModal')
-
+        const submitBtn = document.createElement('button')
         var divForFormBtns = document.getElementById('post-div')
 
         var createPostSubmitBtn = document.createElement('button')
@@ -136,23 +136,23 @@
 
         function checkCommentValidity() {
 
-            const submitBtn = document.createElement('button')
-            if (document.getElementById('commentnote').value > '' && !document.getElementById('createcomment').contains(document.getElementById('submitCommentBtn'))) {
+
+            if (document.getElementById('commentnote').value > '' && !document.getElementById('createcomment').contains(submitBtn)) {
 
                 submitBtn.setAttribute('class', 'btn btn-success col')
                 submitBtn.setAttribute('type', 'submit')
                 submitBtn.setAttribute('id', 'submitCommentBtn')
                 submitBtn.innerHTML = 'comment'
                 document.getElementById('createcomment').append(submitBtn)
-            } else if (document.getElementById('commentnote').value == '' && document.getElementById('createcomment').contains(document.getElementById('submitCommentBtn'))) {
-                document.getElementById('createcomment').removeChild(document.getElementById('submitCommentBtn'))
+            } else if (document.getElementById('commentnote').value == '' && document.getElementById('createcomment').contains(submitBtn)) {
+                document.getElementById('createcomment').removeChild(submitBtn)
 
             }
 
         }
         function clearForm() {
-            if (document.getElementById('createcomment').contains(document.getElementById('submitCommentBtn'))) {
-                document.getElementById('createcomment').removeChild(document.getElementById('submitCommentBtn'))
+            if (document.getElementById('createcomment').contains(submitBtn)) {
+                document.getElementById('createcomment').removeChild(submitBtn)
                 document.getElementById('commentnote').value = ''
             }
         }
@@ -280,9 +280,8 @@
             selectedPostId = id
             openPostModalObj.toggle()
         }
+        var myNote = undefined
         openPostModalEle.addEventListener('shown.bs.modal', function modalOpen(event) {
-            //console.log('shown')
-
 
         })
 

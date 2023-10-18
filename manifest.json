@@ -1,0 +1,10 @@
+{
+    "name": "The Family Loop",
+    "short_name": "tfl",
+    "start_url": "/home",
+    "icons": [],
+    "theme_color": "#000000",
+    "background-color": "#FFFFF",
+    "display": "fullscreen",
+    "orientation": "potrait"
+}

@@ -2,24 +2,29 @@
 onmessage = (event) => {
 
     const result = event.data
-    postMessage(result)
+    console.log(result)
+    if (result[0] !== result[1] && result[0] != null) {
+        new Notification("Someone just made a new post!", {
+            body: "There's a new post!",
+        });
+    }
 }
 this.addEventListener("push", (event) => {
     const notification = event.data.json();
 
     // {"title":"Hi" , "body":"something amazing!" , "url":"./?message=123"}
     console.log(notification)
-    const notify = new Notification("testtiele")
+
     event.waitUntil(this.registration.showNotification(notification.title, {
         body: notification.body,
-
     }));
-    notify.onshow = (event) => {
-        console.log(event)
-    }
+
 });
-/*
-navigator.serviceWorker.getRegistration().then((data) => data.pushManager.subscribe({
-    userVisibleOnly: true
-}).then(resp => console.log(resp)))*/
+
+async function getNewPosts() {
+    const resp = await fetch("/new-posts", {
+        method: "GET"
+    })
+
+}
 

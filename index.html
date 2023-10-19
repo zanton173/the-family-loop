@@ -35,6 +35,7 @@
         <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createPostModal">
             Create a Post!
         </button>
+        &nbsp;&nbsp;<button onclick="getNotified()">Allow notifications</button>
     </div>
     <div class="modal" id="openPostModal" tabindex="-1" aria-labelledby="openPostModalLabel" aria-hidden="true">
         <div class="modal-dialog">
@@ -86,7 +87,22 @@
     </div>
 
     <script>
+        function getNotified() {
+            if (!("Notification" in window)) {
+                // Check if the browser supports notifications
+                alert("This browser does not support desktop notification");
+            }
+            Notification.requestPermission().then((res) => {
+                if (res == 'granted') {
+                    navigator.serviceWorker.register("js/worker.js")
+                    alert('already granted')
+                } else {
+                    alert(Notification.permission)
+                    return false
 
+                }
+            }).catch((err) => alert(err));
+        }
         var createPostModalObj = new bootstrap.Modal(document.getElementById('createPostModal'), {});
 
         var openPostModalObj = new bootstrap.Modal(document.getElementById('openPostModal'), {});

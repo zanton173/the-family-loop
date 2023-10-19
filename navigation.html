@@ -171,15 +171,10 @@
                 c = c.substring(1);
             }
             if (c.indexOf(name) == 0) {
-
+                //debugger;
                 htmx.off("htmx:load", settleEvent)
 
-                notify = Notification.requestPermission().then((res) => {
-                    if (res == 'granted')
-                        navigator.serviceWorker.register("js/worker.js")
-                    else
-                        return false
-                });
+
                 document.getElementById('login-modal').removeAttribute('data-bs-backdrop')
                 //console.log(c.substring(name.length, c.length))
                 let session_token = c.substring(name.length, c.length)

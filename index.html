@@ -178,7 +178,6 @@
             credentials: "same-origin"
         })
         htmx.on("#polling", "htmx:afterRequest", function (event) {
-
             jsWorker.postMessage([dbCount, document.getElementById('post-items').childElementCount])
         })
         var iter = 0

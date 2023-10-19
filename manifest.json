@@ -1,7 +1,7 @@
 {
     "name": "The Family Loop",
     "short_name": "tfl",
-    "start_url": "/home",
+    "start_url": "/",
     "icons": [
         {
             "src": "assets/android-chrome-192x192.png",

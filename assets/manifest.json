@@ -29,5 +29,6 @@
             "sizes": "32x32"
         }
     ],
-    "display": "fullscreen"
+    "theme_color": "#ffffff",
+    "background-color": "#ffff"
 }

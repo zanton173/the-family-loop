@@ -1,10 +1,8 @@
 .env
-*.jpg
-*.png
 *.img
 *.mp4
 *.mpeg
-*.jpeg
+public/
 *.mov
 .DS_Store
 *.sql

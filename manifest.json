@@ -2,7 +2,33 @@
     "name": "The Family Loop",
     "short_name": "tfl",
     "start_url": "/home",
-    "icons": [],
+    "icons": [
+        {
+            "src": "assets/android-chrome-192x192.png",
+            "type": "image/png",
+            "sizes": "192x192"
+        },
+        {
+            "src": "assets/android-chrome-512x512.png",
+            "type": "image/png",
+            "sizes": "512x512"
+        },
+        {
+            "src": "assets/apple-touch-icon.png",
+            "type": "image/png",
+            "sizes": "180x180"
+        },
+        {
+            "src": "assets/favicon-16x16.png",
+            "type": "image/png",
+            "sizes": "16x16"
+        },
+        {
+            "src": "assets/favicon-32x32.png",
+            "type": "image/png",
+            "sizes": "32x32"
+        }
+    ],
     "theme_color": "#000000",
     "background-color": "#FFFFF",
     "display": "fullscreen",

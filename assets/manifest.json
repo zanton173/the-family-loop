@@ -4,27 +4,27 @@
     "start_url": "/",
     "icons": [
         {
-            "src": "assets/android-chrome-192x192.png",
+            "src": "android-chrome-192x192.png",
             "type": "image/png",
             "sizes": "192x192"
         },
         {
-            "src": "assets/android-chrome-512x512.png",
+            "src": "android-chrome-512x512.png",
             "type": "image/png",
             "sizes": "512x512"
         },
         {
-            "src": "assets/apple-touch-icon.png",
+            "src": "apple-touch-icon.png",
             "type": "image/png",
             "sizes": "180x180"
         },
         {
-            "src": "assets/favicon-16x16.png",
+            "src": "favicon-16x16.png",
             "type": "image/png",
             "sizes": "16x16"
         },
         {
-            "src": "assets/favicon-32x32.png",
+            "src": "favicon-32x32.png",
             "type": "image/png",
             "sizes": "32x32"
         }

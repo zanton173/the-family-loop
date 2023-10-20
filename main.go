@@ -15,7 +15,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/SherClockHolmes/webpush-go"
+	firebase "firebase.google.com/go"
+	"firebase.google.com/go/auth"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
@@ -26,6 +27,7 @@ import (
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"golang.org/x/crypto/bcrypt"
+	"google.golang.org/api/option"
 )
 
 type Postsrow struct {
@@ -51,8 +53,6 @@ var ghissuetoken string
 var vapidpub string
 var vapidpriv string
 
-var subscriber *webpush.Subscription
-
 func main() {
 	err := godotenv.Load()
 	if err != nil {
@@ -65,6 +65,22 @@ func main() {
 	ghissuetoken = os.Getenv("GH_BEARER")
 	vapidpub = os.Getenv("VAPID_PUB")
 	vapidpriv = os.Getenv("VAPID_PRIV")
+	//fbapikey := os.Getenv("FIREBASE_API_KEY")
+
+	/*fbauthdomain := os.Getenv("FIREBASE_AUTH_DOMAIN")
+	fbprojectid := os.Getenv("FIREBASE_PROJECT_ID")
+	fbstoragebucket := os.Getenv("FIREBASE_STORAGE_BUCKET")
+	fbmessagesenderid := os.Getenv("FIREBASE_MESSAGING_SENDER_ID")
+	fbappid := os.Getenv("FIREBASE_APP_ID")
+	fbconfig := os.Getenv("FIREBASE_CONFIG")*/
+
+	opts := []option.ClientOption{option.WithCredentialsFile("the-family-loop-fb0d9-firebase-adminsdk-k6sxl-14c7d4c4f7.json")}
+
+	// Initialize firebase app
+	app, err := firebase.NewApp(context.Background(), nil, opts...)
+	if err != nil {
+		fmt.Printf("Error in initializing firebase app: %s", err)
+	}
 
 	// favicon
 	faviconHandler := func(w http.ResponseWriter, r *http.Request) {
@@ -85,7 +101,10 @@ func main() {
 	var tmerr error
 
 	subscriptionHandler := func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+
+		//client.Post("https://fcm.googleapis.com/fcm/send", "application/json", bytes.NewBuffer([]byte(`{"message": {"token": "dLQxUvSLl2E:APA91bG4OBYRPjtfWCWAfe6FABxtCiD-tBTxi9-9VCjHAOyGfM7CSJsx0Ua7bubKxA_X6V8l98052TVOf0_W6p-gTyzYdc3UO8tNGq1sYLxRtnM7Ty9-63AsGC3zYA-UpmLP4wmKUUK-","notification": {"title": "Hi There!","body": "Someone made a new post!"}}, "android": {"notification": {"body": "Check out the newest post"}}}`)))
+		//defer resp.Body.Close()
+		/*w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		bs, _ := io.ReadAll(r.Body)
 
 		type postBody struct {
@@ -111,38 +130,42 @@ func main() {
 				Auth:   postData.SubData.Keys.Auth,
 				P256dh: postData.SubData.Keys.P256dh,
 			},
-		}
-
+		}*/
 	}
 
 	newPostsHandlerPushNotify := func(w http.ResponseWriter, r *http.Request) {
+		/*
+			w.Header().Set("Content-Type", "application/json; charset=utf-8")
+			bs, _ := io.ReadAll(r.Body)
 
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		bs, _ := io.ReadAll(r.Body)
+			type postBody struct {
+				DbCount string `json:"tag"`
+			}
+			var postData postBody
+			psdmae := json.Unmarshal(bs, &postData)
+			if psdmae != nil {
+				fmt.Print(psdmae)
+			}
 
-		type postBody struct {
-			DbCount string `json:"tag"`
-		}
-		var postData postBody
-		psdmae := json.Unmarshal(bs, &postData)
-		if psdmae != nil {
-			fmt.Print(psdmae)
-		}
-
-		resp, senderr := webpush.SendNotification([]byte(fmt.Sprintf(`{"title": "There's a new post!", "body":"Someone just made a new post!", "icon": "../assets/android-chrome-512x512.png", "tag": "NewPostTag-%s" }`, postData.DbCount)), subscriber, &webpush.Options{
-			Subscriber:      "the-family-loop.com",
-			VAPIDPublicKey:  vapidpub,
-			VAPIDPrivateKey: vapidpriv,
-			TTL:             30,
-		})
-		if senderr != nil {
-			// TODO: Handle error
-			fmt.Println(senderr)
-		}
-		defer resp.Body.Close()
+			resp, senderr := webpush.SendNotification([]byte(fmt.Sprintf(`{"title": "There's a new post!", "body":"Someone just made a new post!", "icon": "../assets/android-chrome-512x512.png", "tag": "NewPostTag-%s" }`, postData.DbCount)), subscriber, &webpush.Options{
+				Subscriber:      "the-family-loop.com",
+				VAPIDPublicKey:  vapidpub,
+				VAPIDPrivateKey: vapidpriv,
+				TTL:             30,
+			})
+			if senderr != nil {
+				// TODO: Handle error
+				fmt.Println(senderr)
+			}
+			defer resp.Body.Close()*/
 	}
 
 	signUpHandler := func(w http.ResponseWriter, r *http.Request) {
+
+		fb_auth_client, clienterr := app.Auth(context.TODO())
+		if clienterr != nil {
+			fmt.Println(clienterr)
+		}
 
 		if r.PostFormValue("passwordsignup") != r.PostFormValue("confirmpasswordsignup") {
 			w.WriteHeader(http.StatusUnauthorized)
@@ -162,8 +185,15 @@ func main() {
 		if err != nil {
 			fmt.Println(err)
 		}
+		record, usererr := fb_auth_client.CreateUser(context.TODO(), (&auth.UserToCreate{}).DisplayName(strings.ToLower(r.PostFormValue("usernamesignup"))).Email(strings.ToLower(r.PostFormValue("emailsignup"))).Password(r.PostFormValue("passwordsignup")).PhotoURL(fmt.Sprintf("https://the-family-loop-customer-hash.s3.amazonaws.com/pfp/%s", filename.Filename)))
+		if usererr != nil {
+			fmt.Println(usererr)
+			w.WriteHeader(http.StatusConflict)
+			return
+		}
+
 		// TODO: Add pfp insert
-		_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.users(\"username\", \"password\", \"pfp_name\") values('%s', '%s', '%s');", strings.ToLower(r.PostFormValue("usernamesignup")), bytesOfPass, filename.Filename))
+		_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.users(\"username\", \"password\", \"pfp_name\", \"email\", \"firebase_user_uid\") values('%s', '%s', '%s', '%s', '%s');", strings.ToLower(r.PostFormValue("usernamesignup")), bytesOfPass, filename.Filename, strings.ToLower(r.PostFormValue("emailsignup")), record.UID))
 
 		if errinsert != nil {
 			fmt.Println(errinsert)
@@ -174,8 +204,24 @@ func main() {
 	}
 
 	loginHandler := func(w http.ResponseWriter, r *http.Request) {
+		var userUid string
+		fb_auth_client, clienterr := app.Auth(context.TODO())
+		if clienterr != nil {
+			fmt.Println(clienterr)
+		}
 
 		userStr := strings.ToLower(r.PostFormValue("usernamelogin"))
+		userIdRow := db.QueryRow(fmt.Sprintf("select firebase_user_uid from tfldata.users where username='%s';", userStr))
+		userScnErr := userIdRow.Scan(&userUid)
+		if userScnErr != nil {
+			w.Header().Set("HX-Trigger", "loginevent")
+		}
+		_, loginerr := fb_auth_client.GetUser(context.Background(), userUid)
+
+		if loginerr != nil {
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('%s');", loginerr))
+			w.Header().Set("HX-Trigger", "loginevent")
+		}
 		var password string
 		passScan := db.QueryRow(fmt.Sprintf("select password from tfldata.users where username='%s';", userStr))
 		scnerr := passScan.Scan(&password)
@@ -190,6 +236,7 @@ func main() {
 			w.Header().Set("HX-Trigger", "loginevent")
 		} else if err == nil {
 			setLoginCookie(w, db, userStr, r)
+
 			w.Header().Set("HX-Refresh", "true")
 		}
 
@@ -690,10 +737,6 @@ func main() {
 	}
 	getSessionDataHandler := func(w http.ResponseWriter, r *http.Request) {
 
-		/*_, upderr := db.Exec(fmt.Sprintf("update tfldata.users set allow_notification=%s where session_token='%s';", r.URL.Query().Get("notify"), r.URL.Query().Get("id")))
-		if upderr != nil {
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('%s')", upderr))
-		}*/
 		var ourSeshStruct seshStruct
 
 		row := db.QueryRow(fmt.Sprintf("select username, pfp_name from tfldata.users where session_token='%s';", r.URL.Query().Get("id")))

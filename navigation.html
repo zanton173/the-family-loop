@@ -56,13 +56,19 @@
                         </div>
                     </form>
                     <form class="form" id="sign-up-form" name="signupform" hx-post="/signup" hx-trigger="submit"
-                        hx-encoding="multipart/form-data" hx-swap="none">
+                        hx-encoding="multipart/form-data" hx-on="failedEvent: failedSignUp()" hx-swap="none">
                         <div class="p-4">
                             <h5>Sign Up</h5>
                             <label>Username:</label>
                             <input class="form-control" autocomplete="username" type="text" name="usernamesignup"
                                 placeholder="Username" oninput="checkForValidSignUpSubmission()" required
                                 id="usernamesignupinput" />
+                        </div>
+                        <div class="p-4">
+                            <label>Email:</label>
+                            <input class="form-control" type="email" name="emailsignup" autocomplete="email"
+                                placeholder="email@example.com" oninput="checkForValidSignUpSubmission()" required
+                                id="emailsignupinput" maxlength="64" />
                         </div>
                         <div class="p-4">
                             <label>Password:</label>
@@ -124,6 +130,7 @@
     let passwordlogininput = document.getElementById('passwordlogininput')
 
     let usernamesignupinput = document.getElementById('usernamesignupinput')
+    let emailsignupinput = document.getElementById("emailsignupinput")
     let passwordsignupinput = document.getElementById('passwordsignupinput')
     let confirmpasswordsignupinput = document.getElementById('confirmpasswordsignupinput')
 
@@ -268,6 +275,7 @@
             : navItemWelcomeAvatar.setAttribute("src", "https://the-family-loop-customer-hash.s3.amazonaws.com/pfp/" + text.Pfpname)
         return text
     }
+
     async function clearCookie() {
         const resp = await fetch("/clear-cookie", {
             method: "GET",
@@ -322,7 +330,7 @@
         }
     }
     function checkForValidSignUpSubmission() {
-        if (usernamesignupinput.value > '' && passwordsignupinput.value > '' && passwordsignupinput.value === confirmpasswordsignupinput.value) {
+        if (usernamesignupinput.value > '' && emailsignupinput.value > '' && passwordsignupinput.value > '' && passwordsignupinput.value === confirmpasswordsignupinput.value) {
 
             gosignup.setAttribute("type", "submit")
             gosignup.setAttribute("class", "btn btn-outline-success")
@@ -332,7 +340,7 @@
 
             signup.append(gosignup)
 
-        } else if ((usernamesignupinput.value == '' || passwordsignupinput.value == '' || confirmpasswordsignupinput.value == '' || passwordsignupinput.value !== confirmpasswordsignupinput.value) && signup.contains(gosignup)) {
+        } else if ((usernamesignupinput.value == '' || emailsignupinput.value == '' || passwordsignupinput.value == '' || confirmpasswordsignupinput.value == '' || passwordsignupinput.value !== confirmpasswordsignupinput.value) && signup.contains(gosignup)) {
 
             signup.removeChild(gosignup)
 
@@ -348,6 +356,9 @@
             showLoginForm();
         } else if (event.detail.xhr.status == 400) {
             alert("Something was wrong with the picture you provided. Try a different one")
+        } else if (event.detail.xhr.status == 409) {
+            alert("That email already exists")
+            window.location.reload()
         }
     })
 
@@ -358,5 +369,9 @@
         loginModal.toggle()
         showLoginForm()
     }
+
+</script>
+
+<script>
 
 </script>

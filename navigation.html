@@ -22,7 +22,7 @@
             hx-target="#post-items" style="color: blue;" id="notification"></p>
     </div>
 </nav>
-<!--<button onclick="testNotify()">test me please</button>-->
+
 <div class="modal" data-bs-backdrop="static" tabindex="-1" id="login-modal">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -91,7 +91,20 @@
     </div>
 
 </div>
+
 <script>
+
+    async function createPushTest() {
+        const resp = await fetch("/create-subscription", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(notificationBody)
+        })
+
+
+    }
 
     let p = document.getElementById('anchor')
     let c = document.getElementById('ournav')
@@ -159,8 +172,8 @@
         });
     }
 
+    var notificationBody = {}
     document.body.addEventListener("htmx:load", function settleEvent(event) {
-
 
         let name = "session_id=";
         let decodedCookie = decodeURIComponent(document.cookie);
@@ -174,12 +187,7 @@
                 //debugger;
                 htmx.off("htmx:load", settleEvent)
 
-                Notification.requestPermission().then((res) => {
-                    if (res == 'granted')
-                        navigator.serviceWorker.register("js/worker.js")
-                    else
-                        return false
-                });
+
                 document.getElementById('login-modal').removeAttribute('data-bs-backdrop')
                 //console.log(c.substring(name.length, c.length))
                 let session_token = c.substring(name.length, c.length)
@@ -190,6 +198,37 @@
 
                 document.getElementById('navlist').removeChild(navItemToReplace)
                 navbarItems.append(divToStickNav)
+                if (Notification.permission == 'denied' || Notification.permission == 'default')
+                    Notification.requestPermission();
+                if (!("Notification" in window)) {
+                    // Check if the browser supports notifications
+                    alert("This browser does not support desktop notification");
+                } else {
+                    // Notification.requestPermission().then((res) => {
+                    //   if (res == 'granted') {
+                    if (Notification.permission == 'granted') {
+                        navigator.serviceWorker.register("js/worker.js").then((work) => {
+                            return work.pushManager.subscribe({
+                                userVisibleOnly: true,
+                                applicationServerKey: "BJmKY269Mkqw_zRnXy0n1ncFOBsamgi7hSpli4hKGlAJ-OKTae7qj8scasqrO9dpdmntNXXgbsMK3okY0bpOBVQ"
+                            }).then(resp => {
+
+                                notificationBody = {
+                                    subData: resp.toJSON(),
+                                    username: session_token
+                                }
+                                fetch("/create-subscription", {
+                                    method: "POST",
+                                    headers: {
+                                        "Content-Type": "application/json"
+                                    },
+                                    body: JSON.stringify(notificationBody)
+                                })
+                            })
+                        })
+                    }
+
+                }
 
                 break
             } else if (!document.cookie.includes("session_id")) {
@@ -215,8 +254,6 @@
     async function fetchSeshDetails(token) {
         //console.log(token)
 
-
-
         const resp = await fetch("/get-username-from-session?id=" + token /*+ "&notify=" + notify,*/, {
             method: "GET",
             headers: {
@@ -229,7 +266,7 @@
         text.Pfpname === ""
             ? navItemWelcomeAvatar.setAttribute("src", "https://the-family-loop-customer-hash.s3.amazonaws.com/pfp/question.png")
             : navItemWelcomeAvatar.setAttribute("src", "https://the-family-loop-customer-hash.s3.amazonaws.com/pfp/" + text.Pfpname)
-
+        return text
     }
     async function clearCookie() {
         const resp = await fetch("/clear-cookie", {

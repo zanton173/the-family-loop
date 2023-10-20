@@ -35,6 +35,7 @@
         <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createPostModal">
             Create a Post!
         </button>
+        <!--<button hx-ext='json-enc' hx-post="/send-new-posts-push" hx-vals='js:{"tag": "me"}'>Do it</button>-->
         <!--&nbsp;&nbsp;<button onclick="getNotified()">Allow notifications</button>-->
     </div>
     <div class="modal" id="openPostModal" tabindex="-1" aria-labelledby="openPostModalLabel" aria-hidden="true">
@@ -191,12 +192,7 @@
     </div>
 
     <script>
-        const jsWorker = new Worker("js/worker.js", {
-            credentials: "same-origin"
-        })
-        htmx.on("#polling", "htmx:afterRequest", function (event) {
-            jsWorker.postMessage([dbCount, document.getElementById('post-items').childElementCount])
-        })
+
         var iter = 0
         const listOfImageObj = []
         htmx.on("#divofposts", "htmx:load", async function getImgs(event) {

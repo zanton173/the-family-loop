@@ -15,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/SherClockHolmes/webpush-go"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
@@ -47,6 +48,10 @@ type seshStruct struct {
 var awskey string
 var awskeysecret string
 var ghissuetoken string
+var vapidpub string
+var vapidpriv string
+
+var subscriber *webpush.Subscription
 
 func main() {
 	err := godotenv.Load()
@@ -58,6 +63,9 @@ func main() {
 	awskey = os.Getenv("AWS_ACCESS_KEY")
 	awskeysecret = os.Getenv("AWS_ACCESS_SECRET")
 	ghissuetoken = os.Getenv("GH_BEARER")
+	vapidpub = os.Getenv("VAPID_PUB")
+	vapidpriv = os.Getenv("VAPID_PRIV")
+
 	// favicon
 	faviconHandler := func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "assets/favicon.ico")
@@ -75,6 +83,64 @@ func main() {
 
 	var postTmpl *template.Template
 	var tmerr error
+
+	subscriptionHandler := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		bs, _ := io.ReadAll(r.Body)
+
+		type postBody struct {
+			SubData struct {
+				Endpoint string `json:"endpoint"`
+				Keys     struct {
+					P256dh string `json:"p256dh"`
+					Auth   string `json:"auth"`
+				}
+			}
+			Username string `json:"username"`
+		}
+		var postData postBody
+		psdmae := json.Unmarshal(bs, &postData)
+		if psdmae != nil {
+			fmt.Print(psdmae)
+		}
+		fmt.Println(postData)
+		//_, uperr := db.Exec(fmt.Sprintf("update"))
+		subscriber = &webpush.Subscription{
+			Endpoint: postData.SubData.Endpoint,
+			Keys: webpush.Keys{
+				Auth:   postData.SubData.Keys.Auth,
+				P256dh: postData.SubData.Keys.P256dh,
+			},
+		}
+
+	}
+
+	newPostsHandlerPushNotify := func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		bs, _ := io.ReadAll(r.Body)
+
+		type postBody struct {
+			DbCount string `json:"tag"`
+		}
+		var postData postBody
+		psdmae := json.Unmarshal(bs, &postData)
+		if psdmae != nil {
+			fmt.Print(psdmae)
+		}
+
+		resp, senderr := webpush.SendNotification([]byte(fmt.Sprintf(`{"title": "There's a new post!", "body":"Someone just made a new post!", "icon": "../assets/android-chrome-512x512.png", "tag": "NewPostTag-%s" }`, postData.DbCount)), subscriber, &webpush.Options{
+			Subscriber:      "the-family-loop.com",
+			VAPIDPublicKey:  vapidpub,
+			VAPIDPrivateKey: vapidpriv,
+			TTL:             30,
+		})
+		if senderr != nil {
+			// TODO: Handle error
+			fmt.Println(senderr)
+		}
+		defer resp.Body.Close()
+	}
 
 	signUpHandler := func(w http.ResponseWriter, r *http.Request) {
 
@@ -735,6 +801,9 @@ func main() {
 
 	http.HandleFunc("/group-chat-messages", getGroupChatMessagesHandler)
 	http.HandleFunc("/create-a-group-chat-message", createGroupChatMessageHandler)
+
+	http.HandleFunc("/create-subscription", subscriptionHandler)
+	http.HandleFunc("/send-new-posts-push", newPostsHandlerPushNotify)
 
 	http.HandleFunc("/create-issue", createIssueHandler)
 

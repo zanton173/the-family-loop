@@ -20,6 +20,8 @@
         <script src="https://unpkg.com/htmx.org/dist/ext/json-enc.js"></script>-->
     <script src="js/htmx.min.js"></script>
     <script src="js/htmx_json-enc.js"></script>
+
+    <script type="javascript" src="firebase-messaging-sw.js"></script>
     <title>The Family Loop</title>
 </head>
 
@@ -35,8 +37,11 @@
         <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createPostModal">
             Create a Post!
         </button>
-        <!--<button hx-ext='json-enc' hx-post="/send-new-posts-push" hx-vals='js:{"tag": "me"}'>Do it</button>-->
-        <!--&nbsp;&nbsp;<button onclick="getNotified()">Allow notifications</button>-->
+        <!--<button hx-ext='json-enc' hx-post="/send-new-posts-push"
+            hx-vals='js:{"id": document.cookie.split("session_id=")[1]}' hx-swap="none">Do
+            it</button>
+
+        &nbsp;&nbsp;<button onclick="getNotified()">Allow notifications</button>-->
     </div>
     <div class="modal" id="openPostModal" tabindex="-1" aria-labelledby="openPostModalLabel" aria-hidden="true">
         <div class="modal-dialog">
@@ -88,7 +93,13 @@
     </div>
 
     <script>
-
+        function getNotified() {
+            Notification.requestPermission().then((data) => {
+                alert(data)
+            }).catch((err) => {
+                alert(err)
+            })
+        }
 
         var createPostModalObj = new bootstrap.Modal(document.getElementById('createPostModal'), {});
 
@@ -296,6 +307,7 @@
         })
 
     </script>
+
     </div>
 
     </div>

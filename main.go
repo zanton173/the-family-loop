@@ -17,6 +17,7 @@ import (
 
 	firebase "firebase.google.com/go"
 	"firebase.google.com/go/auth"
+	"firebase.google.com/go/messaging"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
@@ -50,8 +51,6 @@ type seshStruct struct {
 var awskey string
 var awskeysecret string
 var ghissuetoken string
-var vapidpub string
-var vapidpriv string
 
 func main() {
 	err := godotenv.Load()
@@ -63,8 +62,7 @@ func main() {
 	awskey = os.Getenv("AWS_ACCESS_KEY")
 	awskeysecret = os.Getenv("AWS_ACCESS_SECRET")
 	ghissuetoken = os.Getenv("GH_BEARER")
-	vapidpub = os.Getenv("VAPID_PUB")
-	vapidpriv = os.Getenv("VAPID_PRIV")
+
 	//fbapikey := os.Getenv("FIREBASE_API_KEY")
 
 	/*fbauthdomain := os.Getenv("FIREBASE_AUTH_DOMAIN")
@@ -87,6 +85,10 @@ func main() {
 		http.ServeFile(w, r, "assets/favicon.ico")
 	}
 	http.HandleFunc("/favicon.ico", faviconHandler)
+	serviceWorkerHandler := func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "firebase-messaging-sw.js")
+	}
+	http.HandleFunc("/firebase-messaging-sw.js", serviceWorkerHandler)
 
 	// Connect to database
 	connStr := fmt.Sprintf("postgresql://tfldbrole:%s@localhost/tfl?sslmode=disable", dbpass)
@@ -102,19 +104,11 @@ func main() {
 
 	subscriptionHandler := func(w http.ResponseWriter, r *http.Request) {
 
-		//client.Post("https://fcm.googleapis.com/fcm/send", "application/json", bytes.NewBuffer([]byte(`{"message": {"token": "dLQxUvSLl2E:APA91bG4OBYRPjtfWCWAfe6FABxtCiD-tBTxi9-9VCjHAOyGfM7CSJsx0Ua7bubKxA_X6V8l98052TVOf0_W6p-gTyzYdc3UO8tNGq1sYLxRtnM7Ty9-63AsGC3zYA-UpmLP4wmKUUK-","notification": {"title": "Hi There!","body": "Someone made a new post!"}}, "android": {"notification": {"body": "Check out the newest post"}}}`)))
-		//defer resp.Body.Close()
-		/*w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		bs, _ := io.ReadAll(r.Body)
 
 		type postBody struct {
-			SubData struct {
-				Endpoint string `json:"endpoint"`
-				Keys     struct {
-					P256dh string `json:"p256dh"`
-					Auth   string `json:"auth"`
-				}
-			}
+			Fcmtoken string `json:"fcm_token"`
 			Username string `json:"username"`
 		}
 		var postData postBody
@@ -123,17 +117,46 @@ func main() {
 			fmt.Print(psdmae)
 		}
 		fmt.Println(postData)
-		//_, uperr := db.Exec(fmt.Sprintf("update"))
-		subscriber = &webpush.Subscription{
-			Endpoint: postData.SubData.Endpoint,
-			Keys: webpush.Keys{
-				Auth:   postData.SubData.Keys.Auth,
-				P256dh: postData.SubData.Keys.P256dh,
-			},
-		}*/
+		res, inserr := db.Exec(fmt.Sprintf("update tfldata.users set fcm_registration_id='%s' where session_token='%s';", postData.Fcmtoken, postData.Username))
+		if inserr != nil {
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('%s');", inserr))
+		}
+		fmt.Print(res)
 	}
 
 	newPostsHandlerPushNotify := func(w http.ResponseWriter, r *http.Request) {
+
+		bs, _ := io.ReadAll(r.Body)
+
+		var postData struct {
+			Id string `json:"id"`
+		}
+		marshErr := json.Unmarshal(bs, &postData)
+		if marshErr != nil {
+			fmt.Print(marshErr)
+		}
+
+		var fcmToken string
+		tokenRow := db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where session_token='%s';", postData.Id))
+		scnerr := tokenRow.Scan(&fcmToken)
+		if scnerr != nil {
+			fmt.Println(scnerr)
+		}
+
+		fb_message_client, _ := app.Messaging(context.TODO())
+
+		sentRes, sendErr := fb_message_client.Send(context.TODO(), &messaging.Message{
+			Token: fcmToken,
+			Notification: &messaging.Notification{
+				Title: "There's a new post!",
+				Body:  "Somebody just made a new post!",
+			},
+		})
+		if sendErr != nil {
+			fmt.Print(sendErr)
+		}
+		fmt.Println(sentRes)
+
 		/*
 			w.Header().Set("Content-Type", "application/json; charset=utf-8")
 			bs, _ := io.ReadAll(r.Body)
@@ -214,14 +237,15 @@ func main() {
 		userIdRow := db.QueryRow(fmt.Sprintf("select firebase_user_uid from tfldata.users where username='%s';", userStr))
 		userScnErr := userIdRow.Scan(&userUid)
 		if userScnErr != nil {
-			w.Header().Set("HX-Trigger", "loginevent")
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('%s');", userScnErr))
 		}
 		_, loginerr := fb_auth_client.GetUser(context.Background(), userUid)
 
 		if loginerr != nil {
 			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('%s');", loginerr))
-			w.Header().Set("HX-Trigger", "loginevent")
+
 		}
+
 		var password string
 		passScan := db.QueryRow(fmt.Sprintf("select password from tfldata.users where username='%s';", userStr))
 		scnerr := passScan.Scan(&password)

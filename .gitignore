@@ -7,3 +7,5 @@ public/
 .DS_Store
 *.sql
 the-family-loop-fb0d9-firebase-adminsdk-k6sxl-14c7d4c4f7.json
+firebase-config.js
+node_modules/   

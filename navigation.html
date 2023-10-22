@@ -291,6 +291,15 @@
     import app from "/js/init-firebase.js"
     import { getMessaging, getToken } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-messaging.js";
     const messaging = getMessaging(app);
+    alert(messaging)
+
+
+
+
+    registration.active.postMessage({
+        action: "initializeFirebase",
+        payload: { config: FIREBASE_CONFIG },
+    });
 
     var notificationBody = {}
 

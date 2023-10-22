@@ -1,6 +1,6 @@
 {
     "name": "The Family Loop",
-    "short_name": "tfl",
+    "short_name": "tflqa",
     "start_url": "/",
     "icons": [
         {
@@ -31,6 +31,6 @@
     ],
     "theme_color": "#000000",
     "background-color": "#FFFFF",
-    "display": "fullscreen",
+    "display": "standalone",
     "gcm_sender_id": "760310663988"
 }

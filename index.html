@@ -183,7 +183,7 @@
     <div style="text-align: center;" class="px-5" id="posts-div">
         <div hx-get="/get-posts" hx-trigger="load" hx-target="#post-items" id="divofposts">
             <div id="post-items" name="item-count">
-
+                <!--Issue is here-->
             </div>
         </div>
     </div>
@@ -297,14 +297,14 @@
             openPostModalObj.toggle()
         }
 
-        openPostModalEle.addEventListener('shown.bs.modal', function modalOpen(event) {
-
-        })
-
-        openPostModalEle.addEventListener('hidden.bs.modal', function modalClosed(event) {
-            //console.log('hidden')
-
-        })
+        /* openPostModalEle.addEventListener('shown.bs.modal', function modalOpen(event) {
+ 
+         })
+ 
+         openPostModalEle.addEventListener('hidden.bs.modal', function modalClosed(event) {
+             //console.log('hidden')
+ 
+         })*/
 
     </script>
 

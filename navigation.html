@@ -212,6 +212,20 @@
             }
             parentauth.appendChild(signup)
         }
+        htmx.on("#sign-up-form", "htmx:afterRequest", function (event) {
+            if (event.detail.xhr.status == 401) {
+                alert("Are you trying to bypass client side validation??!?!?!")
+            } else if (event.detail.xhr.status == 200) {
+                alert('Sign up Successful! You can now login');
+                loginModal.toggle();
+                showLoginForm();
+            } else if (event.detail.xhr.status == 400) {
+                alert("Something was wrong with the picture you provided. Try a different one")
+            } else if (event.detail.xhr.status == 409) {
+                alert("That email already exists")
+                window.location.reload()
+            }
+        })
     }
     function showLoginForm() {
 
@@ -256,22 +270,8 @@
 
         }
     }
-    if (document.getElementById("sign-up-form")) {
-        htmx.on("#sign-up-form", "htmx:afterRequest", function (event) {
-            if (event.detail.xhr.status == 401) {
-                alert("Are you trying to bypass client side validation??!?!?!")
-            } else if (event.detail.xhr.status == 200) {
-                alert('Sign up Successful! You can now login');
-                loginModal.toggle();
-                showLoginForm();
-            } else if (event.detail.xhr.status == 400) {
-                alert("Something was wrong with the picture you provided. Try a different one")
-            } else if (event.detail.xhr.status == 409) {
-                alert("That email already exists")
-                window.location.reload()
-            }
-        })
-    }
+
+
 
     function loginFunction() {
         alert("username or password incorrect")
@@ -301,8 +301,8 @@
         }
 
         if (c.indexOf(name) == 0) {
-            //debugger;
-            //htmx.off("htmx:load", settleEvent)
+
+            htmx.off("htmx:load", settleEvent)
 
 
             document.getElementById('login-modal').removeAttribute('data-bs-backdrop')
@@ -314,7 +314,7 @@
             if (!("Notification" in window)) {
                 // Check if the browser supports notifications
                 alert("This browser does not support desktop notification");
-            } else if (Notification.permission == 'denied' || Notification.permission == 'default') {
+            } else {
 
                 Notification.requestPermission().then((res) => {
 
@@ -322,7 +322,7 @@
 
                         getToken(messaging, { vapidKey: "BJmKY269Mkqw_zRnXy0n1ncFOBsamgi7hSpli4hKGlAJ-OKTae7qj8scasqrO9dpdmntNXXgbsMK3okY0bpOBVQ" })
                             .then((currentToken) => {
-
+                                alert(currentToken)
                                 notificationBody = {
                                     username: session_token,
                                     fcm_token: currentToken

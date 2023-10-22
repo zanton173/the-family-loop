@@ -139,6 +139,7 @@ func main() {
 		var fcmToken string
 		tokenRow := db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where session_token='%s';", postData.Id))
 		scnerr := tokenRow.Scan(&fcmToken)
+
 		if scnerr != nil {
 			fmt.Println(scnerr)
 		}
@@ -146,7 +147,7 @@ func main() {
 		fb_message_client, _ := app.Messaging(context.TODO())
 
 		sentRes, sendErr := fb_message_client.Send(context.TODO(), &messaging.Message{
-			Token: fcmToken,
+			Token: "eO7F0BK5JTqjVi6PUvJ4f-:APA91bG9BGMv4jt3tNnWt2rKT5r_nShWMcyj1wXsAtwi4z6vLXhxXpGS_wxtSKxu6bvyLdXhRivs1di5osSoHwq5oTz27QNOjR-fXqrLxBwxdqduxgWU57odGOVDv-LqCFGxfinBJJw5",
 			Notification: &messaging.Notification{
 				Title: "There's a new post!",
 				Body:  "Somebody just made a new post!",

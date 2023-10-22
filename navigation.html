@@ -55,8 +55,8 @@
                                 oninput="checkForValidLoginSubmission()" required id="passwordlogininput" />
                         </div>
                     </form>
-                    <form class="form" id="sign-up-form" name="signupform" hx-post="/signup" hx-trigger="submit"
-                        hx-encoding="multipart/form-data" hx-on="failedEvent: failedSignUp()" hx-swap="none">
+                    <form hx-post="/signup" class="form" id="sign-up-form" name="signupform" hx-trigger="submit"
+                        hx-encoding="multipart/form-data" hx-swap="none" hx-target="this">
                         <div class="p-4">
                             <h5>Sign Up</h5>
                             <label>Username:</label>
@@ -212,7 +212,13 @@
             }
             parentauth.appendChild(signup)
         }
+        signup.addEventListener("submit", function (event) {
+            debugger;
+            console.log(event)
+
+        })
         htmx.on("#sign-up-form", "htmx:afterRequest", function (event) {
+            alert("Loading...")
             if (event.detail.xhr.status == 401) {
                 alert("Are you trying to bypass client side validation??!?!?!")
             } else if (event.detail.xhr.status == 200) {
@@ -288,60 +294,60 @@
 
     var notificationBody = {}
 
-    //document.body.addEventListener("htmx:load", function settleEvent(event) {
+    document.body.addEventListener("htmx:load", function settleEvent(event) {
 
-    let name = "session_id=";
-    let decodedCookie = decodeURIComponent(document.cookie);
-    let ca = decodedCookie.split(';');
-    for (let i = 0; i < ca.length; i++) {
-        let c = ca[i];
+        let name = "session_id=";
+        let decodedCookie = decodeURIComponent(document.cookie);
+        let ca = decodedCookie.split(';');
+        for (let i = 0; i < ca.length; i++) {
+            let c = ca[i];
 
-        while (c.charAt(0) == ' ') {
-            c = c.substring(1);
-        }
-
-        if (c.indexOf(name) == 0) {
-
-            htmx.off("htmx:load", settleEvent)
-
-
-            document.getElementById('login-modal').removeAttribute('data-bs-backdrop')
-            console.log("backdrop removed")
-            //console.log(c.substring(name.length, c.length))
-            let session_token = c.substring(name.length, c.length)
-
-
-            if (!("Notification" in window)) {
-                // Check if the browser supports notifications
-                alert("This browser does not support desktop notification");
-            } else {
-
-                Notification.requestPermission().then((res) => {
-
-                    if (Notification.permission == 'granted') {
-
-                        getToken(messaging, { vapidKey: "BJmKY269Mkqw_zRnXy0n1ncFOBsamgi7hSpli4hKGlAJ-OKTae7qj8scasqrO9dpdmntNXXgbsMK3okY0bpOBVQ" })
-                            .then((currentToken) => {
-                                alert(currentToken)
-                                notificationBody = {
-                                    username: session_token,
-                                    fcm_token: currentToken
-                                }
-                                fetch("/create-subscription", {
-                                    method: "POST",
-                                    headers: {
-                                        "Content-Type": "application/json"
-                                    },
-                                    body: JSON.stringify(notificationBody)
-                                })
-                            })
-                    }
-
-                })
+            while (c.charAt(0) == ' ') {
+                c = c.substring(1);
             }
 
+            if (c.indexOf(name) == 0) {
 
-        } /*else {
+                htmx.off("htmx:load", settleEvent)
+
+
+                document.getElementById('login-modal').removeAttribute('data-bs-backdrop')
+                console.log("backdrop removed")
+                //console.log(c.substring(name.length, c.length))
+                let session_token = c.substring(name.length, c.length)
+
+
+                if (!("Notification" in window)) {
+                    // Check if the browser supports notifications
+                    alert("This browser does not support desktop notification");
+                } else {
+
+                    Notification.requestPermission().then((res) => {
+
+                        if (Notification.permission == 'granted') {
+
+                            getToken(messaging, { vapidKey: "BJmKY269Mkqw_zRnXy0n1ncFOBsamgi7hSpli4hKGlAJ-OKTae7qj8scasqrO9dpdmntNXXgbsMK3okY0bpOBVQ" })
+                                .then((currentToken) => {
+
+                                    notificationBody = {
+                                        username: session_token,
+                                        fcm_token: currentToken
+                                    }
+                                    fetch("/create-subscription", {
+                                        method: "POST",
+                                        headers: {
+                                            "Content-Type": "application/json"
+                                        },
+                                        body: JSON.stringify(notificationBody)
+                                    })
+                                })
+                        }
+
+                    })
+                }
+
+
+            } /*else {
             loginModal.toggle()
             showLoginForm()
             //document.getElementById('login-modal').setAttribute('data-bs-backdrop', 'static')
@@ -349,9 +355,9 @@
             document.getElementById('login-modal-header').contains(document.getElementById('modalclose')) &&
                 document.getElementById('login-modal-header').removeChild(document.getElementById('modalclose'))
         }*/
-    }
+        }
 
-
+    })
 
 
 </script>

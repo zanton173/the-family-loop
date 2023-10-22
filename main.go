@@ -151,6 +151,12 @@ func main() {
 				Title: "There's a new post!",
 				Body:  "Somebody just made a new post!",
 			},
+			Android: &messaging.AndroidConfig{
+				Notification: &messaging.AndroidNotification{
+					Title: "There's a new post!",
+					Body:  "Somebody just made a new post!",
+				},
+			},
 		})
 		if sendErr != nil {
 			fmt.Print(sendErr)

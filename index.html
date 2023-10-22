@@ -43,6 +43,7 @@
             it</button>
 
         &nbsp;&nbsp;<button onclick="getNotified()">Allow notifications</button>-->
+        <button hx-post="/send-new-posts-push" hx-swap="none">Test</button>
     </div>
     <div class="modal" id="openPostModal" tabindex="-1" aria-labelledby="openPostModalLabel" aria-hidden="true">
         <div class="modal-dialog">
@@ -95,11 +96,12 @@
 
     <script>
         function getNotified() {
-            Notification.requestPermission().then((data) => {
+            /*Notification.requestPermission().then((data) => {
                 alert(data)
             }).catch((err) => {
                 alert(err)
-            })
+            })*/
+
         }
 
         var createPostModalObj = new bootstrap.Modal(document.getElementById('createPostModal'), {});

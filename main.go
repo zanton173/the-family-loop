@@ -704,7 +704,7 @@ func main() {
 		userNameRow := db.QueryRow(fmt.Sprintf("select username from tfldata.users where session_token='%s';", c.Value))
 		userNameRow.Scan(&userName)
 
-		_, inserr := db.Exec(fmt.Sprintf("insert into tfldata.gchat(\"chat\", \"author\") values('%s', '%s');", chatMessage, userName))
+		_, inserr := db.Exec(fmt.Sprintf("insert into tfldata.gchat(\"chat\", \"author\", \"createdon\") values('%s', '%s', '%s');", chatMessage, userName, time.Now().Format(time.DateTime)))
 		if inserr != nil {
 			fmt.Println(err)
 			w.WriteHeader(http.StatusBadRequest)
@@ -713,7 +713,7 @@ func main() {
 
 	}
 	getGroupChatMessagesHandler := func(w http.ResponseWriter, r *http.Request) {
-		output, err := db.Query("select chat, author from (select * from tfldata.gchat order by id DESC limit 20) as tmp order by id asc;")
+		output, err := db.Query("select chat, author, createdon from (select * from tfldata.gchat order by id DESC limit 20) as tmp order by createdon asc;")
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -722,8 +722,9 @@ func main() {
 
 			var message string
 			var author string
-			output.Scan(&message, &author)
-			dataStr := "<div style='display: flex; justify-content: center;'><b>" + author + "&nbsp;&nbsp;&nbsp;&nbsp;" + "</b><p>" + message + "</p></div>"
+			var createdat time.Time
+			output.Scan(&message, &author, &createdat)
+			dataStr := "<div style='max-width: 100%; background-color: rgb(107 166 254 / .3);' class='container my-1'><div class='row'><b class='col-2'>" + author + "&nbsp;&nbsp;&nbsp;&nbsp;" + "</b><p class='col-9'>" + message + "</p></div><div class='row'><p class='col' style='margin-left: 75%; font-size: small;'>&nbsp;&nbsp" + createdat.Format(time.DateOnly) + "&nbsp;" + createdat.Format(time.Kitchen) + "</p></div></div>"
 			chattmp, tmperr := template.New("gchat").Parse(dataStr)
 			if tmperr != nil {
 				fmt.Println(tmperr)

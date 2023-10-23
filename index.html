@@ -28,24 +28,13 @@
 
 <body style="background-color: rgba(201, 224, 223, .5);">
     <header id="installbanner" style="display: inline">
+
         <div style="background-color: rgb(252, 253, 245); display: flex; align-items: center; justify-content: center;"
             class="px-3">
             <p class="m-2">Install the app</p>
-            <button id="installAppBtn" class="btn btn-outline-success border-1 mx-5">Install</button>
+            <button id="installAppBtn" type="button" class="btn btn-outline-success border-1 mx-5"
+                data-bs-toggle="modal" data-bs-target="#installmodal">Install</button>
         </div>
-        <script>
-            let deferredPrompt;
-
-            window.addEventListener('beforeinstallprompt', (e) => {
-                // Prevent the mini-infobar from appearing on mobile
-                e.preventDefault();
-                // Stash the event so it can be triggered later.
-                deferredPrompt = e;
-                // Update UI notify the user they can install the PWA
-                showInstall();
-                // Optionally, send analytics event that PWA install promo was shown.
-                console.log(`'beforeinstallprompt' event was fired.`);
-            });</script>
     </header>
     <h3 style="text-align: center; padding: 1%;">Home</h3>
 
@@ -61,9 +50,9 @@
             hx-vals='js:{"id": document.cookie.split("session_id=")[1]}' hx-swap="none">Do
             it</button>
 
-        &nbsp;&nbsp;<button onclick="getNotified()">Allow notifications</button>-->
+        &nbsp;&nbsp;<button onclick="getNotified()">Allow notifications</button>
         <button hx-post="/send-new-posts-push" hx-vals='js:{"id": document.cookie.split("session_id=")[1]}'
-            hx-ext="json-enc" hx-swap="none">Test</button>
+            hx-ext="json-enc" hx-swap="none">Test</button>-->
     </div>
     <div class="modal" id="openPostModal" tabindex="-1" aria-labelledby="openPostModalLabel" aria-hidden="true">
         <div class="modal-dialog">
@@ -81,6 +70,22 @@
                     <button type="button" class="btn btn-dark col" data-bs-dismiss="modal">close</button><br />
                 </form>
             </div>
+        </div>
+    </div>
+    <div class="modal" id="installmodal" tabindex="-1" aria-labelledby="installmodal" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content p-3">
+                <h3>ios instructions</h3>
+                <img src="assets/pwa_ios.png" alt="pwa_ios" />
+            </div>
+            <div class="modal-content p-3">
+                <h3>Android instructions</h3>
+                <img src="assets/pwa_android.jpg" alt="pwa_android" />
+            </div>
+
+            <button style="width: 100%; background-color: rgb(0, 0, 78);" style="justify-content: center;" type="button"
+                class="btn btn-dark col" data-bs-dismiss="modal">close</button><br />
+
         </div>
     </div>
     <div class="modal" id="createPostModal" tabindex="-1" aria-labelledby="createPostModalLabel" aria-hidden="true">
@@ -110,31 +115,20 @@
                 <button type="button" class="btn btn-dark col" data-bs-dismiss="modal">close</button><br />
                 <!--<button type="submit" id="formsubmit" class="btn btn-success col">post</button>-->
             </div>
+
         </div>
+
 
     </div>
 
     <script>
-        function showInstall() {
 
-        }
-        function getNotified() {
-            /*Notification.requestPermission().then((data) => {
-                alert(data)
-            }).catch((err) => {
-                alert(err)
-            })*/
 
-        }
-        document.getElementById('installAppBtn').addEventListener("click", async () => {
-            deferredPrompt.prompt();
-            const { outcome } = await deferredPrompt.userChoice;
-            console.log(outcome)
-            deferredPrompt = null
-        })
         var createPostModalObj = new bootstrap.Modal(document.getElementById('createPostModal'), {});
 
         var openPostModalObj = new bootstrap.Modal(document.getElementById('openPostModal'), {});
+
+
 
         var openPostModalEle = document.getElementById('openPostModal')
         const submitBtn = document.createElement('button')

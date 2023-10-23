@@ -242,7 +242,7 @@ func main() {
 		}
 
 		var password string
-		passScan := db.QueryRow(fmt.Sprintf("select password from tfldata.users where username='%s';", userStr))
+		passScan := db.QueryRow(fmt.Sprintf("select password from tfldata.users where username='%s' or email='%s';", userStr, userStr))
 		scnerr := passScan.Scan(&password)
 		if scnerr != nil {
 			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('this was the scan error %s with dbpassword %s and form user is %s');", scnerr, password, userStr))

@@ -796,21 +796,27 @@ func main() {
 		type PostBody struct {
 			Issuetitle string   `json:"bugissue"`
 			Descdetail []string `json:"bugerrmessages"`
+			Label      string   `json:"label"`
 		}
 
 		var postData PostBody
-
-		labels := []string{"bug"}
+		var issueLabel []string
 
 		errmarsh := json.Unmarshal(bs, &postData)
 		if errmarsh != nil {
 			fmt.Println(errmarsh)
 		}
+		if postData.Label == "enhancement" {
+			issueLabel = []string{"enhancement"}
+
+		} else if postData.Label == "bug" {
+			issueLabel = []string{"bug"}
+		}
 		bodyText := fmt.Sprintf("%s on %s page - %s", postData.Descdetail[1], postData.Descdetail[0], username)
 		issueJson := github.IssueRequest{
 			Title:  &postData.Issuetitle,
 			Body:   &bodyText,
-			Labels: &labels,
+			Labels: &issueLabel,
 		}
 
 		jsonMarshed, errMarsh := json.Marshal(issueJson)

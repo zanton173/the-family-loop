@@ -36,7 +36,25 @@
             <input class="my-3 border-1 text-center" style="border-radius: 3%; width: 85%; margin: auto;"
                 name="bugissue" id="bugissueinput" type="text" placeholder="What was the issue?" required
                 maxlength="420" />
+            <div style="display: block;">
+                <h3>Is this a request for a new feature or a current problem?</h3>
+                <div class="form-check">
+
+                    <input class="form-check-input" type="radio" value="bug" name="label" id="buglabelradio" checked>
+                    <label class="form-check-label" for="labelradiolabel">
+                        Current issue
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" value="enhancement" name="label"
+                        id="enhancementlabelradio">
+                    <label class="form-check-label" for="labelradiolabel">
+                        New feature request
+                    </label>
+                </div>
+            </div>
             <h3>Which page were you seeing the issue?</h3>
+
             <div style="display: block;">
                 <div class="form-check">
 

@@ -116,21 +116,22 @@ func main() {
 		if psdmae != nil {
 			fmt.Print(psdmae)
 		}
-		fmt.Println(postData)
-		res, inserr := db.Exec(fmt.Sprintf("update tfldata.users set fcm_registration_id='%s' where session_token='%s';", postData.Fcmtoken, postData.Username))
+
+		_, inserr := db.Exec(fmt.Sprintf("update tfldata.users set fcm_registration_id='%s' where session_token='%s';", postData.Fcmtoken, postData.Username))
 		if inserr != nil {
 			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('%s');", inserr))
 		}
-		fmt.Print(res)
+
 	}
 
 	newPostsHandlerPushNotify := func(w http.ResponseWriter, r *http.Request) {
-
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		bs, _ := io.ReadAll(r.Body)
 
-		var postData struct {
+		type postBody struct {
 			Id string `json:"id"`
 		}
+		var postData postBody
 		marshErr := json.Unmarshal(bs, &postData)
 		if marshErr != nil {
 			fmt.Print(marshErr)
@@ -147,10 +148,16 @@ func main() {
 		fb_message_client, _ := app.Messaging(context.TODO())
 
 		sentRes, sendErr := fb_message_client.Send(context.TODO(), &messaging.Message{
-			Token: "eO7F0BK5JTqjVi6PUvJ4f-:APA91bG9BGMv4jt3tNnWt2rKT5r_nShWMcyj1wXsAtwi4z6vLXhxXpGS_wxtSKxu6bvyLdXhRivs1di5osSoHwq5oTz27QNOjR-fXqrLxBwxdqduxgWU57odGOVDv-LqCFGxfinBJJw5",
+			Token: fcmToken,
 			Notification: &messaging.Notification{
 				Title: "There's a new post!",
 				Body:  "Somebody just made a new post!",
+			},
+			APNS: &messaging.APNSConfig{
+				Payload: &messaging.APNSPayload{
+					Aps:        &messaging.Aps{},
+					CustomData: map[string]interface{}{},
+				},
 			},
 			Webpush: &messaging.WebpushConfig{
 				Notification: &messaging.WebpushNotification{
@@ -168,32 +175,7 @@ func main() {
 		if sendErr != nil {
 			fmt.Print(sendErr)
 		}
-		fmt.Println(sentRes)
-
-		/*
-			w.Header().Set("Content-Type", "application/json; charset=utf-8")
-			bs, _ := io.ReadAll(r.Body)
-
-			type postBody struct {
-				DbCount string `json:"tag"`
-			}
-			var postData postBody
-			psdmae := json.Unmarshal(bs, &postData)
-			if psdmae != nil {
-				fmt.Print(psdmae)
-			}
-
-			resp, senderr := webpush.SendNotification([]byte(fmt.Sprintf(`{"title": "There's a new post!", "body":"Someone just made a new post!", "icon": "../assets/android-chrome-512x512.png", "tag": "NewPostTag-%s" }`, postData.DbCount)), subscriber, &webpush.Options{
-				Subscriber:      "the-family-loop.com",
-				VAPIDPublicKey:  vapidpub,
-				VAPIDPrivateKey: vapidpriv,
-				TTL:             30,
-			})
-			if senderr != nil {
-				// TODO: Handle error
-				fmt.Println(senderr)
-			}
-			defer resp.Body.Close()*/
+		db.Exec(fmt.Sprintf("insert into tfldata.sent_notification_log(\"notification_result\") values('%s');", sentRes))
 	}
 
 	signUpHandler := func(w http.ResponseWriter, r *http.Request) {

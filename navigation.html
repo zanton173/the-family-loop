@@ -41,6 +41,9 @@
                 <div id="togglesignuplogin">
                     <form class="form" id="login-form" name="loginform" hx-post="/login" hx-trigger="submit"
                         hx-on="loginevent: loginFunction()" hx-swap="none">
+                        <!--<<form id="loginSignupForm" name="loginform" hx-post="/login" class="form" hx-trigger="submit"
+                        hx-swap="none">-->
+
                         <div class="p-4">
                             <h5>Login</h5>
                             <label>Username:</label>
@@ -54,9 +57,13 @@
                                 autocomplete="new-password" placeholder="Password"
                                 oninput="checkForValidLoginSubmission()" required id="passwordlogininput" />
                         </div>
+
                     </form>
-                    <form hx-post="/signup" class="form" id="sign-up-form" name="signupform" hx-trigger="submit"
+                    <form class="form" hx-post="/signup" id="sign-up-form" hx-trigger="submit"
                         hx-encoding="multipart/form-data" hx-swap="none" hx-target="this">
+                        <!-- <form method="post" action="/signup" enctype="multipart/form-data" class="form" id="sign-up-form"
+                        name="signupform" target="_blank" onsubmit="signUpFormSubmitted()">-->
+
                         <div class="p-4">
                             <h5>Sign Up</h5>
                             <label>Username:</label>
@@ -85,9 +92,11 @@
                         <div class="p-4">
 
                             <label>Pick a profile picture</label>
-                            <input id="pfpimage" type="file" accept="image/*" name="pfpformfile" required />
+                            <input class="form-control" id="pfpimage" type="file" accept="image/*"
+                                oninput="checkForValidSignUpSubmission()" name="pfpformfile" required />
 
                         </div>
+
                     </form>
                 </div>
 
@@ -99,16 +108,16 @@
 </div>
 
 
-<script>
+<script defer>
 
     let p = document.getElementById('anchor')
     let c = document.getElementById('ournav')
-    p.append(c)
 
-    let signup = document.getElementById('sign-up-form')
-    let loginele = document.getElementById('login-form')
+
+    var signup = document.getElementById('sign-up-form')
+    var loginele = document.getElementById('login-form')
     let parentauth = document.getElementById('togglesignuplogin')
-
+    //let parentauth = document.getElementById('loginSignupForm')
     let loginbtn = document.getElementById('login-button')
     let signupbtn = document.getElementById('signup-button')
 
@@ -153,6 +162,8 @@
     /*const jsWorker = new Worker("js/worker.js", {
         credentials: "same-origin"
     })*/
+
+    p.append(c)
     async function fetchSeshDetails(token) {
         //console.log(token)
 
@@ -196,59 +207,18 @@
 
         loginModal.toggle()
         showLoginForm()
+        //showSignUpForm()
         //document.getElementById('login-modal').setAttribute('data-bs-backdrop', 'static')
         //document.getElementById('login-modal').setAttribute('data-bs-keyboard', 'false')
         document.getElementById('login-modal-header').contains(document.getElementById('modalclose')) &&
             document.getElementById('login-modal-header').removeChild(document.getElementById('modalclose'))
-    }
-    function showSignUpForm() {
-
-        if (parentauth.childElementCount >= 1) {
-            signupbtn.setAttribute('class', 'btn px-5 btn-secondary')
-
-            loginbtn.setAttribute('class', 'btn px-5 btn-outline-secondary')
-            if (parentauth.contains(loginele)) {
-                parentauth.removeChild(loginele)
-            }
-            parentauth.appendChild(signup)
-        }
-        signup.addEventListener("submit", function (event) {
-
-            console.log(event)
-
-        })
-        htmx.on("#sign-up-form", "htmx:afterRequest", function (event) {
-            alert("Loading...")
-            if (event.detail.xhr.status == 401) {
-                alert("Are you trying to bypass client side validation??!?!?!")
-            } else if (event.detail.xhr.status == 200) {
-                alert('Sign up Successful! You can now login');
-                loginModal.toggle();
-                showLoginForm();
-            } else if (event.detail.xhr.status == 400) {
-                alert("Something was wrong with the picture you provided. Try a different one")
-            } else if (event.detail.xhr.status == 409) {
-                alert("That email already exists")
-                window.location.reload()
-            }
-        })
-    }
-    function showLoginForm() {
-
-        if (parentauth.childElementCount >= 1) {
-            loginbtn.setAttribute('class', 'btn px-5 btn-secondary')
-            signupbtn.setAttribute('class', 'btn px-5 btn-outline-secondary')
-            if (parentauth.contains(signup)) {
-                parentauth.removeChild(signup)
-            }
-            parentauth.appendChild(loginele)
-        }
     }
     function checkForValidLoginSubmission() {
 
         if (usernamelogininput.value > '' && passwordlogininput.value > '') {
 
             gologin.setAttribute("type", "submit")
+            gologin.setAttribute("id", 'logingobutton')
             gologin.setAttribute("class", "btn btn-outline-success")
             gologin.setAttribute("data-bs-dismiss", "modal")
 
@@ -263,6 +233,7 @@
         if (usernamesignupinput.value > '' && emailsignupinput.value > '' && passwordsignupinput.value > '' && passwordsignupinput.value === confirmpasswordsignupinput.value) {
 
             gosignup.setAttribute("type", "submit")
+            gosignup.setAttribute("id", 'signupgobutton')
             gosignup.setAttribute("class", "btn btn-outline-success")
             gosignup.setAttribute("data-bs-dismiss", "modal")
 
@@ -277,6 +248,49 @@
         }
     }
 
+    function showSignUpForm() {
+
+        if (parentauth.childElementCount >= 1) {
+            signupbtn.setAttribute('class', 'btn px-5 btn-secondary')
+
+
+            loginbtn.setAttribute('class', 'btn px-5 btn-outline-secondary')
+            signup.setAttribute("style", "display: inherit")
+            //parentauth.appendChild(signup)
+            if (parentauth.contains(loginele)) {
+                parentauth.removeChild(loginele)
+            }
+        }
+
+    }
+    htmx.on("#sign-up-form", "htmx:afterRequest", function (event) {
+
+        if (event.detail.xhr.status == 401) {
+            alert("Are you trying to bypass client side validation??!?!?!")
+        } else if (event.detail.xhr.status == 200) {
+            alert('Sign up Successful! You can now login');
+            loginModal.toggle();
+            showLoginForm();
+        } else if (event.detail.xhr.status == 400) {
+            alert("Something was wrong with the picture you provided. Try a different one")
+        } else if (event.detail.xhr.status == 409) {
+            alert("That email already exists")
+            window.location.reload()
+        }
+
+    })
+    function showLoginForm() {
+        if (parentauth.childElementCount >= 1) {
+            loginbtn.setAttribute('class', 'btn px-5 btn-secondary')
+            signupbtn.setAttribute('class', 'btn px-5 btn-outline-secondary')
+            if (parentauth.contains(signup)) {
+                //parentauth.removeChild(signup)
+                signup.setAttribute("style", "display: none")
+            }
+
+            parentauth.appendChild(loginele)
+        }
+    }
 
 
     function loginFunction() {
@@ -294,82 +308,67 @@
 
     var notificationBody = {}
 
-    document.body.addEventListener("htmx:load", function settleEvent(event) {
+    let name = "session_id=";
+    let decodedCookie = decodeURIComponent(document.cookie);
+    let ca = decodedCookie.split(';');
+    for (let i = 0; i < ca.length; i++) {
+        let c = ca[i];
 
-        let name = "session_id=";
-        let decodedCookie = decodeURIComponent(document.cookie);
-        let ca = decodedCookie.split(';');
-        for (let i = 0; i < ca.length; i++) {
-            let c = ca[i];
-
-            while (c.charAt(0) == ' ') {
-                c = c.substring(1);
-            }
-
-            if (c.indexOf(name) == 0) {
-
-                htmx.off("htmx:load", settleEvent)
-
-
-                document.getElementById('login-modal').removeAttribute('data-bs-backdrop')
-
-                //console.log(c.substring(name.length, c.length))
-                let session_token = c.substring(name.length, c.length)
-
-
-                if (!("Notification" in window)) {
-                    // Check if the browser supports notifications
-                    alert("This browser does not support desktop notification");
-                } else {
-
-                    Notification.requestPermission().then((res) => {
-
-                        if (Notification.permission == 'granted') {
-
-                            getToken(messaging, { vapidKey: "BJmKY269Mkqw_zRnXy0n1ncFOBsamgi7hSpli4hKGlAJ-OKTae7qj8scasqrO9dpdmntNXXgbsMK3okY0bpOBVQ" })
-                                .then((currentToken) => {
-
-                                    notificationBody = {
-                                        username: session_token,
-                                        fcm_token: currentToken
-                                    }
-                                    fetch("/create-subscription", {
-                                        method: "POST",
-                                        headers: {
-                                            "Content-Type": "application/json"
-                                        },
-                                        body: JSON.stringify(notificationBody)
-                                    })
-                                        .then(() => {
-                                            return window.navigator.serviceWorker
-                                                .getRegistration('/firebase-cloud-messaging-push-scope')
-                                                .then((serviceWorker) => {
-                                                    if (serviceWorker) return serviceWorker;
-                                                    return window.navigator.serviceWorker.register('/firebase-messaging-sw.js', {
-                                                        scope: '/firebase-cloud-messaging-push-scope',
-                                                    });
-                                                });
-                                        }).catch((err) => {
-                                            alert(err)
-                                        })
-                                })
-                        }
-
-                    })
-                }
-
-
-            } /*else {
-            loginModal.toggle()
-            showLoginForm()
-            //document.getElementById('login-modal').setAttribute('data-bs-backdrop', 'static')
-            //document.getElementById('login-modal').setAttribute('data-bs-keyboard', 'false')
-            document.getElementById('login-modal-header').contains(document.getElementById('modalclose')) &&
-                document.getElementById('login-modal-header').removeChild(document.getElementById('modalclose'))
-        }*/
+        while (c.charAt(0) == ' ') {
+            c = c.substring(1);
         }
 
-    })
+        if (c.indexOf(name) == 0) {
+
+            let session_token = c.substring(name.length, c.length)
+
+
+            if (!("Notification" in window)) {
+                // Check if the browser supports notifications
+                alert("This browser does not support desktop notification");
+            } else {
+
+                Notification.requestPermission().then((res) => {
+
+                    if (Notification.permission == 'granted') {
+
+                        getToken(messaging, { vapidKey: "BJmKY269Mkqw_zRnXy0n1ncFOBsamgi7hSpli4hKGlAJ-OKTae7qj8scasqrO9dpdmntNXXgbsMK3okY0bpOBVQ" })
+                            .then((currentToken) => {
+
+                                notificationBody = {
+                                    username: session_token,
+                                    fcm_token: currentToken
+                                }
+                                fetch("/create-subscription", {
+                                    method: "POST",
+                                    headers: {
+                                        "Content-Type": "application/json"
+                                    },
+                                    body: JSON.stringify(notificationBody)
+                                })
+                                    .then(() => {
+                                        return window.navigator.serviceWorker
+                                            .getRegistration('/firebase-cloud-messaging-push-scope')
+                                            .then((serviceWorker) => {
+                                                if (serviceWorker) return serviceWorker;
+                                                return window.navigator.serviceWorker.register('/firebase-messaging-sw.js', {
+                                                    scope: '/firebase-cloud-messaging-push-scope',
+                                                });
+                                            });
+                                    }).catch((err) => {
+                                        alert(err)
+                                    })
+                            }).catch((err) => alert(err))
+                    }
+
+                })
+            }
+
+
+        }
+    }
+
+
 
 
 </script>

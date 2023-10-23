@@ -43,7 +43,8 @@
             it</button>
 
         &nbsp;&nbsp;<button onclick="getNotified()">Allow notifications</button>-->
-        <button hx-post="/send-new-posts-push" hx-swap="none">Test</button>
+        <button hx-post="/send-new-posts-push" hx-vals='js:{"id": document.cookie.split("session_id=")[1]}'
+            hx-ext="json-enc" hx-swap="none">Test</button>
     </div>
     <div class="modal" id="openPostModal" tabindex="-1" aria-labelledby="openPostModalLabel" aria-hidden="true">
         <div class="modal-dialog">
@@ -176,12 +177,12 @@
         }
 
     </script>
-    <div hx-get="/new-posts" hx-trigger="load, every 5s" hx-target="#refreshbutton" style="text-align: center;"
+    <!--<div hx-get="/new-posts" hx-trigger="load, every 5s" hx-target="#refreshbutton" style="text-align: center;"
         class="px-5" id="polling">
         <div id="refreshbutton">
 
         </div>
-    </div>
+    </div>-->
 
     <div style="text-align: center;" class="px-5" id="posts-div">
         <div hx-get="/get-posts" hx-trigger="load" hx-target="#post-items" id="divofposts">
@@ -263,7 +264,7 @@
             window.scrollTo({ top: 0, behavior: "smooth" });
             document.getElementById('notification').removeChild(badge)
         }
-        var dbCount = null
+        /*var dbCount = null
         htmx.on('#post-items', 'htmx:afterSettle', function (event) {
 
             htmx.on('#polling', 'htmx:afterRequest', function (data) {
@@ -283,7 +284,7 @@
 
                 }
             })
-        })
+        })*/
         htmx.on("#createpostele", "htmx:afterRequest", function (event) {
             if (event.detail.xhr.status == 401) {
                 alert("Please login before creating a post.")

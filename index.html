@@ -27,7 +27,7 @@
 </head>
 
 <body style="background-color: rgba(201, 224, 223, .5);">
-    <header id="installbanner" style="display: inline">
+    <!-- <header id="installbanner" style="display: inline">
 
         <div style="background-color: rgb(252, 253, 245); display: flex; align-items: center; justify-content: center;"
             class="px-3">
@@ -35,7 +35,7 @@
             <button id="installAppBtn" type="button" class="btn btn-outline-success border-1 mx-5"
                 data-bs-toggle="modal" data-bs-target="#installmodal">Install</button>
         </div>
-    </header>
+    </header>-->
     <h3 style="text-align: center; padding: 1%;">Home</h3>
 
     <div class="sticky-top" id="anchor">
@@ -48,10 +48,12 @@
         </button>
         <!--<button hx-ext='json-enc' hx-post="/send-new-posts-push"
             hx-vals='js:{"id": document.cookie.split("session_id=")[1]}' hx-swap="none">Do
-            it</button>
+            it</button>-->
+        <div id="notifydiv" style="display: none;">&nbsp;&nbsp;<button class="btn btn-outline-primary"
+                onclick="getNotified()">Allow
+                notifications &nbsp; <i class="bi bi-bell-fill"></i></button></div>
 
-        &nbsp;&nbsp;<button onclick="getNotified()">Allow notifications</button>
-        <button hx-post="/send-new-posts-push" hx-vals='js:{"id": document.cookie.split("session_id=")[1]}'
+        <!--<button hx-post="/send-new-posts-push" hx-vals='js:{"id": document.cookie.split("session_id=")[1]}'
             hx-ext="json-enc" hx-swap="none">Test</button>-->
     </div>
     <div class="modal" id="openPostModal" tabindex="-1" aria-labelledby="openPostModalLabel" aria-hidden="true">
@@ -123,6 +125,19 @@
 
     <script>
 
+        window.addEventListener("load", () => {
+            console.log(Notification.permission)
+            Notification.permission !== 'granted' ?
+                document.getElementById('notifydiv').setAttribute("style", "display: inline")
+                : document.getElementById('notifydiv').setAttribute("style", "display: none")
+        })
+
+        async function getNotified() {
+            !("Notification" in window)
+                ? alert("This browser does not support desktop notification")
+                : await Notification.requestPermission().then((data) => alert("alert permission: " + data)).catch((err) => alert(err))
+
+        }
 
         var createPostModalObj = new bootstrap.Modal(document.getElementById('createPostModal'), {});
 

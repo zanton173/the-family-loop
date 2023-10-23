@@ -29,6 +29,28 @@
             "sizes": "32x32"
         }
     ],
+    "shortcuts": [
+        {
+            "name": "Posts",
+            "url": "/home",
+            "description": "tfl posts"
+        },
+        {
+            "name": "Calendar",
+            "url": "/calendar",
+            "description": "upcoming events"
+        },
+        {
+            "name": "Chat",
+            "url": "/groupchat",
+            "description": "group chat"
+        },
+        {
+            "name": "Bug",
+            "url": "/bugreport",
+            "description": "report a bug"
+        }
+    ],
     "display": "standalone",
     "theme_color": "#ffffff",
     "background-color": "#ffff",

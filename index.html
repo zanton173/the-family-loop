@@ -26,8 +26,27 @@
     <title>The Family Loop</title>
 </head>
 
-<body>
+<body style="background-color: rgba(201, 224, 223, .5);">
+    <header id="installbanner" style="display: inline">
+        <div style="background-color: rgb(252, 253, 245); display: flex; align-items: center; justify-content: center;"
+            class="px-3">
+            <p class="m-2">Install the app</p>
+            <button id="installAppBtn" class="btn btn-outline-success border-1 mx-5">Install</button>
+        </div>
+        <script>
+            let deferredPrompt;
 
+            window.addEventListener('beforeinstallprompt', (e) => {
+                // Prevent the mini-infobar from appearing on mobile
+                e.preventDefault();
+                // Stash the event so it can be triggered later.
+                deferredPrompt = e;
+                // Update UI notify the user they can install the PWA
+                showInstall();
+                // Optionally, send analytics event that PWA install promo was shown.
+                console.log(`'beforeinstallprompt' event was fired.`);
+            });</script>
+    </header>
     <h3 style="text-align: center; padding: 1%;">Home</h3>
 
     <div class="sticky-top" id="anchor">
@@ -96,6 +115,9 @@
     </div>
 
     <script>
+        function showInstall() {
+
+        }
         function getNotified() {
             /*Notification.requestPermission().then((data) => {
                 alert(data)
@@ -104,7 +126,12 @@
             })*/
 
         }
-
+        document.getElementById('installAppBtn').addEventListener("click", async () => {
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            console.log(outcome)
+            deferredPrompt = null
+        })
         var createPostModalObj = new bootstrap.Modal(document.getElementById('createPostModal'), {});
 
         var openPostModalObj = new bootstrap.Modal(document.getElementById('openPostModal'), {});

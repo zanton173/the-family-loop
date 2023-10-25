@@ -53,6 +53,7 @@ var awskeysecret string
 var ghissuetoken string
 
 func main() {
+	nyLoc, _ := time.LoadLocation("America/New_York")
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Error loading .env file")
@@ -711,7 +712,7 @@ func main() {
 			sendNotificationToTaggedUser(w, r, fcmRegToken, db, chatMessage, app)
 		}
 
-		_, inserr := db.Exec(fmt.Sprintf("insert into tfldata.gchat(\"chat\", \"author\", \"createdon\") values('%s', '%s', '%s');", chatMessage, userName, time.Now().Format(time.DateTime)))
+		_, inserr := db.Exec(fmt.Sprintf("insert into tfldata.gchat(\"chat\", \"author\", \"createdon\") values('%s', '%s', '%s');", chatMessage, userName, time.Now().In(nyLoc).Format(time.DateTime)))
 		if inserr != nil {
 			fmt.Println(err)
 			w.WriteHeader(http.StatusBadRequest)

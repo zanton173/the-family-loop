@@ -283,6 +283,8 @@ func main() {
 			tmpl := template.Must(template.ParseFiles("bugreport.html"))
 			tmpl.Execute(w, nil)
 			tm.Execute(w, nil)
+		case "/bg_img.svg":
+			http.ServeFile(w, r, "assets/bg_img.svg")
 		default:
 			tmpl := template.Must(template.ParseFiles("index.html"))
 			tmpl.Execute(w, nil)
@@ -335,14 +337,14 @@ func main() {
 				imgreq.Header.Set("Cache-Control", "max-age=86400")
 				resp, _ := imgclient.Do(imgreq)*/
 				if countOfImg > 1 {
-					dataStr = fmt.Sprintf("<div class='card my-4' style='border-radius: 106px 106px / 91px; box-shadow: 12px 12px 2px 1px rgb(41 88 93 / 20&percnt;);'><img id='%s' src='https://the-family-loop-customer-hash.s3.amazonaws.com/posts/images/%s' alt='%s' style='border-radius: 14px;' alt='default' /><div class='p-2' style='display: flex; justify-content: space-around;'><i onclick='nextLeftImage(`%s`)' class='bi bi-arrow-90deg-left'></i><i onclick='nextRightImage(`%s`)' class='bi bi-arrow-90deg-right'></i></div><div class='card-body'><h5 class='card-title'>%s - %s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' class='btn btn-primary'>Comments (%s)</button></div></div>", postrows.Postfileskey, firstImg.filename, firstImg.filename, postrows.Postfileskey, postrows.Postfileskey, postrows.Title, postrows.Author, postrows.Description, postrows.Id, postrows.Id, commentCount)
+					dataStr = fmt.Sprintf("<div class='card my-4' style='border-radius: 106px 106px / 91px; box-shadow: 12px 12px 2px 1px rgb(41 88 93 / 20&percnt;);'><img id='%s' src='https://the-family-loop-customer-hash.s3.amazonaws.com/posts/images/%s' alt='%s' style='border-radius: 106px 106px / 91px;' alt='default' /><div class='p-2' style='display: flex; justify-content: space-around;'><i onclick='nextLeftImage(`%s`)' class='bi bi-arrow-90deg-left'></i><i onclick='nextRightImage(`%s`)' class='bi bi-arrow-90deg-right'></i></div><div class='card-body'><h5 class='card-title'>%s - %s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' class='btn btn-primary'>Comments (%s)</button></div></div>", postrows.Postfileskey, firstImg.filename, firstImg.filename, postrows.Postfileskey, postrows.Postfileskey, postrows.Title, postrows.Author, postrows.Description, postrows.Id, postrows.Id, commentCount)
 				} else if countOfImg == 1 {
-					dataStr = fmt.Sprintf("<div class='card my-4' style='border-radius: 106px 106px / 91px; box-shadow: 12px 12px 2px 1px rgb(41 88 93 / 20&percnt;);'><img id='%s' src='https://the-family-loop-customer-hash.s3.amazonaws.com/posts/images/%s' alt='%s' style='border-radius: 14px;' alt='default' /><div class='p-2' style='display: flex; justify-content: space-around;'></div><div class='card-body'><h5 class='card-title'>%s - %s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' class='btn btn-primary'>Comments (%s)</button></div></div>", postrows.Postfileskey, firstImg.filename, firstImg.filename, postrows.Title, postrows.Author, postrows.Description, postrows.Id, postrows.Id, commentCount)
+					dataStr = fmt.Sprintf("<div class='card my-4' style='border-radius: 106px 106px / 91px; box-shadow: 12px 12px 2px 1px rgb(41 88 93 / 20&percnt;);'><img id='%s' src='https://the-family-loop-customer-hash.s3.amazonaws.com/posts/images/%s' alt='%s' style='border-radius: 106px 106px / 91px;' alt='default' /><div class='p-2' style='display: flex; justify-content: space-around;'></div><div class='card-body'><h5 class='card-title'>%s - %s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' class='btn btn-primary'>Comments (%s)</button></div></div>", postrows.Postfileskey, firstImg.filename, firstImg.filename, postrows.Title, postrows.Author, postrows.Description, postrows.Id, postrows.Id, commentCount)
 				}
 				//imgclient.CloseIdleConnections()
 				//defer resp.Body.Close()
 			} else if strings.Contains(firstImg.filetype, "video") || strings.Contains(firstImg.filetype, "octet-stream") {
-				dataStr = fmt.Sprintf("<div class='card my-4' style='border-radius: 106px 106px / 91px; box-shadow: 12px 12px 2px 1px rgb(41 88 93 / 20&percnt;);'><video controls id='video'><source src='https://the-family-loop-customer-hash.s3.amazonaws.com/posts/videos/%s'></video><div class='p-2' style='display: flex; justify-content: space-around;'></div><div class='card-body'><h5 class='card-title'>%s - %s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' class='btn btn-primary'>Comments (%s)</button></div></div>", firstImg.filename, postrows.Title, postrows.Author, postrows.Description, postrows.Id, postrows.Id, commentCount)
+				dataStr = fmt.Sprintf("<div class='card my-4' style='border-radius: 106px 106px / 91px; box-shadow: 12px 12px 2px 1px rgb(41 88 93 / 20&percnt;);'><video style='border-radius: 106px 106px / 91px;' controls id='video'><source src='https://the-family-loop-customer-hash.s3.amazonaws.com/posts/videos/%s'></video><div class='p-2' style='display: flex; justify-content: space-around;'></div><div class='card-body'><h5 class='card-title'>%s - %s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' class='btn btn-primary'>Comments (%s)</button></div></div>", firstImg.filename, postrows.Title, postrows.Author, postrows.Description, postrows.Id, postrows.Id, commentCount)
 			}
 
 			postTmpl, tmerr = template.New("tem").Parse(dataStr)
@@ -704,7 +706,7 @@ func main() {
 			scnerr := fcmRegRow.Scan(&fcmRegToken)
 			if scnerr != nil {
 				fmt.Println(scnerr)
-				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", scnerr, time.Now().Format(time.DateTime)))
+				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", scnerr, time.Now().Local().Format(time.DateTime)))
 			}
 			sendNotificationToTaggedUser(w, r, fcmRegToken, db, chatMessage, app)
 		}
@@ -728,8 +730,17 @@ func main() {
 			var message string
 			var author string
 			var createdat time.Time
+			var formatCreatedatTime string
+
 			output.Scan(&message, &author, &createdat)
-			dataStr := "<div style='max-width: 100%; background-color: rgb(107 166 254 / .3);' class='container my-1'><div class='row'><b class='col-2'>" + author + "&nbsp;&nbsp;&nbsp;&nbsp;" + "</b><p class='col-9'>" + message + "</p></div><div class='row'><p class='col' style='margin-left: 75%; font-size: small;'>&nbsp;&nbsp" + createdat.Format(time.DateOnly) + "&nbsp;" + createdat.Format(time.Kitchen) + "</p></div></div>"
+			if time.Now().UTC().Sub(createdat) > (24 * time.Hour) {
+				formatCreatedatTime = time.ANSIC
+				formatCreatedatTime = strings.Split(formatCreatedatTime, " ")[0]
+			} else {
+				formatCreatedatTime = time.Kitchen
+			}
+
+			dataStr := "<div style='max-width: 100%; background-color: rgb(107 166 254 / .3);' class='container my-1'><div class='row'><b class='col-2'>" + author + "&nbsp;&nbsp;&nbsp;&nbsp;" + "</b><p class='col-9'>" + message + "</p></div><div class='row'><p class='col' style='margin-left: 75%; font-size: small;'>&nbsp;&nbsp" + createdat.Format(formatCreatedatTime) + "</p></div></div>"
 			chattmp, tmperr := template.New("gchat").Parse(dataStr)
 			if tmperr != nil {
 				fmt.Println(tmperr)
@@ -964,7 +975,7 @@ func setLoginCookie(w http.ResponseWriter, db *sql.DB, userStr string, r *http.R
 		db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", inserterr))
 		fmt.Println(inserterr)
 	}*/
-	_, updateerr := db.Exec(fmt.Sprintf("update tfldata.users set session_token='%s' where username='%s';", sessionToken, userStr))
+	_, updateerr := db.Exec(fmt.Sprintf("update tfldata.users set session_token='%s' where username='%s' or email='%s';", sessionToken, userStr, userStr))
 	if updateerr != nil {
 		db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s');", updateerr, time.Now().Format(time.DateTime)))
 		fmt.Printf("err: '%s'", updateerr)

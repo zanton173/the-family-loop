@@ -153,12 +153,7 @@ func main() {
 				Title: "There's a new post!",
 				Body:  "Somebody just made a new post!",
 			},
-			APNS: &messaging.APNSConfig{
-				Payload: &messaging.APNSPayload{
-					Aps:        &messaging.Aps{},
-					CustomData: map[string]interface{}{},
-				},
-			},
+
 			Webpush: &messaging.WebpushConfig{
 				Notification: &messaging.WebpushNotification{
 					Title: "There's a new post!",
@@ -684,8 +679,6 @@ func main() {
 	}
 	createGroupChatMessageHandler := func(w http.ResponseWriter, r *http.Request) {
 		c, err := r.Cookie("session_id")
-		chatMessage := r.PostFormValue("gchatmessage")
-		var userName string
 
 		if err != nil {
 			if err == http.ErrNoCookie {
@@ -700,9 +693,21 @@ func main() {
 			fmt.Println("Cook is no longer valid")
 			return
 		}
-
+		chatMessage := r.PostFormValue("gchatmessage")
+		taggedUser := r.PostFormValue("taggedUser")
+		var userName string
+		var fcmRegToken string
 		userNameRow := db.QueryRow(fmt.Sprintf("select username from tfldata.users where session_token='%s';", c.Value))
 		userNameRow.Scan(&userName)
+		if taggedUser > "" {
+			fcmRegRow := db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where username='%s';", taggedUser))
+			scnerr := fcmRegRow.Scan(&fcmRegToken)
+			if scnerr != nil {
+				fmt.Println(scnerr)
+				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('%s');", scnerr))
+			}
+			sendNotificationToTaggedUser(w, r, fcmRegToken, db, chatMessage, app)
+		}
 
 		_, inserr := db.Exec(fmt.Sprintf("insert into tfldata.gchat(\"chat\", \"author\", \"createdon\") values('%s', '%s', '%s');", chatMessage, userName, time.Now().Format(time.DateTime)))
 		if inserr != nil {
@@ -732,6 +737,26 @@ func main() {
 			chattmp.Execute(w, nil)
 
 		}
+	}
+	getUsernamesToTagHandler := func(w http.ResponseWriter, r *http.Request) {
+
+		searchOutput, searchErr := db.Query("select username from tfldata.users where username like '%" + r.URL.Query().Get("user") + "%';")
+		if searchErr != nil {
+			w.Write([]byte("no results found"))
+		}
+		defer searchOutput.Close()
+		var sliceOfResults []string
+		var tmpResult string
+		for searchOutput.Next() {
+
+			searchOutput.Scan(&tmpResult)
+			sliceOfResults = append(sliceOfResults, tmpResult)
+		}
+		jsonbs, marsherr := json.Marshal(sliceOfResults)
+		if marsherr != nil {
+			fmt.Println(marsherr)
+		}
+		w.Write(jsonbs)
 	}
 	getPostImagesHandler := func(w http.ResponseWriter, r *http.Request) {
 
@@ -870,6 +895,7 @@ func main() {
 
 	http.HandleFunc("/group-chat-messages", getGroupChatMessagesHandler)
 	http.HandleFunc("/create-a-group-chat-message", createGroupChatMessageHandler)
+	http.HandleFunc("/get-all-users-to-tag", getUsernamesToTagHandler)
 
 	http.HandleFunc("/create-subscription", subscriptionHandler)
 	http.HandleFunc("/send-new-posts-push", newPostsHandlerPushNotify)
@@ -1115,6 +1141,37 @@ func createTFLBucketAndUpload(k string, s string, bucketexists bool, f multipart
 
 	}
 	return filetype
+}
+
+func sendNotificationToTaggedUser(w http.ResponseWriter, r *http.Request, fcmToken string, db *sql.DB, message string, app *firebase.App) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+
+	fb_message_client, _ := app.Messaging(context.TODO())
+
+	sentRes, sendErr := fb_message_client.Send(context.TODO(), &messaging.Message{
+		Token: fcmToken,
+		Notification: &messaging.Notification{
+			Title: "Someone tagged you",
+			Body:  message,
+		},
+
+		Webpush: &messaging.WebpushConfig{
+			Notification: &messaging.WebpushNotification{
+				Title: "Someone tagged you",
+				Body:  message,
+			},
+		},
+		Android: &messaging.AndroidConfig{
+			Notification: &messaging.AndroidNotification{
+				Title: "Someone tagged you",
+				Body:  message,
+			},
+		},
+	})
+	if sendErr != nil {
+		fmt.Print(sendErr)
+	}
+	db.Exec(fmt.Sprintf("insert into tfldata.sent_notification_log(\"notification_result\", \"createdon\") values('%s', '%s');", sentRes, time.Now().Format(time.DateTime)))
 }
 
 /*func uploadPostPhotoTos3(f multipart.File, fn string, client *s3.Client) {

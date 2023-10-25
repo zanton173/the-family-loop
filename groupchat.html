@@ -30,20 +30,73 @@
     <div id="anchor">
 
     </div>
-    <div hx-get="/group-chat-messages" hx-trigger="load, every 5s, success-send from:#messageform"
-        class="border-1 d-block m-2"
+    <div hx-get="/group-chat-messages" hx-trigger="load, success-send from:#messageform" class="border-1 d-block m-2"
         style="justify-content: center; text-align: center; background-color: rgb(205, 205, 206); border-radius: 1%;">
 
     </div>
-    <form hx-post="/create-a-group-chat-message" hx-swap="afterend" hx-target="this"
-        hx-on::after-request="clearFormGetMessages()" id="messageform">
+    <form hx-post="/create-a-group-chat-message" hx-swap="afterend" hx-target="this" id="messageform"
+        hx-on::after-request="clearFormGetMessages()" hx-vals="js:{'taggedUser': taggedUser}">
         <div class="d-flex" style="justify-content: center; margin-bottom: 8%;">
-            <input class="my-0 border-2 text-center" style="border-radius: 3%; width: 75%;" name="gchatmessage"
-                id="gchatinput" type="text" placeholder="Enter message" required maxlength="420" />
-            <button type="submit" class="btn btn-outline-success"><i class="bi bi-send"></i></button>
+            <div class="container border-1">
+                <div id="popovermain" style="display: none; justify-content: center;" class="popover row"
+                    role="tooltip">
+                    <h3 class="popover-header">tag user</h3>
+                    <div id="popbody">
+
+                    </div>
+
+                </div>
+                <div class="row" style="justify-content: center;">
+                    <input class="col-8 my-0 border-2 text-center" style="border-radius: 3%; width: 75%;"
+                        name="gchatmessage" id="gchatinput" type="text" oninput="checkForTagging()"
+                        placeholder="Enter message" required maxlength="420" />
+                    <button type="submit" class="col-1 btn btn-outline-success"><i class="bi bi-send"></i></button>
+                </div>
+            </div>
         </div>
     </form>
     <script>
+        const jsWorker = new Worker("js/worker.js")
+        var listOfUsersArr = []
+        var taggedUser = ""
+        async function checkForTagging() {
+            if (document.getElementById('gchatinput').value.includes('@') && document.getElementById('gchatinput').value.split('@')[1] > '') {
+
+                const resp = await fetch("/get-all-users-to-tag?user=" + document.getElementById('gchatinput').value.split('@')[1], {
+                    method: "GET",
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+
+                listOfUsersArr = await resp.json()
+                if (listOfUsersArr != null) {
+                    listOfUsersArr.forEach((item) => {
+                        /*var user = document.createElement('p')
+                        user.setAttribute('onclick', `selectTaggedUser('${item}')`)
+                        user.setAttribute('id', item)
+                        user.innerHTML = item*/
+                        userStr = `<p onclick=selectTaggedUser('${item}') id='${item}'>${item}</p>`
+                        document.getElementById('popbody').innerHTML = userStr
+
+                    })
+                } else {
+                    document.getElementById('popbody').innerHTML = "No user found..."
+                }
+
+                document.getElementById('popovermain').setAttribute("style", "display: block; width: 50%; margin-left: 25%")
+
+            } else {
+                document.getElementById('popovermain').setAttribute("style", "display: none")
+            }
+        }
+        function selectTaggedUser(username) {
+            document.getElementById('gchatinput').removeAttribute('oninput')
+            document.getElementById('gchatinput').focus()
+            taggedUser = username
+            document.getElementById('gchatinput').value = document.getElementById('gchatinput').value.replace('@'.concat(document.getElementById('gchatinput').value.split('@')[1]), username)
+            document.getElementById('popovermain').setAttribute("style", "display: none")
+        }
         function clearFormGetMessages() {
             document.getElementById('gchatinput').value = ""
         }

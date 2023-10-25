@@ -119,7 +119,7 @@ func main() {
 
 		_, inserr := db.Exec(fmt.Sprintf("update tfldata.users set fcm_registration_id='%s' where session_token='%s';", postData.Fcmtoken, postData.Username))
 		if inserr != nil {
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('%s');", inserr))
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", inserr, time.Now().Format(time.DateTime)))
 		}
 
 	}
@@ -188,7 +188,7 @@ func main() {
 		upload, filename, errfile := r.FormFile("pfpformfile")
 		if errfile != nil {
 			fmt.Println(errfile)
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('%s');", errfile))
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", errfile, time.Now().Format(time.DateTime)))
 			w.WriteHeader(http.StatusBadRequest)
 		}
 		uploadPfpToS3(awskey, awskeysecret, false, upload, filename.Filename, r)
@@ -210,43 +210,43 @@ func main() {
 
 		if errinsert != nil {
 			fmt.Println(errinsert)
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('%s');", errinsert))
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", errinsert, time.Now().Format(time.DateTime)))
 			w.WriteHeader(http.StatusBadRequest)
 		}
 
 	}
 
 	loginHandler := func(w http.ResponseWriter, r *http.Request) {
-		var userUid string
+		/*var userUid string
 		fb_auth_client, clienterr := app.Auth(context.TODO())
 		if clienterr != nil {
 			fmt.Println(clienterr)
-		}
+		}*/
 
 		userStr := strings.ToLower(r.PostFormValue("usernamelogin"))
-		userIdRow := db.QueryRow(fmt.Sprintf("select firebase_user_uid from tfldata.users where username='%s';", userStr))
+		/*userIdRow := db.QueryRow(fmt.Sprintf("select firebase_user_uid from tfldata.users where username='%s';", userStr))
 		userScnErr := userIdRow.Scan(&userUid)
 		if userScnErr != nil {
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('%s');", userScnErr))
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", userScnErr))
 		}
 		_, loginerr := fb_auth_client.GetUser(context.Background(), userUid)
 
 		if loginerr != nil {
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('%s');", loginerr))
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", loginerr))
 
-		}
+		}*/
 
 		var password string
 		passScan := db.QueryRow(fmt.Sprintf("select password from tfldata.users where username='%s' or email='%s';", userStr, userStr))
 		scnerr := passScan.Scan(&password)
 		if scnerr != nil {
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('this was the scan error %s with dbpassword %s and form user is %s');", scnerr, password, userStr))
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('this was the scan error %s with dbpassword %s and form user is %s');", scnerr, password, userStr))
 			fmt.Print(scnerr)
 		}
 		err := bcrypt.CompareHashAndPassword([]byte(password), []byte(r.PostFormValue("passwordlogin")))
 
 		if err != nil {
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('%s');", err))
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", err, time.Now().Format(time.DateTime)))
 			w.Header().Set("HX-Trigger", "loginevent")
 		} else if err == nil {
 			setLoginCookie(w, db, userStr, r)
@@ -309,7 +309,7 @@ func main() {
 
 			//if err := output.Scan(&postrows.Id, &postrows.Title, &postrows.Description, &postrows.File_name, &postrows.File_type, &postrows.Author); err != nil {
 			if err := output.Scan(&postrows.Id, &postrows.Title, &postrows.Description, &postrows.Author, &postrows.Postfileskey); err != nil {
-				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('%s');", err))
+				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", err, time.Now().Format(time.DateTime)))
 
 			}
 
@@ -347,7 +347,7 @@ func main() {
 
 			postTmpl, tmerr = template.New("tem").Parse(dataStr)
 			if tmerr != nil {
-				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('%s');", tmerr))
+				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", tmerr, time.Now().Format(time.DateTime)))
 			}
 			postTmpl.Execute(w, nil)
 		}
@@ -372,11 +372,11 @@ func main() {
 		c, err := r.Cookie("session_id")
 		if err != nil {
 			if err == http.ErrNoCookie {
-				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('%s');", err))
+				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", err, time.Now().Format(time.DateTime)))
 				w.WriteHeader(http.StatusUnauthorized)
 				return
 			}
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('%s');", err))
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", err, time.Now().Format(time.DateTime)))
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
@@ -389,7 +389,7 @@ func main() {
 		_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.posts(\"title\", \"description\", \"author\", \"post_files_key\") values('%s', '%s', '%s', '%s');", r.PostFormValue("title"), r.PostFormValue("description"), username, postFilesKey))
 
 		if errinsert != nil {
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('%s');", errinsert))
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", errinsert, time.Now().Format(time.DateTime)))
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
@@ -397,14 +397,14 @@ func main() {
 		parseerr := r.ParseMultipartForm(10 << 20)
 		if parseerr != nil {
 			// handle error
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('memory error multi file upload %s');", err))
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('memory error multi file upload %s');", err))
 		}
 		//upload, filename, errfile := r.FormFile("file_name")
 		for _, fh := range r.MultipartForm.File["file_name"] {
 
 			f, err := fh.Open()
 			if err != nil {
-				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('%s');", err))
+				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", err, time.Now().Format(time.DateTime)))
 				w.WriteHeader(http.StatusBadRequest)
 			}
 			filetype := createTFLBucketAndUpload(awskey, awskeysecret, false, f, fh.Filename, r)
@@ -412,13 +412,13 @@ func main() {
 			_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.postfiles(\"file_name\", \"file_type\", \"post_files_key\") values('%s', '%s', '%s');", fh.Filename, filetype, postFilesKey))
 
 			if errinsert != nil {
-				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('%s');", errinsert))
+				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", errinsert, time.Now().Format(time.DateTime)))
 			}
 
 			defer f.Close()
 		}
 		/*if errfile != nil {
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('%s');", err))
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", err))
 			w.WriteHeader(http.StatusBadRequest)
 		}*/
 		/*
@@ -429,7 +429,7 @@ func main() {
 			_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.posts(\"title\", \"description\", \"file_name\", \"file_type\", \"author\") values('%s', '%s', '%s', '%s', '%s');", r.PostFormValue("title"), r.PostFormValue("description"), filename.Filename, filetype, username))
 
 			if errinsert != nil {
-				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('%s');", errinsert))
+				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", errinsert))
 			}*/
 		//defer upload.Close()
 
@@ -446,7 +446,7 @@ func main() {
 
 		var dataStr string
 		if err != nil {
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('%s');", err))
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", err, time.Now().Format(time.DateTime)))
 		}
 
 		defer output.Close()
@@ -455,14 +455,14 @@ func main() {
 			var posts postComment
 
 			if err := output.Scan(&posts.Comment, &posts.Author); err != nil {
-				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('%s');", err))
+				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", err, time.Now().Format(time.DateTime)))
 
 			}
 			dataStr = "<p class='p-2'>" + posts.Comment + " - " + posts.Author + "</p>"
 
 			commentTmpl, err = template.New("com").Parse(dataStr)
 			if err != nil {
-				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('%s');", err))
+				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", err, time.Now().Format(time.DateTime)))
 			}
 			commentTmpl.Execute(w, nil)
 		}
@@ -497,13 +497,13 @@ func main() {
 		errmarsh := json.Unmarshal(bs, &postData)
 		if errmarsh != nil {
 			fmt.Println(errmarsh)
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('%s');", errmarsh))
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", errmarsh, time.Now().Format(time.DateTime)))
 		}
 
 		_, inserterr := db.Exec(fmt.Sprintf("insert into tfldata.comments(\"comment\", \"event_id\", \"author\") values('%s', '%d', (select username from tfldata.users where session_token='%s'));", postData.Eventcomment, postData.CommentSelectedEventId, c.Value))
 		if inserterr != nil {
 			fmt.Println(inserterr)
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('%s');", inserterr))
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", inserterr, time.Now().Format(time.DateTime)))
 		}
 		var author string
 		row := db.QueryRow(fmt.Sprintf("select username from tfldata.users where session_token='%s';", c.Value))
@@ -704,7 +704,7 @@ func main() {
 			scnerr := fcmRegRow.Scan(&fcmRegToken)
 			if scnerr != nil {
 				fmt.Println(scnerr)
-				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('%s');", scnerr))
+				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", scnerr, time.Now().Format(time.DateTime)))
 			}
 			sendNotificationToTaggedUser(w, r, fcmRegToken, db, chatMessage, app)
 		}
@@ -961,13 +961,13 @@ func setLoginCookie(w http.ResponseWriter, db *sql.DB, userStr string, r *http.R
 	//fmt.Println(userStr)
 	/*_, inserterr := db.Exec(fmt.Sprintf("insert into tfldata.sessions(\"username\", \"session_token\", \"expiry\", \"ip_addr\") values('%s', '%s', '%s', '%s') on conflict(ip_addr) do update set session_token='%s', expiry='%s';", userStr, sessionToken, expiresAt.Format(time.DateTime), strings.Split(r.RemoteAddr, ":")[0], sessionToken, expiresAt.Format(time.DateTime)))
 	if inserterr != nil {
-		db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('%s');", inserterr))
+		db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", inserterr))
 		fmt.Println(inserterr)
 	}*/
 	_, updateerr := db.Exec(fmt.Sprintf("update tfldata.users set session_token='%s' where username='%s';", sessionToken, userStr))
 	if updateerr != nil {
-		db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\") values('%s');", updateerr))
-		fmt.Println(updateerr)
+		db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s');", updateerr, time.Now().Format(time.DateTime)))
+		fmt.Printf("err: '%s'", updateerr)
 	}
 	maxAge := time.Until(expiresAt)
 

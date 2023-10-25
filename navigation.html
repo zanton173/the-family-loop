@@ -27,8 +27,12 @@
 <div class="modal" data-bs-backdrop="static" tabindex="-1" id="login-modal">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header" id="login-modal-header">
+            <div class="modal-header" id="login-modal-header" style="display: block;">
                 <h4 class="modal-title" style="text-align: center;">Login or Sign Up</h4>
+                <p style='color: cornflowerblue'>Everyone's account has been deleted so I could setup notifications in
+                    the near future.
+                    Please sign up again with an email. After you sign up, follow the instructions to install the app.
+                    Thanks :)</p>
                 <button id="modalclose" type="button" class="btn-close" data-bs-dismiss="modal"
                     aria-label="Close"></button>
             </div>
@@ -172,7 +176,7 @@
 
         const text = await resp.json()
         username = text.Username
-        text.Pfpname === ""
+        text.Pfpname == ""
             ? navItemWelcomeAvatar.setAttribute("src", "https://the-family-loop-customer-hash.s3.amazonaws.com/pfp/question.png")
             : navItemWelcomeAvatar.setAttribute("src", "https://the-family-loop-customer-hash.s3.amazonaws.com/pfp/" + text.Pfpname)
         return text

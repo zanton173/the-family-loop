@@ -14,6 +14,7 @@
         integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
         crossorigin="anonymous"></script>-->
     <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/custom-css.css" rel="stylesheet">
     <script src="js/bootstrap.bundle.min.js"></script>
     <!--<script src="https://unpkg.com/htmx.org@1.9.5"
         integrity="sha384-xcuj3WpfgjlKF+FXhSQFQ0ZNr39ln+hwjN3npfM9VBnUskLolQAcN80McRIVOPuO"
@@ -27,8 +28,13 @@
 </head>
 
 <body style="background-color: rgba(201, 224, 223, .5);">
-
     <!--<body style="background-image: url('assets/bg_img.svg'); ">-->
+
+    <div class="spinner-indicator" id="loadingspinner"
+        style="width: 100%; height: 100%; background-color: rgb(197, 197, 197);">
+
+        <img width="90px" height="90px" class="spinner-indicator" src="assets/LoadingSpinner.png" />
+    </div>
     <header id="installbanner" style="display: inline">
 
         <div style="background-color: rgb(252, 253, 245); display: flex; align-items: center; justify-content: center;"
@@ -97,7 +103,7 @@
             <div id="post-div" class="modal-content p-2">
 
                 <form id="createpostele" class="d-inline-grid" hx-post="/create-post" hx-encoding="multipart/form-data"
-                    hx-swap="none">
+                    hx-swap="none" hx-indicator="#loadingspinner">
 
                     <input class="my-2 shadow-sm border-1 text-center" style="width: 100%" name="title" id="posttitle"
                         type="text" placeholder="title your post" required maxlength="128" />
@@ -128,7 +134,7 @@
     <script>
 
         window.addEventListener("load", () => {
-            console.log(Notification.permission)
+
             Notification.permission !== 'granted' ?
                 document.getElementById('notifydiv').setAttribute("style", "display: inline")
                 : document.getElementById('notifydiv').setAttribute("style", "display: none")
@@ -225,8 +231,9 @@
     <div style="text-align: center;" class="px-5" id="posts-div">
         <div hx-get="/get-posts" hx-trigger="load" hx-target="#post-items" id="divofposts">
             <div id="post-items" name="item-count">
-                <!--Issue is here-->
+
             </div>
+
         </div>
     </div>
 
@@ -329,7 +336,7 @@
             } else if (event.detail.xhr.status == 400) {
                 alert("Something was wrong with the file you provided.")
             } else if (event.detail.xhr.status == 200) {
-                alert('success')
+
                 window.location.reload()
             }
         })

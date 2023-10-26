@@ -738,6 +738,8 @@ func main() {
 			if time.Now().UTC().Sub(createdat) > (24 * time.Hour) {
 				formatCreatedatTime = time.ANSIC
 				formatCreatedatTime = strings.Split(formatCreatedatTime, " ")[0]
+			} else if time.Now().UTC().Sub(createdat) > (72 * time.Hour) {
+				formatCreatedatTime = time.DateOnly
 			} else {
 				formatCreatedatTime = time.Kitchen
 			}

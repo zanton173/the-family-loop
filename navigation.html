@@ -1,5 +1,5 @@
-<nav class="navbar navbar-expand-sm navbar-light" style="background-color: rgba(190, 214, 213, .75);" id="ournav"
-    hx-target="#anchor">
+<nav class="navbar navbar-expand-sm navbar-light" style="background-color: rgba(190, 214, 213, .75); z-index: 0;"
+    id="ournav" hx-target="#anchor">
 
     <div class="container">
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarText"
@@ -37,6 +37,7 @@
                     aria-label="Close"></button>
             </div>
             <div class="modal-body">
+
                 <div style="display: flex; justify-content: space-around;">
                     <button class="btn px-5 btn-outline-secondary" id="login-button"
                         onclick='showLoginForm()'>Login</button>
@@ -45,7 +46,7 @@
                 </div>
                 <div id="togglesignuplogin">
                     <form class="form" id="login-form" name="loginform" hx-post="/login" hx-trigger="submit"
-                        hx-on="loginevent: loginFunction()" hx-swap="none">
+                        hx-on="loginevent: loginFunction()" hx-swap="none" hx-indicator="#loadingspinner">
                         <!--<<form id="loginSignupForm" name="loginform" hx-post="/login" class="form" hx-trigger="submit"
                         hx-swap="none">-->
 
@@ -65,7 +66,8 @@
 
                     </form>
                     <form class="form" hx-post="/signup" id="sign-up-form" hx-trigger="submit"
-                        hx-encoding="multipart/form-data" hx-swap="none" hx-target="this">
+                        hx-encoding="multipart/form-data" hx-swap="none" hx-target="this"
+                        hx-indicator="#loadingspinner">
                         <!-- <form method="post" action="/signup" enctype="multipart/form-data" class="form" id="sign-up-form"
                         name="signupform" target="_blank" onsubmit="signUpFormSubmitted()">-->
 

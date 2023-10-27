@@ -200,7 +200,7 @@ func main() {
 		if err != nil {
 			fmt.Println(err)
 		}
-		record, usererr := fb_auth_client.CreateUser(context.TODO(), (&auth.UserToCreate{}).DisplayName(strings.ToLower(r.PostFormValue("usernamesignup"))).Email(strings.ToLower(r.PostFormValue("emailsignup"))).Password(r.PostFormValue("passwordsignup")).PhotoURL(fmt.Sprintf("https://the-family-loop-customer-hash.s3.amazonaws.com/pfp/%s", filename.Filename)))
+		record, usererr := fb_auth_client.CreateUser(context.TODO(), (&auth.UserToCreate{}).DisplayName(strings.ToLower(r.PostFormValue("usernamesignup"))).Email(strings.ToLower(r.PostFormValue("emailsignup"))).Password(r.PostFormValue("passwordsignup")).PhotoURL(fmt.Sprintf("https://d33gjmrumfzeah.cloudfront.net/pfp/%s", filename.Filename)))
 		if usererr != nil {
 			fmt.Println(usererr)
 			w.WriteHeader(http.StatusConflict)
@@ -334,19 +334,19 @@ func main() {
 			if strings.Contains(firstImg.filetype, "image") {
 				/*imgclient := http.Client{}
 
-				imgreq, _ := http.NewRequest("GET", fmt.Sprintf("https://the-family-loop-customer-hash.s3.amazonaws.com/posts/images/%s", postrows.File_name), nil)
+				imgreq, _ := http.NewRequest("GET", fmt.Sprintf("https://d33gjmrumfzeah.cloudfront.net/posts/images/%s", postrows.File_name), nil)
 
 				imgreq.Header.Set("Cache-Control", "max-age=86400")
 				resp, _ := imgclient.Do(imgreq)*/
 				if countOfImg > 1 {
-					dataStr = fmt.Sprintf("<div class='card my-4' style='border-radius: 106px 106px / 91px; box-shadow: 12px 12px 2px 1px rgb(41 88 93 / 20&percnt;);'><img id='%s' src='https://the-family-loop-customer-hash.s3.amazonaws.com/posts/images/%s' alt='%s' style='border-radius: 106px 106px / 91px;' alt='default' /><div class='p-2' style='display: flex; justify-content: space-around;'><i onclick='nextLeftImage(`%s`)' class='bi bi-arrow-90deg-left'></i><i onclick='nextRightImage(`%s`)' class='bi bi-arrow-90deg-right'></i></div><div class='card-body'><h5 class='card-title'>%s - %s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' class='btn btn-primary'>Comments (%s)</button></div></div>", postrows.Postfileskey, firstImg.filename, firstImg.filename, postrows.Postfileskey, postrows.Postfileskey, postrows.Title, postrows.Author, postrows.Description, postrows.Id, postrows.Id, commentCount)
+					dataStr = fmt.Sprintf("<div class='card my-4' style='border-radius: 106px 106px / 91px; box-shadow: 12px 12px 2px 1px rgb(41 88 93 / 20&percnt;);'><img id='%s' src='https://d33gjmrumfzeah.cloudfront.net/posts/images/%s' alt='%s' style='border-radius: 106px 106px / 91px;' alt='default' /><div class='p-2' style='display: flex; justify-content: space-around;'><i onclick='nextLeftImage(`%s`)' class='bi bi-arrow-90deg-left'></i><i onclick='nextRightImage(`%s`)' class='bi bi-arrow-90deg-right'></i></div><div class='card-body'><h5 class='card-title'>%s - %s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' class='btn btn-primary'>Comments (%s)</button></div></div>", postrows.Postfileskey, firstImg.filename, firstImg.filename, postrows.Postfileskey, postrows.Postfileskey, postrows.Title, postrows.Author, postrows.Description, postrows.Id, postrows.Id, commentCount)
 				} else if countOfImg == 1 {
-					dataStr = fmt.Sprintf("<div class='card my-4' style='border-radius: 106px 106px / 91px; box-shadow: 12px 12px 2px 1px rgb(41 88 93 / 20&percnt;);'><img id='%s' src='https://the-family-loop-customer-hash.s3.amazonaws.com/posts/images/%s' alt='%s' style='border-radius: 106px 106px / 91px;' alt='default' /><div class='p-2' style='display: flex; justify-content: space-around;'></div><div class='card-body'><h5 class='card-title'>%s - %s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' class='btn btn-primary'>Comments (%s)</button></div></div>", postrows.Postfileskey, firstImg.filename, firstImg.filename, postrows.Title, postrows.Author, postrows.Description, postrows.Id, postrows.Id, commentCount)
+					dataStr = fmt.Sprintf("<div class='card my-4' style='border-radius: 106px 106px / 91px; box-shadow: 12px 12px 2px 1px rgb(41 88 93 / 20&percnt;);'><img id='%s' src='https://d33gjmrumfzeah.cloudfront.net/posts/images/%s' alt='%s' style='border-radius: 106px 106px / 91px;' alt='default' /><div class='p-2' style='display: flex; justify-content: space-around;'></div><div class='card-body'><h5 class='card-title'>%s - %s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' class='btn btn-primary'>Comments (%s)</button></div></div>", postrows.Postfileskey, firstImg.filename, firstImg.filename, postrows.Title, postrows.Author, postrows.Description, postrows.Id, postrows.Id, commentCount)
 				}
 				//imgclient.CloseIdleConnections()
 				//defer resp.Body.Close()
 			} else if strings.Contains(firstImg.filetype, "video") || strings.Contains(firstImg.filetype, "octet-stream") {
-				dataStr = fmt.Sprintf("<div class='card my-4' style='border-radius: 106px 106px / 91px; box-shadow: 12px 12px 2px 1px rgb(41 88 93 / 20&percnt;);'><video style='border-radius: 106px 106px / 91px;' controls id='video'><source src='https://the-family-loop-customer-hash.s3.amazonaws.com/posts/videos/%s'></video><div class='p-2' style='display: flex; justify-content: space-around;'></div><div class='card-body'><h5 class='card-title'>%s - %s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' class='btn btn-primary'>Comments (%s)</button></div></div>", firstImg.filename, postrows.Title, postrows.Author, postrows.Description, postrows.Id, postrows.Id, commentCount)
+				dataStr = fmt.Sprintf("<div class='card my-4' style='border-radius: 106px 106px / 91px; box-shadow: 12px 12px 2px 1px rgb(41 88 93 / 20&percnt;);'><video style='border-radius: 106px 106px / 91px;' controls id='video'><source src='https://d33gjmrumfzeah.cloudfront.net/posts/videos/%s'></video><div class='p-2' style='display: flex; justify-content: space-around;'></div><div class='card-body'><h5 class='card-title'>%s - %s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' class='btn btn-primary'>Comments (%s)</button></div></div>", firstImg.filename, postrows.Title, postrows.Author, postrows.Description, postrows.Id, postrows.Id, commentCount)
 			}
 
 			postTmpl, tmerr = template.New("tem").Parse(dataStr)
@@ -1091,22 +1091,31 @@ func createTFLBucketAndUpload(k string, s string, bucketexists bool, f multipart
 	_, err3 := client.PutBucketPolicy(context.TODO(),
 		&s3.PutBucketPolicyInput{
 			Bucket: aws.String("the-family-loop" + "-customer-hash"),
-			Policy: aws.String(`{"Version": "2012-10-17",
-    "Statement": [
-        {
-            "Sid": "Statement",
-            "Effect": "Allow",
-            "Principal": "*",
-            "Action": [
-                "s3:GetObject*",
-                "s3:PutObject*"
-            ],
-            "Resource": [
-				"arn:aws:s3:::the-family-loop` + `-customer-hash/posts/*",
-				"arn:aws:s3:::the-family-loop` + `-customer-hash/pfp/*"
-        ]
-			}
-    ]}`),
+			Policy: aws.String(`{
+	"Version": "2012-10-17",
+	"Statement": [
+		{
+			"Sid": "Statement",
+			"Effect": "Allow",
+			"Principal": {
+			    "Service": "cloudfront.amazonaws.com"
+			},
+			"Action": [
+				"s3:GetObject*",
+				"s3:PutObject*"
+			],
+			"Resource": [
+				"arn:aws:s3:::the-family-loop-customer-hash/posts/*",
+				"arn:aws:s3:::the-family-loop-customer-hash/pfp/*"
+			],
+			"Condition": {
+                    "StringEquals": {
+                      "AWS:SourceArn": "arn:aws:cloudfront::529465713677:distribution/EYETELDNATROU"
+                    }
+                }
+		}
+	]
+}`),
 		})
 	if err3 != nil {
 		fmt.Println(err3)

@@ -229,7 +229,8 @@
     </div>-->
 
     <div style="text-align: center;" class="px-5" id="posts-div">
-        <div hx-get="/get-posts" hx-trigger="load" hx-target="#post-items" id="divofposts">
+        <div hx-get="/get-posts" hx-trigger="load" hx-target="#post-items" id="divofposts"
+            hx-indicator="#loadingspinner">
             <div id="post-items" name="item-count">
 
             </div>
@@ -258,6 +259,7 @@
             var output = resp.json()
             return output
         }
+
         function nextLeftImage(id) {
 
             var imgCaro = document.getElementById(id)
@@ -266,11 +268,11 @@
             console.log(imgCaro)
             if (iter == 0) {
                 iter = imgArray.length - 1
-                imgCaro.setAttribute("src", "https://the-family-loop-customer-hash.s3.amazonaws.com/posts/images/" + imgArray[iter])
+                imgCaro.setAttribute("src", "https://d33gjmrumfzeah.cloudfront.net/posts/images/" + imgArray[iter])
                 imgCaro.setAttribute("alt", imgArray[iter])
             }
             else {
-                imgCaro.setAttribute("src", "https://the-family-loop-customer-hash.s3.amazonaws.com/posts/images/" + imgArray[iter - 1])
+                imgCaro.setAttribute("src", "https://d33gjmrumfzeah.cloudfront.net/posts/images/" + imgArray[iter - 1])
                 imgCaro.setAttribute("alt", imgArray[iter - 1])
                 iter--
             }
@@ -283,11 +285,11 @@
             console.log(imgCaro)
             if (iter == imgArray.length - 1) {
                 iter = 0
-                imgCaro.setAttribute("src", "https://the-family-loop-customer-hash.s3.amazonaws.com/posts/images/" + imgArray[iter])
+                imgCaro.setAttribute("src", "https://d33gjmrumfzeah.cloudfront.net/posts/images/" + imgArray[iter])
                 imgCaro.setAttribute("alt", imgArray[iter])
             }
             else {
-                imgCaro.setAttribute("src", "https://the-family-loop-customer-hash.s3.amazonaws.com/posts/images/" + imgArray[iter + 1])
+                imgCaro.setAttribute("src", "https://d33gjmrumfzeah.cloudfront.net/posts/images/" + imgArray[iter + 1])
                 imgCaro.setAttribute("alt", imgArray[iter + 1])
                 iter++
             }

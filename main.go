@@ -1171,24 +1171,20 @@ func sendNotificationToTaggedUser(w http.ResponseWriter, r *http.Request, fcmTok
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 
 	fb_message_client, _ := app.Messaging(context.TODO())
-
 	sentRes, sendErr := fb_message_client.Send(context.TODO(), &messaging.Message{
 		Token: fcmToken,
-		Notification: &messaging.Notification{
-			Title: "Someone tagged you",
-			Body:  message,
-		},
 
 		Webpush: &messaging.WebpushConfig{
 			Notification: &messaging.WebpushNotification{
 				Title: "Someone tagged you",
 				Body:  message,
-			},
-		},
-		Android: &messaging.AndroidConfig{
-			Notification: &messaging.AndroidNotification{
-				Title: "Someone tagged you",
-				Body:  message,
+				/*Actions: []*messaging.WebpushNotificationAction{
+					{
+						Action: "Open",
+						Title:  "Open message",
+						Icon:   "assets/android-chrome-512x512.png",
+					},
+				},*/
 			},
 		},
 	})

@@ -13,6 +13,7 @@
             integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
             crossorigin="anonymous"></script>-->
     <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/custom-css.css" rel="stylesheet">
     <script src="js/bootstrap.bundle.min.js"></script>
     <!--<script src="https://unpkg.com/htmx.org@1.9.5"
             integrity="sha384-xcuj3WpfgjlKF+FXhSQFQ0ZNr39ln+hwjN3npfM9VBnUskLolQAcN80McRIVOPuO"
@@ -26,10 +27,16 @@
 </head>
 
 <body>
+    <div class="spinner-indicator" id="loadingspinner"
+        style="width: 100%; height: 100%; background-color: rgb(197, 197, 197);">
+
+        <img width="90px" height="90px" class="spinner-indicator" src="assets/LoadingSpinner.png" />
+    </div>
     <h3 style="text-align: center;">Group Chat</h3>
     <div id="anchor">
 
     </div>
+
     <div hx-get="/group-chat-messages" hx-trigger="load, success-send from:#messageform" class="border-1 d-block m-2"
         style="justify-content: center; text-align: center; background-color: rgb(205, 205, 206); border-radius: 1%;">
 
@@ -99,8 +106,12 @@
         }
         function clearFormGetMessages() {
             document.getElementById('gchatinput').value = ""
+            taggedUser = ""
+            document.getElementById('gchatinput').setAttribute('oninput', "checkForTagging()")
         }
         htmx.on('#messageform', 'htmx:afterRequest', function (event) {
+
+
             event.detail.xhr.status === 401
                 && alert("Please login first.")
         })

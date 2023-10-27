@@ -32,7 +32,8 @@ this.addEventListener("push", (event) => {
         body: notification.body,
         tag: notification.tag,
         image: notification.image,
-        icon: notification.icon
+        icon: notification.icon,
+
     }));
 
 });

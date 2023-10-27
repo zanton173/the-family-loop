@@ -193,7 +193,7 @@ func main() {
 			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", errfile, time.Now().In(nyLoc).Format(time.DateTime)))
 			w.WriteHeader(http.StatusBadRequest)
 		}
-		uploadPfpToS3(awskey, awskeysecret, false, upload, filename.Filename, r)
+		uploadPfpToS3(awskey, awskeysecret, upload, filename.Filename, r, "pfpformfile")
 		bs := []byte(r.PostFormValue("passwordsignup"))
 
 		bytesOfPass, err := bcrypt.GenerateFromPassword(bs, len(bs))
@@ -827,6 +827,20 @@ func main() {
 		}
 
 	}
+	updatePfpHandler := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "multipart/form-data")
+		upload, filename, _ := r.FormFile("changepfp")
+
+		username := r.PostFormValue("usernameinput")
+
+		_, uperr := db.Exec(fmt.Sprintf("update tfldata.users set pfp_name='%s' where username='%s';", filename.Filename, username))
+		if uperr != nil {
+			fmt.Println(uperr)
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s');", uperr, time.Now().In(nyLoc).Format(time.DateTime)))
+			w.WriteHeader(http.StatusBadRequest)
+		}
+		uploadPfpToS3(awskey, awskeysecret, upload, filename.Filename, r, "changepfp")
+	}
 	createIssueHandler := func(w http.ResponseWriter, r *http.Request) {
 		c, _ := r.Cookie("session_id")
 		var username string
@@ -915,6 +929,8 @@ func main() {
 	http.HandleFunc("/create-subscription", subscriptionHandler)
 	http.HandleFunc("/send-new-posts-push", newPostsHandlerPushNotify)
 
+	http.HandleFunc("/update-pfp", updatePfpHandler)
+
 	http.HandleFunc("/create-issue", createIssueHandler)
 
 	http.HandleFunc("/signup", signUpHandler)
@@ -995,7 +1011,7 @@ func setLoginCookie(w http.ResponseWriter, db *sql.DB, userStr string, r *http.R
 	})
 
 }
-func uploadPfpToS3(k string, s string, bucketexists bool, f multipart.File, fn string, r *http.Request) {
+func uploadPfpToS3(k string, s string, f multipart.File, fn string, r *http.Request, formInputIdentifier string) {
 	cfg, err := config.LoadDefaultConfig(context.TODO(),
 		config.WithDefaultRegion("us-east-1"),
 		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(k, s, "")),
@@ -1009,7 +1025,7 @@ func uploadPfpToS3(k string, s string, bucketexists bool, f multipart.File, fn s
 	client := s3.NewFromConfig(cfg)
 
 	defer f.Close()
-	ourfile, fileHeader, errfile := r.FormFile("pfpformfile")
+	ourfile, fileHeader, errfile := r.FormFile(formInputIdentifier)
 
 	if errfile != nil {
 		log.Fatal(errfile)

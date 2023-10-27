@@ -115,8 +115,8 @@
 </div>
 
 
-<script defer>
-
+<script>
+    var changePfpModal = new bootstrap.Modal(document.getElementById('changepfpmodal'), {});
     let p = document.getElementById('anchor')
     let c = document.getElementById('ournav')
 
@@ -163,7 +163,7 @@
     // clip-path: inset(30px 7px 30px 7px round 100%)
     navItemWelcomeAvatar.setAttribute("style", "width: 8%; height: auto; border-radius: 35%;")
     navItemWelcomeAvatar.setAttribute("src", "https://d33gjmrumfzeah.cloudfront.net/pfp/question.png")
-
+    navItemWelcomeAvatar.setAttribute("id", "pfpavatar")
     navItemWelcomeAvatar.setAttribute("alt", "Your family loop pfp")
     var username = ''
     p.append(c)
@@ -190,6 +190,34 @@
         })
         //console.log(resp)
     }
+    navItemWelcomeAvatar.addEventListener('click', async (event) => {
+        changePfpModal.show()
+    })
+
+    function checkPfpChangeValidity() {
+        var pfpChangeInput = document.getElementById('pfpchangeinput')
+        var pfpChangeBtn = document.getElementById('changePfpSubmitBtn')
+        var updatePfpForm = document.getElementById('updatepfpform')
+        var invisibleInputForUsername = document.getElementById('invisibleusernameinput')
+        invisibleInputForUsername.value = username
+        if (pfpChangeInput.value == '')
+            pfpChangeBtn.setAttribute("disabled", "true")
+        else
+            pfpChangeBtn.removeAttribute('disabled')
+
+        updatepfpform.addEventListener('htmx:afterRequest', async function setPfp(event) {
+            pfpChangeBtn.setAttribute("disabled", "true")
+
+            pfpChangeBtn.removeEventListener('click', setPfp)
+
+            if (event.detail.xhr.status == 200)
+                window.location.reload()
+            else if (event.detail.xhr.status == 400)
+                alert("Something was wrong with that picture :(")
+
+        })
+    }
+
     function logoutFunction() {
         clearCookie().then(() => {
             document.cookie = "session_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";

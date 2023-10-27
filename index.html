@@ -82,6 +82,26 @@
             </div>
         </div>
     </div>
+    <div class="modal" tabindex="-1" id="changepfpmodal" aria-labelledby="openchangepfpmodal" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content p-3">
+                <div class="modal-header" id="changepfpheader" style="display: block;">
+                    <h4 class="modal-title" style="text-align: center;">Change profile picture</h4>
+                </div>
+                <form hx-encoding="multipart/form-data" class="form modal-content border-0" hx-post="/update-pfp"
+                    hx-swap="none" id="updatepfpform">
+                    <input id="pfpchangeinput" type="file" class="my-2" name="changepfp" placeholder="Upload new pfp"
+                        accept="image/*" oninput="checkPfpChangeValidity()" />
+                    <input style="display: none;" name="usernameinput" id="invisibleusernameinput" />
+                    <button id="changePfpSubmitBtn" disabled="true"
+                        class="btn btn-outline-success col my-2">change</button>
+                    <button type="button" class="btn btn-outline-dark col my-2"
+                        data-bs-dismiss="modal">close</button><br />
+                </form>
+            </div>
+        </div>
+    </div>
+
     <div class="modal" id="installmodal" tabindex="-1" aria-labelledby="installmodal" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content p-3">
@@ -150,8 +170,6 @@
         var createPostModalObj = new bootstrap.Modal(document.getElementById('createPostModal'), {});
 
         var openPostModalObj = new bootstrap.Modal(document.getElementById('openPostModal'), {});
-
-
 
         var openPostModalEle = document.getElementById('openPostModal')
         const submitBtn = document.createElement('button')

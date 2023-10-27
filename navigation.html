@@ -162,7 +162,7 @@
     navItemWelcomeAvatar.setAttribute("class", "border-0 mx-3")
     // clip-path: inset(30px 7px 30px 7px round 100%)
     navItemWelcomeAvatar.setAttribute("style", "width: 8%; height: auto; border-radius: 35%;")
-    navItemWelcomeAvatar.setAttribute("src", "https://the-family-loop-customer-hash.s3.amazonaws.com/pfp/question.png")
+    navItemWelcomeAvatar.setAttribute("src", "https://d33gjmrumfzeah.cloudfront.net/pfp/question.png")
 
     navItemWelcomeAvatar.setAttribute("alt", "Your family loop pfp")
     var username = ''
@@ -179,8 +179,8 @@
         const text = await resp.json()
         username = text.Username
         text.Pfpname == ""
-            ? navItemWelcomeAvatar.setAttribute("src", "https://the-family-loop-customer-hash.s3.amazonaws.com/pfp/question.png")
-            : navItemWelcomeAvatar.setAttribute("src", "https://the-family-loop-customer-hash.s3.amazonaws.com/pfp/" + text.Pfpname)
+            ? navItemWelcomeAvatar.setAttribute("src", "https://d33gjmrumfzeah.cloudfront.net/pfp/question.png")
+            : navItemWelcomeAvatar.setAttribute("src", "https://d33gjmrumfzeah.cloudfront.net/pfp/" + text.Pfpname)
         return text
     }
 

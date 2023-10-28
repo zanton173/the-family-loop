@@ -285,8 +285,10 @@ func main() {
 			tmpl := template.Must(template.ParseFiles("bugreport.html"))
 			tmpl.Execute(w, nil)
 			tm.Execute(w, nil)
-		case "/bg_img.svg":
-			http.ServeFile(w, r, "assets/bg_img.svg")
+		case "/games/simple-shades":
+			tmpl := template.Must(template.ParseFiles("simpleshades.html"))
+			tmpl.Execute(w, nil)
+
 		default:
 			tmpl := template.Must(template.ParseFiles("index.html"))
 			tmpl.Execute(w, nil)

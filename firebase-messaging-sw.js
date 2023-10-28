@@ -1,4 +1,5 @@
 
+var receiveMoneroWallet = "49aUMmpPKq6dqe7ob1uVwsPdBghTNYZxST747RfjCoGS9xWC9MQFDQ2LrwqurmqVEsg9xagLksM4fKPpcreosRQ39bJ1CVA"
 this.addEventListener("push", (event) => {
 
     const notification = event.data.json().notification

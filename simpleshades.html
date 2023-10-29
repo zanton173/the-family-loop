@@ -36,11 +36,12 @@
                     style="width: 100%; border-radius: 0%; font-size: xx-large; height: 15vh">+</button>
             </div>
             <div class="col px-0 mx-0" style="background-color: #41FF54;">
-                <button class="border-bottom border-0 btn btn-outline-secondary"
+                <button type="button" onclick="incGreenPlayer()"
+                    class="border-bottom border-0 btn btn-outline-secondary"
                     style="width: 100%; border-radius: 0%; font-size: xx-large; height: 15vh">+</button>
             </div>
             <div class="col px-0 mx-0" style="background-color: #6741FF;">
-                <button class="border-bottom border-0 btn btn-outline-secondary"
+                <button type="button" onclick="incBluePlayer()" class="border-bottom border-0 btn btn-outline-secondary"
                     style="width: 100%; border-radius: 0%;font-size: xx-large; height: 15vh">+</button>
             </div>
 
@@ -48,17 +49,17 @@
         <div class="row">
 
             <div class="col px-0 mx-0" style="background-color: #FF4141;">
-                <button class="border-top border-0  btn btn-outline-secondary"
+                <button type="button" onclick="decRedPlayer()" class="border-top border-0  btn btn-outline-secondary"
                     style="width: 100%; border-radius: 0%; font-size: xx-large; height: 15vh">-</button>
             </div>
 
             <div class="col px-0 mx-0" style="background-color: #41FF54;">
-                <button class="border-top border-0  btn btn-outline-secondary"
+                <button type="button" onclick="decGreenPlayer()" class="border-top border-0  btn btn-outline-secondary"
                     style="width: 100%; border-radius: 0%; font-size: xx-large; height: 15vh">-</button>
             </div>
 
             <div class="col px-0 mx-0" style="background-color: #6741FF">
-                <button class="border-top border-0 btn btn-outline-secondary"
+                <button type="button" onclick="decBluePlayer()" class="border-top border-0 btn btn-outline-secondary"
                     style="width: 100%; border-radius: 0%; font-size: xx-large; height: 15vh">-</button>
 
             </div>
@@ -67,9 +68,80 @@
     <script>
         var playObj = document.getElementById('playerObj')
         function incRedPlayer() {
-            formattedCol = playObj.getAttribute('style').split('background-color: rgb(')[1]
-            formattedCol = Number(formattedCol = formattedCol.split(', 0, 0)')[0])
-            playObj.setAttribute("style", `background-color: rgb(${formattedCol + 15}, 0, 0)`)
+            var curPlayObj = getCurrentPlayerColor()
+            if (curPlayObj.playerred >= 255)
+                return
+            var incRedVal = curPlayObj.playerred + 15
+            var dataStr = `background-color: rgb(${incRedVal}, ${curPlayObj.playergreen}, ${curPlayObj.playerblue})`
+
+            var curStr = playObj.getAttribute("style")
+            playObj.setAttribute("style", dataStr)
+        }
+        function decRedPlayer() {
+            var curPlayObj = getCurrentPlayerColor()
+            if (curPlayObj.playerred <= 0)
+                return
+            var decRedVal = curPlayObj.playerred - 15
+            var dataStr = `background-color: rgb(${decRedVal}, ${curPlayObj.playergreen}, ${curPlayObj.playerblue})`
+
+            var curStr = playObj.getAttribute("style")
+            playObj.setAttribute("style", dataStr)
+        }
+        function incGreenPlayer() {
+            var curPlayObj = getCurrentPlayerColor()
+            if (curPlayObj.playergreen >= 255)
+                return
+            var incGreenVal = curPlayObj.playergreen + 15
+            var dataStr = `background-color: rgb(${curPlayObj.playerred}, ${incGreenVal}, ${curPlayObj.playerblue})`
+
+            var curStr = playObj.getAttribute("style")
+            playObj.setAttribute("style", dataStr)
+        }
+        function decGreenPlayer() {
+            var curPlayObj = getCurrentPlayerColor()
+            if (curPlayObj.playergreen <= 0)
+                return
+            var decGreenVal = curPlayObj.playergreen - 15
+            var dataStr = `background-color: rgb(${curPlayObj.playerred}, ${decGreenVal}, ${curPlayObj.playerblue})`
+
+            var curStr = playObj.getAttribute("style")
+            playObj.setAttribute("style", dataStr)
+        }
+        function incBluePlayer() {
+            var curPlayObj = getCurrentPlayerColor()
+            if (curPlayObj.playerblue >= 255)
+                return
+            var incBlueVal = curPlayObj.playerblue + 15
+            var dataStr = `background-color: rgb(${curPlayObj.playerred}, ${curPlayObj.playergreen}, ${incBlueVal})`
+
+            var curStr = playObj.getAttribute("style")
+            playObj.setAttribute("style", dataStr)
+        }
+        function decBluePlayer() {
+            var curPlayObj = getCurrentPlayerColor()
+            if (curPlayObj.playerblue <= 0)
+                return
+            var decBlueVal = curPlayObj.playerblue - 15
+            var dataStr = `background-color: rgb(${curPlayObj.playerred}, ${curPlayObj.playergreen}, ${decBlueVal})`
+
+            var curStr = playObj.getAttribute("style")
+            playObj.setAttribute("style", dataStr)
+        }
+
+        function getCurrentPlayerColor() {
+            var playObj = document.getElementById('playerObj')
+            var formattedCol = playObj.getAttribute('style').replace("background-color: rgb(", '').replace(")", "").replace(";", '')
+            var arrayOfCols = formattedCol.split(",", 3)
+            var playerred = Number(arrayOfCols[0])
+            var playergreen = Number(arrayOfCols[1])
+            var playerblue = Number(arrayOfCols[2])
+            var playerColor = {
+                playerred,
+                playergreen,
+                playerblue,
+                replaceStr: formattedCol
+            }
+            return playerColor
         }
     </script>
 

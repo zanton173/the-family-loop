@@ -388,7 +388,7 @@ func main() {
 
 		postFilesKey := uuid.NewString()
 
-		_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.posts(\"title\", \"description\", \"author\", \"post_files_key\") values('%s', '%s', '%s', '%s');", r.PostFormValue("title"), r.PostFormValue("description"), username, postFilesKey))
+		_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.posts(\"title\", \"description\", \"author\", \"post_files_key\") values('%s', '%s', '%s', '%s');", strings.ReplaceAll(r.PostFormValue("title"), "'", ""), r.PostFormValue("description"), username, postFilesKey))
 
 		if errinsert != nil {
 			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", errinsert, time.Now().In(nyLoc).Format(time.DateTime)))

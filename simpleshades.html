@@ -20,7 +20,7 @@
             <div class="col" style="height: 30dvh; background-color: gainsboro;"></div>
         </div>
 
-        <div id="gameObj" class="row mx-0 px-0" style="background-color: #402525;">
+        <div id="gameObj" class="row mx-0 px-0" style="background-color: rgb(184, 280, 11);">
             <div class="col" style="height: 20dvh;"></div>
         </div>
         <div id="playerObj" class="row mx-0 px-0" style="background-color: rgb(0, 0, 0)">
@@ -76,6 +76,7 @@
 
             var curStr = playObj.getAttribute("style")
             playObj.setAttribute("style", dataStr)
+            comparePlayerToGameObj()
         }
         function decRedPlayer() {
             var curPlayObj = getCurrentPlayerColor()
@@ -86,6 +87,7 @@
 
             var curStr = playObj.getAttribute("style")
             playObj.setAttribute("style", dataStr)
+            comparePlayerToGameObj()
         }
         function incGreenPlayer() {
             var curPlayObj = getCurrentPlayerColor()
@@ -96,6 +98,7 @@
 
             var curStr = playObj.getAttribute("style")
             playObj.setAttribute("style", dataStr)
+            comparePlayerToGameObj()
         }
         function decGreenPlayer() {
             var curPlayObj = getCurrentPlayerColor()
@@ -106,6 +109,7 @@
 
             var curStr = playObj.getAttribute("style")
             playObj.setAttribute("style", dataStr)
+            comparePlayerToGameObj()
         }
         function incBluePlayer() {
             var curPlayObj = getCurrentPlayerColor()
@@ -116,6 +120,7 @@
 
             var curStr = playObj.getAttribute("style")
             playObj.setAttribute("style", dataStr)
+            comparePlayerToGameObj()
         }
         function decBluePlayer() {
             var curPlayObj = getCurrentPlayerColor()
@@ -126,6 +131,7 @@
 
             var curStr = playObj.getAttribute("style")
             playObj.setAttribute("style", dataStr)
+            comparePlayerToGameObj()
         }
 
         function getCurrentPlayerColor() {
@@ -142,6 +148,28 @@
                 replaceStr: formattedCol
             }
             return playerColor
+        }
+        function getCurrentGameColor() {
+            var gameObj = document.getElementById('gameObj')
+            var formattedCol = gameObj.getAttribute('style').replace("background-color: rgb(", '').replace(")", "").replace(";", '')
+            var arrayOfCols = formattedCol.split(",", 3)
+            var gamered = Number(arrayOfCols[0])
+            var gamegreen = Number(arrayOfCols[1])
+            var gameblue = Number(arrayOfCols[2])
+            var gameColor = {
+                gamered,
+                gamegreen,
+                gameblue,
+                replaceStr: formattedCol
+            }
+            return gameColor
+        }
+        function comparePlayerToGameObj() {
+            var curPlayObj = getCurrentPlayerColor()
+            var curGameObj = getCurrentGameColor()
+            if (Math.abs(curPlayObj.playerred - curGameObj.gamered) <= 25 && Math.abs(curPlayObj.playergreen - curGameObj.gamegreen) <= 25 && Math.abs(curPlayObj.playerblue - curGameObj.gameblue) <= 25) {
+                console.log('won')
+            }
         }
     </script>
 

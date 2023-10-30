@@ -15,13 +15,19 @@
 </head>
 
 <body style="overflow: hidden; position: absolute; top: 0; bottom: 0; width: 100%; ">
+
     <div id="leaderboardbody" style="display: none;">
 
-        <div style="text-align: center; background-color: rgb(165, 203, 255); height: 100dvh;">
-            <div>
-                <h1>Top 20 Leaderboard</h1>
+        <div style="text-align: center; background-color: rgb(165, 203, 255); height: 100vh;">
+            <div style="display: flex;">
+                <button onclick="toggleMenuDisplay()"
+                    style="border-width: 3px; border-radius: 12px; border-color: blue; background-color: rgba(0, 0, 0, 0); box-shadow: 5px 4px 10px 0px #505050">
+                    menu
+                </button>&nbsp;
+                <h1 class="mx-auto px-1 text-center">Top 20 Leaderboard</h1>
             </div>
-            <div hx-get="/get-leaderboard" hx-trigger="load" hx-target="this"></div>
+            <div id="htmxleaderboard" hx-get="/get-leaderboard" hx-trigger="load, click" hx-target="this"
+                style="font-size: larger;"></div>
         </div>
 
     </div>
@@ -37,19 +43,19 @@
             <p class="py-3"
                 style="margin-top: 10%;font-size: xx-large; border-width: 3; border-radius: 12px; border-color: blue;">
                 <button onclick="toggleGameDisplay()"
-                    style="border-width: 3px; border-radius: 12px; border-color: blue; background-color: rgba(0, 0, 0, 0); box-shadow: 5px 4px 10px 0px #505050">
+                    style="border-width: 3px; border-radius: 12px; border-color: blue; background-color: rgb(21 182 255 / 25%); box-shadow: 5px 4px 10px 0px #505050">
                     start
                 </button>
             </p>
             <p class="py-3" style="font-size: xx-large; border-width: 3; border-radius: 12px; border-color: blue;">
                 <button onclick="toggleLeaderboard()"
-                    style="border-width: 3px; border-radius: 12px; border-color: blue; background-color: rgba(0, 0, 0, 0); box-shadow: 5px 4px 10px 0px #505050">
+                    style="border-width: 3px; border-radius: 12px; border-color: blue; background-color: rgb(21 182 255 / 25%); box-shadow: 5px 4px 10px 0px #505050">
                     leaderboard
                 </button>
             </p>
             <p class="py-3" style="font-size: xx-large; ">
                 <button
-                    style="border-width: 3px; border-radius: 12px; border-color: blue; background-color: rgba(0, 0, 0, 0); box-shadow: 5px 4px 10px 0px #505050;"
+                    style="border-width: 3px; border-radius: 12px; border-color: blue; background-color: rgb(21 182 255 / 25%); box-shadow: 5px 4px 10px 0px #505050;"
                     onclick="window.location.href ='/'">tfl home</button>
             </p>
         </div>
@@ -58,7 +64,12 @@
         <div class="d-flex-grid g-0" style="background-color: white; overflow: hidden;height: 100dvh;">
             <div class="row">
                 <div class="col" style="text-align: center; height: 30dvh; background-color: gainsboro;">
-                    Timer: <p style="font-size: xx-large;" id="timer">2</p><br />
+
+                    <button class="row m-0 p-1" onclick="toggleMenuDisplay()"
+                        style="border-width: 3px; border-radius: 12px; border-color: blue; background-color: rgba(0, 0, 0, 0); box-shadow: 5px 4px 10px 0px #505050">
+                        menu
+                    </button>&nbsp;
+                    Timer: <p style="font-size: xx-large;" id="timer">45</p><br />
                     Score: <p style="font-size: xx-large; font-family: monospace;" id="score">0</p>
                 </div>
             </div>
@@ -122,6 +133,7 @@
         var gameObj = document.getElementById('gameObj')
         var timer = document.getElementById('timer')
         var score = document.getElementById('score')
+
         var getCurrentUsername = async () => {
             const token = document.cookie.split("session_id=")[1]
             const resp = await fetch("/get-username-from-session?id=" + token, {
@@ -133,7 +145,7 @@
 
             const text = await resp.json()
             username = await text.Username
-            console.log(username)
+
             if (username < ' ')
                 alert("You're username was not found. Try logging out and logging back in if you would like to be displayed on the leaderboard")
             return username
@@ -237,9 +249,6 @@
             }
             return gameColor
         }
-        function setGameColor() {
-
-        }
         function comparePlayerToGameObj() {
             var curPlayObj = getCurrentPlayerColor()
             var curGameObj = getCurrentGameColor()
@@ -254,29 +263,48 @@
         }
         const delay = 1000
         let ourGameInterval = null
-        const runTimerFunction = () => {
-            console.log("evaluate")
-            if (!document.getElementById("gamebody").getAttribute('style').includes('display: none;'))
-                timer.innerHTML = Number(timer.innerHTML) - (delay / 1000)
-            else {
-                controlInterval(false)
-                timer.innerHTML = 45
-            }
+        const runTimerFunction = async () => {
+            //if (!document.getElementById("gamebody").getAttribute('style').includes('display: none;'))
+            timer.innerHTML = Number(timer.innerHTML) - (delay / 1000)
+            // else {
+            //    controlInterval(false)
+            //    timer.innerHTML = 45
+            //    score.innerHTML = 0
+            //}
             if (Number(timer.innerHTML) == 0) {
+                var finalScore = Number(score.innerHTML)
                 controlInterval(false)
-                toggleLeaderboard()
-            }
-            console.log('running')
+                //toggleLeaderboard()
+                const resp = await fetch("/update-simpleshades-score", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ username, score: finalScore })
+                }).then((data) => {
 
+                    if (data.status == 200) {
+                        alert("You're score was added to the record.")
+                        toggleLeaderboard();
+                    }
+                    else {
+                        alert("Your score could not be added to the record for some reason :(")
+                    }
+
+                }).catch((err) => alert("Your score could not be added: " + err))
+            }
         };
+
         function controlInterval(run, func) {
             if (run)
                 ourGameInterval = setInterval(runTimerFunction, delay)
             else {
                 clearInterval(ourGameInterval)
-                console.log('destory')
+                timer.innerHTML = 45
+                score.innerHTML = 0
             }
         }
+
         function toggleGameDisplay() {
             if (document.getElementById('gamebody').getAttribute("style") == "display: none;" && document.getElementById('gamebuttons').getAttribute("style") == "display: none;" && document.getElementById("menubody").getAttribute("style") == "display: block;") {
                 controlInterval(true, runTimerFunction)
@@ -292,6 +320,7 @@
         }
         function toggleLeaderboard() {
             if (document.getElementById('gamebody').getAttribute("style") == "display: block;" && document.getElementById('gamebuttons').getAttribute("style") == "display: block;" || document.getElementById("menubody").getAttribute("style") == "display: block;") {
+                document.getElementById("htmxleaderboard").dispatchEvent(new Event('click'))
                 document.getElementById("leaderboardbody").setAttribute("style", "display: block;")
                 document.getElementById('gamebody').setAttribute("style", "display: none;")
                 document.getElementById('gamebuttons').setAttribute("style", "display: none;")
@@ -300,6 +329,15 @@
                 document.getElementById("leaderboardbody").setAttribute("style", "display: none;")
                 document.getElementById('gamebody').setAttribute("style", "display: block;")
                 document.getElementById('gamebuttons').setAttribute("style", "display: block;")
+                document.getElementById('menubody').setAttribute("style", "display: block;")
+            }
+        }
+        function toggleMenuDisplay() {
+            controlInterval(false)
+            if (document.getElementById('menubody').getAttribute("style") == "display: none;") {
+                document.getElementById("leaderboardbody").setAttribute("style", "display: none;")
+                document.getElementById('gamebody').setAttribute("style", "display: none;")
+                document.getElementById('gamebuttons').setAttribute("style", "display: none;")
                 document.getElementById('menubody').setAttribute("style", "display: block;")
             }
         }

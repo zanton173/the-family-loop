@@ -14,85 +14,96 @@
 </head>
 
 <body style="overflow: hidden; position: absolute; top: 0; bottom: 0; width: 100%; ">
-    <div id="menubody"
-        style="text-align: center; display: block; background-color: rgb(165, 203, 255); justify-content: space-evenly; height: 100vh">
-        <img src="/assets/simpleshadesicon1024x1024.png" style="width: 128px; height: 128px; margin-top: 25%;"
-            alt="simple shades" />
+    <div id="menubody" style="display: block;">
+        <div
+            style="text-align: center; background-color: rgb(165, 203, 255); justify-content: space-evenly; height: 100vh">
+            <img src="/assets/simpleshadesicon1024x1024.png"
+                style="width: 128px; height: 128px; margin-top: 25%; border-radius: 10px; box-shadow: 10px 10px 10px 0px rgba(4, 4, 120, .8);"
+                alt="simple shades" />
 
 
-        <p class="py-3"
-            style="margin-top: 25%;font-size: xx-large; border-width: 3; border-radius: 12px; border-color: blue;">
-            <button onclick="startGame()"
-                style="border-width: 3px; border-radius: 12px; border-color: blue; background-color: rgba(0, 0, 0, 0);">
-                start
-            </button>
-        </p>
-        <p class="py-3" style="font-size: xx-large; border-width: 3; border-radius: 12px; border-color: blue;">
-            <button onclick="showLeaderBoard()"
-                style="border-width: 3px; border-radius: 12px; border-color: blue; background-color: rgba(0, 0, 0, 0);">
-                leaderboard
-            </button>
-        </p>
-        <p class="py-3" style="font-size: xx-large; ">
-            <button
-                style="border-width: 3px; border-radius: 12px; border-color: blue; background-color: rgba(0, 0, 0, 0);"
-                onclick="window.location.href ='/'">tfl home</button>
-        </p>
+            <p class="py-3"
+                style="margin-top: 25%;font-size: xx-large; border-width: 3; border-radius: 12px; border-color: blue;">
+                <button onclick="toggleGameDisplay()"
+                    style="border-width: 3px; border-radius: 12px; border-color: blue; background-color: rgba(0, 0, 0, 0); box-shadow: 5px 4px 10px 0px #505050">
+                    start
+                </button>
+            </p>
+            <p class="py-3" style="font-size: xx-large; border-width: 3; border-radius: 12px; border-color: blue;">
+                <button onclick="showLeaderBoard()"
+                    style="border-width: 3px; border-radius: 12px; border-color: blue; background-color: rgba(0, 0, 0, 0); box-shadow: 5px 4px 10px 0px #505050">
+                    leaderboard
+                </button>
+            </p>
+            <p class="py-3" style="font-size: xx-large; ">
+                <button
+                    style="border-width: 3px; border-radius: 12px; border-color: blue; background-color: rgba(0, 0, 0, 0); box-shadow: 5px 4px 10px 0px #505050;"
+                    onclick="window.location.href ='/'">tfl home</button>
+            </p>
+        </div>
     </div>
-    <div id="gamebody" class="d-flex-grid g-0"
-        style="background-color: white; overflow: hidden;height: 100dvh; display: none">
-        <div class="row">
-            <div class="col" style="text-align: center; height: 30dvh; background-color: gainsboro;">
-                Timer: <p style="font-size: xx-large;" id="timer">4</p><br />
-                Score: <p style="font-size: xx-large; font-family: monospace;" id="score">0</p>
+    <div id="gamebody" style="display: none;">
+        <div class="d-flex-grid g-0" style="background-color: white; overflow: hidden;height: 100dvh;">
+            <div class="row">
+                <div class="col" style="text-align: center; height: 30dvh; background-color: gainsboro;">
+                    Timer: <p style="font-size: xx-large;" id="timer">45</p><br />
+                    Score: <p style="font-size: xx-large; font-family: monospace;" id="score">0</p>
+                </div>
             </div>
-        </div>
 
-        <div id="gameObj" class="row mx-0 px-0" style="background-color: rgb(184, 280, 11);">
-            <div class="col" style="height: 20dvh;"></div>
-        </div>
-        <div id="playerObj" class="row mx-0 px-0" style="background-color: rgb(0, 0, 0)">
-            <div class="col" style="height: 20dvh;"></div>
-        </div>
+            <div id="gameObj" class="row mx-0 px-0" style="background-color: rgb(184, 280, 11);">
+                <div class="col" style="height: 20dvh;"></div>
+            </div>
+            <div id="playerObj" class="row mx-0 px-0" style="background-color: rgb(0, 0, 0)">
+                <div class="col" style="height: 20dvh;"></div>
+            </div>
 
+        </div>
     </div>
-    <footer id="gamebuttons" style="position: relative; bottom: 30vh; overflow: hidden; display: none">
-        <div class="row">
+    <div id="gamebuttons" style="display: none;">
+        <footer style="position: relative; bottom: 30vh; overflow: hidden;">
+            <div class="row">
 
-            <div class="col px-0 mx-0" style="background-color: #FF4141;">
-                <button type="button" onclick="incRedPlayer()" class="border-bottom border-0 btn btn-outline-secondary"
-                    style="width: 100%; border-radius: 0%; font-size: xx-large; height: 15vh">+</button>
-            </div>
-            <div class="col px-0 mx-0" style="background-color: #41FF54;">
-                <button type="button" onclick="incGreenPlayer()"
-                    class="border-bottom border-0 btn btn-outline-secondary"
-                    style="width: 100%; border-radius: 0%; font-size: xx-large; height: 15vh">+</button>
-            </div>
-            <div class="col px-0 mx-0" style="background-color: #6741FF;">
-                <button type="button" onclick="incBluePlayer()" class="border-bottom border-0 btn btn-outline-secondary"
-                    style="width: 100%; border-radius: 0%;font-size: xx-large; height: 15vh">+</button>
-            </div>
-
-        </div>
-        <div class="row">
-
-            <div class="col px-0 mx-0" style="background-color: #FF4141;">
-                <button type="button" onclick="decRedPlayer()" class="border-top border-0  btn btn-outline-secondary"
-                    style="width: 100%; border-radius: 0%; font-size: xx-large; height: 15vh">-</button>
-            </div>
-
-            <div class="col px-0 mx-0" style="background-color: #41FF54;">
-                <button type="button" onclick="decGreenPlayer()" class="border-top border-0  btn btn-outline-secondary"
-                    style="width: 100%; border-radius: 0%; font-size: xx-large; height: 15vh">-</button>
-            </div>
-
-            <div class="col px-0 mx-0" style="background-color: #6741FF">
-                <button type="button" onclick="decBluePlayer()" class="border-top border-0 btn btn-outline-secondary"
-                    style="width: 100%; border-radius: 0%; font-size: xx-large; height: 15vh">-</button>
+                <div class="col px-0 mx-0" style="background-color: #FF4141;">
+                    <button type="button" onclick="incRedPlayer()"
+                        class="border-bottom border-0 btn btn-outline-secondary"
+                        style="width: 100%; border-radius: 0%; font-size: xx-large; height: 15vh">+</button>
+                </div>
+                <div class="col px-0 mx-0" style="background-color: #41FF54;">
+                    <button type="button" onclick="incGreenPlayer()"
+                        class="border-bottom border-0 btn btn-outline-secondary"
+                        style="width: 100%; border-radius: 0%; font-size: xx-large; height: 15vh">+</button>
+                </div>
+                <div class="col px-0 mx-0" style="background-color: #6741FF;">
+                    <button type="button" onclick="incBluePlayer()"
+                        class="border-bottom border-0 btn btn-outline-secondary"
+                        style="width: 100%; border-radius: 0%;font-size: xx-large; height: 15vh">+</button>
+                </div>
 
             </div>
-        </div>
-    </footer>
+            <div class="row">
+
+                <div class="col px-0 mx-0" style="background-color: #FF4141;">
+                    <button type="button" onclick="decRedPlayer()"
+                        class="border-top border-0  btn btn-outline-secondary"
+                        style="width: 100%; border-radius: 0%; font-size: xx-large; height: 15vh">-</button>
+                </div>
+
+                <div class="col px-0 mx-0" style="background-color: #41FF54;">
+                    <button type="button" onclick="decGreenPlayer()"
+                        class="border-top border-0  btn btn-outline-secondary"
+                        style="width: 100%; border-radius: 0%; font-size: xx-large; height: 15vh">-</button>
+                </div>
+
+                <div class="col px-0 mx-0" style="background-color: #6741FF">
+                    <button type="button" onclick="decBluePlayer()"
+                        class="border-top border-0 btn btn-outline-secondary"
+                        style="width: 100%; border-radius: 0%; font-size: xx-large; height: 15vh">-</button>
+
+                </div>
+            </div>
+        </footer>
+    </div>
     <script>
         var playObj = document.getElementById('playerObj')
         var gameObj = document.getElementById('gameObj')
@@ -214,17 +225,24 @@
         const runTimer = setInterval(() => {
             if (document.getElementById("gamebody").getAttribute('style').includes('display: none'))
                 clearInterval(runTimer)
-
-            timer.innerHTML = Number(timer.innerHTML) - (delay / 1000)
+            else
+                timer.innerHTML = Number(timer.innerHTML) - (delay / 1000)
 
             if (Number(timer.innerHTML) == 0) {
                 clearInterval(runTimer)
 
             }
         }, delay);
-        function setGameDisplayToNone() {
-            document.getElementById('gamebody').setAttribute("style", "display: none")
-            document.getElementById('gamebuttons').setAttribute("style", "display: none")
+        function toggleGameDisplay() {
+
+            if (document.getElementById('gamebody').getAttribute("style") == "display: none;" && document.getElementById('gamebuttons').getAttribute("style") == "display: none;" && document.getElementById("menubody").getAttribute("style") == "display: block;") {
+                document.getElementById('menubody').setAttribute("style", "display: none;")
+                document.getElementById('gamebody').setAttribute("style", "display: block;")
+                document.getElementById('gamebuttons').setAttribute("style", "display: block;")
+            } else {
+                document.getElementById('gamebody').setAttribute("style", "display: none;")
+                document.getElementById('gamebuttons').setAttribute("style", "display: none;")
+            }
         }
 
     </script>

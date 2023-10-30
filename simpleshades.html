@@ -14,8 +14,11 @@
 </head>
 
 <body style="overflow: hidden; position: absolute; top: 0; bottom: 0; width: 100%;">
-    <div class="d-flex-grid g-0" style="background-color: white; overflow: hidden;height: 100dvh;">
-
+    <div id="menubody" style="text-align: center; display: none">
+        <p>start</p>
+        <p>leaderboard</p>
+    </div>
+    <div id="gamebody" class="d-flex-grid g-0" style="background-color: white; overflow: hidden;height: 100dvh;">
         <div class="row">
             <div class="col" style="text-align: center; height: 30dvh; background-color: gainsboro;">
                 Timer: <p style="font-size: xx-large;" id="timer">45</p><br />
@@ -70,6 +73,7 @@
     </footer>
     <script>
         var playObj = document.getElementById('playerObj')
+        var gameObj = document.getElementById('gameObj')
         var timer = document.getElementById('timer')
         var score = document.getElementById('score')
         function incRedPlayer() {
@@ -169,27 +173,32 @@
             }
             return gameColor
         }
+        function setGameColor() {
+
+        }
         function comparePlayerToGameObj() {
             var curPlayObj = getCurrentPlayerColor()
             var curGameObj = getCurrentGameColor()
             if (Math.abs(curPlayObj.playerred - curGameObj.gamered) <= 25 && Math.abs(curPlayObj.playergreen - curGameObj.gamegreen) <= 25 && Math.abs(curPlayObj.playerblue - curGameObj.gameblue) <= 25) {
-                /*
-                this.changeColorObj();
-                changeScore(score + 10);
-                setCount(count + 13);
-                */
+                var dataStr = `background-color: rgb(${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)})`
+                var curStr = gameObj.getAttribute("style")
+                gameObj.setAttribute("style", dataStr)
+
+                score.innerHTML = Number(score.innerHTML) + 10
+                timer.innerHTML = Number(timer.innerHTML) + 8
             }
         }
-        useInterval(() => {
-            if (timer === 0) {
-                // Show final score
-                //props.navigation.navigate('Score', { data: score });
+        const delay = 1000
+        const runTimer = setInterval(() => {
+            timer.innerHTML = Number(timer.innerHTML) - (delay / 1000)
+            if (Number(timer.innerHTML) == 0) {
+                clearInterval(runTimer)
 
-                changeTimerRunning({
-                    timerRunning: true
-                })
-            }; setCount(count - 1);
+            }
         }, delay);
+        function setGameDisplayToNone() {
+            document.getElementById('gamebody').setAttribute("style", "display: none")
+        }
 
     </script>
 

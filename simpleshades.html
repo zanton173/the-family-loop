@@ -13,15 +13,37 @@
 
 </head>
 
-<body style="overflow: hidden; position: absolute; top: 0; bottom: 0; width: 100%;">
-    <div id="menubody" style="text-align: center; display: none">
-        <p>start</p>
-        <p>leaderboard</p>
+<body style="overflow: hidden; position: absolute; top: 0; bottom: 0; width: 100%; ">
+    <div id="menubody"
+        style="text-align: center; display: block; background-color: rgb(165, 203, 255); justify-content: space-evenly; height: 100vh">
+        <img src="/assets/simpleshadesicon1024x1024.png" style="width: 128px; height: 128px; margin-top: 25%;"
+            alt="simple shades" />
+
+
+        <p class="py-3"
+            style="margin-top: 25%;font-size: xx-large; border-width: 3; border-radius: 12px; border-color: blue;">
+            <button onclick="startGame()"
+                style="border-width: 3px; border-radius: 12px; border-color: blue; background-color: rgba(0, 0, 0, 0);">
+                start
+            </button>
+        </p>
+        <p class="py-3" style="font-size: xx-large; border-width: 3; border-radius: 12px; border-color: blue;">
+            <button onclick="showLeaderBoard()"
+                style="border-width: 3px; border-radius: 12px; border-color: blue; background-color: rgba(0, 0, 0, 0);">
+                leaderboard
+            </button>
+        </p>
+        <p class="py-3" style="font-size: xx-large; ">
+            <button
+                style="border-width: 3px; border-radius: 12px; border-color: blue; background-color: rgba(0, 0, 0, 0);"
+                onclick="window.location.href ='/'">tfl home</button>
+        </p>
     </div>
-    <div id="gamebody" class="d-flex-grid g-0" style="background-color: white; overflow: hidden;height: 100dvh;">
+    <div id="gamebody" class="d-flex-grid g-0"
+        style="background-color: white; overflow: hidden;height: 100dvh; display: none">
         <div class="row">
             <div class="col" style="text-align: center; height: 30dvh; background-color: gainsboro;">
-                Timer: <p style="font-size: xx-large;" id="timer">45</p><br />
+                Timer: <p style="font-size: xx-large;" id="timer">4</p><br />
                 Score: <p style="font-size: xx-large; font-family: monospace;" id="score">0</p>
             </div>
         </div>
@@ -34,7 +56,7 @@
         </div>
 
     </div>
-    <footer style="position: relative; bottom: 30vh; overflow: hidden;">
+    <footer id="gamebuttons" style="position: relative; bottom: 30vh; overflow: hidden; display: none">
         <div class="row">
 
             <div class="col px-0 mx-0" style="background-color: #FF4141;">
@@ -190,7 +212,11 @@
         }
         const delay = 1000
         const runTimer = setInterval(() => {
+            if (document.getElementById("gamebody").getAttribute('style').includes('display: none'))
+                clearInterval(runTimer)
+
             timer.innerHTML = Number(timer.innerHTML) - (delay / 1000)
+
             if (Number(timer.innerHTML) == 0) {
                 clearInterval(runTimer)
 
@@ -198,6 +224,7 @@
         }, delay);
         function setGameDisplayToNone() {
             document.getElementById('gamebody').setAttribute("style", "display: none")
+            document.getElementById('gamebuttons').setAttribute("style", "display: none")
         }
 
     </script>

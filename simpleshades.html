@@ -5,7 +5,7 @@
     <meta charset='utf-8'>
     <link rel="manifest" href="/assets/manifest.json" />
     <title>Simple Shades</title>
-    <meta name='viewport' content='width=device-width,height=device-height initial-scale=1.0'>
+    <meta name='viewport' content='width=device-width,height=device-height, initial-scale=1.0, user-scalable=no'>
 
     <link href="/css/bootstrap.min.css" rel="stylesheet">
     <link href="/css/custom-css.css" rel="stylesheet">
@@ -14,7 +14,7 @@
     <script src="/js/htmx_json-enc.js"></script>
 </head>
 
-<body style="overflow: hidden; position: absolute; top: 0; bottom: 0; width: 100%; ">
+<body style="overflow: hidden; position: absolute; top: 0; bottom: 0; width: 100%; touch-action: manipulation;">
 
     <div id="leaderboardbody" style="display: none;">
 
@@ -70,7 +70,7 @@
                         menu
                     </button>&nbsp;
                     Timer: <p style="font-size: xx-large;" id="timer">45</p><br />
-                    Score: <p style="font-size: xx-large; font-family: monospace;" id="score">0</p>
+                    Score: <p style="font-size: xx-large; font-family: monospace; padding-bottom: 5px;" id="score">0</p>
                 </div>
             </div>
 

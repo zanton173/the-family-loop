@@ -285,6 +285,10 @@ func main() {
 			tmpl := template.Must(template.ParseFiles("bugreport.html"))
 			tmpl.Execute(w, nil)
 			tm.Execute(w, nil)
+		case "/games/simple-shades":
+			tmpl := template.Must(template.ParseFiles("simpleshades.html"))
+			tmpl.Execute(w, nil)
+
 		default:
 			tmpl := template.Must(template.ParseFiles("index.html"))
 			tmpl.Execute(w, nil)
@@ -890,6 +894,44 @@ func main() {
 		resp.Body.Close()
 
 	}
+	getLeaderboardHandler := func(w http.ResponseWriter, r *http.Request) {
+		output, outerr := db.Query("select username, score from tfldata.ss_leaderboard order by score desc limit 20;")
+		if outerr != nil {
+			fmt.Println(outerr)
+		}
+		defer output.Close()
+		iter := 1
+		for output.Next() {
+			var username string
+			var score string
+			scnerr := output.Scan(&username, &score)
+			if scnerr != nil {
+				fmt.Println(scnerr)
+			}
+			dataStr := "<div class='py-0 my-0' style='display: inline-flex;'><p class='px-2 m-0'>" + fmt.Sprintf("%d", iter) + "</p><p class='px-2 m-0' style='text-align: center;'>" + username + " - " + score + "</p></div><br/>"
+			iter++
+			w.Write([]byte(dataStr))
+		}
+	}
+	updateSimpleShadesScoreHandler := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		bs, _ := io.ReadAll(r.Body)
+		type postBody struct {
+			Username string `json:"username"`
+			Score    int    `json:"score"`
+		}
+		var postData postBody
+		errmarsh := json.Unmarshal(bs, &postData)
+		if errmarsh != nil {
+			fmt.Println(errmarsh)
+		}
+
+		_, inserr := db.Exec(fmt.Sprintf("insert into tfldata.ss_leaderboard(\"username\", \"score\") values('%s', '%d');", postData.Username, postData.Score))
+		if inserr != nil {
+			w.WriteHeader(http.StatusBadRequest)
+		}
+
+	}
 	/*h3 := func(w http.ResponseWriter, r *http.Request) {
 		upload, filename, err := r.FormFile("file_name")
 		if err != nil {
@@ -930,6 +972,9 @@ func main() {
 	http.HandleFunc("/update-pfp", updatePfpHandler)
 
 	http.HandleFunc("/create-issue", createIssueHandler)
+
+	http.HandleFunc("/get-leaderboard", getLeaderboardHandler)
+	http.HandleFunc("/update-simpleshades-score", updateSimpleShadesScoreHandler)
 
 	http.HandleFunc("/signup", signUpHandler)
 	http.HandleFunc("/login", loginHandler)

@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset='utf-8'>
+    <link rel="manifest" href="/assets/manifest.json" />
+    <title>Simple Shades</title>
+    <meta name='viewport' content='width=device-width,height=device-height initial-scale=1.0'>
+
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/custom-css.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/htmx.min.js"></script>
+    <script src="/js/htmx_json-enc.js"></script>
+</head>
+
+<body style="overflow: hidden; position: absolute; top: 0; bottom: 0; width: 100%; ">
+
+    <div id="leaderboardbody" style="display: none;">
+
+        <div style="text-align: center; background-color: rgb(165, 203, 255); height: 100vh;">
+            <div style="display: flex;">
+                <button onclick="toggleMenuDisplay()"
+                    style="border-width: 3px; border-radius: 12px; border-color: blue; background-color: rgba(0, 0, 0, 0); box-shadow: 5px 4px 10px 0px #505050">
+                    menu
+                </button>&nbsp;
+                <h1 class="mx-auto px-1 text-center">Top 20 Leaderboard</h1>
+            </div>
+            <div id="htmxleaderboard" hx-get="/get-leaderboard" hx-trigger="load, click" hx-target="this"
+                style="font-size: larger;"></div>
+        </div>
+
+    </div>
+
+    <div id="menubody" style="display: block;">
+        <div
+            style="text-align: center; background-color: rgb(165, 203, 255); justify-content: space-evenly; height: 100dvh">
+            <img src="/assets/simpleshadesicon1024x1024.png"
+                style="width: 128px; height: 128px; margin-top: 20%; border-radius: 10px; box-shadow: 10px 10px 10px 0px rgba(4, 4, 120, .8);"
+                alt="simple shades" />
+
+
+            <p class="py-3"
+                style="margin-top: 10%;font-size: xx-large; border-width: 3; border-radius: 12px; border-color: blue;">
+                <button onclick="toggleGameDisplay()"
+                    style="border-width: 3px; border-radius: 12px; border-color: blue; background-color: rgb(21 182 255 / 25%); box-shadow: 5px 4px 10px 0px #505050">
+                    start
+                </button>
+            </p>
+            <p class="py-3" style="font-size: xx-large; border-width: 3; border-radius: 12px; border-color: blue;">
+                <button onclick="toggleLeaderboard()"
+                    style="border-width: 3px; border-radius: 12px; border-color: blue; background-color: rgb(21 182 255 / 25%); box-shadow: 5px 4px 10px 0px #505050">
+                    leaderboard
+                </button>
+            </p>
+            <p class="py-3" style="font-size: xx-large; ">
+                <button
+                    style="border-width: 3px; border-radius: 12px; border-color: blue; background-color: rgb(21 182 255 / 25%); box-shadow: 5px 4px 10px 0px #505050;"
+                    onclick="window.location.href ='/'">tfl home</button>
+            </p>
+        </div>
+    </div>
+    <div id="gamebody" style="display: none;">
+        <div class="d-flex-grid g-0" style="background-color: white; overflow: hidden;height: 100dvh;">
+            <div class="row">
+                <div class="col" style="text-align: center; height: 30dvh; background-color: gainsboro;">
+
+                    <button class="row m-0 p-1" onclick="toggleMenuDisplay()"
+                        style="border-width: 3px; border-radius: 12px; border-color: blue; background-color: rgba(0, 0, 0, 0); box-shadow: 5px 4px 10px 0px #505050">
+                        menu
+                    </button>&nbsp;
+                    Timer: <p style="font-size: xx-large;" id="timer">45</p><br />
+                    Score: <p style="font-size: xx-large; font-family: monospace;" id="score">0</p>
+                </div>
+            </div>
+
+            <div id="gameObj" class="row mx-0 px-0" style="background-color: rgb(184, 280, 11);">
+                <div class="col" style="height: 20dvh;"></div>
+            </div>
+            <div id="playerObj" class="row mx-0 px-0" style="background-color: rgb(0, 0, 0)">
+                <div class="col" style="height: 20dvh;"></div>
+            </div>
+
+        </div>
+    </div>
+    <div id="gamebuttons" style="display: none;">
+        <footer style="position: relative; bottom: 30vh; overflow: hidden;">
+            <div class="row">
+
+                <div class="col px-0 mx-0" style="background-color: #FF4141;">
+                    <button type="button" onclick="incRedPlayer()"
+                        class="border-bottom border-0 btn btn-outline-secondary"
+                        style="width: 100%; border-radius: 0%; font-size: xx-large; height: 15vh">+</button>
+                </div>
+                <div class="col px-0 mx-0" style="background-color: #41FF54;">
+                    <button type="button" onclick="incGreenPlayer()"
+                        class="border-bottom border-0 btn btn-outline-secondary"
+                        style="width: 100%; border-radius: 0%; font-size: xx-large; height: 15vh">+</button>
+                </div>
+                <div class="col px-0 mx-0" style="background-color: #6741FF;">
+                    <button type="button" onclick="incBluePlayer()"
+                        class="border-bottom border-0 btn btn-outline-secondary"
+                        style="width: 100%; border-radius: 0%;font-size: xx-large; height: 15vh">+</button>
+                </div>
+
+            </div>
+            <div class="row">
+
+                <div class="col px-0 mx-0" style="background-color: #FF4141;">
+                    <button type="button" onclick="decRedPlayer()"
+                        class="border-top border-0  btn btn-outline-secondary"
+                        style="width: 100%; border-radius: 0%; font-size: xx-large; height: 15vh">-</button>
+                </div>
+
+                <div class="col px-0 mx-0" style="background-color: #41FF54;">
+                    <button type="button" onclick="decGreenPlayer()"
+                        class="border-top border-0  btn btn-outline-secondary"
+                        style="width: 100%; border-radius: 0%; font-size: xx-large; height: 15vh">-</button>
+                </div>
+
+                <div class="col px-0 mx-0" style="background-color: #6741FF">
+                    <button type="button" onclick="decBluePlayer()"
+                        class="border-top border-0 btn btn-outline-secondary"
+                        style="width: 100%; border-radius: 0%; font-size: xx-large; height: 15vh">-</button>
+
+                </div>
+            </div>
+        </footer>
+
+    </div>
+    <script>
+        var playObj = document.getElementById('playerObj')
+        var gameObj = document.getElementById('gameObj')
+        var timer = document.getElementById('timer')
+        var score = document.getElementById('score')
+
+        var getCurrentUsername = async () => {
+            const token = document.cookie.split("session_id=")[1]
+            const resp = await fetch("/get-username-from-session?id=" + token, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            })
+
+            const text = await resp.json()
+            username = await text.Username
+
+            if (username < ' ')
+                alert("You're username was not found. Try logging out and logging back in if you would like to be displayed on the leaderboard")
+            return username
+        }
+        var username = getCurrentUsername()
+
+        function incRedPlayer() {
+            var curPlayObj = getCurrentPlayerColor()
+            if (curPlayObj.playerred >= 255)
+                return
+            var incRedVal = curPlayObj.playerred + 15
+            var dataStr = `background-color: rgb(${incRedVal}, ${curPlayObj.playergreen}, ${curPlayObj.playerblue})`
+
+            var curStr = playObj.getAttribute("style")
+            playObj.setAttribute("style", dataStr)
+            comparePlayerToGameObj()
+        }
+        function decRedPlayer() {
+            var curPlayObj = getCurrentPlayerColor()
+            if (curPlayObj.playerred <= 0)
+                return
+            var decRedVal = curPlayObj.playerred - 15
+            var dataStr = `background-color: rgb(${decRedVal}, ${curPlayObj.playergreen}, ${curPlayObj.playerblue})`
+
+            var curStr = playObj.getAttribute("style")
+            playObj.setAttribute("style", dataStr)
+            comparePlayerToGameObj()
+        }
+        function incGreenPlayer() {
+            var curPlayObj = getCurrentPlayerColor()
+            if (curPlayObj.playergreen >= 255)
+                return
+            var incGreenVal = curPlayObj.playergreen + 15
+            var dataStr = `background-color: rgb(${curPlayObj.playerred}, ${incGreenVal}, ${curPlayObj.playerblue})`
+
+            var curStr = playObj.getAttribute("style")
+            playObj.setAttribute("style", dataStr)
+            comparePlayerToGameObj()
+        }
+        function decGreenPlayer() {
+            var curPlayObj = getCurrentPlayerColor()
+            if (curPlayObj.playergreen <= 0)
+                return
+            var decGreenVal = curPlayObj.playergreen - 15
+            var dataStr = `background-color: rgb(${curPlayObj.playerred}, ${decGreenVal}, ${curPlayObj.playerblue})`
+
+            var curStr = playObj.getAttribute("style")
+            playObj.setAttribute("style", dataStr)
+            comparePlayerToGameObj()
+        }
+        function incBluePlayer() {
+            var curPlayObj = getCurrentPlayerColor()
+            if (curPlayObj.playerblue >= 255)
+                return
+            var incBlueVal = curPlayObj.playerblue + 15
+            var dataStr = `background-color: rgb(${curPlayObj.playerred}, ${curPlayObj.playergreen}, ${incBlueVal})`
+
+            var curStr = playObj.getAttribute("style")
+            playObj.setAttribute("style", dataStr)
+            comparePlayerToGameObj()
+        }
+        function decBluePlayer() {
+            var curPlayObj = getCurrentPlayerColor()
+            if (curPlayObj.playerblue <= 0)
+                return
+            var decBlueVal = curPlayObj.playerblue - 15
+            var dataStr = `background-color: rgb(${curPlayObj.playerred}, ${curPlayObj.playergreen}, ${decBlueVal})`
+
+            var curStr = playObj.getAttribute("style")
+            playObj.setAttribute("style", dataStr)
+            comparePlayerToGameObj()
+        }
+
+        function getCurrentPlayerColor() {
+            var playObj = document.getElementById('playerObj')
+            var formattedCol = playObj.getAttribute('style').replace("background-color: rgb(", '').replace(")", "").replace(";", '')
+            var arrayOfCols = formattedCol.split(",", 3)
+            var playerred = Number(arrayOfCols[0])
+            var playergreen = Number(arrayOfCols[1])
+            var playerblue = Number(arrayOfCols[2])
+            var playerColor = {
+                playerred,
+                playergreen,
+                playerblue,
+                replaceStr: formattedCol
+            }
+            return playerColor
+        }
+        function getCurrentGameColor() {
+            var gameObj = document.getElementById('gameObj')
+            var formattedCol = gameObj.getAttribute('style').replace("background-color: rgb(", '').replace(")", "").replace(";", '')
+            var arrayOfCols = formattedCol.split(",", 3)
+            var gamered = Number(arrayOfCols[0])
+            var gamegreen = Number(arrayOfCols[1])
+            var gameblue = Number(arrayOfCols[2])
+            var gameColor = {
+                gamered,
+                gamegreen,
+                gameblue,
+                replaceStr: formattedCol
+            }
+            return gameColor
+        }
+        function comparePlayerToGameObj() {
+            var curPlayObj = getCurrentPlayerColor()
+            var curGameObj = getCurrentGameColor()
+            if (Math.abs(curPlayObj.playerred - curGameObj.gamered) <= 25 && Math.abs(curPlayObj.playergreen - curGameObj.gamegreen) <= 25 && Math.abs(curPlayObj.playerblue - curGameObj.gameblue) <= 25) {
+                var dataStr = `background-color: rgb(${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)})`
+                var curStr = gameObj.getAttribute("style")
+                gameObj.setAttribute("style", dataStr)
+
+                score.innerHTML = Number(score.innerHTML) + 10
+                timer.innerHTML = Number(timer.innerHTML) + 8
+            }
+        }
+        const delay = 1000
+        let ourGameInterval = null
+        const runTimerFunction = async () => {
+            //if (!document.getElementById("gamebody").getAttribute('style').includes('display: none;'))
+            timer.innerHTML = Number(timer.innerHTML) - (delay / 1000)
+            // else {
+            //    controlInterval(false)
+            //    timer.innerHTML = 45
+            //    score.innerHTML = 0
+            //}
+            if (Number(timer.innerHTML) == 0) {
+                var finalScore = Number(score.innerHTML)
+                controlInterval(false)
+                //toggleLeaderboard()
+                const resp = await fetch("/update-simpleshades-score", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ username, score: finalScore })
+                }).then((data) => {
+
+                    if (data.status == 200) {
+                        alert("You're score was added to the record.")
+                        toggleLeaderboard();
+                    }
+                    else {
+                        alert("Your score could not be added to the record for some reason :(")
+                    }
+
+                }).catch((err) => alert("Your score could not be added: " + err))
+            }
+        };
+
+        function controlInterval(run, func) {
+            if (run)
+                ourGameInterval = setInterval(runTimerFunction, delay)
+            else {
+                clearInterval(ourGameInterval)
+                timer.innerHTML = 45
+                score.innerHTML = 0
+            }
+        }
+
+        function toggleGameDisplay() {
+            if (document.getElementById('gamebody').getAttribute("style") == "display: none;" && document.getElementById('gamebuttons').getAttribute("style") == "display: none;" && document.getElementById("menubody").getAttribute("style") == "display: block;") {
+                controlInterval(true, runTimerFunction)
+                document.getElementById('menubody').setAttribute("style", "display: none;")
+                document.getElementById('gamebody').setAttribute("style", "display: block;")
+                document.getElementById('gamebuttons').setAttribute("style", "display: block;")
+            } else {
+                document.getElementById('gamebody').setAttribute("style", "display: none;")
+                document.getElementById('gamebuttons').setAttribute("style", "display: none;")
+                document.getElementById('menubody').setAttribute("style", "display: block;")
+
+            }
+        }
+        function toggleLeaderboard() {
+            if (document.getElementById('gamebody').getAttribute("style") == "display: block;" && document.getElementById('gamebuttons').getAttribute("style") == "display: block;" || document.getElementById("menubody").getAttribute("style") == "display: block;") {
+                document.getElementById("htmxleaderboard").dispatchEvent(new Event('click'))
+                document.getElementById("leaderboardbody").setAttribute("style", "display: block;")
+                document.getElementById('gamebody').setAttribute("style", "display: none;")
+                document.getElementById('gamebuttons').setAttribute("style", "display: none;")
+                document.getElementById('menubody').setAttribute("style", "display: none;")
+            } else {
+                document.getElementById("leaderboardbody").setAttribute("style", "display: none;")
+                document.getElementById('gamebody').setAttribute("style", "display: block;")
+                document.getElementById('gamebuttons').setAttribute("style", "display: block;")
+                document.getElementById('menubody').setAttribute("style", "display: block;")
+            }
+        }
+        function toggleMenuDisplay() {
+            controlInterval(false)
+            if (document.getElementById('menubody').getAttribute("style") == "display: none;") {
+                document.getElementById("leaderboardbody").setAttribute("style", "display: none;")
+                document.getElementById('gamebody').setAttribute("style", "display: none;")
+                document.getElementById('gamebuttons').setAttribute("style", "display: none;")
+                document.getElementById('menubody').setAttribute("style", "display: block;")
+            }
+        }
+
+    </script>
+
+</body>
+
+</html>

@@ -113,6 +113,12 @@
     </div>
 </body>
 <script>
+    const iconyes = document.createElement('i')
+    iconyes.setAttribute('class', "bi bi-check-lg")
+    const iconno = document.createElement('i')
+    iconno.setAttribute("class", "bi bi-x-lg")
+    const iconmaybe = document.createElement('i')
+    iconmaybe.setAttribute("class", "bi bi-asterisk")
     var allEvents = []
     var eventDetailModal = new bootstrap.Modal(document.getElementById('openEventDetail'), {});
 
@@ -173,6 +179,7 @@
                 alert("RSVP sent")
             else
                 alert("something went wrong")
+            checkForRSVP(commentSelectedEventId)
         }).catch((err) => {
             alert("Something went wrong: " + JSON.stringify(err))
         })
@@ -187,13 +194,54 @@
         }).then(async (data) => {
             const status = await data.text()
             if (data.status == 200 && status > ' ') {
-                document.getElementById(status + "btn").setAttribute("disabled", "true")
-                document.getElementById(status + "btn").innerHTML = "RSVP status: " + status
+                resetAllRSVPBtns()
+                switch (status) {
+                    case "yes":
+                        document.getElementById(status + "btn").disabled = true
+                        document.getElementById(status + 'btn').append(iconyes)
+                        document.getElementById(status + "btn").innerHTML = "RSVP status: " + status
+                        document.getElementById('nobtn').disabled = false
+                        document.getElementById('maybebtn').disabled = false
+                        break;
+                    case "no":
+                        document.getElementById(status + "btn").disabled = true
+                        document.getElementById(status + 'btn').append(iconno)
+                        document.getElementById(status + "btn").innerHTML = "RSVP status: " + status
+                        document.getElementById('yesbtn').disabled = false
+                        document.getElementById('maybebtn').disabled = false
+                        break;
+                    case "maybe":
+                        document.getElementById(status + "btn").disabled = true
+                        document.getElementById(status + 'btn').append(iconmaybe)
+                        document.getElementById(status + "btn").innerHTML = "RSVP status: " + status
+                        document.getElementById('nobtn').disabled = false
+                        document.getElementById('yesbtn').disabled = false
+                        break;
+                    default:
+                        break;
+                }
+
+            } else {
+                resetAllRSVPBtns()
             }
 
         }).catch((err) => {
             alert('something went wrong: ' + JSON.stringify(err))
         })
+    }
+    function resetAllRSVPBtns() {
+        document.getElementById('nobtn').disabled = false
+        document.getElementById('nobtn').innerHTML = ""
+        document.getElementById('nobtn').append(iconno)
+        document.getElementById('nobtn').innerHTML += "&nbsp;&nbsp;no"
+        document.getElementById('yesbtn').disabled = false
+        document.getElementById('yesbtn').innerHTML = ""
+        document.getElementById('yesbtn').append(iconyes)
+        document.getElementById('yesbtn').innerHTML += "&nbsp;&nbsp;yes"
+        document.getElementById('maybebtn').disabled = false
+        document.getElementById('maybebtn').innerHTML = ""
+        document.getElementById('maybebtn').append(iconmaybe)
+        document.getElementById('maybebtn').innerHTML += "&nbsp;&nbsp;maybe"
     }
     function openEventModal(data) {
         eventDetailModal.toggle()

@@ -603,6 +603,43 @@ func main() {
 		}
 		commentTmpl.Execute(w, nil)
 
+		var fcmToken string
+		fcmrow := db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where username = (select author from tfldata.posts where id=%d);", postData.SelectedPostId))
+		scnerr := fcmrow.Scan(&fcmToken)
+		if scnerr != nil {
+
+			if scnerr.Error() == "sql: no rows in result set" {
+				w.WriteHeader(http.StatusAccepted)
+				return
+			}
+			db.Exec("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", scnerr, time.Now().Local().Format(time.DateTime))
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		} else {
+
+			fb_message_client, _ := app.Messaging(context.TODO())
+			typePayload := make(map[string]string)
+			typePayload["type"] = "posts"
+			sentRes, sendErr := fb_message_client.Send(context.TODO(), &messaging.Message{
+				Token: fcmToken,
+				Notification: &messaging.Notification{
+					Title: author + " commented on your post!",
+					Body:  "\"" + postData.Comment + "\"",
+				},
+
+				Webpush: &messaging.WebpushConfig{
+					Notification: &messaging.WebpushNotification{
+						Title: author + " commented on your post!",
+						Body:  "\"" + postData.Comment + "\"",
+						Data:  typePayload,
+					},
+				},
+			})
+			if sendErr != nil {
+				fmt.Print(sendErr)
+			}
+			db.Exec(fmt.Sprintf("insert into tfldata.sent_notification_log(\"notification_result\") values('%s');", sentRes))
+		}
 	}
 	getEventsHandler := func(w http.ResponseWriter, r *http.Request) {
 

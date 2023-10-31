@@ -706,36 +706,39 @@ func main() {
 		fcmrow := db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where username = (select event_owner from tfldata.calendar where id=%d);", postData.Eventid))
 		scnerr := fcmrow.Scan(&fcmToken)
 		if scnerr != nil {
+
 			if scnerr.Error() == "sql: no rows in result set" {
 				w.WriteHeader(http.StatusAccepted)
 				return
 			}
 			db.Exec("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", scnerr, time.Now().Local().Format(time.DateTime))
 			w.WriteHeader(http.StatusBadRequest)
-		}
+			return
+		} else {
 
-		fb_message_client, _ := app.Messaging(context.TODO())
-		typePayload := make(map[string]string)
-		typePayload["type"] = "event"
-		sentRes, sendErr := fb_message_client.Send(context.TODO(), &messaging.Message{
-			Token: fcmToken,
-			Notification: &messaging.Notification{
-				Title: "Someone RSVPed to your event",
-				Body:  postData.Username + " responded to your event",
-			},
-
-			Webpush: &messaging.WebpushConfig{
-				Notification: &messaging.WebpushNotification{
+			fb_message_client, _ := app.Messaging(context.TODO())
+			typePayload := make(map[string]string)
+			typePayload["type"] = "event"
+			sentRes, sendErr := fb_message_client.Send(context.TODO(), &messaging.Message{
+				Token: fcmToken,
+				Notification: &messaging.Notification{
 					Title: "Someone RSVPed to your event",
 					Body:  postData.Username + " responded to your event",
-					Data:  typePayload,
 				},
-			},
-		})
-		if sendErr != nil {
-			fmt.Print(sendErr)
+
+				Webpush: &messaging.WebpushConfig{
+					Notification: &messaging.WebpushNotification{
+						Title: "Someone RSVPed to your event",
+						Body:  postData.Username + " responded to your event",
+						Data:  typePayload,
+					},
+				},
+			})
+			if sendErr != nil {
+				fmt.Print(sendErr)
+			}
+			db.Exec(fmt.Sprintf("insert into tfldata.sent_notification_log(\"notification_result\") values('%s');", sentRes))
 		}
-		db.Exec(fmt.Sprintf("insert into tfldata.sent_notification_log(\"notification_result\") values('%s');", sentRes))
 
 	}
 	getEventRSVPHandler := func(w http.ResponseWriter, r *http.Request) {
@@ -751,6 +754,36 @@ func main() {
 			w.WriteHeader(http.StatusBadRequest)
 		}
 		w.Write([]byte(status))
+	}
+	getRSVPNotesHandler := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+
+		var status string
+		var username string
+		output, outerr := db.Query(fmt.Sprintf("select username, status from tfldata.calendar_rsvp where username='%s' and event_id='%s';", r.URL.Query().Get("username"), r.URL.Query().Get("event_id")))
+
+		if outerr != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		for output.Next() {
+			output.Scan(&username, &status)
+			var fontColor string
+			switch status {
+			case "maybe":
+				fontColor = "darkgoldenrod"
+			case "no":
+				fontColor = "crimson"
+			case "yes":
+				fontColor = "green"
+			default:
+				fontColor = "black"
+			}
+			dataStr := "<p class='px-3' style='font-size: medium" + "; color: " + fontColor + ";'>" + username + " has responded with a: " + status + "</p>"
+
+			w.Write([]byte(dataStr))
+		}
+
 	}
 	createGroupChatMessageHandler := func(w http.ResponseWriter, r *http.Request) {
 		c, err := r.Cookie("session_id")
@@ -1032,6 +1065,7 @@ func main() {
 	http.HandleFunc("/create-event", createEventHandler)
 	http.HandleFunc("/update-rsvp-for-event", updateRSVPForEventHandler)
 	http.HandleFunc("/get-rsvp-data", getEventRSVPHandler)
+	http.HandleFunc("/get-rsvp", getRSVPNotesHandler)
 
 	http.HandleFunc("/group-chat-messages", getGroupChatMessagesHandler)
 	http.HandleFunc("/create-a-group-chat-message", createGroupChatMessageHandler)

@@ -85,6 +85,13 @@
                     <h7 id="eventdateele"></h7>
 
                     <p id="eventdetailsele"></p>
+                    <div class="border-2">
+                        <h3 style="margin-left: 5%;">Responses</h3>
+                        <div id="rsvpnotes" hx-get="/get-rsvp" hx-trigger="load, click"
+                            hx-vals="js:{'event_id': commentSelectedEventId, 'username': username}" hx-target='this'>
+
+                        </div>
+                    </div>
                     <div id="rsvp">
                         <button id="yesbtn" value="yes" onclick="updateStatus(event.target.value)"
                             class="btn btn-outline-success border-0"><i
@@ -95,6 +102,7 @@
                             class="btn btn-outline-warning border-0"><i
                                 class="bi bi-asterisk"></i>&nbsp;&nbsp;maybe</button>
                     </div>
+
                     <div id="eventappendcomments"></div>
                 </div>
 
@@ -113,6 +121,7 @@
     </div>
 </body>
 <script>
+
     const iconyes = document.createElement('i')
     iconyes.setAttribute('class', "bi bi-check-lg")
     const iconno = document.createElement('i')
@@ -177,8 +186,8 @@
         }).then((data) => {
             if (data.status == 200)
                 alert("RSVP sent")
-            else
-                alert("something went wrong")
+            else if (data.status == 400)
+                alert("RSVP sent")
             checkForRSVP(commentSelectedEventId)
         }).catch((err) => {
             alert("Something went wrong: " + JSON.stringify(err))
@@ -251,8 +260,11 @@
         commentSelectedEventId = data.Eventid
         checkForRSVP(data.Eventid)
         document.getElementById('eventappendcomments').innerHTML = ''
+        document.getElementById('rsvpnotes').dispatchEvent(new Event('click'))
     }
-
+    document.getElementById("openEventDetail").addEventListener("hidden.bs.modal", () => {
+        document.getElementById('rsvpnotes').innerHTML = ""
+    })
     if (document.getElementById('createeventcomment').contains(document.getElementById('submitEventCommentBtn'))) {
         document.getElementById('createeventcomment').removeChild(document.getElementById('submitEventCommentBtn'))
         document.getElementById('commentnoteevent').value = ''
@@ -444,6 +456,7 @@
     }
 
     function toggleActiveElement(data) {
+
         if (document.querySelector('.active')) {
             document.querySelector('.active').setAttribute("class", "")
         }

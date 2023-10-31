@@ -683,6 +683,75 @@ func main() {
 		}
 
 	}
+	updateRSVPForEventHandler := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		bs, _ := io.ReadAll(r.Body)
+		type postBody struct {
+			Username string `json:"username"`
+			Status   string `json:"status"`
+			Eventid  int    `json:"event_id"`
+		}
+		var postData postBody
+		marsherr := json.Unmarshal(bs, &postData)
+		if marsherr != nil {
+			fmt.Println(marsherr)
+		}
+		_, inserr := db.Exec(fmt.Sprintf("insert into tfldata.calendar_rsvp(\"username\",\"event_id\",\"status\") values('%s',%d,'%s') on conflict(username,event_id) do update set status='%s';", postData.Username, postData.Eventid, postData.Status, postData.Status))
+		if inserr != nil {
+			db.Exec("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", inserr, time.Now().Local().Format(time.DateTime))
+			w.WriteHeader(http.StatusBadRequest)
+		}
+
+		var fcmToken string
+		fcmrow := db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where username = (select event_owner from tfldata.calendar where id=%d);", postData.Eventid))
+		scnerr := fcmrow.Scan(&fcmToken)
+		if scnerr != nil {
+			if scnerr.Error() == "sql: no rows in result set" {
+				w.WriteHeader(http.StatusAccepted)
+				return
+			}
+			db.Exec("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", scnerr, time.Now().Local().Format(time.DateTime))
+			w.WriteHeader(http.StatusBadRequest)
+		}
+
+		fb_message_client, _ := app.Messaging(context.TODO())
+		typePayload := make(map[string]string)
+		typePayload["type"] = "event"
+		sentRes, sendErr := fb_message_client.Send(context.TODO(), &messaging.Message{
+			Token: fcmToken,
+			Notification: &messaging.Notification{
+				Title: "Someone RSVPed to your event",
+				Body:  postData.Username + " responded to your event",
+			},
+
+			Webpush: &messaging.WebpushConfig{
+				Notification: &messaging.WebpushNotification{
+					Title: "Someone RSVPed to your event",
+					Body:  postData.Username + " responded to your event",
+					Data:  typePayload,
+				},
+			},
+		})
+		if sendErr != nil {
+			fmt.Print(sendErr)
+		}
+		db.Exec(fmt.Sprintf("insert into tfldata.sent_notification_log(\"notification_result\") values('%s');", sentRes))
+
+	}
+	getEventRSVPHandler := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		var status string
+		row := db.QueryRow(fmt.Sprintf("select status from tfldata.calendar_rsvp where username='%s' and event_id='%s';", r.URL.Query().Get("username"), r.URL.Query().Get("event_id")))
+		scnerr := row.Scan(&status)
+		if scnerr != nil {
+			if scnerr.Error() == "sql: no rows in result set" {
+				w.WriteHeader(http.StatusAccepted)
+			}
+			db.Exec("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", scnerr, time.Now().Local().Format(time.DateTime))
+			w.WriteHeader(http.StatusBadRequest)
+		}
+		w.Write([]byte(status))
+	}
 	createGroupChatMessageHandler := func(w http.ResponseWriter, r *http.Request) {
 		c, err := r.Cookie("session_id")
 
@@ -961,6 +1030,8 @@ func main() {
 	http.HandleFunc("/clear-cookie", clearCookieHandler)
 
 	http.HandleFunc("/create-event", createEventHandler)
+	http.HandleFunc("/update-rsvp-for-event", updateRSVPForEventHandler)
+	http.HandleFunc("/get-rsvp-data", getEventRSVPHandler)
 
 	http.HandleFunc("/group-chat-messages", getGroupChatMessagesHandler)
 	http.HandleFunc("/create-a-group-chat-message", createGroupChatMessageHandler)

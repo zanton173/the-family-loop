@@ -701,6 +701,42 @@ func main() {
 			db.Exec("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", inserr, time.Now().Local().Format(time.DateTime))
 			w.WriteHeader(http.StatusBadRequest)
 		}
+
+		var fcmToken string
+		fcmrow := db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where username = (select event_owner from tfldata.calendar where id=%d);", postData.Eventid))
+		scnerr := fcmrow.Scan(&fcmToken)
+		if scnerr != nil {
+			if scnerr.Error() == "sql: no rows in result set" {
+				w.WriteHeader(http.StatusAccepted)
+				return
+			}
+			db.Exec("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", scnerr, time.Now().Local().Format(time.DateTime))
+			w.WriteHeader(http.StatusBadRequest)
+		}
+
+		fb_message_client, _ := app.Messaging(context.TODO())
+		typePayload := make(map[string]string)
+		typePayload["type"] = "event"
+		sentRes, sendErr := fb_message_client.Send(context.TODO(), &messaging.Message{
+			Token: fcmToken,
+			Notification: &messaging.Notification{
+				Title: "Someone RSVPed to your event",
+				Body:  postData.Username + " responded to your event",
+			},
+
+			Webpush: &messaging.WebpushConfig{
+				Notification: &messaging.WebpushNotification{
+					Title: "Someone RSVPed to your event",
+					Body:  postData.Username + " responded to your event",
+					Data:  typePayload,
+				},
+			},
+		})
+		if sendErr != nil {
+			fmt.Print(sendErr)
+		}
+		db.Exec(fmt.Sprintf("insert into tfldata.sent_notification_log(\"notification_result\") values('%s');", sentRes))
+
 	}
 	getEventRSVPHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")

@@ -172,7 +172,7 @@ func main() {
 		if sendErr != nil {
 			fmt.Print(sendErr)
 		}
-		db.Exec(fmt.Sprintf("insert into tfldata.sent_notification_log(\"notification_result\") values('%s');", sentRes))
+		db.Exec(fmt.Sprintf("insert into tfldata.sent_notification_log(\"notification_result\", \"createdon\") values('%s', '%s');", sentRes, time.Now().In(nyLoc).Local().Format(time.DateTime)))
 	}
 
 	signUpHandler := func(w http.ResponseWriter, r *http.Request) {
@@ -612,7 +612,7 @@ func main() {
 				w.WriteHeader(http.StatusAccepted)
 				return
 			}
-			db.Exec("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", scnerr, time.Now().Local().Format(time.DateTime))
+			db.Exec("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", scnerr, time.Now().In(nyLoc).Local().Format(time.DateTime))
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		} else {
@@ -638,7 +638,7 @@ func main() {
 			if sendErr != nil {
 				fmt.Print(sendErr)
 			}
-			db.Exec(fmt.Sprintf("insert into tfldata.sent_notification_log(\"notification_result\") values('%s');", sentRes))
+			db.Exec(fmt.Sprintf("insert into tfldata.sent_notification_log(\"notification_result\", \"createdon\") values('%s', '%s');", sentRes, time.Now().In(nyLoc).Local().Format(time.DateTime)))
 		}
 	}
 	getEventsHandler := func(w http.ResponseWriter, r *http.Request) {
@@ -735,7 +735,7 @@ func main() {
 		}
 		_, inserr := db.Exec(fmt.Sprintf("insert into tfldata.calendar_rsvp(\"username\",\"event_id\",\"status\") values('%s',%d,'%s') on conflict(username,event_id) do update set status='%s';", postData.Username, postData.Eventid, postData.Status, postData.Status))
 		if inserr != nil {
-			db.Exec("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", inserr, time.Now().Local().Format(time.DateTime))
+			db.Exec("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", inserr, time.Now().In(nyLoc).Local().Format(time.DateTime))
 			w.WriteHeader(http.StatusBadRequest)
 		}
 
@@ -748,7 +748,7 @@ func main() {
 				w.WriteHeader(http.StatusAccepted)
 				return
 			}
-			db.Exec("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", scnerr, time.Now().Local().Format(time.DateTime))
+			db.Exec("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", scnerr, time.Now().In(nyLoc).Local().Format(time.DateTime))
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		} else {
@@ -787,7 +787,7 @@ func main() {
 			if scnerr.Error() == "sql: no rows in result set" {
 				w.WriteHeader(http.StatusAccepted)
 			}
-			db.Exec("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", scnerr, time.Now().Local().Format(time.DateTime))
+			db.Exec("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", scnerr, time.Now().In(nyLoc).Local().Format(time.DateTime))
 			w.WriteHeader(http.StatusBadRequest)
 		}
 		w.Write([]byte(status))
@@ -849,7 +849,7 @@ func main() {
 			scnerr := fcmRegRow.Scan(&fcmRegToken)
 			if scnerr != nil {
 				fmt.Println(scnerr)
-				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", scnerr, time.Now().Local().Format(time.DateTime)))
+				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", scnerr, time.Now().In(nyLoc).Local().Format(time.DateTime)))
 			}
 			sendNotificationToTaggedUser(w, r, fcmRegToken, db, chatMessage, app)
 		}

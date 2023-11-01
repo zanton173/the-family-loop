@@ -1,3 +1,4 @@
+
 onmessage = async (event) => {
 
     const result = event.data

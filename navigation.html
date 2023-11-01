@@ -203,8 +203,9 @@
 
         const text = await resp.json()
         username = text.Username
-        text.Pfpname == ""
-            ? navItemWelcomeAvatar.setAttribute("src", "https://d33gjmrumfzeah.cloudfront.net/pfp/question.png")
+
+        text.Pfpname <= ""
+            ? logoutFunction()
             : navItemWelcomeAvatar.setAttribute("src", "https://d33gjmrumfzeah.cloudfront.net/pfp/" + text.Pfpname)
         return text
     }

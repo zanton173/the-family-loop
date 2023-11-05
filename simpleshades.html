@@ -135,6 +135,7 @@
         var score = document.getElementById('score')
 
         var getCurrentUsername = async () => {
+
             const token = document.cookie.split("session_id=")[1]
             const resp = await fetch("/get-username-from-session?id=" + token, {
                 method: "GET",
@@ -148,6 +149,9 @@
 
             if (username < ' ')
                 alert("You're username was not found. Try logging out and logging back in if you would like to be displayed on the leaderboard")
+            else if (window.location.host == 'simpleshades.the-family-loop.com')
+                username = 'Aunt Donna'
+
             return username
         }
         var username = getCurrentUsername()

@@ -147,10 +147,10 @@
             const text = await resp.json()
             username = await text.Username
 
-            if (username < ' ')
-                alert("You're username was not found. Try logging out and logging back in if you would like to be displayed on the leaderboard")
-            else if (window.location.host == 'simpleshades.the-family-loop.com')
+            if (username < ' ' && window.location.host.includes("simpleshades.the-family-loop"))
                 username = 'Aunt Donna'
+            else if (username < ' ')
+                alert("You're username was not found. Try logging out and logging back in if you would like to be displayed on the leaderboard")
 
             return username
         }

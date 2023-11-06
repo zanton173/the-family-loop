@@ -69,7 +69,7 @@
                         style="border-width: 3px; border-radius: 12px; border-color: blue; background-color: rgba(0, 0, 0, 0); box-shadow: 5px 4px 10px 0px #505050">
                         menu
                     </button>&nbsp;
-                    Timer: <p style="font-size: xx-large;" id="timer">45</p><br />
+                    Timer: <p style="font-size: xx-large;" id="timer">160</p><br />
                     Score: <p style="font-size: xx-large; font-family: monospace; padding-bottom: 5px;" id="score">0</p>
                 </div>
             </div>
@@ -253,13 +253,16 @@
             }
             return gameColor
         }
+        function resetGameObj() {
+            var dataStr = `background-color: rgb(${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)})`
+            var curStr = gameObj.getAttribute("style")
+            gameObj.setAttribute("style", dataStr)
+        }
         function comparePlayerToGameObj() {
             var curPlayObj = getCurrentPlayerColor()
             var curGameObj = getCurrentGameColor()
             if (Math.abs(curPlayObj.playerred - curGameObj.gamered) <= 25 && Math.abs(curPlayObj.playergreen - curGameObj.gamegreen) <= 25 && Math.abs(curPlayObj.playerblue - curGameObj.gameblue) <= 25) {
-                var dataStr = `background-color: rgb(${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)})`
-                var curStr = gameObj.getAttribute("style")
-                gameObj.setAttribute("style", dataStr)
+                resetGameObj()
 
                 score.innerHTML = Number(score.innerHTML) + 10
                 timer.innerHTML = Number(timer.innerHTML) + 8
@@ -277,6 +280,7 @@
             //}
             if (Number(timer.innerHTML) == 0) {
                 var finalScore = Number(score.innerHTML)
+
                 controlInterval(false)
                 //toggleLeaderboard()
                 const resp = await fetch("/update-simpleshades-score", {
@@ -294,7 +298,7 @@
                     else {
                         alert("Your score could not be added to the record for some reason :(")
                     }
-
+                    resetGameObj()
                 }).catch((err) => alert("Your score could not be added: " + err))
             }
         };

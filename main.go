@@ -54,6 +54,7 @@ var ghissuetoken string
 var nyLoc *time.Location
 
 func main() {
+	replacer := strings.NewReplacer("'", "\\'", "\"", "\\\"")
 	nyLoc, _ = time.LoadLocation("America/New_York")
 	err := godotenv.Load()
 	if err != nil {
@@ -392,7 +393,7 @@ func main() {
 
 		postFilesKey := uuid.NewString()
 
-		_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.posts(\"title\", \"description\", \"author\", \"post_files_key\") values('%s', '%s', '%s', '%s');", strings.ReplaceAll(r.PostFormValue("title"), "'", ""), strings.ReplaceAll(r.PostFormValue("description"), "'", ""), username, postFilesKey))
+		_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.posts(\"title\", \"description\", \"author\", \"post_files_key\") values(E'%s', E'%s', '%s', '%s');", replacer.Replace(r.PostFormValue("title")), replacer.Replace(r.PostFormValue("description")), username, postFilesKey))
 
 		if errinsert != nil {
 			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", errinsert, time.Now().In(nyLoc).Format(time.DateTime)))
@@ -586,7 +587,7 @@ func main() {
 			fmt.Println(errmarsh)
 		}
 
-		_, inserterr := db.Exec(fmt.Sprintf("insert into tfldata.comments(\"comment\", \"post_id\", \"author\") values('%s', '%d', (select username from tfldata.users where session_token='%s'));", postData.Comment, postData.SelectedPostId, c.Value))
+		_, inserterr := db.Exec(fmt.Sprintf("insert into tfldata.comments(\"comment\", \"post_id\", \"author\") values(E'%s', '%d', (select username from tfldata.users where session_token='%s'));", replacer.Replace(postData.Comment), postData.SelectedPostId, c.Value))
 		if inserterr != nil {
 			fmt.Println(inserterr)
 		}
@@ -713,7 +714,7 @@ func main() {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		_, inserterr := db.Exec(fmt.Sprintf("insert into tfldata.calendar(\"start_date\", \"event_owner\", \"event_details\", \"event_title\") values('%s', (select username from tfldata.users where session_token='%s'), '%s', '%s');", postData.Startdate, c.Value, postData.Eventdetails, postData.Eventtitle))
+		_, inserterr := db.Exec(fmt.Sprintf("insert into tfldata.calendar(\"start_date\", \"event_owner\", \"event_details\", \"event_title\") values('%s', (select username from tfldata.users where session_token='%s'), E'%s', E'%s');", postData.Startdate, c.Value, replacer.Replace(postData.Eventdetails), replacer.Replace(postData.Eventtitle)))
 		if inserterr != nil {
 			fmt.Println(inserterr)
 			w.WriteHeader(http.StatusBadRequest)
@@ -838,7 +839,9 @@ func main() {
 			fmt.Println("Cook is no longer valid")
 			return
 		}
-		chatMessage := r.PostFormValue("gchatmessage")
+
+		chatMessage := replacer.Replace(r.PostFormValue("gchatmessage"))
+		fmt.Println(chatMessage)
 		taggedUser := r.PostFormValue("taggedUser")
 		var userName string
 		var fcmRegToken string
@@ -854,7 +857,7 @@ func main() {
 			sendNotificationToTaggedUser(w, r, fcmRegToken, db, chatMessage, app)
 		}
 
-		_, inserr := db.Exec(fmt.Sprintf("insert into tfldata.gchat(\"chat\", \"author\", \"createdon\") values('%s', '%s', '%s');", chatMessage, userName, time.Now().In(nyLoc).Format(time.DateTime)))
+		_, inserr := db.Exec(fmt.Sprintf("insert into tfldata.gchat(\"chat\", \"author\", \"createdon\") values(E'%s', '%s', '%s');", chatMessage, userName, time.Now().In(nyLoc).Format(time.DateTime)))
 		if inserr != nil {
 			fmt.Println(err)
 			w.WriteHeader(http.StatusBadRequest)
@@ -876,16 +879,17 @@ func main() {
 			var formatCreatedatTime string
 
 			output.Scan(&message, &author, &createdat)
-			if time.Now().UTC().Sub(createdat) > (24 * time.Hour) {
+			if time.Now().UTC().Sub(createdat) > (72 * time.Hour) {
+				formatCreatedatTime = time.DateOnly
+
+			} else if time.Now().UTC().Sub(createdat) > (24 * time.Hour) {
 				formatCreatedatTime = time.ANSIC
 				formatCreatedatTime = strings.Split(formatCreatedatTime, " ")[0]
-			} else if time.Now().UTC().Sub(createdat) > (72 * time.Hour) {
-				formatCreatedatTime = time.DateOnly
 			} else {
 				formatCreatedatTime = time.Kitchen
 			}
 
-			dataStr := "<div style='max-width: 100%; background-color: rgb(107 166 254 / .3);' class='container my-1'><div class='row'><b class='col-2 px-1'>" + author + "</b><p class='col-10 my-0' style='padding-top: 1rem!important'>" + message + "</p></div><div class='row'><p class='col' style='margin-left: 75%; font-size: small;'>&nbsp;&nbsp" + createdat.Format(formatCreatedatTime) + "</p></div></div>"
+			dataStr := "<div style='max-width: 100%; background-color: rgb(22 53 255 / 28%); border-width: thin; border-style: solid; box-shadow: 4px 4px 5px; border-radius: 16px 5px 23px 3px' class='container my-2'><div class='row'><b class='col-2 px-1'>" + author + "</b><p class='col-10 my-0' style='padding-top: 1rem!important'>" + message + "</p></div><div class='row'><p class='col' style='margin-left: 70%; font-size: small;'>" + createdat.Format(formatCreatedatTime) + "</p></div></div>"
 			chattmp, tmperr := template.New("gchat").Parse(dataStr)
 			if tmperr != nil {
 				fmt.Println(tmperr)

@@ -26,8 +26,8 @@
     <title>The Family Loop - Group Chat</title>
 </head>
 
-<body>
-    <div class="spinner-indicator" id="loadingspinner"
+<body style="background: linear-gradient(142deg, #00009f, #00ecff 9%)">
+    <div class=" spinner-indicator" id="loadingspinner"
         style="width: 100%; height: 100%; background-color: rgb(197, 197, 197);">
 
         <img width="90px" height="90px" class="spinner-indicator" src="assets/LoadingSpinner.png" />
@@ -38,8 +38,7 @@
     </div>
 
     <div hx-get="/group-chat-messages" hx-trigger="load, every 3s, success-send from:#messageform"
-        class="border-1 d-block m-2"
-        style="justify-content: center; text-align: center; background-color: rgb(205, 205, 206); border-radius: 1%;">
+        class="border-1 d-block m-2" style="justify-content: center; text-align: center; border-radius: 1%;">
 
     </div>
     <form hx-post="/create-a-group-chat-message" hx-swap="afterend" hx-target="this" id="messageform"

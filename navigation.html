@@ -219,7 +219,10 @@
     navItemWelcomeAvatar.addEventListener('click', async (event) => {
         changePfpModal.show()
     })
-
+    /*p.addEventListener("scroll", function () {
+        console.log("scroll")
+        document.getElementById('toggleNavItems').dispatchEvent(new Event('click'))
+    })*/
     function checkPfpChangeValidity() {
         var pfpChangeInput = document.getElementById('pfpchangeinput')
         var pfpChangeBtn = document.getElementById('changePfpSubmitBtn')

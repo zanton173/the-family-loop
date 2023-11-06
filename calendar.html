@@ -157,7 +157,8 @@
     })
 
     function setDatesThatHaveEvents() {
-        listOfActive = document.querySelectorAll("[style='background: #fff']")
+        //listOfActive = document.querySelectorAll("[style='background: #fff']")
+        listOfActive = document.querySelectorAll("[style='background-color: rgba(255, 255, 255, .5); border-radius: 15%;']")
         for (var i = 1; i <= listOfActive.length; i++) {
 
             for (var j = 0; j < allEvents.length; j++) {
@@ -427,7 +428,7 @@
                 ? "active"
                 : "";*/
 
-            lit += `<li id='${i}' hx-get='/get-event-comments' hx-vals='js:{"commentSelectedEventID": commentSelectedEventId}' hx-ext='json-enc' hx-target='#eventappendcomments' hx-swap='beforeend' style='background: #fff' onclick='toggleActiveElement(${i})'>${i}</li>`;
+            lit += `<li id='${i}' hx-get='/get-event-comments' hx-vals='js:{"commentSelectedEventID": commentSelectedEventId}' hx-ext='json-enc' hx-target='#eventappendcomments' hx-swap='beforeend' style='background-color: rgba(255, 255, 255, .5); border-radius: 15%;' onclick='toggleActiveElement(${i})'>${i}</li>`;
 
         }
 

@@ -329,7 +329,7 @@ func main() {
 
 			}
 			if postrows.Author != curUser {
-				reactionBtn = fmt.Sprintf("<i onclick='addAReaction(%d)' class='bi bi-plus-circle px-2'></i>", postrows.Id)
+				reactionBtn = fmt.Sprintf("<i popovertarget='reactionPop' onclick='addAReaction(%d)' class='bi bi-plus-circle px-2'></i>", postrows.Id)
 			} else {
 				reactionBtn = ""
 			}

@@ -902,7 +902,7 @@ func main() {
 				formatCreatedatTime = time.Kitchen
 			}
 
-			dataStr := "<div style='max-width: 100%; background-color: rgb(22 53 255 / 28%); border-width: thin; border-style: solid; box-shadow: 4px 4px 5px; border-radius: 16px 5px 23px 3px' class='container my-2'><div class='row'><b class='col-2 px-1'>" + author + "</b><p class='col-10 my-0' style='padding-top: 1rem!important'>" + message + "</p></div><div class='row'><p class='col' style='margin-left: 70%; font-size: small;'>" + createdat.Format(formatCreatedatTime) + "</p></div></div>"
+			dataStr := "<div style='max-width: 100%; background-color: rgb(22 53 255 / 13%); border-width: thin; border-style: solid; box-shadow: 4px 4px 5px; border-radius: 16px 5px 23px 3px' class='container my-2'><div class='row'><b class='col-2 px-1'>" + author + "</b><p class='col-10 my-0' style='padding-top: 1rem!important'>" + message + "</p></div><div class='row'><p class='col' style='margin-left: 70%; font-size: small;'>" + createdat.Format(formatCreatedatTime) + "</p></div></div>"
 			chattmp, tmperr := template.New("gchat").Parse(dataStr)
 			if tmperr != nil {
 				fmt.Println(tmperr)

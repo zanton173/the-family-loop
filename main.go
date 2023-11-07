@@ -299,7 +299,16 @@ func main() {
 	}
 
 	getPostsHandler := func(w http.ResponseWriter, r *http.Request) {
+		var curUser string
+		var reactionBtn string
+		c, err := r.Cookie("session_id")
 
+		if err != nil {
+			curUser = "Guest"
+		}
+
+		row := db.QueryRow(fmt.Sprintf("select username from tfldata.users where session_token='%s';", c.Value))
+		row.Scan(&curUser)
 		output, err := db.Query("select id, title, description, author, post_files_key from tfldata.posts order by id DESC;")
 		var count string
 		db.QueryRow("select count(*) from tfldata.posts;").Scan(&count)
@@ -313,13 +322,28 @@ func main() {
 
 		for output.Next() {
 			var postrows Postsrow
-
+			var reaction string
 			//if err := output.Scan(&postrows.Id, &postrows.Title, &postrows.Description, &postrows.File_name, &postrows.File_type, &postrows.Author); err != nil {
 			if err := output.Scan(&postrows.Id, &postrows.Title, &postrows.Description, &postrows.Author, &postrows.Postfileskey); err != nil {
 				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", err, time.Now().In(nyLoc).Format(time.DateTime)))
 
 			}
 
+			reactionRow := db.QueryRow(fmt.Sprintf("select reaction from tfldata.reactions where post_id=%d and author='%s';", postrows.Id, curUser))
+			scnerr := reactionRow.Scan(&reaction)
+			if scnerr != nil {
+				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", scnerr, time.Now().In(nyLoc).Format(time.DateTime)))
+			}
+
+			if postrows.Author != curUser {
+				if reaction > " " {
+					reactionBtn = fmt.Sprintf("&nbsp;&nbsp;"+reaction+"<div onclick='addAReaction(%d, `%s`)'><i class='bi bi-three-dots'></i></div>", postrows.Id, postrows.Author+"_author_"+postrows.Title)
+				} else {
+					reactionBtn = fmt.Sprintf("<button class='btn btn-outline-secondary border-0 px-2' type='button' onclick='addAReaction(%d, `%s`)'><i class='bi bi-three-dots-vertical'></i></button>", postrows.Id, postrows.Author+"_author_"+postrows.Title)
+				}
+			} else {
+				reactionBtn = ""
+			}
 			comment := db.QueryRow(fmt.Sprintf("select count(*) from tfldata.comments where post_id='%d';", postrows.Id))
 			var commentCount string
 			comment.Scan(&commentCount)
@@ -342,14 +366,14 @@ func main() {
 				imgreq.Header.Set("Cache-Control", "max-age=86400")
 				resp, _ := imgclient.Do(imgreq)*/
 				if countOfImg > 1 {
-					dataStr = fmt.Sprintf("<div class='card my-4' style='background-color: rgb(22 30 255 / .42); border-radius: 106px 106px / 91px; box-shadow: 12px 12px 2px 1px rgb(41 88 93 / 20&percnt;);'><img class='img-fluid' id='%s' src='https://d33gjmrumfzeah.cloudfront.net/posts/images/%s' alt='%s' style='border-radius: 65px 65px / 50px;' alt='default' /><div class='p-2' style='display: flex; justify-content: space-around;'><i onclick='nextLeftImage(`%s`)' class='bi bi-arrow-90deg-left'></i><i onclick='nextRightImage(`%s`)' class='bi bi-arrow-90deg-right'></i></div><div class='card-body'><h5 class='card-title'>%s - %s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' class='btn btn-primary'>Comments (%s)</button></div></div>", postrows.Postfileskey, firstImg.filename, firstImg.filename, postrows.Postfileskey, postrows.Postfileskey, postrows.Title, postrows.Author, postrows.Description, postrows.Id, postrows.Id, commentCount)
+					dataStr = fmt.Sprintf("<div class='card my-4' style='background-color: rgb(22 30 255 / .42); border-radius: 106px 106px / 91px; box-shadow: 12px 12px 2px 1px rgb(41 88 93 / 20&percnt;);'><img class='img-fluid' id='%s' src='https://d33gjmrumfzeah.cloudfront.net/posts/images/%s' alt='%s' style='border-radius: 65px 65px / 50px;' alt='default' /><div class='p-2' style='display: flex; justify-content: space-around;'><i onclick='nextLeftImage(`%s`)' class='bi bi-arrow-90deg-left'></i><i onclick='nextRightImage(`%s`)' class='bi bi-arrow-90deg-right'></i></div><div id='%s' class='card-body'><h5 class='card-title'>%s - %s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' class='btn btn-primary'>Comments (%s)</button>%s</div></div>", postrows.Postfileskey, firstImg.filename, firstImg.filename, postrows.Postfileskey, postrows.Postfileskey, postrows.Author+"_author_"+postrows.Title, postrows.Title, postrows.Author, postrows.Description, postrows.Id, postrows.Id, commentCount, reactionBtn)
 				} else if countOfImg == 1 {
-					dataStr = fmt.Sprintf("<div class='card my-4' style='background-color: rgb(22 30 255 / .42); border-radius: 106px 106px / 91px; box-shadow: 12px 12px 2px 1px rgb(41 88 93 / 20&percnt;);'><img class='img-fluid' id='%s' src='https://d33gjmrumfzeah.cloudfront.net/posts/images/%s' alt='%s' style='border-radius: 65px 65px / 50px;' alt='default' /><div class='p-2' style='display: flex; justify-content: space-around;'></div><div class='card-body'><h5 class='card-title'>%s - %s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' class='btn btn-primary'>Comments (%s)</button></div></div>", postrows.Postfileskey, firstImg.filename, firstImg.filename, postrows.Title, postrows.Author, postrows.Description, postrows.Id, postrows.Id, commentCount)
+					dataStr = fmt.Sprintf("<div class='card my-4' style='background-color: rgb(22 30 255 / .42); border-radius: 106px 106px / 91px; box-shadow: 12px 12px 2px 1px rgb(41 88 93 / 20&percnt;);'><img class='img-fluid' id='%s' src='https://d33gjmrumfzeah.cloudfront.net/posts/images/%s' alt='%s' style='border-radius: 65px 65px / 50px;' alt='default' /><div class='p-2' style='display: flex; justify-content: space-around;'></div><div id='%s' class='card-body'><h5 class='card-title'>%s - %s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' class='btn btn-primary'>Comments (%s)</button>%s</div></div>", postrows.Postfileskey, firstImg.filename, firstImg.filename, postrows.Author+"_author_"+postrows.Title, postrows.Title, postrows.Author, postrows.Description, postrows.Id, postrows.Id, commentCount, reactionBtn)
 				}
 				//imgclient.CloseIdleConnections()
 				//defer resp.Body.Close()
 			} else if strings.Contains(firstImg.filetype, "video") || strings.Contains(firstImg.filetype, "octet-stream") {
-				dataStr = fmt.Sprintf("<div class='card my-4' style='background-color: rgb(22 30 255 / .42); border-radius: 106px 106px / 91px; box-shadow: 12px 12px 2px 1px rgb(41 88 93 / 20&percnt;);'><video style='border-radius: 65px 65px / 91px;' controls id='video'><source src='https://d33gjmrumfzeah.cloudfront.net/posts/videos/%s'></video><div class='p-2' style='display: flex; justify-content: space-around;'></div><div class='card-body'><h5 class='card-title'>%s - %s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' class='btn btn-primary'>Comments (%s)</button></div></div>", firstImg.filename, postrows.Title, postrows.Author, postrows.Description, postrows.Id, postrows.Id, commentCount)
+				dataStr = fmt.Sprintf("<div class='card my-4' style='background-color: rgb(22 30 255 / .42); border-radius: 106px 106px / 91px; box-shadow: 12px 12px 2px 1px rgb(41 88 93 / 20&percnt;);'><video style='border-radius: 65px 65px / 91px;' controls id='video'><source src='https://d33gjmrumfzeah.cloudfront.net/posts/videos/%s'></video><div class='p-2' style='display: flex; justify-content: space-around;'></div><div id='%s' class='card-body'><h5 class='card-title'>%s - %s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' class='btn btn-primary'>Comments (%s)</button>%s</div></div>", firstImg.filename, postrows.Author+"_author_"+postrows.Title, postrows.Title, postrows.Author, postrows.Description, postrows.Id, postrows.Id, commentCount, reactionBtn)
 			}
 
 			postTmpl, tmerr = template.New("tem").Parse(dataStr)
@@ -441,6 +465,27 @@ func main() {
 		//defer upload.Close()
 
 	}
+	createPostReactionHandler := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		type postBody struct {
+			Username       string `json:"username"`
+			ReactionToPost string `json:"emoji"`
+			Postid         int    `json:"selectedPostId"`
+		}
+		var postData postBody
+		bs, _ := io.ReadAll(r.Body)
+		marsherr := json.Unmarshal(bs, &postData)
+		if marsherr != nil {
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", marsherr, time.Now().In(nyLoc).Format(time.DateTime)))
+		}
+		_, inserr := db.Exec(fmt.Sprintf("insert into tfldata.reactions(\"post_id\", \"author\", \"reaction\") values(%d, '%s', '%s') on conflict(post_id,author) do update set reaction='%s';", postData.Postid, postData.Username, postData.ReactionToPost, postData.ReactionToPost))
+		if inserr != nil {
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", inserr, time.Now().In(nyLoc).Format(time.DateTime)))
+			w.WriteHeader(http.StatusBadRequest)
+		}
+
+	}
+
 	getSelectedPostsComments := func(w http.ResponseWriter, r *http.Request) {
 		type postComment struct {
 			Comment string
@@ -677,7 +722,24 @@ func main() {
 		}
 		w.Write(data)
 	}
+	getPostsReactionsHandler := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 
+		output, rowerr := db.Query(fmt.Sprintf("select author, reaction from tfldata.reactions where post_id='%s' and author != '%s';", r.URL.Query().Get("selectedPostId"), r.URL.Query().Get("username")))
+		if rowerr != nil {
+			db.Exec("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", rowerr, time.Now().In(nyLoc).Local().Format(time.DateTime))
+		}
+		var outReaction string
+		var outAuthor string
+		defer output.Close()
+		for output.Next() {
+			scnerr := output.Scan(&outAuthor, &outReaction)
+			if scnerr != nil {
+				fmt.Println(scnerr)
+			}
+			w.Write([]byte("&nbsp;&nbsp;" + outAuthor + "&nbsp; - " + outReaction + "<br/>"))
+		}
+	}
 	createEventHandler := func(w http.ResponseWriter, r *http.Request) {
 		c, err := r.Cookie("session_id")
 
@@ -841,7 +903,7 @@ func main() {
 		}
 
 		chatMessage := replacer.Replace(r.PostFormValue("gchatmessage"))
-		fmt.Println(chatMessage)
+
 		taggedUser := r.PostFormValue("taggedUser")
 		var userName string
 		var fcmRegToken string
@@ -1087,10 +1149,15 @@ func main() {
 	http.HandleFunc("/", pagesHandler)
 	http.HandleFunc("/create-post", createPostHandler)
 
+	http.HandleFunc("/create-reaction-to-post", createPostReactionHandler)
+
 	http.HandleFunc("/get-posts", getPostsHandler)
 	http.HandleFunc("/new-posts", getPostCountHandler)
 
 	http.HandleFunc("/get-selected-post", getSelectedPostsComments)
+
+	http.HandleFunc("/get-posts-reactions", getPostsReactionsHandler)
+
 	http.HandleFunc("/get-events", getEventsHandler)
 	http.HandleFunc("/get-event-comments", getSelectedEventsComments)
 

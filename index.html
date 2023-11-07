@@ -50,6 +50,15 @@
 
     </div>
 
+    <div id='reactionicons' style="display: none;">
+
+        <p onclick="postEmoji(event)" class="p-2 my-0 mx-2">&#128512;</p>
+        <p onclick="postEmoji(event)" class="p-2 my-0 mx-2">&#128513;</p>
+        <p onclick="postEmoji(event)" class="p-2 my-0 mx-2">&#128514;</p>
+        <p onclick="postEmoji(event)" class="p-2 my-0 mx-2">&#128515;</p><br /><br />
+        <p onclick="postEmoji(event)" class="p-2 my-0 mx-2">&#128516;</p>
+        <p onclick="postEmoji(event)" class="p-2 my-0 mx-2">&#128517;</p>
+    </div>
     <div style="text-align: center; padding-top: 1%; padding-bottom: 1%;">
         <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createPostModal">
             Create a Post!
@@ -66,10 +75,19 @@
     </div>
     <div class="modal" id="openPostModal" tabindex="-1" aria-labelledby="openPostModalLabel" aria-hidden="true">
         <div class="modal-dialog">
-            <div id="post-comments" class="modal-content p-3" style="border-radius: 5%;">
+            <div id="post-comments" class="modal-content p-3"
+                style="border-radius: 15px / 15px; background-color: rgb(99 81 255 / 65%);">
+                <div class="modal-content my-1" id="modal-post-reactions" hx-target="#reactionContent"
+                    hx-trigger="getReactionsEvent" hx-get="/get-posts-reactions"
+                    hx-vals="js:{'selectedPostId': selectedPostId, 'username': username}" hx-ext="json-enc">
+                    <div id="reactionContent">
 
-                <div class="modal-content" id="modal-post-content">
+                    </div>
                 </div>
+                <div class="modal-content" id="modal-post-content">
+
+                </div>
+
                 <form id="createcomment" class="d-grid" hx-post="/create-comment"
                     hx-vals='js:{"selectedPostId": selectedPostId}' hx-ext='json-enc' hx-target="#modal-post-content"
                     hx-swap="beforeend" hx-on:htmx:after-request="clearForm()">
@@ -135,6 +153,36 @@
 
     <script>
 
+        const reactIcons = document.getElementById('reactionicons')
+        var sendEmojiTo = null
+        function addAReaction(postId, divIdToAppend) {
+
+            var divToAddBtnsTo = document.getElementById(divIdToAppend)
+            sendEmojiTo = postId
+            divToAddBtnsTo.appendChild(reactIcons)
+            if (reactIcons.getAttribute("style").includes("display: flex")) {
+                reactIcons.setAttribute('style', "position: relative; margin-top: 4%; background-color: rgba(255, 255, 255, .9); border-radius: 10px / 10px; border-style: solid; border-width: medium; display: none; z-index: 2; overflow: auto;")
+                sendEmojiTo = null
+            } else
+                reactIcons.setAttribute('style', "position: relative; margin-top: 4%; background-color: rgba(255, 255, 255, .9); border-radius: 10px / 10px; border-style: solid; border-width: medium; display: flex; z-index: 2; overflow: auto;")
+        }
+        async function postEmoji(val) {
+            var selectedEmoji = val.target.innerHTML
+            const resp = await fetch("/create-reaction-to-post", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ username, emoji: selectedEmoji, selectedPostId: sendEmojiTo })
+            }).then((data) => {
+                if (reactIcons.getAttribute("style").includes("display: flex")) {
+                    reactIcons.setAttribute('style', "position: relative; margin-top: 4%; background-color: rgba(255, 255, 255, .9); border-radius: 10px / 10px; border-style: solid; border-width: medium; display: none; z-index: 2; overflow: auto;")
+                    sendEmojiTo = null
+                }
+                document.getElementById('divofposts').dispatchEvent(new Event('loadNewVars'))
+            })
+
+        }
         window.addEventListener("load", () => {
 
             Notification.permission !== 'granted' ?
@@ -231,7 +279,7 @@
     </div>-->
 
     <div style="text-align: center;" class="px-5" id="posts-div">
-        <div hx-get="/get-posts" hx-trigger="load" hx-target="#post-items" id="divofposts"
+        <div hx-get="/get-posts" hx-trigger="load, loadNewVars" hx-target="#post-items" id="divofposts"
             hx-indicator="#loadingspinner">
             <div id="post-items" name="item-count">
 
@@ -261,7 +309,7 @@
             var output = resp.json()
             return output
         }
-
+        // consider zindex for img toggling
         function nextLeftImage(id) {
 
             var imgCaro = document.getElementById(id)
@@ -315,22 +363,22 @@
         }
         /*var dbCount = null
         htmx.on('#post-items', 'htmx:afterSettle', function (event) {
-
+ 
             htmx.on('#polling', 'htmx:afterRequest', function (data) {
-
+ 
                 if (dbCount !== document.getElementById('post-items').childElementCount) {
                     //console.log("need a refresh")
                     if (document.getElementById('notification').childElementCount == 0) {
-
+ 
                         document.getElementById('notification').append(badge)
                     }
-
+ 
                 } else {
                     //console.log('no refresh')
                     if (document.getElementById('notification').contains(badge)) {
                         document.getElementById('notification').removeChild(badge)
                     }
-
+ 
                 }
             })
         })*/
@@ -347,6 +395,7 @@
 
         function openPostFunction(id) {
             selectedPostId = id
+            document.getElementById('modal-post-reactions').dispatchEvent(new Event('getReactionsEvent'))
             openPostModalObj.toggle()
         }
 

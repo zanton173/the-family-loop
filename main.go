@@ -337,7 +337,7 @@ func main() {
 
 			if postrows.Author != curUser {
 				if reaction > " " {
-					reactionBtn = "&nbsp;&nbsp;" + reaction
+					reactionBtn = fmt.Sprintf("&nbsp;&nbsp;"+reaction+"<div onclick='addAReaction(%d, `%s`)'><i class='bi bi-three-dots'></i></div>", postrows.Id, postrows.Author+"_author_"+postrows.Title)
 				} else {
 					reactionBtn = fmt.Sprintf("<button class='btn btn-outline-secondary border-0 px-2' type='button' onclick='addAReaction(%d, `%s`)'><i class='bi bi-three-dots-vertical'></i></button>", postrows.Id, postrows.Author+"_author_"+postrows.Title)
 				}
@@ -466,7 +466,7 @@ func main() {
 
 	}
 	createPostReactionHandler := func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		type postBody struct {
 			Username       string `json:"username"`
 			ReactionToPost string `json:"emoji"`
@@ -722,7 +722,24 @@ func main() {
 		}
 		w.Write(data)
 	}
+	getPostsReactionsHandler := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 
+		output, rowerr := db.Query(fmt.Sprintf("select author, reaction from tfldata.reactions where post_id='%s' and author != '%s';", r.URL.Query().Get("selectedPostId"), r.URL.Query().Get("username")))
+		if rowerr != nil {
+			db.Exec("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", rowerr, time.Now().In(nyLoc).Local().Format(time.DateTime))
+		}
+		var outReaction string
+		var outAuthor string
+		defer output.Close()
+		for output.Next() {
+			scnerr := output.Scan(&outAuthor, &outReaction)
+			if scnerr != nil {
+				fmt.Println(scnerr)
+			}
+			w.Write([]byte("&nbsp;&nbsp;" + outAuthor + "&nbsp; - " + outReaction + "<br/>"))
+		}
+	}
 	createEventHandler := func(w http.ResponseWriter, r *http.Request) {
 		c, err := r.Cookie("session_id")
 
@@ -1138,6 +1155,9 @@ func main() {
 	http.HandleFunc("/new-posts", getPostCountHandler)
 
 	http.HandleFunc("/get-selected-post", getSelectedPostsComments)
+
+	http.HandleFunc("/get-posts-reactions", getPostsReactionsHandler)
+
 	http.HandleFunc("/get-events", getEventsHandler)
 	http.HandleFunc("/get-event-comments", getSelectedEventsComments)
 

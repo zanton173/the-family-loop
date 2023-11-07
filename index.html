@@ -75,10 +75,19 @@
     </div>
     <div class="modal" id="openPostModal" tabindex="-1" aria-labelledby="openPostModalLabel" aria-hidden="true">
         <div class="modal-dialog">
-            <div id="post-comments" class="modal-content p-3" style="border-radius: 5%;">
+            <div id="post-comments" class="modal-content p-3"
+                style="border-radius: 15px / 15px; background-color: rgb(99 81 255 / 65%);">
+                <div class="modal-content my-1" id="modal-post-reactions" hx-target="#reactionContent"
+                    hx-trigger="getReactionsEvent" hx-get="/get-posts-reactions"
+                    hx-vals="js:{'selectedPostId': selectedPostId, 'username': username}" hx-ext="json-enc">
+                    <div id="reactionContent">
 
-                <div class="modal-content" id="modal-post-content">
+                    </div>
                 </div>
+                <div class="modal-content" id="modal-post-content">
+
+                </div>
+
                 <form id="createcomment" class="d-grid" hx-post="/create-comment"
                     hx-vals='js:{"selectedPostId": selectedPostId}' hx-ext='json-enc' hx-target="#modal-post-content"
                     hx-swap="beforeend" hx-on:htmx:after-request="clearForm()">
@@ -386,6 +395,7 @@
 
         function openPostFunction(id) {
             selectedPostId = id
+            document.getElementById('modal-post-reactions').dispatchEvent(new Event('getReactionsEvent'))
             openPostModalObj.toggle()
         }
 

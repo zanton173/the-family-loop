@@ -322,15 +322,25 @@ func main() {
 
 		for output.Next() {
 			var postrows Postsrow
-
+			var reaction string
 			//if err := output.Scan(&postrows.Id, &postrows.Title, &postrows.Description, &postrows.File_name, &postrows.File_type, &postrows.Author); err != nil {
 			if err := output.Scan(&postrows.Id, &postrows.Title, &postrows.Description, &postrows.Author, &postrows.Postfileskey); err != nil {
 				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", err, time.Now().In(nyLoc).Format(time.DateTime)))
 
 			}
 
+			reactionRow := db.QueryRow(fmt.Sprintf("select reaction from tfldata.reactions where post_id=%d and author='%s';", postrows.Id, curUser))
+			scnerr := reactionRow.Scan(&reaction)
+			if scnerr != nil {
+				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", scnerr, time.Now().In(nyLoc).Format(time.DateTime)))
+			}
+
 			if postrows.Author != curUser {
-				reactionBtn = fmt.Sprintf("<button class='btn btn-outline-secondary border-0 px-2' type='button' onclick='addAReaction(%d, `%s`)'><i class='bi bi-three-dots-vertical'></i></button>", postrows.Id, postrows.Author+"_author_"+postrows.Title)
+				if reaction > " " {
+					reactionBtn = "&nbsp;&nbsp;" + reaction
+				} else {
+					reactionBtn = fmt.Sprintf("<button class='btn btn-outline-secondary border-0 px-2' type='button' onclick='addAReaction(%d, `%s`)'><i class='bi bi-three-dots-vertical'></i></button>", postrows.Id, postrows.Author+"_author_"+postrows.Title)
+				}
 			} else {
 				reactionBtn = ""
 			}
@@ -455,6 +465,27 @@ func main() {
 		//defer upload.Close()
 
 	}
+	createPostReactionHandler := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		type postBody struct {
+			Username       string `json:"username"`
+			ReactionToPost string `json:"emoji"`
+			Postid         int    `json:"selectedPostId"`
+		}
+		var postData postBody
+		bs, _ := io.ReadAll(r.Body)
+		marsherr := json.Unmarshal(bs, &postData)
+		if marsherr != nil {
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", marsherr, time.Now().In(nyLoc).Format(time.DateTime)))
+		}
+		_, inserr := db.Exec(fmt.Sprintf("insert into tfldata.reactions(\"post_id\", \"author\", \"reaction\") values(%d, '%s', '%s') on conflict(post_id,author) do update set reaction='%s';", postData.Postid, postData.Username, postData.ReactionToPost, postData.ReactionToPost))
+		if inserr != nil {
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", inserr, time.Now().In(nyLoc).Format(time.DateTime)))
+			w.WriteHeader(http.StatusBadRequest)
+		}
+
+	}
+
 	getSelectedPostsComments := func(w http.ResponseWriter, r *http.Request) {
 		type postComment struct {
 			Comment string
@@ -1100,6 +1131,8 @@ func main() {
 	}*/
 	http.HandleFunc("/", pagesHandler)
 	http.HandleFunc("/create-post", createPostHandler)
+
+	http.HandleFunc("/create-reaction-to-post", createPostReactionHandler)
 
 	http.HandleFunc("/get-posts", getPostsHandler)
 	http.HandleFunc("/new-posts", getPostCountHandler)

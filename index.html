@@ -145,20 +145,34 @@
     <script>
 
         const reactIcons = document.getElementById('reactionicons')
-        var sendEmoji = null
+        var sendEmojiTo = null
         function addAReaction(postId, divIdToAppend) {
 
             var divToAddBtnsTo = document.getElementById(divIdToAppend)
-            sendEmoji = postId
+            sendEmojiTo = postId
             divToAddBtnsTo.appendChild(reactIcons)
             if (reactIcons.getAttribute("style").includes("display: flex")) {
                 reactIcons.setAttribute('style', "position: relative; margin-top: 4%; background-color: rgba(255, 255, 255, .9); border-radius: 10px / 10px; border-style: solid; border-width: medium; display: none; z-index: 2; overflow: auto;")
-                sendEmoji = null
+                sendEmojiTo = null
             } else
                 reactIcons.setAttribute('style', "position: relative; margin-top: 4%; background-color: rgba(255, 255, 255, .9); border-radius: 10px / 10px; border-style: solid; border-width: medium; display: flex; z-index: 2; overflow: auto;")
         }
-        function postEmoji(val) {
-            console.log(val.target.innerHTML)
+        async function postEmoji(val) {
+            var selectedEmoji = val.target.innerHTML
+            const resp = await fetch("/create-reaction-to-post", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ username, emoji: selectedEmoji, selectedPostId: sendEmojiTo })
+            }).then((data) => {
+                if (reactIcons.getAttribute("style").includes("display: flex")) {
+                    reactIcons.setAttribute('style', "position: relative; margin-top: 4%; background-color: rgba(255, 255, 255, .9); border-radius: 10px / 10px; border-style: solid; border-width: medium; display: none; z-index: 2; overflow: auto;")
+                    sendEmojiTo = null
+                }
+                document.getElementById('divofposts').dispatchEvent(new Event('loadNewVars'))
+            })
+
         }
         window.addEventListener("load", () => {
 
@@ -256,7 +270,7 @@
     </div>-->
 
     <div style="text-align: center;" class="px-5" id="posts-div">
-        <div hx-get="/get-posts" hx-trigger="load" hx-target="#post-items" id="divofposts"
+        <div hx-get="/get-posts" hx-trigger="load, loadNewVars" hx-target="#post-items" id="divofposts"
             hx-indicator="#loadingspinner">
             <div id="post-items" name="item-count">
 

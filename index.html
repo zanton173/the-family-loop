@@ -50,6 +50,15 @@
 
     </div>
 
+    <div id='reactionicons' style="display: none;">
+
+        <p onclick="postEmoji(event)" class="p-2 my-0 mx-2">&#128512;</p>
+        <p onclick="postEmoji(event)" class="p-2 my-0 mx-2">&#128513;</p>
+        <p onclick="postEmoji(event)" class="p-2 my-0 mx-2">&#128514;</p>
+        <p onclick="postEmoji(event)" class="p-2 my-0 mx-2">&#128515;</p><br /><br />
+        <p onclick="postEmoji(event)" class="p-2 my-0 mx-2">&#128516;</p>
+        <p onclick="postEmoji(event)" class="p-2 my-0 mx-2">&#128517;</p>
+    </div>
     <div style="text-align: center; padding-top: 1%; padding-bottom: 1%;">
         <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createPostModal">
             Create a Post!
@@ -135,10 +144,22 @@
 
     <script>
 
-        function addAReaction(postId) {
-            console.log(postId)
-        }
+        const reactIcons = document.getElementById('reactionicons')
+        var sendEmoji = null
+        function addAReaction(postId, divIdToAppend) {
 
+            var divToAddBtnsTo = document.getElementById(divIdToAppend)
+            sendEmoji = postId
+            divToAddBtnsTo.appendChild(reactIcons)
+            if (reactIcons.getAttribute("style").includes("display: flex")) {
+                reactIcons.setAttribute('style', "position: relative; margin-top: 4%; background-color: rgba(255, 255, 255, .9); border-radius: 10px / 10px; border-style: solid; border-width: medium; display: none; z-index: 2; overflow: auto;")
+                sendEmoji = null
+            } else
+                reactIcons.setAttribute('style', "position: relative; margin-top: 4%; background-color: rgba(255, 255, 255, .9); border-radius: 10px / 10px; border-style: solid; border-width: medium; display: flex; z-index: 2; overflow: auto;")
+        }
+        function postEmoji(val) {
+            console.log(val.target.innerHTML)
+        }
         window.addEventListener("load", () => {
 
             Notification.permission !== 'granted' ?
@@ -243,20 +264,7 @@
 
         </div>
     </div>
-    <div popover id="reactionPop">
-        <i class="bi bi-emoji-astonished-fill"></i>
-        <i class="bi bi-emoji-dizzy-fill"></i>
-        <i class="bi bi-emoji-expressionless-fill"></i>
-        <i class="bi bi-emoji-angry-fill"></i>
-        <i class="bi bi-emoji-frown-fill"></i>
-        <i class="bi bi-emoji-heart-eyes-fill"></i>
-        <i class="bi bi-emoji-smile-fill"></i>
-        <i class="bi bi-emoji-neutral-fill"></i>
-        <i class="bi bi-emoji-kiss-fill"></i>
-        <i class="bi bi-emoji-wink-fill"></i>
-        <i class="bi bi-emoji-sunglasses-fill"></i>
 
-    </div>
     <script>
 
         var iter = 0
@@ -278,7 +286,7 @@
             var output = resp.json()
             return output
         }
-
+        // consider zindex for img toggling
         function nextLeftImage(id) {
 
             var imgCaro = document.getElementById(id)
@@ -332,22 +340,22 @@
         }
         /*var dbCount = null
         htmx.on('#post-items', 'htmx:afterSettle', function (event) {
-
+ 
             htmx.on('#polling', 'htmx:afterRequest', function (data) {
-
+ 
                 if (dbCount !== document.getElementById('post-items').childElementCount) {
                     //console.log("need a refresh")
                     if (document.getElementById('notification').childElementCount == 0) {
-
+ 
                         document.getElementById('notification').append(badge)
                     }
-
+ 
                 } else {
                     //console.log('no refresh')
                     if (document.getElementById('notification').contains(badge)) {
                         document.getElementById('notification').removeChild(badge)
                     }
-
+ 
                 }
             })
         })*/

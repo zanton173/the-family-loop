@@ -69,7 +69,7 @@
                         style="border-width: 3px; border-radius: 12px; border-color: blue; background-color: rgba(0, 0, 0, 0); box-shadow: 5px 4px 10px 0px #505050">
                         menu
                     </button>&nbsp;
-                    Timer: <p style="font-size: xx-large;" id="timer">160</p><br />
+                    Timer: <p style="font-size: xx-large;" id="timer">45</p><br />
                     Score: <p style="font-size: xx-large; font-family: monospace; padding-bottom: 5px;" id="score">0</p>
                 </div>
             </div>
@@ -147,9 +147,10 @@
             const text = await resp.json()
             username = await text.Username
 
-            if (username < ' ' && window.location.host.includes("simpleshades.the-family-loop"))
+            if (username < ' ' && window.location.host.includes("simpleshades.the-family-loop")) {
                 username = 'Aunt Donna'
-            else if (username < ' ')
+                timer.innerHTML = 160
+            } else if (username < ' ')
                 alert("You're username was not found. Try logging out and logging back in if you would like to be displayed on the leaderboard")
 
             return username
@@ -308,7 +309,9 @@
                 ourGameInterval = setInterval(runTimerFunction, delay)
             else {
                 clearInterval(ourGameInterval)
-                timer.innerHTML = 160
+                username == 'Aunt Donna' ?
+                    timer.innerHTML = 160
+                    : timer.innerHTML = 45
                 score.innerHTML = 0
             }
         }

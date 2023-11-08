@@ -917,7 +917,7 @@ func main() {
 				fmt.Println(scnerr)
 				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", scnerr, time.Now().In(nyLoc).Local().Format(time.DateTime)))
 			}
-			sendNotificationToTaggedUser(w, r, fcmRegToken, db, chatMessage, app)
+			sendNotificationToTaggedUser(w, r, fcmRegToken, db, strings.ReplaceAll(chatMessage, "\"", ""), app)
 		}
 
 		_, inserr := db.Exec(fmt.Sprintf("insert into tfldata.gchat(\"chat\", \"author\", \"createdon\") values(E'%s', '%s', '%s');", chatMessage, userName, time.Now().In(nyLoc).Format(time.DateTime)))
@@ -1470,7 +1470,7 @@ func sendNotificationToTaggedUser(w http.ResponseWriter, r *http.Request, fcmTok
 		Webpush: &messaging.WebpushConfig{
 			Notification: &messaging.WebpushNotification{
 				Title: "Someone tagged you",
-				Body:  message,
+				Body:  strings.ReplaceAll(message, "'", ""),
 				Data:  typePayload,
 				/*Actions: []*messaging.WebpushNotificationAction{
 					{

@@ -37,7 +37,11 @@
     <div id="anchor">
 
     </div>
-    <div style="display: block; text-align: center;">
+    <div id="showthemebtn" style="display: block; text-align: center;">
+        <button type="button" onclick="showThemePanel()" class="btn btn-dark border-0 btn-sm"
+            style="box-shadow: 3px 3px 6px;">Change Theme</button>
+    </div>
+    <div id="themepanel" style="display: none; text-align: center;">
         <h3>Change background color</h3>
         <input style="width: 25%" class="px-3 mx-1" type="color" oninput="setBgLeftVal()" id="leftsidethemeinput" />
         <input style="width: 25%" class="px-3 mx-1" type="color" oninput="setBgRightVal()" id="rightsidethemeinput" />
@@ -45,7 +49,8 @@
             min="0" max="100" step="1" /><br />
         <button type="button" onclick="submitTheme()" class="btn btn-dark border-0 btn-sm"
             style="box-shadow: 3px 3px 6px;">save theme</button>
-
+        <button type="button" onclick="showThemePanel()" class="btn btn-dark border-0 btn-sm"
+            style="box-shadow: 3px 3px 6px;">close</button>
     </div>
     <div hx-get="/group-chat-messages" hx-trigger="load, every 3s, success-send from:#messageform"
         class="border-1 d-block m-2" style="justify-content: center; text-align: center; border-radius: 1%;">
@@ -109,6 +114,15 @@
             }).then((data) => {
 
             })
+        }
+        function showThemePanel() {
+            if (document.getElementById('showthemebtn').style.display.includes("block") && document.getElementById('themepanel').style.display.includes("none")) {
+                document.getElementById('showthemebtn').style.display = "none"
+                document.getElementById('themepanel').style.display = "block"
+            } else {
+                document.getElementById('showthemebtn').style.display = "block"
+                document.getElementById('themepanel').style.display = "none"
+            }
         }
         const jsWorker = new Worker("js/worker.js")
         var listOfUsersArr = []

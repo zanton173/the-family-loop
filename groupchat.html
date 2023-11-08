@@ -81,9 +81,12 @@
         var leftSideVal = null
         var rightSideVal = null
         var gradPercent = null
-        document.addEventListener("DOMContentLoaded", () => {
 
-            document.body.setAttribute('style', gchatBGTheme)
+        document.addEventListener("DOMContentLoaded", async () => {
+            gchatBGTheme = await fetchSeshDetails(document.cookie.split("session_id=")[1])
+
+            document.body.setAttribute('style', gchatBGTheme.BGtheme)
+
             leftSideVal = document.body.getAttribute("style").split("background: linear-gradient(142deg, ")[1].split(",")[0]
             rightSideVal = document.body.getAttribute("style").split("background: linear-gradient(142deg, " + leftSideVal + ",")[1].split(" ", 2)[1]
             gradPercent = document.body.getAttribute("style").split("background: linear-gradient(142deg, " + leftSideVal + ", " + rightSideVal + " ")[1].split("%")[0]

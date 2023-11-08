@@ -41,7 +41,7 @@
         <h3>Change background color</h3>
         <input style="width: 25%" class="px-3 mx-1" type="color" oninput="setBgLeftVal()" id="leftsidethemeinput" />
         <input style="width: 25%" class="px-3 mx-1" type="color" oninput="setBgRightVal()" id="rightsidethemeinput" />
-
+        <input style="width: 25%" class="px-3 mx-1" type="range" oninput="setGradPercent()" id="gradientpercentinput" />
     </div>
     <div hx-get="/group-chat-messages" hx-trigger="load, every 3s, success-send from:#messageform"
         class="border-1 d-block m-2" style="justify-content: center; text-align: center; border-radius: 1%;">
@@ -71,19 +71,25 @@
     <script>
         var leftSideVal = null
         var rightSideVal = null
+        var gradPercent = null
         document.addEventListener("DOMContentLoaded", () => {
 
-            document.body.setAttribute('style', "background: linear-gradient(142deg, #00009f, #00ecff 9%")
+            document.body.setAttribute('style', "background: linear-gradient(142deg, #00009f, #00ecff 15%")
             leftSideVal = document.body.getAttribute("style").split("background: linear-gradient(142deg, ")[1].split(",")[0]
             rightSideVal = document.body.getAttribute("style").split("background: linear-gradient(142deg, " + leftSideVal + ",")[1].split(" ", 2)[1]
+            gradPercent = document.body.getAttribute("style").split("background: linear-gradient(142deg, " + leftSideVal + ", " + rightSideVal + " ")[1].split("%")[0]
         })
         function setBgLeftVal() {
             leftSideVal = document.getElementById('leftsidethemeinput').value
-            document.body.setAttribute("style", "background: linear-gradient(142deg, " + leftSideVal + ", " + rightSideVal + " 9%)")
+            document.body.setAttribute("style", "background: linear-gradient(142deg, " + leftSideVal + ", " + rightSideVal + " " + gradPercent + "%)")
         }
         function setBgRightVal() {
             rightSideVal = document.getElementById('rightsidethemeinput').value
-            document.body.setAttribute("style", "background: linear-gradient(142deg, " + leftSideVal + ", " + rightSideVal + " 9%)")
+            document.body.setAttribute("style", "background: linear-gradient(142deg, " + leftSideVal + ", " + rightSideVal + "  " + gradPercent + "%)")
+        }
+        function setGradPercent() {
+            gradPercent = document.getElementById('gradientpercentinput').value
+            document.body.setAttribute("style", "background: linear-gradient(142deg, " + leftSideVal + ", " + rightSideVal + " " + gradPercent + "%)")
         }
         const jsWorker = new Worker("js/worker.js")
         var listOfUsersArr = []

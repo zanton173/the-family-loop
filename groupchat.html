@@ -37,6 +37,29 @@
     <div id="anchor">
 
     </div>
+    <div class="modal" tabindex="-1" id="editOrDeleteModal" aria-labelledby="editOrDeleteModal" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content p-3" id="editOrDeleteModalContent">
+                <div class="modal-header" style="display: block;">
+                    <h4 class="modal-title" style="text-align: center;">Edit or delete</h4>
+                </div>
+
+                <div style="text-align: center;">
+                    <input name="usernameinput" id="currentChatMessage" />
+                    <button id="changePfpSubmitBtn" class="btn btn-success col my-2" hx-post="/update-selected-chat"
+                        hx-ext="json-enc" hx-trigger="click"
+                        hx-vals="js:{'newMessage': document.getElementById('currentChatMessage').value, 'selectedChatId': selectedChatId}"
+                        hx-swap="none" style="padding-top: 2%;">change</button><br />
+                    <p style="text-align: center; color: rgba(58, 58, 58, 0.776);">-----------------------------------
+                    </p><br />
+                    <button type="button" class="btn btn-danger col my-1" hx-trigger="click"
+                        hx-post="/delete-selected-chat" hx-vals="js:{'selectedChatId': selectedChatId}"
+                        hx-ext="json-enc" hx-swap="none">delete</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
     <div id="showthemebtn" style="display: block; text-align: center;">
         <button type="button" onclick="showThemePanel()" class="btn btn-dark border-0 btn-sm"
             style="box-shadow: 3px 3px 6px;">Change Theme</button>
@@ -82,6 +105,10 @@
         var rightSideVal = null
         var gradPercent = null
 
+        var selectedChatId = null
+
+        const editOrDeleteModal = new bootstrap.Modal(document.getElementById('editOrDeleteModal'), {})
+
         document.addEventListener("DOMContentLoaded", async () => {
             gchatBGTheme = await fetchSeshDetails(document.cookie.split("session_id=")[1])
 
@@ -90,6 +117,7 @@
             leftSideVal = document.body.getAttribute("style").split("background: linear-gradient(142deg, ")[1].split(",")[0]
             rightSideVal = document.body.getAttribute("style").split("background: linear-gradient(142deg, " + leftSideVal + ",")[1].split(" ", 2)[1]
             gradPercent = document.body.getAttribute("style").split("background: linear-gradient(142deg, " + leftSideVal + ", " + rightSideVal + " ")[1].split("%")[0]
+            document.getElementById('editOrDeleteModalContent').style.background = "linear-gradient(142deg," + leftSideVal + ", #ffffff 230%)"
             document.getElementById('leftsidethemeinput').value = leftSideVal
             document.getElementById('rightsidethemeinput').value = rightSideVal
             document.getElementById('gradientpercentinput').value = gradPercent
@@ -127,6 +155,20 @@
                 document.getElementById('themepanel').style.display = "none"
             }
         }
+
+        async function editOrDeleteChat(chatId) {
+            const resp = await fetch("/get-selected-chat?chatid=" + chatId, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            })
+            const data = await resp.json()
+            document.getElementById('currentChatMessage').value = data
+            selectedChatId = chatId
+            editOrDeleteModal.show()
+        }
+
         const jsWorker = new Worker("js/worker.js")
         var listOfUsersArr = []
         var taggedUser = ""

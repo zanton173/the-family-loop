@@ -929,19 +929,28 @@ func main() {
 
 	}
 	getGroupChatMessagesHandler := func(w http.ResponseWriter, r *http.Request) {
-		output, err := db.Query("select chat, author, createdon from (select * from tfldata.gchat order by id DESC limit 20) as tmp order by createdon asc;")
+		output, err := db.Query("select id, chat, author, createdon from (select * from tfldata.gchat order by id DESC limit 20) as tmp order by createdon asc;")
+		var curUser string
 		if err != nil {
 			fmt.Println(err)
 		}
+		c, err := r.Cookie("session_id")
+
+		if err != nil {
+			curUser = "Guest"
+		}
+
+		row := db.QueryRow(fmt.Sprintf("select username from tfldata.users where session_token='%s';", c.Value))
+		row.Scan(&curUser)
 		defer output.Close()
 		for output.Next() {
-
+			var gchatid string
 			var message string
 			var author string
 			var createdat time.Time
 			var formatCreatedatTime string
 
-			output.Scan(&message, &author, &createdat)
+			output.Scan(&gchatid, &message, &author, &createdat)
 			if time.Now().UTC().Sub(createdat) > (72 * time.Hour) {
 				formatCreatedatTime = time.DateOnly
 
@@ -951,8 +960,11 @@ func main() {
 			} else {
 				formatCreatedatTime = time.Kitchen
 			}
-
-			dataStr := "<div style='max-width: 100%; background-color: rgb(22 53 255 / 13%); border-width: thin; border-style: solid; box-shadow: 4px 4px 5px; border-radius: 16px 5px 23px 3px' class='container my-2'><div class='row'><b class='col-2 px-1'>" + author + "</b><p class='col-10 my-0' style='padding-top: 1rem!important'>" + message + "</p></div><div class='row'><p class='col' style='margin-left: 70%; font-size: small;'>" + createdat.Format(formatCreatedatTime) + "</p></div></div>"
+			editDelBtn := ""
+			if author == curUser {
+				editDelBtn = "<i class='bi bi-three-dots-vertical px-1' onclick='editOrDeleteChat(`" + gchatid + "`)'></i>"
+			}
+			dataStr := "<div style='max-width: 100%; background-color: rgb(22 53 255 / 13%); border-width: thin; border-style: solid; box-shadow: 4px 4px 5px; border-radius: 16px 5px 23px 3px' class='container my-2'><div class='row'><b class='col-2 px-1'>" + author + "</b><p class='col-10 my-0' style='padding-top: 1rem!important'>" + message + "</p></div><div class='row'><p class='col' style='margin-left: 70%; font-size: small;'>" + createdat.Format(formatCreatedatTime) + editDelBtn + "</p></div></div>"
 			chattmp, tmperr := template.New("gchat").Parse(dataStr)
 			if tmperr != nil {
 				fmt.Println(tmperr)
@@ -1065,6 +1077,49 @@ func main() {
 		if uperr != nil {
 			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s');", uperr, time.Now().In(nyLoc).Format(time.DateTime)))
 		}
+	}
+	deleteSelectedChatHandler := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		type postBody struct {
+			SelectedChatId string `json:"selectedChatId"`
+		}
+		var postData postBody
+		bs, _ := io.ReadAll(r.Body)
+		marsherr := json.Unmarshal(bs, &postData)
+		if marsherr != nil {
+			fmt.Println(marsherr)
+		}
+		_, delerr := db.Exec(fmt.Sprintf("delete from tfldata.gchat where id='%s';", postData.SelectedChatId))
+		if delerr != nil {
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s');", delerr, time.Now().In(nyLoc).Format(time.DateTime)))
+		}
+	}
+	updateSelectedChatHandler := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		type postBody struct {
+			ChatMessage    string `json:"newMessage"`
+			SelectedChatId string `json:"selectedChatId"`
+		}
+		var postData postBody
+		bs, _ := io.ReadAll(r.Body)
+		marsherr := json.Unmarshal(bs, &postData)
+		if marsherr != nil {
+			fmt.Println(marsherr)
+		}
+		_, uperr := db.Exec(fmt.Sprintf("update tfldata.gchat set chat='%s' where id='%s';", postData.ChatMessage, postData.SelectedChatId))
+		if uperr != nil {
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s');", uperr, time.Now().In(nyLoc).Format(time.DateTime)))
+		}
+	}
+	getSelectedChatHandler := func(w http.ResponseWriter, r *http.Request) {
+		var ChatVal string
+		row := db.QueryRow(fmt.Sprintf("select chat from tfldata.gchat where id='%s';", r.URL.Query().Get("chatid")))
+		row.Scan(&ChatVal)
+		marshbs, marsherr := json.Marshal(ChatVal)
+		if marsherr != nil {
+			fmt.Println(marsherr)
+		}
+		w.Write(marshbs)
 	}
 	createIssueHandler := func(w http.ResponseWriter, r *http.Request) {
 		c, _ := r.Cookie("session_id")
@@ -1179,6 +1234,8 @@ func main() {
 	http.HandleFunc("/get-events", getEventsHandler)
 	http.HandleFunc("/get-event-comments", getSelectedEventsComments)
 
+	http.HandleFunc("/get-selected-chat", getSelectedChatHandler)
+
 	http.HandleFunc("/get-post-images", getPostImagesHandler)
 
 	http.HandleFunc("/create-comment", createCommentHandler)
@@ -1202,6 +1259,9 @@ func main() {
 
 	http.HandleFunc("/update-pfp", updatePfpHandler)
 	http.HandleFunc("/update-gchat-bg-theme", updateChatThemeHandler)
+
+	http.HandleFunc("/update-selected-chat", updateSelectedChatHandler)
+	http.HandleFunc("/delete-selected-chat", deleteSelectedChatHandler)
 
 	http.HandleFunc("/create-issue", createIssueHandler)
 

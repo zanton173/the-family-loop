@@ -83,6 +83,16 @@
 
         </div>
     </div>
+    <div class="modal" id="enterDisplayName" tabindex="-1" aria-labelledby="enterDesiredDisplayName" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content p-2 m-3" style="text-align: center; background-color: rgb(22 30 255 / .42)">
+                <input class="p-3 my-1" id="newUsername" type="text" maxlength="128" placeholder="name" />
+                <button class="btn btn-dark p-3 my-1" type="button" style="box-shadow: 3px 3px 3px;"
+                    onclick="setUsername()">submit</button>
+            </div>
+        </div>
+
+    </div>
     <div id="gamebuttons" style="display: none;">
         <footer style="position: relative; bottom: 30vh; overflow: hidden;">
             <div class="row">
@@ -133,7 +143,15 @@
         var gameObj = document.getElementById('gameObj')
         var timer = document.getElementById('timer')
         var score = document.getElementById('score')
-
+        const usernameModal = new bootstrap.Modal(document.getElementById('enterDisplayName'), {})
+        function promptForUsername() {
+            alert("Please enter your display name")
+            usernameModal.show()
+        }
+        function setUsername() {
+            username = document.getElementById('newUsername').value
+            usernameModal.hide()
+        }
         var getCurrentUsername = async () => {
 
             const token = document.cookie.split("session_id=")[1]
@@ -148,7 +166,7 @@
             username = await text.Username
 
             if (username < ' ' && window.location.host.includes("simpleshades.the-family-loop")) {
-                username = 'Aunt Donna'
+                promptForUsername()
                 timer.innerHTML = 160
             } else if (username < ' ')
                 alert("You're username was not found. Try logging out and logging back in if you would like to be displayed on the leaderboard")
@@ -284,6 +302,9 @@
 
                 controlInterval(false)
                 //toggleLeaderboard()
+                username == '' ?
+                    username = "Guest"
+                    : username
                 const resp = await fetch("/update-simpleshades-score", {
                     method: "POST",
                     headers: {
@@ -309,7 +330,7 @@
                 ourGameInterval = setInterval(runTimerFunction, delay)
             else {
                 clearInterval(ourGameInterval)
-                username == 'Aunt Donna' ?
+                window.location.host.includes("simpleshades.the-family-loop") ?
                     timer.innerHTML = 160
                     : timer.innerHTML = 45
                 score.innerHTML = 0

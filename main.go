@@ -1462,6 +1462,8 @@ func sendNotificationToTaggedUser(w http.ResponseWriter, r *http.Request, fcmTok
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 
 	fb_message_client, _ := app.Messaging(context.TODO())
+	typePayload := make(map[string]string)
+	typePayload["type"] = "groupchat"
 	sentRes, sendErr := fb_message_client.Send(context.TODO(), &messaging.Message{
 		Token: fcmToken,
 
@@ -1469,6 +1471,7 @@ func sendNotificationToTaggedUser(w http.ResponseWriter, r *http.Request, fcmTok
 			Notification: &messaging.WebpushNotification{
 				Title: "Someone tagged you",
 				Body:  message,
+				Data:  typePayload,
 				/*Actions: []*messaging.WebpushNotificationAction{
 					{
 						Action: "Open",

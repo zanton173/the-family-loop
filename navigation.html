@@ -191,6 +191,7 @@
     navItemWelcomeAvatar.setAttribute("id", "pfpavatar")
     navItemWelcomeAvatar.setAttribute("alt", "Your family loop pfp")
     var username = ''
+    var gchatBGTheme = "background: linear-gradient(142deg, #00009f, #00ecff 15%)"
     p.append(c)
     async function fetchSeshDetails(token) {
 
@@ -202,7 +203,11 @@
         })
 
         const text = await resp.json()
+
         username = text.Username
+        text.BGtheme > ' '
+            ? gchatBGTheme = text.BGtheme
+            : gchatBGTheme = "background: linear-gradient(142deg, #00009f, #00ecff 15%)"
 
         text.Pfpname <= ""
             ? logoutFunction()

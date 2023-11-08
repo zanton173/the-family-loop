@@ -41,7 +41,11 @@
         <h3>Change background color</h3>
         <input style="width: 25%" class="px-3 mx-1" type="color" oninput="setBgLeftVal()" id="leftsidethemeinput" />
         <input style="width: 25%" class="px-3 mx-1" type="color" oninput="setBgRightVal()" id="rightsidethemeinput" />
-        <input style="width: 25%" class="px-3 mx-1" type="range" oninput="setGradPercent()" id="gradientpercentinput" />
+        <input style="width: 25%" class="px-3 mx-1" type="range" oninput="setGradPercent()" id="gradientpercentinput"
+            min="0" max="100" step="1" /><br />
+        <button type="button" onclick="submitTheme()" class="btn btn-dark border-0 btn-sm"
+            style="box-shadow: 3px 3px 6px;">save theme</button>
+
     </div>
     <div hx-get="/group-chat-messages" hx-trigger="load, every 3s, success-send from:#messageform"
         class="border-1 d-block m-2" style="justify-content: center; text-align: center; border-radius: 1%;">
@@ -74,10 +78,13 @@
         var gradPercent = null
         document.addEventListener("DOMContentLoaded", () => {
 
-            document.body.setAttribute('style', "background: linear-gradient(142deg, #00009f, #00ecff 15%")
+            document.body.setAttribute('style', gchatBGTheme)
             leftSideVal = document.body.getAttribute("style").split("background: linear-gradient(142deg, ")[1].split(",")[0]
             rightSideVal = document.body.getAttribute("style").split("background: linear-gradient(142deg, " + leftSideVal + ",")[1].split(" ", 2)[1]
             gradPercent = document.body.getAttribute("style").split("background: linear-gradient(142deg, " + leftSideVal + ", " + rightSideVal + " ")[1].split("%")[0]
+            document.getElementById('leftsidethemeinput').value = leftSideVal
+            document.getElementById('rightsidethemeinput').value = rightSideVal
+            document.getElementById('gradientpercentinput').value = gradPercent
         })
         function setBgLeftVal() {
             leftSideVal = document.getElementById('leftsidethemeinput').value
@@ -90,6 +97,18 @@
         function setGradPercent() {
             gradPercent = document.getElementById('gradientpercentinput').value
             document.body.setAttribute("style", "background: linear-gradient(142deg, " + leftSideVal + ", " + rightSideVal + " " + gradPercent + "%)")
+        }
+
+        async function submitTheme() {
+            const resp = await fetch("/update-gchat-bg-theme", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ theme: "background: linear-gradient(142deg, " + leftSideVal + ", " + rightSideVal + " " + gradPercent + "%)", username })
+            }).then((data) => {
+
+            })
         }
         const jsWorker = new Worker("js/worker.js")
         var listOfUsersArr = []

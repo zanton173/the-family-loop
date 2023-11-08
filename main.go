@@ -46,6 +46,7 @@ type Postjoin struct {
 type seshStruct struct {
 	Username string
 	Pfpname  string
+	BGtheme  string
 }
 
 var awskey string
@@ -1006,8 +1007,8 @@ func main() {
 
 		var ourSeshStruct seshStruct
 
-		row := db.QueryRow(fmt.Sprintf("select username, pfp_name from tfldata.users where session_token='%s';", r.URL.Query().Get("id")))
-		scnerr := row.Scan(&ourSeshStruct.Username, &ourSeshStruct.Pfpname)
+		row := db.QueryRow(fmt.Sprintf("select username, pfp_name, gchat_bg_theme from tfldata.users where session_token='%s';", r.URL.Query().Get("id")))
+		scnerr := row.Scan(&ourSeshStruct.Username, &ourSeshStruct.Pfpname, &ourSeshStruct.BGtheme)
 		if scnerr != nil {
 			fmt.Println(scnerr)
 		}
@@ -1047,6 +1048,23 @@ func main() {
 			w.WriteHeader(http.StatusBadRequest)
 		}
 		uploadPfpToS3(awskey, awskeysecret, upload, filename.Filename, r, "changepfp")
+	}
+	updateChatThemeHandler := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		type postBody struct {
+			Theme    string `json:"theme"`
+			Username string `json:"username"`
+		}
+		var postData postBody
+		bs, _ := io.ReadAll(r.Body)
+		marsherr := json.Unmarshal(bs, &postData)
+		if marsherr != nil {
+			fmt.Println(marsherr)
+		}
+		_, uperr := db.Exec(fmt.Sprintf("update tfldata.users set gchat_bg_theme='%s' where username='%s';", postData.Theme, postData.Username))
+		if uperr != nil {
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s');", uperr, time.Now().In(nyLoc).Format(time.DateTime)))
+		}
 	}
 	createIssueHandler := func(w http.ResponseWriter, r *http.Request) {
 		c, _ := r.Cookie("session_id")
@@ -1183,6 +1201,7 @@ func main() {
 	http.HandleFunc("/send-new-posts-push", newPostsHandlerPushNotify)
 
 	http.HandleFunc("/update-pfp", updatePfpHandler)
+	http.HandleFunc("/update-gchat-bg-theme", updateChatThemeHandler)
 
 	http.HandleFunc("/create-issue", createIssueHandler)
 

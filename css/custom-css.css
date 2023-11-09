@@ -30,11 +30,11 @@ div.htmx-request.spinner-indicator {
 
 @keyframes enter {
     0% {
-        transform: scale(.1);
-        -webkit-transition: scale(.1);
+        transform: scale(0);
+        -webkit-transition: scale(0);
     }
 
-    80% {
+    75% {
         transform: scale(1.1);
         -webkit-transition: scale(1.1);
     }

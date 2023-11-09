@@ -317,7 +317,7 @@
 
 
         function thisFunc() {
-            if (document.getElementById('post-items').scrollHeight - window.scrollY < 450) {
+            if (document.getElementById('post-items').scrollHeight - window.scrollY < 540) {
                 document.getElementById('divofposts').dispatchEvent(new Event('anotherCustomEvent'))
                 window.removeEventListener('scroll', thisFunc)
             }

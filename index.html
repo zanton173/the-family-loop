@@ -74,7 +74,8 @@
         <!--<button hx-post="/send-new-posts-push" hx-vals='js:{"id": document.cookie.split("session_id=")[1]}'
             hx-ext="json-enc" hx-swap="none">Test</button>-->
     </div>
-    <div class="modal" id="openPostModal" tabindex="-1" aria-labelledby="openPostModalLabel" aria-hidden="true">
+    <div class="modal customModalTrans" id="openPostModal" tabindex="-1" aria-labelledby="openPostModalLabel"
+        aria-hidden="true">
         <div class="modal-dialog">
             <div id="post-comments" class="modal-content p-3"
                 style="border-radius: 15px / 15px; background-color: rgb(99 81 255 / 65%);">
@@ -119,12 +120,15 @@
 
         </div>
     </div>
-    <div class="modal" id="createPostModal" tabindex="-1" aria-labelledby="createPostModalLabel" aria-hidden="true">
+    <div class="modal customModalTrans" id="createPostModal" tabindex="-1" aria-labelledby="createPostModalLabel"
+        aria-hidden="true">
         <div class="modal-dialog">
-            <div id="post-div" class="modal-content p-2">
+            <div id="post-div" class="modal-content p-2"
+                style="border-radius: 15px / 15px; background-color: rgb(99 81 255 / 65%);">
 
                 <form id="createpostele" class="d-inline-grid" hx-post="/create-post" hx-encoding="multipart/form-data"
-                    hx-swap="none" hx-indicator="#loadingspinner">
+                    hx-swap="none" hx-indicator="#loadingspinner"
+                    style="background-color: white; border-radius: 15px / 15px; padding: 5%">
 
                     <input class="my-2 shadow-sm border-1 text-center" style="width: 100%" name="title" id="posttitle"
                         type="text" placeholder="title your post" required maxlength="128" />
@@ -143,7 +147,7 @@
                 </div>
 
 
-                <button type="button" class="btn btn-dark col" data-bs-dismiss="modal">close</button><br />
+                <button type="button" class="btn btn-dark col my-1" data-bs-dismiss="modal">close</button><br />
                 <!--<button type="submit" id="formsubmit" class="btn btn-success col">post</button>-->
             </div>
 

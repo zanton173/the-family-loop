@@ -22,7 +22,28 @@ div.htmx-request.spinner-indicator {
 
 }
 
+.customModalTrans {
+    border-radius: 25px / 25px;
 
+    animation: enter 250ms ease-in-out
+}
+
+@keyframes enter {
+    0% {
+        transform: scale(.1);
+        -webkit-transition: scale(.1);
+    }
+
+    80% {
+        transform: scale(1.1);
+        -webkit-transition: scale(1.1);
+    }
+
+    100% {
+        transform: scale(1);
+        -webkit-transition: scale(1);
+    }
+}
 
 @keyframes spin {
     100% {

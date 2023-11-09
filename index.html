@@ -105,7 +105,7 @@
     </div>
 
 
-    <div class="modal" id="installmodal" tabindex="-1" aria-labelledby="installmodal" aria-hidden="true">
+    <!--<div class="modal" id="installmodal" tabindex="-1" aria-labelledby="installmodal" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content p-3">
                 <h3>ios instructions</h3>
@@ -120,7 +120,7 @@
                 class="btn btn-dark col" data-bs-dismiss="modal">close</button><br />
 
         </div>
-    </div>
+    </div>-->
     <div class="modal customModalTrans" id="createPostModal" tabindex="-1" aria-labelledby="createPostModalLabel"
         aria-hidden="true">
         <div class="modal-dialog">
@@ -285,8 +285,10 @@
     </div>-->
 
     <div style="text-align: center;" class="px-5" id="posts-div">
-        <div hx-get="/get-posts" hx-trigger="load, loadNewVars" hx-target="#post-items" id="divofposts"
-            hx-indicator="#loadingspinner">
+        <div hx-get="/get-posts" hx-trigger="load, loadNewVars, anotherCustomEvent" hx-target="#post-items"
+            id="divofposts" hx-indicator="#loadingspinner"
+            hx-vals="js:{'page': pageLoadPaginator, 'limit': 10, 'token': document.cookie.split('session_id=')[1]}"
+            hx-swap="beforeend">
             <div id="post-items" name="item-count">
 
             </div>
@@ -297,6 +299,29 @@
     <script>
 
         var iter = 0
+        var pageLoadPaginator = null
+        htmx.on("#post-items", "htmx:afterSettle", function updatePaginator() {
+            var postItems = document.querySelectorAll("[hx-get]")
+            var tmpArr = []
+            postItems.forEach((data) => {
+                {
+                    if (data.getAttribute("hx-get").includes("/get-selected-post?post-id=")) {
+                        tmpArr.push(Number(data.getAttribute("hx-get").split("/get-selected-post?post-id=")[1]))
+                    }
+                }
+            })
+
+            pageLoadPaginator = tmpArr.sort((a, b) => a - b)[0]
+            window.addEventListener("scroll", thisFunc)
+        })
+
+
+        function thisFunc() {
+            if (document.getElementById('post-items').scrollHeight - window.scrollY < 450) {
+                document.getElementById('divofposts').dispatchEvent(new Event('anotherCustomEvent'))
+                window.removeEventListener('scroll', thisFunc)
+            }
+        }
         const listOfImageObj = []
         htmx.on("#divofposts", "htmx:load", async function getImgs(event) {
             var imgListUUId = event.detail.elt.children[0].getAttribute("id")
@@ -413,13 +438,17 @@
              //console.log('hidden')
  
          })*/
+        function sendEventToLoad() {
+            document.getElementById('divofposts').dispatchEvent(new Event('anotherCustomEvent'))
 
+        }
     </script>
 
     </div>
 
     </div>
-
+    <!--<footer><button id="myTestBtn" onclick="sendEventToLoad()">try
+            me</button></footer>-->
 </body>
 
 </html>

@@ -298,19 +298,24 @@ func main() {
 		}
 
 	}
-
 	getPostsHandler := func(w http.ResponseWriter, r *http.Request) {
-		var curUser string
-		var reactionBtn string
-		c, err := r.Cookie("session_id")
 
-		if err != nil {
+		var reactionBtn string
+		//curUser := r.URL.Query().Get("username")
+		curToken := r.URL.Query().Get("token")
+		var curUser string
+		row := db.QueryRow(fmt.Sprintf("select username from tfldata.users where session_token='%s';", curToken))
+		row.Scan(&curUser)
+		if curUser < " " {
 			curUser = "Guest"
 		}
 
-		row := db.QueryRow(fmt.Sprintf("select username from tfldata.users where session_token='%s';", c.Value))
-		row.Scan(&curUser)
-		output, err := db.Query("select id, title, description, author, post_files_key from tfldata.posts order by id DESC;")
+		var output *sql.Rows
+		if r.URL.Query().Get("page") == "null" {
+			output, err = db.Query("select id, title, description, author, post_files_key from tfldata.posts order by id DESC limit 2;")
+		} else {
+			output, err = db.Query(fmt.Sprintf("select id, title, description, author, post_files_key from tfldata.posts where id < %s order by id DESC limit 2;", r.URL.Query().Get("page")))
+		}
 		var count string
 		db.QueryRow("select count(*) from tfldata.posts;").Scan(&count)
 
@@ -320,8 +325,8 @@ func main() {
 		}
 
 		defer output.Close()
-
 		for output.Next() {
+
 			var postrows Postsrow
 			var reaction string
 			//if err := output.Scan(&postrows.Id, &postrows.Title, &postrows.Description, &postrows.File_name, &postrows.File_type, &postrows.Author); err != nil {
@@ -382,6 +387,7 @@ func main() {
 				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", tmerr, time.Now().In(nyLoc).Format(time.DateTime)))
 			}
 			postTmpl.Execute(w, nil)
+
 		}
 
 	}

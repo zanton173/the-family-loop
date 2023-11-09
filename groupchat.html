@@ -39,22 +39,26 @@
     </div>
     <div class="modal" tabindex="-1" id="editOrDeleteModal" aria-labelledby="editOrDeleteModal" aria-hidden="true">
         <div class="modal-dialog">
-            <div class="modal-content p-3" id="editOrDeleteModalContent">
+            <div class="modal-content p-3 border-0" id="editOrDeleteModalContent">
                 <div class="modal-header" style="display: block;">
                     <h4 class="modal-title" style="text-align: center;">Edit or delete</h4>
                 </div>
 
                 <div style="text-align: center;">
-                    <input name="usernameinput" id="currentChatMessage" />
-                    <button id="changePfpSubmitBtn" class="btn btn-success col my-2" hx-post="/update-selected-chat"
-                        hx-ext="json-enc" hx-trigger="click"
-                        hx-vals="js:{'newMessage': document.getElementById('currentChatMessage').value, 'selectedChatId': selectedChatId}"
-                        hx-swap="none" style="padding-top: 2%;">change</button><br />
+                    <div style="display: grid; " class="my-1">
+                        <input name="usernameinput" id="currentChatMessage" />
+                        <button id="changePfpSubmitBtn" class="btn btn-success col my-2" hx-post="/update-selected-chat"
+                            hx-on::after-request="editOrDeleteModal.hide()" hx-ext="json-enc" hx-trigger="click"
+                            hx-vals="js:{'newMessage': document.getElementById('currentChatMessage').value, 'selectedChatId': selectedChatId}"
+                            hx-swap="none" style="padding-top: 2%; width: 50%; margin-left: 25%;">change</button><br />
+                    </div>
                     <p style="text-align: center; color: rgba(58, 58, 58, 0.776);">-----------------------------------
                     </p><br />
-                    <button type="button" class="btn btn-danger col my-1" hx-trigger="click"
-                        hx-post="/delete-selected-chat" hx-vals="js:{'selectedChatId': selectedChatId}"
-                        hx-ext="json-enc" hx-swap="none">delete</button>
+                    <button type="button" class="btn btn-danger px-5 my-1"
+                        hx-on::after-request="editOrDeleteModal.hide()"
+                        hx-confirm="This will permanently delete this message. Do you want to continue?"
+                        hx-trigger="click" hx-post="/delete-selected-chat"
+                        hx-vals="js:{'selectedChatId': selectedChatId}" hx-ext="json-enc" hx-swap="none">delete</button>
                 </div>
 
             </div>
@@ -117,7 +121,7 @@
             leftSideVal = document.body.getAttribute("style").split("background: linear-gradient(142deg, ")[1].split(",")[0]
             rightSideVal = document.body.getAttribute("style").split("background: linear-gradient(142deg, " + leftSideVal + ",")[1].split(" ", 2)[1]
             gradPercent = document.body.getAttribute("style").split("background: linear-gradient(142deg, " + leftSideVal + ", " + rightSideVal + " ")[1].split("%")[0]
-            document.getElementById('editOrDeleteModalContent').style.background = "linear-gradient(142deg," + leftSideVal + ", #ffffff 230%)"
+            document.getElementById('editOrDeleteModalContent').style.background = "linear-gradient(142deg, #ffffff, " + leftSideVal + " 130%)"
             document.getElementById('leftsidethemeinput').value = leftSideVal
             document.getElementById('rightsidethemeinput').value = rightSideVal
             document.getElementById('gradientpercentinput').value = gradPercent

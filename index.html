@@ -288,8 +288,7 @@
     <div style="text-align: center;" class="px-5" id="posts-div">
         <div hx-get="/get-posts" hx-trigger="load, loadNewVars, anotherCustomEvent" hx-target="#post-items"
             id="divofposts" hx-indicator="#loadingspinner"
-            hx-vals="js:{'page': pageLoadPaginator, 'limit': 10, 'token': document.cookie.split('session_id=')[1]}"
-            hx-swap="beforeend">
+            hx-vals="js:{'page': pageLoadPaginator, 'limit': 10, 'token': document.cookie.split('session_id=')[1]}">
             <div id="post-items" name="item-count">
 
             </div>

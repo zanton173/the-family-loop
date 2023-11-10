@@ -378,14 +378,14 @@ func main() {
 				imgreq.Header.Set("Cache-Control", "max-age=86400")
 				resp, _ := imgclient.Do(imgreq)*/
 				if countOfImg > 1 {
-					dataStr = fmt.Sprintf("<div class='card my-4' style='background-color: rgb(22 30 255 / .42); border-radius: 106px 106px / 91px; box-shadow: 12px 12px 2px 1px rgb(41 88 93 / 20&percnt;);'><img class='img-fluid' id='%s' src='https://d33gjmrumfzeah.cloudfront.net/posts/images/%s' alt='%s' style='border-radius: 65px 65px / 50px;' alt='default' /><div class='p-2' style='display: flex; justify-content: space-around;'><i onclick='nextLeftImage(`%s`)' class='bi bi-arrow-90deg-left'></i><i onclick='nextRightImage(`%s`)' class='bi bi-arrow-90deg-right'></i></div><div id='%s' class='card-body'><h5 class='card-title'>%s - %s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' class='btn btn-primary'>Comments (%s)</button>%s</div></div>", postrows.Postfileskey, firstImg.filename, firstImg.filename, postrows.Postfileskey, postrows.Postfileskey, postrows.Author+"_author_"+postrows.Title, postrows.Title, postrows.Author, postrows.Description, postrows.Id, postrows.Id, commentCount, reactionBtn)
+					dataStr = fmt.Sprintf("<div class='card my-4' style='background-color: rgb(22 30 255 / .42); border-radius: 106px 106px / 91px; box-shadow: 12px 12px 2px 1px rgb(41 88 93 / 20&percnt;);'><img class='img-fluid' id='%s' src='https://d33gjmrumfzeah.cloudfront.net/posts/images/%s' alt='%s' style='border-radius: 65px 65px / 50px;' alt='default' /><div class='p-2' style='display: flex; justify-content: space-around;'><i onclick='nextLeftImage(`%s`)' class='bi bi-arrow-90deg-left'></i><i onclick='nextRightImage(`%s`)' class='bi bi-arrow-90deg-right'></i></div><div id='%s' class='card-body'><h5 class='card-title'>%s - %s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' class='btn btn-primary' hx-swap='innerHTML'>Comments (%s)</button>%s</div></div>", postrows.Postfileskey, firstImg.filename, firstImg.filename, postrows.Postfileskey, postrows.Postfileskey, postrows.Author+"_author_"+postrows.Title, postrows.Title, postrows.Author, postrows.Description, postrows.Id, postrows.Id, commentCount, reactionBtn)
 				} else if countOfImg == 1 {
-					dataStr = fmt.Sprintf("<div class='card my-4' style='background-color: rgb(22 30 255 / .42); border-radius: 106px 106px / 91px; box-shadow: 12px 12px 2px 1px rgb(41 88 93 / 20&percnt;);'><img class='img-fluid' id='%s' src='https://d33gjmrumfzeah.cloudfront.net/posts/images/%s' alt='%s' style='border-radius: 65px 65px / 50px;' alt='default' /><div class='p-2' style='display: flex; justify-content: space-around;'></div><div id='%s' class='card-body'><h5 class='card-title'>%s - %s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' class='btn btn-primary'>Comments (%s)</button>%s</div></div>", postrows.Postfileskey, firstImg.filename, firstImg.filename, postrows.Author+"_author_"+postrows.Title, postrows.Title, postrows.Author, postrows.Description, postrows.Id, postrows.Id, commentCount, reactionBtn)
+					dataStr = fmt.Sprintf("<div class='card my-4' style='background-color: rgb(22 30 255 / .42); border-radius: 106px 106px / 91px; box-shadow: 12px 12px 2px 1px rgb(41 88 93 / 20&percnt;);'><img class='img-fluid' id='%s' src='https://d33gjmrumfzeah.cloudfront.net/posts/images/%s' alt='%s' style='border-radius: 65px 65px / 50px;' alt='default' /><div class='p-2' style='display: flex; justify-content: space-around;'></div><div id='%s' class='card-body'><h5 class='card-title'>%s - %s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' hx-swap='innerHTML' class='btn btn-primary'>Comments (%s)</button>%s</div></div>", postrows.Postfileskey, firstImg.filename, firstImg.filename, postrows.Author+"_author_"+postrows.Title, postrows.Title, postrows.Author, postrows.Description, postrows.Id, postrows.Id, commentCount, reactionBtn)
 				}
 				//imgclient.CloseIdleConnections()
 				//defer resp.Body.Close()
 			} else if strings.Contains(firstImg.filetype, "video") || strings.Contains(firstImg.filetype, "octet-stream") {
-				dataStr = fmt.Sprintf("<div class='card my-4' style='background-color: rgb(22 30 255 / .42); border-radius: 106px 106px / 91px; box-shadow: 12px 12px 2px 1px rgb(41 88 93 / 20&percnt;);'><video style='border-radius: 65px 65px / 91px;' controls id='video'><source src='https://d33gjmrumfzeah.cloudfront.net/posts/videos/%s'></video><div class='p-2' style='display: flex; justify-content: space-around;'></div><div id='%s' class='card-body'><h5 class='card-title'>%s - %s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' class='btn btn-primary'>Comments (%s)</button>%s</div></div>", firstImg.filename, postrows.Author+"_author_"+postrows.Title, postrows.Title, postrows.Author, postrows.Description, postrows.Id, postrows.Id, commentCount, reactionBtn)
+				dataStr = fmt.Sprintf("<div class='card my-4' style='background-color: rgb(22 30 255 / .42); border-radius: 106px 106px / 91px; box-shadow: 12px 12px 2px 1px rgb(41 88 93 / 20&percnt;);'><video style='border-radius: 65px 65px / 91px;' controls id='video'><source src='https://d33gjmrumfzeah.cloudfront.net/posts/videos/%s'></video><div class='p-2' style='display: flex; justify-content: space-around;'></div><div id='%s' class='card-body'><h5 class='card-title'>%s - %s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' hx-swap='innerHTML' class='btn btn-primary'>Comments (%s)</button>%s</div></div>", firstImg.filename, postrows.Author+"_author_"+postrows.Title, postrows.Title, postrows.Author, postrows.Description, postrows.Id, postrows.Id, commentCount, reactionBtn)
 			}
 
 			postTmpl, tmerr = template.New("tem").Parse(dataStr)
@@ -505,7 +505,7 @@ func main() {
 			Author  string
 		}
 
-		var commentTmpl *template.Template
+		//var commentTmpl *template.Template
 
 		output, err := db.Query(fmt.Sprintf("select comment, author from tfldata.comments where post_id='%s'::integer order by post_id desc;", r.URL.Query().Get("post-id")))
 
@@ -525,11 +525,12 @@ func main() {
 			}
 			dataStr = "<p class='p-2'>" + posts.Comment + " - " + posts.Author + "</p>"
 
-			commentTmpl, err = template.New("com").Parse(dataStr)
+			/*commentTmpl, err = template.New("com").Parse(dataStr)
 			if err != nil {
 				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", err, time.Now().In(nyLoc).Format(time.DateTime)))
 			}
-			commentTmpl.Execute(w, nil)
+			commentTmpl.Execute(w, nil)*/
+			w.Write([]byte(dataStr))
 		}
 
 	}

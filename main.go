@@ -210,7 +210,7 @@ func main() {
 		}
 
 		// TODO: Add pfp insert
-		_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.users(\"username\", \"password\", \"pfp_name\", \"email\", \"firebase_user_uid\") values('%s', '%s', '%s', '%s', '%s');", strings.ToLower(r.PostFormValue("usernamesignup")), bytesOfPass, filename.Filename, strings.ToLower(r.PostFormValue("emailsignup")), record.UID))
+		_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.users(\"username\", \"password\", \"pfp_name\", \"email\", \"firebase_user_uid\", \"gchat_bg_theme\") values('%s', '%s', '%s', '%s', '%s', '%s');", strings.ToLower(r.PostFormValue("usernamesignup")), bytesOfPass, filename.Filename, strings.ToLower(r.PostFormValue("emailsignup")), record.UID, "background: linear-gradient(142deg, #00009f, #3dff3d 26%"))
 
 		if errinsert != nil {
 			fmt.Println(errinsert)
@@ -321,7 +321,8 @@ func main() {
 
 		var dataStr string
 		if err != nil {
-			log.Fatal(err)
+			//log.Fatal(err)
+			fmt.Print(err)
 		}
 
 		defer output.Close()
@@ -331,15 +332,20 @@ func main() {
 			var reaction string
 			//if err := output.Scan(&postrows.Id, &postrows.Title, &postrows.Description, &postrows.File_name, &postrows.File_type, &postrows.Author); err != nil {
 			if err := output.Scan(&postrows.Id, &postrows.Title, &postrows.Description, &postrows.Author, &postrows.Postfileskey); err != nil {
+
 				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", err, time.Now().In(nyLoc).Format(time.DateTime)))
 
 			}
 
 			reactionRow := db.QueryRow(fmt.Sprintf("select reaction from tfldata.reactions where post_id=%d and author='%s';", postrows.Id, curUser))
-			scnerr := reactionRow.Scan(&reaction)
-			if scnerr != nil {
-				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", scnerr, time.Now().In(nyLoc).Format(time.DateTime)))
-			}
+			reactionRow.Scan(&reaction)
+
+			/*
+				No need to error check here
+				if scnerr != nil {
+					//fmt.Println("error here")
+					//db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", scnerr, time.Now().In(nyLoc).Format(time.DateTime)))
+				}*/
 
 			if postrows.Author != curUser {
 				if reaction > " " {
@@ -400,7 +406,7 @@ func main() {
 		dataStr := "<script>dbCount = " + count + "</script>"
 		tmp, err := template.New("but").Parse(dataStr)
 		if err != nil {
-			fmt.Println(err)
+			fmt.Println("here: " + err.Error())
 		}
 		tmp.Execute(w, nil)
 

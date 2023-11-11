@@ -97,7 +97,7 @@ func main() {
 	// Connect to database
 	connStr := fmt.Sprintf("postgresql://tfldbrole:%s@localhost/tfl?sslmode=disable", dbpass)
 	db, err := sql.Open("postgres", connStr)
-
+	db.SetConnMaxLifetime(6 * time.Hour)
 	if err != nil {
 		log.Fatal(err)
 	}

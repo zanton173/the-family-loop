@@ -28,6 +28,20 @@ div.htmx-request.spinner-indicator {
     animation: enter 250ms ease-in-out
 }
 
+button.btn.btn-primary {
+    box-shadow: 3px 3px 3px #0c4e9ade;
+}
+
+.navCustomItem {
+    padding-top: 1%;
+    padding-bottom: 1%;
+    margin: 1%;
+    background-color: rgb(41 116 242 / 50%);
+    z-index: 3;
+    border-radius: 3px / 3px;
+    box-shadow: 1px 1px 3px;
+}
+
 @keyframes enter {
     0% {
         transform: scale(0);

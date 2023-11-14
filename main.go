@@ -314,6 +314,9 @@ func main() {
 		var output *sql.Rows
 		if r.URL.Query().Get("page") == "null" {
 			output, err = db.Query("select id, title, description, author, post_files_key from tfldata.posts order by id DESC limit 2;")
+		} else if r.URL.Query().Get("limit") == "current" {
+			w.Header().Set("HX-Reswap", "innerHTML")
+			output, err = db.Query(fmt.Sprintf("select id, title, description, author, post_files_key from tfldata.posts where id >= %s order by id DESC;", r.URL.Query().Get("page")))
 		} else {
 			output, err = db.Query(fmt.Sprintf("select id, title, description, author, post_files_key from tfldata.posts where id < %s order by id DESC limit 2;", r.URL.Query().Get("page")))
 		}

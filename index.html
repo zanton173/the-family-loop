@@ -161,8 +161,8 @@
 
         const reactIcons = document.getElementById('reactionicons')
         var sendEmojiTo = null
+        limit = 10
         function addAReaction(postId, divIdToAppend) {
-
             var divToAddBtnsTo = document.getElementById(divIdToAppend)
             sendEmojiTo = postId
             divToAddBtnsTo.appendChild(reactIcons)
@@ -186,6 +186,7 @@
                     sendEmojiTo = null
                 }
                 // bug here. Emojis don't load immediately on event fire. Needs a page reload to display
+                limit = "current"
                 document.getElementById('divofposts').dispatchEvent(new Event('loadNewVars'))
             })
 
@@ -288,7 +289,7 @@
     <div style="text-align: center;" class="px-5" id="posts-div">
         <div hx-get="/get-posts" hx-trigger="load, loadNewVars, anotherCustomEvent" hx-target="#post-items"
             id="divofposts" hx-indicator="#loadingspinner"
-            hx-vals="js:{'page': pageLoadPaginator, 'limit': 10, 'token': document.cookie.split('session_id=')[1]}"
+            hx-vals="js:{'page': pageLoadPaginator, 'limit': limit, 'token': document.cookie.split('session_id=')[1]}"
             hx-swap="beforeend">
             <div id="post-items" name="item-count">
 
@@ -326,6 +327,7 @@
         }
         const listOfImageObj = []
         htmx.on("#divofposts", "htmx:load", async function getImgs(event) {
+            limit = 10
             var imgListUUId = event.detail.elt.children[0].getAttribute("id")
             if (imgListUUId != 'video') {
                 listOfImageObj.push({ id: imgListUUId, imgs: await getListOfImgs(imgListUUId) })

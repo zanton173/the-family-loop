@@ -28,8 +28,8 @@
                 </li>
             </ul>
         </div>
-        <p onclick='scrollToTop()' class="btn" hx-get="/get-posts" style="display: contents;" hx-trigger="click"
-            hx-target="#post-items" style="color: blue;" id="notification"></p>
+        <!--<p onclick='scrollToTop()' class="btn" hx-get="/get-posts" style="display: contents;" hx-trigger="click"
+            hx-target="#post-items" style="color: blue;" id="notification"></p>-->
     </div>
 </nav>
 <div class="modal customModalTrans" tabindex="-1" id="changepfpmodal" aria-labelledby="openchangepfpmodal"
@@ -376,6 +376,8 @@
     let name = "session_id=";
     let decodedCookie = decodeURIComponent(document.cookie);
     let ca = decodedCookie.split(';');
+
+
     for (let i = 0; i < ca.length; i++) {
         let c = ca[i];
 
@@ -386,50 +388,56 @@
         if (c.indexOf(name) == 0) {
 
             let session_token = c.substring(name.length, c.length)
+            const checkSubResp = await fetch(`/get-check-if-subscribed?session_id=${session_token}`, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            }).then((data) => {
 
+                if (data.status == 202) {
+                    if (!("Notification" in window)) {
+                        // Check if the browser supports notifications
+                        alert("This browser does not support desktop notification");
+                    } else {
 
-            if (!("Notification" in window)) {
-                // Check if the browser supports notifications
-                alert("This browser does not support desktop notification");
-            } else {
+                        Notification.requestPermission().then((res) => {
 
-                Notification.requestPermission().then((res) => {
+                            if (Notification.permission == 'granted') {
 
-                    if (Notification.permission == 'granted') {
+                                getToken(messaging, { vapidKey: "BJmKY269Mkqw_zRnXy0n1ncFOBsamgi7hSpli4hKGlAJ-OKTae7qj8scasqrO9dpdmntNXXgbsMK3okY0bpOBVQ" })
+                                    .then((currentToken) => {
 
-                        getToken(messaging, { vapidKey: "BJmKY269Mkqw_zRnXy0n1ncFOBsamgi7hSpli4hKGlAJ-OKTae7qj8scasqrO9dpdmntNXXgbsMK3okY0bpOBVQ" })
-                            .then((currentToken) => {
+                                        notificationBody = {
+                                            username: session_token,
+                                            fcm_token: currentToken
+                                        }
+                                        fetch("/create-subscription", {
+                                            method: "POST",
+                                            headers: {
+                                                "Content-Type": "application/json"
+                                            },
+                                            body: JSON.stringify(notificationBody)
+                                        })
+                                            .then(() => {
+                                                return window.navigator.serviceWorker
+                                                    .getRegistration('/firebase-cloud-messaging-push-scope')
+                                                    .then((serviceWorker) => {
+                                                        if (serviceWorker) return serviceWorker;
+                                                        return window.navigator.serviceWorker.register('/firebase-messaging-sw.js', {
+                                                            scope: '/firebase-cloud-messaging-push-scope',
+                                                        });
+                                                    });
+                                            }).catch((err) => {
+                                                alert(err)
+                                            })
+                                    }).catch((err) => alert(err))
+                            }
 
-                                notificationBody = {
-                                    username: session_token,
-                                    fcm_token: currentToken
-                                }
-                                fetch("/create-subscription", {
-                                    method: "POST",
-                                    headers: {
-                                        "Content-Type": "application/json"
-                                    },
-                                    body: JSON.stringify(notificationBody)
-                                })
-                                    .then(() => {
-                                        return window.navigator.serviceWorker
-                                            .getRegistration('/firebase-cloud-messaging-push-scope')
-                                            .then((serviceWorker) => {
-                                                if (serviceWorker) return serviceWorker;
-                                                return window.navigator.serviceWorker.register('/firebase-messaging-sw.js', {
-                                                    scope: '/firebase-cloud-messaging-push-scope',
-                                                });
-                                            });
-                                    }).catch((err) => {
-                                        alert(err)
-                                    })
-                            }).catch((err) => alert(err))
+                        })
                     }
-
-                })
-            }
-
-
+                }
+            }).catch((err) => console.log(err))
         }
     }
 

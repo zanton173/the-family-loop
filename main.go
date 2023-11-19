@@ -1032,6 +1032,18 @@ func main() {
 		w.Write(data)
 
 	}
+	getSubscribedHandler := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-type", "application/json; charset=utf-8")
+		var fcmRegToken string
+		fcmRegRow := db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where session_token='%s';", r.URL.Query().Get("session_id")))
+		scnerr := fcmRegRow.Scan(&fcmRegToken)
+		if scnerr != nil {
+			w.WriteHeader(http.StatusAccepted)
+			return
+			//db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", scnerr, time.Now().In(nyLoc).Local().Format(time.DateTime)))
+		}
+		w.WriteHeader(http.StatusOK)
+	}
 	getSessionDataHandler := func(w http.ResponseWriter, r *http.Request) {
 
 		var ourSeshStruct seshStruct
@@ -1259,6 +1271,7 @@ func main() {
 	http.HandleFunc("/create-event-comment", createEventCommentHandler)
 
 	http.HandleFunc("/get-username-from-session", getSessionDataHandler)
+	http.HandleFunc("/get-check-if-subscribed", getSubscribedHandler)
 
 	http.HandleFunc("/clear-cookie", clearCookieHandler)
 

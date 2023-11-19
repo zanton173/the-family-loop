@@ -946,7 +946,7 @@ func main() {
 
 	}
 	getGroupChatMessagesHandler := func(w http.ResponseWriter, r *http.Request) {
-		output, err := db.Query("select id, chat, author, createdon from (select * from tfldata.gchat order by id DESC limit 20) as tmp order by createdon asc;")
+		output, err := db.Query(fmt.Sprintf("select id, chat, author, createdon from (select * from tfldata.gchat where thread='%s' order by id DESC limit 20) as tmp order by createdon asc;", r.URL.Query().Get("threadval")))
 		var curUser string
 		if err != nil {
 			fmt.Println(err)
@@ -1239,6 +1239,22 @@ func main() {
 		}
 
 	}
+	getOpenThreadsHandler := func(w http.ResponseWriter, r *http.Request) {
+		distinctThreadsOutput, queryErr := db.Query("select distinct(thread) from tfldata.gchat;")
+		if queryErr != nil {
+			fmt.Println(queryErr)
+		}
+		defer distinctThreadsOutput.Close()
+		for distinctThreadsOutput.Next() {
+			var thread string
+			scnerr := distinctThreadsOutput.Scan(&thread)
+			if scnerr != nil {
+				fmt.Print("scan error: " + scnerr.Error())
+			}
+			dataStr := fmt.Sprintf("<option value='%s'>%s</option>", thread, thread)
+			w.Write([]byte(dataStr))
+		}
+	}
 	/*h3 := func(w http.ResponseWriter, r *http.Request) {
 		upload, filename, err := r.FormFile("file_name")
 		if err != nil {
@@ -1297,6 +1313,8 @@ func main() {
 
 	http.HandleFunc("/get-leaderboard", getLeaderboardHandler)
 	http.HandleFunc("/update-simpleshades-score", updateSimpleShadesScoreHandler)
+
+	http.HandleFunc("/get-open-threads", getOpenThreadsHandler)
 
 	http.HandleFunc("/signup", signUpHandler)
 	http.HandleFunc("/login", loginHandler)

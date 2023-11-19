@@ -79,7 +79,18 @@
         <button type="button" onclick="showThemePanel()" class="btn btn-dark border-0 btn-sm"
             style="box-shadow: 3px 3px 6px;">close</button>
     </div>
-    <div hx-get="/group-chat-messages" hx-trigger="load, every 3s, success-send from:#messageform"
+    <div class="text-center my-2">
+        <label for="threadSelector">Select Chat Thread:</label>
+        <select id="threadSelector" hx-get="/get-open-threads"
+            hx-on::after-request="document.getElementById('loadGChathere').dispatchEvent(new Event('afterThreadSelectorLoadsEvent'))"
+            hx-swap="beforeend" hx-trigger="load"
+            onchange="document.getElementById('loadGChathere').dispatchEvent(new Event('afterThreadSelectorLoadsEvent'))"
+            name="threadSelector">
+        </select>
+    </div>
+    <div id="loadGChathere" hx-get="/group-chat-messages"
+        hx-vals="js:{'threadval': document.getElementById('threadSelector').value}"
+        hx-trigger="afterThreadSelectorLoadsEvent, every 3s, success-send from:#messageform"
         class="border-1 d-block m-2" style="justify-content: center; text-align: center; border-radius: 1%;">
 
     </div>

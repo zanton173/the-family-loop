@@ -184,8 +184,8 @@
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({ theme: "background: linear-gradient(142deg, " + leftSideVal + ", " + rightSideVal + " " + gradPercent + "%)", username })
-            }).then((data) => {
-
+            }).then(() => {
+                showThemePanel()
             })
         }
         function showThemePanel() {

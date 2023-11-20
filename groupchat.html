@@ -120,20 +120,23 @@
                     </div>
 
                 </div>
-                <div class="row" style="justify-content: center;">
-                    <input class="col-8 my-0 border-2 text-center" style="border-radius: 3%; width: 75%;"
-                        name="gchatmessage" id="gchatinput" type="text" oninput="checkForTagging()"
-                        placeholder="Enter message" required maxlength="420" />
-                    <button type="submit" class="col-2 btn btn-outline-success"><i class="bi bi-send"></i></button>
+                <div class="row" style="justify-content: center; margin-top: 1%;">
+                    <input class="col-8 my-0 border-0 text-center"
+                        style="border-radius: 18px / 18px; width: 75%; box-shadow: 3px 3px 5px" name="gchatmessage"
+                        id="gchatinput" type="text" oninput="checkForTagging()" placeholder="Enter message" required
+                        maxlength="420" />
+                    <button type="submit" class="col-2 mx-2 border-0 btn btn-success"
+                        style="border-radius: 18px / 18px; box-shadow: 3px 3px 5px black;"><i
+                            class="bi bi-send"></i></button>
                 </div>
 
             </div>
         </div>
     </form>
-    <div class="row" style="justify-content: center; text-align: center; margin-bottom: 5%;">
+    <div class="row" style="justify-content: center; text-align: center; margin-bottom: 5%; margin-top: 1%;">
         <p id="threadPostingTo">loading...</p>
         <button data-bs-toggle="modal" data-bs-target="#newThreadModal" class="btn border-0"
-            style="border-radius: 4px / 4px; color: antiquewhite; box-shadow: 1px 1px 3px; background-color: rgb(50 50 50); width: 60%;">Create
+            style="border-radius: 14px / 14px; color: antiquewhite; box-shadow: 1px 1px 3px; background-color: rgb(50 50 50); width: 60%;">Create
             a new
             chat thread!</button>
     </div>
@@ -223,15 +226,18 @@
 
                 listOfUsersArr = await resp.json()
                 if (listOfUsersArr != null) {
+                    var userStr = ""
                     listOfUsersArr.forEach((item) => {
                         /*var user = document.createElement('p')
                         user.setAttribute('onclick', `selectTaggedUser('${item}')`)
                         user.setAttribute('id', item)
                         user.innerHTML = item*/
-                        userStr = `<p onclick=selectTaggedUser('${item}') id='${item}'>${item}</p>`
+
+                        userStr += `<p onclick=selectTaggedUser('${item}') id='${item}'>${item}</p>`
                         document.getElementById('popbody').innerHTML = userStr
 
                     })
+
                 } else {
                     document.getElementById('popbody').innerHTML = "No user found..."
                 }

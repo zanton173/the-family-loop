@@ -921,12 +921,12 @@ func main() {
 		}
 
 		chatMessage := replacer.Replace(r.PostFormValue("gchatmessage"))
-
 		taggedUser := r.PostFormValue("taggedUser")
 		var userName string
 		var fcmRegToken string
 		userNameRow := db.QueryRow(fmt.Sprintf("select username from tfldata.users where session_token='%s';", c.Value))
 		userNameRow.Scan(&userName)
+		threadVal := r.PostFormValue("threadval")
 		if taggedUser > "" {
 			fcmRegRow := db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where username='%s';", taggedUser))
 			scnerr := fcmRegRow.Scan(&fcmRegToken)
@@ -937,7 +937,7 @@ func main() {
 			sendNotificationToTaggedUser(w, r, fcmRegToken, db, strings.ReplaceAll(chatMessage, "\\", ""), app)
 		}
 
-		_, inserr := db.Exec(fmt.Sprintf("insert into tfldata.gchat(\"chat\", \"author\", \"createdon\") values(E'%s', '%s', '%s');", chatMessage, userName, time.Now().In(nyLoc).Format(time.DateTime)))
+		_, inserr := db.Exec(fmt.Sprintf("insert into tfldata.gchat(\"chat\", \"author\", \"createdon\", \"thread\") values(E'%s', '%s', '%s', '%s');", chatMessage, userName, time.Now().In(nyLoc).Format(time.DateTime), threadVal))
 		if inserr != nil {
 			fmt.Println(err)
 			w.WriteHeader(http.StatusBadRequest)

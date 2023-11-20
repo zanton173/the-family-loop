@@ -85,7 +85,8 @@
             hx-on::after-request="document.getElementById('loadGChathere').dispatchEvent(new Event('afterThreadSelectorLoadsEvent'))"
             hx-swap="beforeend" hx-trigger="load"
             onchange="document.getElementById('loadGChathere').dispatchEvent(new Event('afterThreadSelectorLoadsEvent'))"
-            name="threadSelector">
+            name="threadSelector"
+            style="padding: 5px; border: 0; border-radius: 8px / 8px; box-shadow: 3px 3px 7px white;">
         </select>
     </div>
     <div id="loadGChathere" hx-get="/group-chat-messages"
@@ -95,7 +96,8 @@
 
     </div>
     <form hx-post="/create-a-group-chat-message" hx-swap="afterend" hx-target="this" id="messageform"
-        hx-on::after-request="clearFormGetMessages()" hx-vals="js:{'taggedUser': taggedUser}">
+        hx-on::after-request="clearFormGetMessages()"
+        hx-vals="js:{'taggedUser': taggedUser, 'threadval': document.getElementById('threadSelector').value}">
         <div class="d-flex" style="justify-content: center; margin-bottom: 8%;">
             <div class="container border-1">
                 <div id="popovermain" style="display: none; justify-content: center;" class="popover row"

@@ -89,6 +89,17 @@
             style="padding: 5px; border: 0; border-radius: 8px / 8px; box-shadow: 3px 3px 7px white;">
         </select>
     </div>
+    <div class="modal customModalTrans" id="newThreadModal">
+        <div class="modal-dialog">
+            <div class="modal-content p-3 my-1 text-center" style="background-color: rgb(250 250 250 / 85%);">
+                <div class="modal-header text-center">
+                    <h3>New thread:</h3>
+                </div>
+                <input id="newThreadNameInput" class="m-2" type="text" maxlength="32" placeholder="My thread!" />
+                <button class="btn btn-success m-2" data-bs-dismiss="modal" onclick="createNewThread()">create</button>
+            </div>
+        </div>
+    </div>
     <div id="loadGChathere" hx-get="/group-chat-messages"
         hx-vals="js:{'threadval': document.getElementById('threadSelector').value}"
         hx-trigger="afterThreadSelectorLoadsEvent, every 3s, success-send from:#messageform"
@@ -98,7 +109,7 @@
     <form hx-post="/create-a-group-chat-message" hx-swap="afterend" hx-target="this" id="messageform"
         hx-on::after-request="clearFormGetMessages()"
         hx-vals="js:{'taggedUser': taggedUser, 'threadval': document.getElementById('threadSelector').value}">
-        <div class="d-flex" style="justify-content: center; margin-bottom: 8%;">
+        <div class="d-flex" style="justify-content: center;">
             <div class="container border-1">
                 <div id="popovermain" style="display: none; justify-content: center;" class="popover row"
                     role="tooltip">
@@ -114,9 +125,17 @@
                         placeholder="Enter message" required maxlength="420" />
                     <button type="submit" class="col-2 btn btn-outline-success"><i class="bi bi-send"></i></button>
                 </div>
+
             </div>
         </div>
     </form>
+    <div class="row" style="justify-content: center; text-align: center; margin-bottom: 5%;">
+        <p id="threadPostingTo">loading...</p>
+        <button data-bs-toggle="modal" data-bs-target="#newThreadModal" class="btn border-0"
+            style="border-radius: 4px / 4px; color: antiquewhite; box-shadow: 1px 1px 3px; background-color: rgb(50 50 50 / 75%); width: 60%;">Create
+            a new
+            chat thread!</button>
+    </div>
     <script>
         var leftSideVal = null
         var rightSideVal = null
@@ -151,7 +170,9 @@
             gradPercent = document.getElementById('gradientpercentinput').value
             document.body.setAttribute("style", "background: linear-gradient(142deg, " + leftSideVal + ", " + rightSideVal + " " + gradPercent + "%)")
         }
-
+        document.getElementById('loadGChathere').addEventListener("afterThreadSelectorLoadsEvent", () => {
+            document.getElementById('threadPostingTo').innerHTML = "Posting to: " + document.getElementById('threadSelector').value
+        })
         async function submitTheme() {
             const resp = await fetch("/update-gchat-bg-theme", {
                 method: "POST",
@@ -232,9 +253,17 @@
             taggedUser = ""
             document.getElementById('gchatinput').setAttribute('oninput', "checkForTagging()")
         }
+        function createNewThread() {
+            if (document.getElementById('newThreadNameInput').value > ' ') {
+                var newOption = document.createElement("option")
+                newOption.setAttribute("value", document.getElementById('newThreadNameInput').value)
+                newOption.innerHTML = document.getElementById('newThreadNameInput').value
+                document.getElementById('threadSelector').append(newOption)
+                newOption.selected = true
+                document.getElementById('loadGChathere').dispatchEvent(new Event('afterThreadSelectorLoadsEvent'))
+            }
+        }
         htmx.on('#messageform', 'htmx:afterRequest', function (event) {
-
-
             event.detail.xhr.status === 401
                 && alert("Please login first.")
         })

@@ -216,12 +216,7 @@
         return text
     }
 
-    async function clearCookie() {
-        const resp = await fetch("/clear-cookie", {
-            method: "GET",
-        })
-        //console.log(resp)
-    }
+
     navItemWelcomeAvatar.addEventListener('click', async (event) => {
         changePfpModal.show()
     })
@@ -254,11 +249,9 @@
     }
 
     function logoutFunction() {
-        clearCookie().then(() => {
-            document.cookie = "session_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-
-            window.location.reload()
-        })
+        location.href = "/"
+        document.cookie = "session_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+        //window.location.reload()
 
     }
     if (document.cookie.includes("session_id=")) {

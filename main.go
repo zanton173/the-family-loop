@@ -255,7 +255,10 @@ func main() {
 			w.Header().Set("HX-Trigger", "loginevent")
 		} else if err == nil {
 			setLoginCookie(w, db, userStr, r)
-
+			_, uperr := db.Exec(fmt.Sprintf("update tfldata.users set last_sign_on='%s' where username='%s';", time.Now().In(nyLoc).Format(time.DateTime), userStr))
+			if uperr != nil {
+				fmt.Println(uperr)
+			}
 			w.Header().Set("HX-Refresh", "true")
 		}
 
@@ -946,15 +949,25 @@ func main() {
 
 	}
 	getGroupChatMessagesHandler := func(w http.ResponseWriter, r *http.Request) {
-		output, err := db.Query(fmt.Sprintf("select id, chat, author, createdon from (select * from tfldata.gchat where thread='%s' order by id DESC limit 20) as tmp order by createdon asc;", r.URL.Query().Get("threadval")))
+		c, err := r.Cookie("session_id")
 		var curUser string
 		if err != nil {
-			fmt.Println(err)
+			if err == http.ErrNoCookie {
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+			w.WriteHeader(http.StatusBadRequest)
+			return
 		}
-		c, err := r.Cookie("session_id")
-
 		if err != nil {
 			curUser = "Guest"
+		}
+
+		output, err := db.Query(fmt.Sprintf("select id, chat, author, createdon from (select * from tfldata.gchat where thread='%s' order by id DESC limit 20) as tmp order by createdon asc;", r.URL.Query().Get("threadval")))
+
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
 		}
 
 		row := db.QueryRow(fmt.Sprintf("select username from tfldata.users where session_token='%s';", c.Value))
@@ -1062,20 +1075,7 @@ func main() {
 
 		w.Write(data)
 	}
-	clearCookieHandler := func(w http.ResponseWriter, r *http.Request) {
 
-		c, _ := r.Cookie("session_id")
-
-		/*_, seshClearErr := db.Exec(fmt.Sprintf("delete from tfldata.sessions where session_token='%s';", c.Value))
-		if seshClearErr != nil {
-			fmt.Println(seshClearErr)
-		}*/
-		_, usersEditErr := db.Exec(fmt.Sprintf("update tfldata.users set session_token=null where session_token='%s';", c.Value))
-		if usersEditErr != nil {
-			fmt.Println(usersEditErr)
-		}
-
-	}
 	updatePfpHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "multipart/form-data")
 		upload, filename, _ := r.FormFile("changepfp")
@@ -1288,8 +1288,6 @@ func main() {
 
 	http.HandleFunc("/get-username-from-session", getSessionDataHandler)
 	http.HandleFunc("/get-check-if-subscribed", getSubscribedHandler)
-
-	http.HandleFunc("/clear-cookie", clearCookieHandler)
 
 	http.HandleFunc("/create-event", createEventHandler)
 	http.HandleFunc("/update-rsvp-for-event", updateRSVPForEventHandler)

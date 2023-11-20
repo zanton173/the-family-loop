@@ -91,7 +91,8 @@
     </div>
     <div class="modal customModalTrans" id="newThreadModal">
         <div class="modal-dialog">
-            <div class="modal-content p-3 my-1 text-center" style="background-color: rgb(250 250 250 / 85%);">
+            <div class="modal-content p-3 my-1 text-center"
+                style="background-color: rgb(250 250 250 / 85%); box-shadow: 8px 10px 14px;">
                 <div class="modal-header text-center">
                     <h3>New thread:</h3>
                 </div>
@@ -132,7 +133,7 @@
     <div class="row" style="justify-content: center; text-align: center; margin-bottom: 5%;">
         <p id="threadPostingTo">loading...</p>
         <button data-bs-toggle="modal" data-bs-target="#newThreadModal" class="btn border-0"
-            style="border-radius: 4px / 4px; color: antiquewhite; box-shadow: 1px 1px 3px; background-color: rgb(50 50 50 / 75%); width: 60%;">Create
+            style="border-radius: 4px / 4px; color: antiquewhite; box-shadow: 1px 1px 3px; background-color: rgb(50 50 50); width: 60%;">Create
             a new
             chat thread!</button>
     </div>
@@ -261,6 +262,8 @@
                 document.getElementById('threadSelector').append(newOption)
                 newOption.selected = true
                 document.getElementById('loadGChathere').dispatchEvent(new Event('afterThreadSelectorLoadsEvent'))
+            } else {
+                alert("Not a valid thread name")
             }
         }
         htmx.on('#messageform', 'htmx:afterRequest', function (event) {

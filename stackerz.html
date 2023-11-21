@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset='utf-8'>
+    <link rel="manifest" href="/assets/manifest.json" />
+    <title>Stackerz</title>
+    <meta name='viewport' content='width=device-width,height=device-height, initial-scale=1.0, user-scalable=no'>
+
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/custom-css.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/htmx.min.js"></script>
+    <script src="/js/htmx_json-enc.js"></script>
+</head>
+
+<body style="overflow: hidden; position: absolute; top: 0; bottom: 0; touch-action: manipulation;">
+
+    <div id="homeScreen"
+        style="display: flex; flex-direction: column; text-align: center; height: 100dvh; width: 100dvw">
+        <div style="height: inherit;">
+            <div class="col">
+                <div class="row-gap-lg-5 h-30" style="font-size: xx-large;">Stackerz</div>
+                <div class="row-gap-5 w-35 my-3 h-10">
+                    <button class="btn btn-primary"
+                        style="border-radius: 18px / 18px; border-width: 3px; border-style: solid; border-color: darkslategray;"
+                        onclick="showGameWindow()">start</button>
+                </div>
+                <div class="row-gap-5 w-35 my-3 h-10">
+                    <button class="btn btn-primary"
+                        style="border-radius: 18px / 18px; border-width: 3px; border-style: solid; border-color: darkslategray;"
+                        onclick="showLeaderboardWindow()">leaderboard</button>
+                </div>
+                <div class="row-gap-5 w-35 my-3 h-10">
+                    <button class="btn btn-primary"
+                        style="border-radius: 18px / 18px; border-width: 3px; border-style: solid; border-color: darkslategray;"
+                        onclick="location.href = '/'">tfl home</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <div id="gameWindow" style="display: none;">
+
+        <button class="btn btn-primary" onclick="showMenuWindow()">home</button>
+    </div>
+    <div id="leaderboardWindow" style="display: none;">
+        <h1>Leaderboard</h1>
+        <button class="btn btn-primary" onclick="showMenuWindow()">home</button>
+    </div>
+    <script>
+        const gameWindow = document.getElementById('gameWindow')
+        const menuWindow = document.getElementById('homeScreen')
+        const leaderboardWindow = document.getElementById('leaderboardWindow')
+        function showGameWindow() {
+            menuWindow.style.display = "none"
+            leaderboardWindow.style.display = "none"
+            if (gameWindow.style.display.includes('none'))
+                gameWindow.style.display = "flex"
+            else
+                gameWindow.style.display = "none"
+        }
+        function showMenuWindow() {
+            gameWindow.style.display = "none"
+            leaderboardWindow.style.display = "none"
+            if (menuWindow.style.display.includes('none'))
+                menuWindow.style.display = "flex"
+            else
+                menuWindow.style.display = "none"
+        }
+        function showLeaderboardWindow() {
+            gameWindow.style.display = "none"
+            menuWindow.style.display = "none"
+            if (leaderboardWindow.style.display.includes('none'))
+                leaderboardWindow.style.display = "flex"
+            else
+                leaderboardWindow.style.display = "none"
+        }
+    </script>
+</body>
+
+</html>

@@ -294,7 +294,9 @@ func main() {
 		case "/games/simple-shades":
 			tmpl := template.Must(template.ParseFiles("simpleshades.html"))
 			tmpl.Execute(w, nil)
-
+		case "/games/stackerz":
+			tmpl := template.Must(template.ParseFiles("stackerz.html"))
+			tmpl.Execute(w, nil)
 		default:
 			tmpl := template.Must(template.ParseFiles("index.html"))
 			tmpl.Execute(w, nil)

@@ -42,6 +42,24 @@ button.btn.btn-primary {
     box-shadow: 1px 1px 3px;
 }
 
+#stGameObj {
+    animation: bounce 2s infinite
+}
+
+@keyframes bounce {
+    0% {
+        left: 0;
+    }
+
+    50% {
+        left: calc(100dvw - var(--game-lvl-width));
+    }
+
+    100% {
+        left: 0;
+    }
+}
+
 @keyframes enter {
     0% {
         transform: scale(0);

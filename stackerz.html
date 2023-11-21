@@ -17,7 +17,7 @@
 <body style="overflow: hidden; position: absolute; top: 0; bottom: 0; touch-action: manipulation;">
 
     <div id="homeScreen"
-        style="display: flex; flex-direction: column; text-align: center; height: 100dvh; width: 100dvw">
+        style="display: none; flex-direction: column; text-align: center; height: 100dvh; width: 100dvw">
         <div style="height: inherit;">
             <div class="col">
                 <div class="row-gap-lg-5 h-30" style="font-size: xx-large;">Stackerz</div>
@@ -40,18 +40,58 @@
             </div>
         </div>
     </div>
-    <div id="gameWindow" style="display: none;">
+    <div id="gameWindow" style="width: 100dvw; height: 100dvh; overflow: hidden; --game-lvl-width: 300px">
 
-        <button class="btn btn-primary" onclick="showMenuWindow()">home</button>
+        <button class="btn btn-primary" onclick="showMenuWindow()" style="position: absolute; top: 0">home</button>
+
+        <div onclick="stopGameObj()"
+            style="position: absolute; top: 5%; width: 88%; height: 90dvh; background-color: rgba(215, 214, 212, 0.196); z-index: 3; margin: 6%;">
+
+        </div>
+
+        <div id="stGameObj"
+            style="background-color: brown; width: 300px; height: 45px; position: absolute; bottom: 0; border-style: solid; border-width: 2px;">
+        </div>
+
+
     </div>
     <div id="leaderboardWindow" style="display: none;">
         <h1>Leaderboard</h1>
         <button class="btn btn-primary" onclick="showMenuWindow()">home</button>
     </div>
     <script>
+        var gameLevel = 0
+        var curGameObj = document.getElementById('stGameObj')
         const gameWindow = document.getElementById('gameWindow')
         const menuWindow = document.getElementById('homeScreen')
         const leaderboardWindow = document.getElementById('leaderboardWindow')
+        const gameObj = document.getElementById("stGameObj")
+        var newGameObj = document.createElement("div")
+        function stopGameObj() {
+            gameLevel++
+            newGameObj = document.createElement("div")
+            var speed = 1500
+            var newGameObjWidth = 200
+            if (gameLevel > 3) {
+                speed = 750
+                newGameObjWidth = 150
+            } if (gameLevel > 6) {
+                speed = 500
+                newGameObjWidth = 75
+            } if (gameLevel > 9) {
+                speed = 250
+                newGameObjWidth = 25
+            }
+            curGameObj.style.animationPlayState = "paused"
+            curGameObj.style.setProperty("--game-lvl-width", getComputedStyle(gameWindow).getPropertyValue('--game-lvl-width'))
+            newGameObj.setAttribute("style", `background-color: brown; width: ${newGameObjWidth}px; height: 45px; position: absolute; bottom: calc(0% + 45px * ${gameLevel}); border-style: solid; border-width: 2px;`)
+            newGameObj.setAttribute("id", `gameobj_${gameLevel}`)
+            curGameObj = newGameObj
+            newGameObj.style.animation = `bounce ${speed}ms infinite`
+            gameWindow.append(newGameObj)
+            gameWindow.style.setProperty('--game-lvl-width', newGameObj.style.width)
+        }
+
         function showGameWindow() {
             menuWindow.style.display = "none"
             leaderboardWindow.style.display = "none"

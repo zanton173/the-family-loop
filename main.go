@@ -1223,6 +1223,24 @@ func main() {
 			w.Write([]byte(dataStr))
 		}
 	}
+	updateStackerzScoreHandler := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		bs, _ := io.ReadAll(r.Body)
+		type postBody struct {
+			Username    string `json:"username"`
+			BonusPoints int    `json:"bonus_points"`
+			Level       int    `json:"level"`
+		}
+		var postData postBody
+		marsherr := json.Unmarshal(bs, &postData)
+		if marsherr != nil {
+			fmt.Println(marsherr)
+		}
+		inserr, _ := db.Exec(fmt.Sprintf("insert into tfldata.stack_leaderboard(\"username\", \"bonus_points\", \"level\") values('%s', %d, %d)", postData.Username, postData.BonusPoints, postData.Level))
+		if inserr != nil {
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s');", inserr, time.Now().In(nyLoc).Format(time.DateTime)))
+		}
+	}
 	getLeaderboardHandler := func(w http.ResponseWriter, r *http.Request) {
 		output, outerr := db.Query("select username, score from tfldata.ss_leaderboard order by score desc limit 20;")
 		if outerr != nil {
@@ -1335,6 +1353,7 @@ func main() {
 	http.HandleFunc("/update-simpleshades-score", updateSimpleShadesScoreHandler)
 
 	http.HandleFunc("/get-stackerz-leaderboard", getStackerzLeaderboardHandler)
+	http.HandleFunc("/update-stackerz-score", updateStackerzScoreHandler)
 
 	http.HandleFunc("/get-open-threads", getOpenThreadsHandler)
 

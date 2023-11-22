@@ -175,7 +175,7 @@
             newGameObj.setAttribute("style", `background-color: rgb(${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}); width: ${newGameObjWidth}px; height: 25px; position: absolute; bottom: calc(0% + 25px * ${gameLevel - 1}); border-style: solid; border-width: 2px;`)
             newGameObj.setAttribute("id", `gameobj_${gameLevel}`)
             curGameObj = newGameObj
-            newGameObj.style.animation = `bounce ${speed}ms infinite`
+            newGameObj.style.animation = `bounce ${speed}ms linear infinite`
             gameWindow.append(newGameObj)
             gameWindow.style.setProperty('--game-lvl-width', newGameObj.style.width)
         }

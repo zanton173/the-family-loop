@@ -46,12 +46,6 @@ button.btn.btn-primary {
     animation: bounce 2s infinite
 }
 
-.stackerz_hs_gradient {
-    background-image: linear-gradient(to bottom,
-            hsl(264deg 45.29% 56.16%),
-            hsl(31, 100%, 40%))
-}
-
 @keyframes bounce {
     0% {
         left: 0;

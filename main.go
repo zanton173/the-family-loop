@@ -1203,6 +1203,26 @@ func main() {
 		resp.Body.Close()
 
 	}
+	getStackerzLeaderboardHandler := func(w http.ResponseWriter, r *http.Request) {
+		output, outerr := db.Query("select username, bonus_points, level from tfldata.stack_leaderboard order by(bonus_points+level) desc limit 20;")
+		if outerr != nil {
+			fmt.Println(outerr)
+		}
+		defer output.Close()
+		iter := 1
+		for output.Next() {
+			var username string
+			var bonus_points string
+			var level string
+			scnerr := output.Scan(&username, &bonus_points, &level)
+			if scnerr != nil {
+				fmt.Println(scnerr)
+			}
+			dataStr := "<div class='py-0 my-0' style='display: inline-flex;'><p class='px-2 m-0'>" + fmt.Sprintf("%d", iter) + "</p><p class='px-2 m-0' style='text-align: center;'>" + username + " - " + bonus_points + " - " + level + "</p></div><br/>"
+			iter++
+			w.Write([]byte(dataStr))
+		}
+	}
 	getLeaderboardHandler := func(w http.ResponseWriter, r *http.Request) {
 		output, outerr := db.Query("select username, score from tfldata.ss_leaderboard order by score desc limit 20;")
 		if outerr != nil {
@@ -1313,6 +1333,8 @@ func main() {
 
 	http.HandleFunc("/get-leaderboard", getLeaderboardHandler)
 	http.HandleFunc("/update-simpleshades-score", updateSimpleShadesScoreHandler)
+
+	http.HandleFunc("/get-stackerz-leaderboard", getStackerzLeaderboardHandler)
 
 	http.HandleFunc("/get-open-threads", getOpenThreadsHandler)
 

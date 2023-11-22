@@ -1218,7 +1218,7 @@ func main() {
 			if scnerr != nil {
 				fmt.Println(scnerr)
 			}
-			dataStr := "<div class='py-0 my-0' style='display: inline-flex;'><p class='px-2 m-0'>" + fmt.Sprintf("%d", iter) + "</p><p class='px-2 m-0' style='text-align: center;'>" + username + " - " + bonus_points + " - " + level + "</p></div><br/>"
+			dataStr := "<div class='py-0 my-2' style='display: inline-flex;'><p class='px-2 m-0'>" + fmt.Sprintf("%d", iter) + ".)&nbsp;&nbsp;</p><p class='px-2 m-0' style='text-align: center;'>" + username + "&nbsp;&nbsp; - &nbsp;&nbsp;" + bonus_points + "&nbsp;&nbsp; - &nbsp;&nbsp;" + level + "</p></div><br/>"
 			iter++
 			w.Write([]byte(dataStr))
 		}

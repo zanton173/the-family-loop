@@ -1204,7 +1204,7 @@ func main() {
 
 	}
 	getStackerzLeaderboardHandler := func(w http.ResponseWriter, r *http.Request) {
-		output, outerr := db.Query("select username, bonus_points, level from tfldata.stack_leaderboard order by(bonus_points+level) desc limit 20;")
+		output, outerr := db.Query("select substr(username,0,14), bonus_points, level from tfldata.stack_leaderboard order by(bonus_points+level) desc limit 20;")
 		if outerr != nil {
 			fmt.Println(outerr)
 		}
@@ -1218,7 +1218,7 @@ func main() {
 			if scnerr != nil {
 				fmt.Println(scnerr)
 			}
-			dataStr := "<div class='py-0 my-2' style='display: inline-flex;'><p class='px-2 m-0'>" + fmt.Sprintf("%d", iter) + ".)&nbsp;&nbsp;</p><p class='px-2 m-0' style='text-align: center;'>" + username + "&nbsp;&nbsp; - &nbsp;&nbsp;" + bonus_points + "&nbsp;&nbsp; - &nbsp;&nbsp;" + level + "</p></div><br/>"
+			dataStr := "<div class='py-0 my-0' style='display: inline-flex;'><p class='px-2 m-0' style='position: absolute; left: 2%;'>" + fmt.Sprintf("%d", iter) + ".)&nbsp;&nbsp;</p><p class='px-2 m-0' style='text-align: center; position: absolute; left: 15%;'>" + username + "</p><p class='px-2 m-0' style='text-align: center; position: relative; left: 25%;'>" + bonus_points + "</p><p class='px-2 m-0' style='text-align: center; position: absolute; left: 75%;'>" + level + "</p></div><br/>"
 			iter++
 			w.Write([]byte(dataStr))
 		}

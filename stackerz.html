@@ -16,41 +16,57 @@
 
 <body style="overflow: hidden; position: absolute; top: 0; bottom: 0; touch-action: manipulation;">
 
-    <div id="homeScreen"
-        style="display: none; flex-direction: column; text-align: center; height: 100dvh; width: 100dvw">
+    <div id="homeScreen" style="flex-direction: column; text-align: center; height: 100dvh; width: 100dvw">
         <div style="height: inherit;">
-            <div class="col">
-                <div class="row-gap-lg-5 h-30" style="font-size: xx-large;">Stackerz</div>
-                <div class="row-gap-5 w-35 my-3 h-10">
-                    <button class="btn btn-primary"
-                        style="border-radius: 18px / 18px; border-width: 3px; border-style: solid; border-color: darkslategray;"
+            <div class="col h-100">
+                <div class="row-gap-lg-5" style="font-size: xx-large; margin-top: 25%; height: 15dvh">Stackerz
+                </div>
+                <div class="row-gap-5 w-35 my-5 h-20">
+                    <button class="btn btn-primary p-3"
+                        style="border-radius: 18px / 18px; border-width: 3px; border-style: solid; border-color: darkslategray; font-size: larger"
                         onclick="showGameWindow()">start</button>
                 </div>
-                <div class="row-gap-5 w-35 my-3 h-10">
-                    <button class="btn btn-primary"
-                        style="border-radius: 18px / 18px; border-width: 3px; border-style: solid; border-color: darkslategray;"
+                <div class="row-gap-5 w-35 my-5 h-20">
+                    <button class="btn btn-primary p-3"
+                        style="border-radius: 18px / 18px; border-width: 3px; border-style: solid; border-color: darkslategray; font-size: larger"
                         onclick="showLeaderboardWindow()">leaderboard</button>
                 </div>
-                <div class="row-gap-5 w-35 my-3 h-10">
-                    <button class="btn btn-primary"
-                        style="border-radius: 18px / 18px; border-width: 3px; border-style: solid; border-color: darkslategray;"
+                <div class="row-gap-5 w-35 my-5 h-20">
+                    <button class="btn btn-primary p-3"
+                        style="border-radius: 18px / 18px; border-width: 3px; border-style: solid; border-color: darkslategray; font-size: larger"
                         onclick="location.href = '/'">tfl home</button>
                 </div>
 
             </div>
         </div>
     </div>
-    <div id="gameWindow" style="width: 100dvw; height: 100dvh; overflow: hidden; --game-lvl-width: 300px">
+    <div id="gameWindow"
+        style="width: 100dvw; height: 100dvh; overflow: hidden; --game-lvl-width: 200px; display: none; text-align: center;">
 
-        <button class="btn btn-primary" onclick="showMenuWindow()" style="position: absolute; top: 0">home</button>
-
-        <div onclick="stopGameObj()"
+        <button class="btn btn-primary m-1" onclick="showMenuWindow()" style="position: absolute; top: 0">home</button>
+        <div style="width: 100dvw">
+            <p id="levelCount" style="text-align: center; font-size: xx-large;">Level: 0</p>
+        </div>
+        <div id="stopButton" onclick="stopGameObj()"
             style="position: absolute; top: 5%; width: 88%; height: 90dvh; background-color: rgba(215, 214, 212, 0.196); z-index: 3; margin: 6%;">
 
         </div>
 
+        <div id="winBanner"
+            style="position: absolute; z-index: 5; width: 100%; height: 35px; top: 10%; display: block; background-color: rgb(110 170 50 / 85%);">
+        </div>
+
+        <div id="gameOverDiv"
+            style="display: none; position: absolute; z-index: 5; width: 100%; height: 75px; top: 50%; justify-content: center;">
+            <button class="btn btn-outline-secondary border-0"
+                style="font-size: xx-large; text-align: center; box-shadow: 3px 3px 5px; color: black; background: linear-gradient(140deg, #009415, #f8f9fa 80%)"
+                onclick="restartGame()">
+                Restart
+            </button>
+        </div>
+
         <div id="stGameObj"
-            style="background-color: brown; width: 300px; height: 45px; position: absolute; bottom: 0; border-style: solid; border-width: 2px;">
+            style="background-color: brown; width: 200px; height: 25px; position: absolute; bottom: 0; border-style: solid; border-width: 2px;">
         </div>
 
 
@@ -60,38 +76,85 @@
         <button class="btn btn-primary" onclick="showMenuWindow()">home</button>
     </div>
     <script>
-        var gameLevel = 0
+        var gameLevel = 1
         var curGameObj = document.getElementById('stGameObj')
         const gameWindow = document.getElementById('gameWindow')
         const menuWindow = document.getElementById('homeScreen')
         const leaderboardWindow = document.getElementById('leaderboardWindow')
         const gameObj = document.getElementById("stGameObj")
+        const levelCount = document.getElementById('levelCount')
         var newGameObj = document.createElement("div")
+        var speed = 1500
+        var newGameObjWidth = 125
+        var lastStopLeftSide = Number(window.innerWidth - curGameObj.getBoundingClientRect().x)
+        var lastStopRightSide = Number(curGameObj.getBoundingClientRect().x + 200)
         function stopGameObj() {
+
+            levelCount.innerHTML = "Level: " + gameLevel
+            if (gameLevel > 1) {
+                if (Number(window.innerWidth - curGameObj.getBoundingClientRect().x) <= lastStopLeftSide && Number(curGameObj.getBoundingClientRect().x + Number(curGameObj.style.width.replace("px", ""))) <= lastStopRightSide) {
+
+                } else if (
+                    Math.abs(Number(window.innerWidth - curGameObj.getBoundingClientRect().x) - lastStopLeftSide) > Number(curGameObj.style.width.replace("px", ""))
+                    && Math.abs(Number(curGameObj.getBoundingClientRect().x + Number(curGameObj.style.width.replace("px", ""))) - lastStopRightSide) > Number(curGameObj.style.width.replace("px", ""))
+                ) {
+                    // Game over
+                    levelCount.innerHTML = "Level: " + (gameLevel - 1)
+                    document.getElementById(`gameobj_${gameLevel}`).style.display = "none"
+                    document.getElementById('stopButton').style.display = "none"
+                    document.getElementById('gameOverDiv').style.display = "flex"
+                    return
+                } else if (curGameObj.getBoundingClientRect().y < document.getElementById('winBanner').getBoundingClientRect().y + 35) {
+                    curGameObj.style.animationPlayState = "paused"
+                    document.getElementById(`gameobj_${gameLevel}`).style.animationPlayState = "paused"
+                    alert("You win")
+                    showLeaderboardWindow()
+                    return
+                }
+
+            }
             gameLevel++
             newGameObj = document.createElement("div")
-            var speed = 1500
-            var newGameObjWidth = 200
+            lastStopLeftSide = Number(window.innerWidth - curGameObj.getBoundingClientRect().x)
+            lastStopRightSide = Number(curGameObj.getBoundingClientRect().x + Number(curGameObj.style.width.replace("px", "")))
+
             if (gameLevel > 3) {
-                speed = 750
-                newGameObjWidth = 150
-            } if (gameLevel > 6) {
-                speed = 500
-                newGameObjWidth = 75
+                speed = Math.floor(Math.random() * (1550 - 1000) + 1200)
+                newGameObjWidth = 100
             } if (gameLevel > 9) {
-                speed = 250
-                newGameObjWidth = 25
+                speed = Math.floor(Math.random() * (1450 - 750) + 750)
+                newGameObjWidth = 75
+            } if (gameLevel > 16) {
+                speed = Math.floor(Math.random() * (900 - 300) + 300)
+                newGameObjWidth = 50
             }
             curGameObj.style.animationPlayState = "paused"
+
             curGameObj.style.setProperty("--game-lvl-width", getComputedStyle(gameWindow).getPropertyValue('--game-lvl-width'))
-            newGameObj.setAttribute("style", `background-color: brown; width: ${newGameObjWidth}px; height: 45px; position: absolute; bottom: calc(0% + 45px * ${gameLevel}); border-style: solid; border-width: 2px;`)
+            newGameObj.setAttribute("style", `background-color: rgb(${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}); width: ${newGameObjWidth}px; height: 25px; position: absolute; bottom: calc(0% + 25px * ${gameLevel - 1}); border-style: solid; border-width: 2px;`)
             newGameObj.setAttribute("id", `gameobj_${gameLevel}`)
             curGameObj = newGameObj
             newGameObj.style.animation = `bounce ${speed}ms infinite`
             gameWindow.append(newGameObj)
             gameWindow.style.setProperty('--game-lvl-width', newGameObj.style.width)
         }
-
+        function restartGame() {
+            for (var i = 2; i <= gameLevel; i++) {
+                document.getElementById(`gameobj_${i}`).remove()
+            }
+            newGameObj = document.createElement("div")
+            gameLevel = 1
+            levelCount.innerHTML = "Level: " + gameLevel
+            speed = 1500
+            newGameObjWidth = 125
+            lastStopLeftSide = Number(window.innerWidth - curGameObj.getBoundingClientRect().x)
+            lastStopRightSide = Number(curGameObj.getBoundingClientRect().x + 200)
+            document.getElementById('stopButton').style.display = "block"
+            gameObj.style.animationPlayState = "running"
+            gameWindow.style.setProperty('--game-lvl-width', "200px")
+            document.getElementById('gameOverDiv').style.display = "none"
+            curGameObj = gameObj
+        }
         function showGameWindow() {
             menuWindow.style.display = "none"
             leaderboardWindow.style.display = "none"

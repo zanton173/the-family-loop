@@ -129,6 +129,7 @@ func main() {
 
 	}
 
+	/* Not currently being used
 	newPostsHandlerPushNotify := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		bs, _ := io.ReadAll(r.Body)
@@ -176,7 +177,7 @@ func main() {
 			fmt.Print(sendErr)
 		}
 		db.Exec(fmt.Sprintf("insert into tfldata.sent_notification_log(\"notification_result\", \"createdon\") values('%s', '%s');", sentRes, time.Now().In(nyLoc).Local().Format(time.DateTime)))
-	}
+	}*/
 
 	signUpHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "multipart/form-data")
@@ -673,7 +674,7 @@ func main() {
 		commentTmpl.Execute(w, nil)
 
 		var fcmToken string
-		fcmrow := db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where username = (select author from tfldata.posts where id=%d);", postData.SelectedPostId))
+		fcmrow := db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where username = (select author from tfldata.posts where id=%d) and username != (select username from tfldata.users where session_token='%s');", postData.SelectedPostId, c.Value))
 		scnerr := fcmrow.Scan(&fcmToken)
 		if scnerr != nil {
 
@@ -1339,7 +1340,8 @@ func main() {
 	http.HandleFunc("/get-all-users-to-tag", getUsernamesToTagHandler)
 
 	http.HandleFunc("/create-subscription", subscriptionHandler)
-	http.HandleFunc("/send-new-posts-push", newPostsHandlerPushNotify)
+	// Not currently in use
+	//http.HandleFunc("/send-new-posts-push", newPostsHandlerPushNotify)
 
 	http.HandleFunc("/update-pfp", updatePfpHandler)
 	http.HandleFunc("/update-gchat-bg-theme", updateChatThemeHandler)

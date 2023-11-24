@@ -37,6 +37,7 @@
     <div id="anchor">
 
     </div>
+
     <div class="modal" tabindex="-1" id="editOrDeleteModal" aria-labelledby="editOrDeleteModal" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content p-3 border-0 customModalTrans" id="editOrDeleteModalContent">
@@ -67,7 +68,13 @@
     <div id="showthemebtn" style="display: block; text-align: center;">
         <button type="button" onclick="showThemePanel()" class="btn btn-dark border-0 btn-sm"
             style="box-shadow: 3px 3px 6px;">Change Theme</button>
+        <button id="changeChatOrderOptBtn" type="button"
+            hx-on::after-request="document.dispatchEvent(new Event('DOMContentLoaded'))" hx-ext="json-enc"
+            hx-post="/change-gchat-order-opt" hx-vals="js:{'order_option': !gchatOrderOpt, 'username': username}"
+            hx-swap="none" hx-trigger="click" class="btn btn-dark border-0 btn-sm" style="box-shadow: 3px 3px 6px"><i
+                class="bi bi-arrow-down-circle"></i></button>
     </div>
+
     <div id="themepanel" style="display: none; text-align: center;">
         <h3>Change background color</h3>
         <input style="width: 25%" class="px-3 mx-1" type="color" oninput="setBgLeftVal()" id="leftsidethemeinput" />
@@ -89,70 +96,79 @@
             style="padding: 5px; border: 0; border-radius: 8px / 8px; box-shadow: 3px 3px 7px white;">
         </select>
     </div>
-    <div class="modal customModalTrans" id="newThreadModal">
-        <div class="modal-dialog">
-            <div class="modal-content p-3 my-1 text-center"
-                style="background-color: rgb(250 250 250 / 85%); box-shadow: 8px 10px 14px;">
-                <div class="modal-header text-center">
-                    <h3>New thread:</h3>
-                </div>
-                <input id="newThreadNameInput" class="m-2" type="text" maxlength="32" placeholder="My thread!" />
-                <button class="btn btn-success m-2" data-bs-dismiss="modal" onclick="createNewThread()">create</button>
-            </div>
-        </div>
-    </div>
+    <div id="prependhere"></div>
     <div id="loadGChathere" hx-get="/group-chat-messages"
-        hx-vals="js:{'threadval': document.getElementById('threadSelector').value}"
+        hx-vals="js:{'threadval': document.getElementById('threadSelector').value, 'order_option': gchatOrderOpt}"
         hx-trigger="afterThreadSelectorLoadsEvent, every 3s, success-send from:#messageform"
         class="border-1 d-block m-2" style="justify-content: center; text-align: center; border-radius: 1%;">
 
     </div>
-    <form hx-post="/create-a-group-chat-message" hx-swap="afterend" hx-target="this" id="messageform"
-        hx-on::after-request="clearFormGetMessages()"
-        hx-vals="js:{'taggedUser': taggedUser, 'threadval': document.getElementById('threadSelector').value}">
-        <div class="d-flex" style="justify-content: center;">
-            <div class="container border-1">
-                <div id="popovermain" style="display: none; justify-content: center;" class="popover row"
-                    role="tooltip">
-                    <h3 class="popover-header">tag user</h3>
-                    <div id="popbody">
+    <div id="appendhere"></div>
+    <div id="orderDependentDiv">
 
+        <div class="modal customModalTrans" id="newThreadModal">
+            <div class="modal-dialog">
+                <div class="modal-content p-3 my-1 text-center"
+                    style="background-color: rgb(250 250 250 / 85%); box-shadow: 8px 10px 14px;">
+                    <div class="modal-header text-center">
+                        <h3>New thread:</h3>
+                    </div>
+                    <input id="newThreadNameInput" class="m-2" type="text" maxlength="32" placeholder="My thread!" />
+                    <button class="btn btn-success m-2" data-bs-dismiss="modal"
+                        onclick="createNewThread()">create</button>
+                </div>
+            </div>
+        </div>
+        <form hx-post="/create-a-group-chat-message" hx-swap="afterend" hx-target="this" id="messageform"
+            hx-on::after-request="clearFormGetMessages()"
+            hx-vals="js:{'taggedUser': taggedUser, 'threadval': document.getElementById('threadSelector').value}">
+            <div class="d-flex" style="justify-content: center;">
+                <div class="container border-1">
+                    <div id="popovermain" style="display: none; justify-content: center;" class="popover row"
+                        role="tooltip">
+                        <h3 class="popover-header">tag user</h3>
+                        <div id="popbody">
+
+                        </div>
+
+                    </div>
+                    <div class="row" style="justify-content: center; margin-top: 1%;">
+                        <input class="col-8 my-0 border-0 text-center"
+                            style="border-radius: 18px / 18px; width: 75%; box-shadow: 3px 3px 5px" name="gchatmessage"
+                            id="gchatinput" type="text" oninput="checkForTagging()" placeholder="Enter message" required
+                            maxlength="420" />
+                        <button type="submit" class="col-2 mx-2 border-0 btn btn-success"
+                            style="border-radius: 18px / 18px; box-shadow: 3px 3px 5px black;"><i
+                                class="bi bi-send"></i></button>
                     </div>
 
                 </div>
-                <div class="row" style="justify-content: center; margin-top: 1%;">
-                    <input class="col-8 my-0 border-0 text-center"
-                        style="border-radius: 18px / 18px; width: 75%; box-shadow: 3px 3px 5px" name="gchatmessage"
-                        id="gchatinput" type="text" oninput="checkForTagging()" placeholder="Enter message" required
-                        maxlength="420" />
-                    <button type="submit" class="col-2 mx-2 border-0 btn btn-success"
-                        style="border-radius: 18px / 18px; box-shadow: 3px 3px 5px black;"><i
-                            class="bi bi-send"></i></button>
-                </div>
-
             </div>
+        </form>
+        <div class="row w-100" style="justify-content: center; text-align: center; margin-bottom: 5%; margin-top: 1%;">
+            <p id="threadPostingTo">loading...</p>
+            <button data-bs-toggle="modal" data-bs-target="#newThreadModal" class="btn border-0"
+                style="border-radius: 14px / 14px; color: antiquewhite; box-shadow: 1px 1px 3px; background-color: rgb(50 50 50); width: 60%;">Create
+                a new
+                chat thread!</button>
         </div>
-    </form>
-    <div class="row w-100" style="justify-content: center; text-align: center; margin-bottom: 5%; margin-top: 1%;">
-        <p id="threadPostingTo">loading...</p>
-        <button data-bs-toggle="modal" data-bs-target="#newThreadModal" class="btn border-0"
-            style="border-radius: 14px / 14px; color: antiquewhite; box-shadow: 1px 1px 3px; background-color: rgb(50 50 50); width: 60%;">Create
-            a new
-            chat thread!</button>
     </div>
+
     <script>
         var leftSideVal = null
         var rightSideVal = null
         var gradPercent = null
 
         var selectedChatId = null
+        var gchatOrderOpt = true
 
         const editOrDeleteModal = new bootstrap.Modal(document.getElementById('editOrDeleteModal'), {})
 
         document.addEventListener("DOMContentLoaded", async () => {
-            gchatBGTheme = await fetchSeshDetails(document.cookie.split("session_id=")[1])
+            curUserData = await fetchSeshDetails(document.cookie.split("session_id=")[1])
 
-            document.body.setAttribute('style', gchatBGTheme.BGtheme)
+            document.body.setAttribute('style', curUserData.BGtheme)
+            gchatOrderOpt = curUserData.GchatOrderOpt
 
             leftSideVal = document.body.getAttribute("style").split("background: linear-gradient(142deg, ")[1].split(",")[0]
             rightSideVal = document.body.getAttribute("style").split("background: linear-gradient(142deg, " + leftSideVal + ",")[1].split(" ", 2)[1]
@@ -161,7 +177,16 @@
             document.getElementById('leftsidethemeinput').value = leftSideVal
             document.getElementById('rightsidethemeinput').value = rightSideVal
             document.getElementById('gradientpercentinput').value = gradPercent
+
+            if (gchatOrderOpt) {
+                document.getElementById('appendhere').append(document.getElementById('orderDependentDiv'))
+                document.getElementById('changeChatOrderOptBtn').innerHTML = '<i class="bi bi-arrow-down-circle"></i>'
+            } else {
+                document.getElementById('prependhere').prepend(document.getElementById('orderDependentDiv'))
+                document.getElementById('changeChatOrderOptBtn').innerHTML = '<i class="bi bi-arrow-up-circle"></i>'
+            }
         })
+
         function setBgLeftVal() {
             leftSideVal = document.getElementById('leftsidethemeinput').value
             document.body.setAttribute("style", "background: linear-gradient(142deg, " + leftSideVal + ", " + rightSideVal + " " + gradPercent + "%)")
@@ -228,11 +253,6 @@
                 if (listOfUsersArr != null) {
                     var userStr = ""
                     listOfUsersArr.forEach((item) => {
-                        /*var user = document.createElement('p')
-                        user.setAttribute('onclick', `selectTaggedUser('${item}')`)
-                        user.setAttribute('id', item)
-                        user.innerHTML = item*/
-
                         userStr += `<p onclick=selectTaggedUser('${item}') id='${item}'>${item}</p>`
                         document.getElementById('popbody').innerHTML = userStr
 

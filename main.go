@@ -44,9 +44,10 @@ type Postjoin struct {
 	Postfileskey string
 }
 type seshStruct struct {
-	Username string
-	Pfpname  string
-	BGtheme  string
+	Username      string
+	Pfpname       string
+	BGtheme       string
+	GchatOrderOpt bool
 }
 
 var awskey string
@@ -212,7 +213,7 @@ func main() {
 		}
 
 		// TODO: Add pfp insert
-		_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.users(\"username\", \"password\", \"pfp_name\", \"email\", \"firebase_user_uid\", \"gchat_bg_theme\") values('%s', '%s', '%s', '%s', '%s', '%s');", strings.ToLower(r.PostFormValue("usernamesignup")), bytesOfPass, filename.Filename, strings.ToLower(r.PostFormValue("emailsignup")), record.UID, "background: linear-gradient(142deg, #00009f, #3dff3d 26%"))
+		_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.users(\"username\", \"password\", \"pfp_name\", \"email\", \"firebase_user_uid\", \"gchat_bg_theme\", \"gchat_order_option\") values('%s', '%s', '%s', '%s', '%s', '%s', %t);", strings.ToLower(r.PostFormValue("usernamesignup")), bytesOfPass, filename.Filename, strings.ToLower(r.PostFormValue("emailsignup")), record.UID, "background: linear-gradient(142deg, #00009f, #3dff3d 26%", true))
 
 		if errinsert != nil {
 			fmt.Println(errinsert)
@@ -951,9 +952,27 @@ func main() {
 		w.Header().Set("HX-Trigger", "success-send")
 
 	}
+	changeGchatOrderOptHandler := func(w http.ResponseWriter, r *http.Request) {
+		bs, _ := io.ReadAll(r.Body)
+		type postBody struct {
+			Username string `json:"username"`
+			Option   bool   `json:"order_option"`
+		}
+		var postData postBody
+		marsherr := json.Unmarshal(bs, &postData)
+		if marsherr != nil {
+			fmt.Println(marsherr)
+		}
+		_, uperr := db.Exec(fmt.Sprintf("update tfldata.users set gchat_order_option='%t' where username='%s';", postData.Option, postData.Username))
+		if uperr != nil {
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s');", uperr, time.Now().In(nyLoc).Format(time.DateTime)))
+		}
+
+	}
 	getGroupChatMessagesHandler := func(w http.ResponseWriter, r *http.Request) {
 		c, err := r.Cookie("session_id")
 		var curUser string
+		//var orderAscOrDesc string
 		if err != nil {
 			if err == http.ErrNoCookie {
 				w.WriteHeader(http.StatusUnauthorized)
@@ -965,8 +984,13 @@ func main() {
 		if err != nil {
 			curUser = "Guest"
 		}
-
-		output, err := db.Query(fmt.Sprintf("select id, chat, author, createdon from (select * from tfldata.gchat where thread='%s' order by id DESC limit 20) as tmp order by createdon asc;", r.URL.Query().Get("threadval")))
+		orderAscOrDesc := "asc"
+		if r.URL.Query().Get("order_option") == "true" {
+			orderAscOrDesc = "asc"
+		} else {
+			orderAscOrDesc = "desc"
+		}
+		output, err := db.Query(fmt.Sprintf("select id, chat, author, createdon from (select * from tfldata.gchat where thread='%s' order by id DESC limit 20) as tmp order by createdon %s;", r.URL.Query().Get("threadval"), orderAscOrDesc))
 
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
@@ -1064,8 +1088,8 @@ func main() {
 
 		var ourSeshStruct seshStruct
 
-		row := db.QueryRow(fmt.Sprintf("select username, pfp_name, gchat_bg_theme from tfldata.users where session_token='%s';", r.URL.Query().Get("id")))
-		scnerr := row.Scan(&ourSeshStruct.Username, &ourSeshStruct.Pfpname, &ourSeshStruct.BGtheme)
+		row := db.QueryRow(fmt.Sprintf("select username, pfp_name, gchat_bg_theme, gchat_order_option from tfldata.users where session_token='%s';", r.URL.Query().Get("id")))
+		scnerr := row.Scan(&ourSeshStruct.Username, &ourSeshStruct.Pfpname, &ourSeshStruct.BGtheme, &ourSeshStruct.GchatOrderOpt)
 		if scnerr != nil {
 			fmt.Println(scnerr)
 		}
@@ -1338,6 +1362,8 @@ func main() {
 	http.HandleFunc("/group-chat-messages", getGroupChatMessagesHandler)
 	http.HandleFunc("/create-a-group-chat-message", createGroupChatMessageHandler)
 	http.HandleFunc("/get-all-users-to-tag", getUsernamesToTagHandler)
+
+	http.HandleFunc("/change-gchat-order-opt", changeGchatOrderOptHandler)
 
 	http.HandleFunc("/create-subscription", subscriptionHandler)
 	// Not currently in use

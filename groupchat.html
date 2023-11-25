@@ -121,7 +121,7 @@
         </div>
         <form hx-post="/create-a-group-chat-message" hx-swap="afterend" hx-target="this" id="messageform"
             hx-on::after-request="clearFormGetMessages()"
-            hx-vals="js:{'taggedUser': taggedUser, 'threadval': document.getElementById('threadSelector').value}">
+            hx-vals="js:{'taggedUser': [taggedUser], 'threadval': document.getElementById('threadSelector').value}">
             <div class="d-flex" style="justify-content: center;">
                 <div class="container border-1">
                     <div id="popovermain" style="display: none; justify-content: center;" class="popover row"
@@ -238,11 +238,17 @@
 
         const jsWorker = new Worker("js/worker.js")
         var listOfUsersArr = []
-        var taggedUser = ""
+        var taggedUser = []
+        var newInput = ""
         async function checkForTagging() {
-            if (document.getElementById('gchatinput').value.includes('@') && document.getElementById('gchatinput').value.split('@')[1] > '') {
+            newInput = document.getElementById('gchatinput').value
+            for (var i = 0; i < taggedUser.length; i++) {
+                newInput = newInput.replace(taggedUser[i], "")
+            }
 
-                const resp = await fetch("/get-all-users-to-tag?user=" + document.getElementById('gchatinput').value.split('@')[1], {
+            if (newInput.includes('@') && newInput.split('@')[1] > '') {
+
+                const resp = await fetch("/get-all-users-to-tag?user=" + newInput.split('@')[1], {
                     method: "GET",
                     headers: {
                         'Content-Type': 'application/json'
@@ -269,15 +275,16 @@
             }
         }
         function selectTaggedUser(username) {
-            document.getElementById('gchatinput').removeAttribute('oninput')
+            //document.getElementById('gchatinput').removeAttribute('oninput')
             document.getElementById('gchatinput').focus()
-            taggedUser = username
-            document.getElementById('gchatinput').value = document.getElementById('gchatinput').value.replace('@'.concat(document.getElementById('gchatinput').value.split('@')[1]), username)
+            taggedUser.push(username)
+            //taggedUser = ""
+            document.getElementById('gchatinput').value = document.getElementById('gchatinput').value.replace('@'.concat(newInput.split('@')[1]), username)
             document.getElementById('popovermain').setAttribute("style", "display: none")
         }
         function clearFormGetMessages() {
             document.getElementById('gchatinput').value = ""
-            taggedUser = ""
+            taggedUser = []
             document.getElementById('gchatinput').setAttribute('oninput', "checkForTagging()")
         }
         function createNewThread() {

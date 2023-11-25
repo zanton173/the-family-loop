@@ -911,6 +911,7 @@ func main() {
 
 	}
 	createGroupChatMessageHandler := func(w http.ResponseWriter, r *http.Request) {
+
 		c, err := r.Cookie("session_id")
 
 		if err != nil {
@@ -928,20 +929,23 @@ func main() {
 		}
 
 		chatMessage := replacer.Replace(r.PostFormValue("gchatmessage"))
-		taggedUser := r.PostFormValue("taggedUser")
+
+		listOfUsersTagged := strings.Split(r.PostFormValue("taggedUser"), ",")
+
 		var userName string
-		var fcmRegToken string
 		userNameRow := db.QueryRow(fmt.Sprintf("select username from tfldata.users where session_token='%s';", c.Value))
 		userNameRow.Scan(&userName)
 		threadVal := r.PostFormValue("threadval")
-		if taggedUser > "" {
-			fcmRegRow := db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where username='%s';", taggedUser))
-			scnerr := fcmRegRow.Scan(&fcmRegToken)
-			if scnerr != nil {
-				fmt.Println(scnerr)
-				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", scnerr, time.Now().In(nyLoc).Local().Format(time.DateTime)))
+		var fcmRegToken string
+
+		if len(listOfUsersTagged) > 0 {
+			for _, val := range listOfUsersTagged {
+				fcmRegRow := db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where username='%s' and username != '%s';", val, userName))
+				scner := fcmRegRow.Scan(&fcmRegToken)
+				if scner == nil {
+					sendNotificationToTaggedUser(w, r, fcmRegToken, db, strings.ReplaceAll(chatMessage, "\\", ""), app)
+				}
 			}
-			sendNotificationToTaggedUser(w, r, fcmRegToken, db, strings.ReplaceAll(chatMessage, "\\", ""), app)
 		}
 
 		_, inserr := db.Exec(fmt.Sprintf("insert into tfldata.gchat(\"chat\", \"author\", \"createdon\", \"thread\") values(E'%s', '%s', '%s', '%s');", chatMessage, userName, time.Now().In(nyLoc).Format(time.DateTime), threadVal))

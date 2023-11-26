@@ -885,14 +885,16 @@ func main() {
 
 		var status string
 		var username string
-		output, outerr := db.Query(fmt.Sprintf("select username, status from tfldata.calendar_rsvp where username='%s' and event_id='%s';", r.URL.Query().Get("username"), r.URL.Query().Get("event_id")))
+		output, outerr := db.Query(fmt.Sprintf("select username, status from tfldata.calendar_rsvp where event_id='%s';", r.URL.Query().Get("event_id")))
 
 		if outerr != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
+		defer output.Close()
 		for output.Next() {
 			output.Scan(&username, &status)
+
 			var fontColor string
 			switch status {
 			case "maybe":

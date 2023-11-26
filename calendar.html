@@ -265,10 +265,10 @@
         document.getElementById('eventdetailsele').innerHTML = data.Eventdetails
         commentSelectedEventId = data.Eventid
         document.getElementById('eventappendcomments').dispatchEvent(new Event('loadCommentEvent'))
+        //document.getElementById('rsvpnotes').dispatchEvent(new Event('click'))
         document.getElementById('rsvpnotes').dispatchEvent(new Event('click'))
         checkForRSVP(data.Eventid)
         document.getElementById('eventappendcomments').innerHTML = ''
-        document.getElementById('rsvpnotes').dispatchEvent(new Event('click'))
     }
     document.getElementById("openEventDetail").addEventListener("hidden.bs.modal", () => {
         document.getElementById('rsvpnotes').innerHTML = ""

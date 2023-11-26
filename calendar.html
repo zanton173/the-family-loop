@@ -105,7 +105,9 @@
                                 class="bi bi-asterisk"></i>&nbsp;&nbsp;maybe</button>
                     </div>
 
-                    <div id="eventappendcomments"></div>
+                    <div hx-get='/get-event-comments' hx-vals='js:{"commentSelectedEventID": commentSelectedEventId}'
+                        hx-ext='json-enc' hx-trigger="loadCommentEvent" hx-swap='beforeend' id="eventappendcomments">
+                    </div>
                 </div>
 
                 <form id="createeventcomment" class="d-grid" hx-post="/create-event-comment"
@@ -159,6 +161,7 @@
     })
 
     function setDatesThatHaveEvents() {
+
         //listOfActive = document.querySelectorAll("[style='background: #fff']")
         listOfActive = document.querySelectorAll("[style='background-color: rgba(255, 255, 255, .5); border-radius: 15%;']")
         for (var i = 1; i <= listOfActive.length; i++) {
@@ -261,6 +264,7 @@
         document.getElementById('eventdateele').innerHTML = new Date(data.Startdate[0], data.Startdate[1] - 1, data.Startdate[2]).toDateString()
         document.getElementById('eventdetailsele').innerHTML = data.Eventdetails
         commentSelectedEventId = data.Eventid
+        document.getElementById('eventappendcomments').dispatchEvent(new Event('loadCommentEvent'))
         checkForRSVP(data.Eventid)
         document.getElementById('eventappendcomments').innerHTML = ''
         document.getElementById('rsvpnotes').dispatchEvent(new Event('click'))
@@ -398,7 +402,6 @@
 
     // Function to generate the calendar
     const manipulate = () => {
-
         // Get the first day of the month
         let dayone = new Date(year, month, 1).getDay();
 
@@ -430,7 +433,7 @@
                 ? "active"
                 : "";*/
 
-            lit += `<li id='${i}' hx-get='/get-event-comments' hx-vals='js:{"commentSelectedEventID": commentSelectedEventId}' hx-ext='json-enc' hx-target='#eventappendcomments' hx-swap='beforeend' style='background-color: rgba(255, 255, 255, .5); border-radius: 15%;' onclick='toggleActiveElement(${i})'>${i}</li>`;
+            lit += `<li id='${i}' style='background-color: rgba(255, 255, 255, .5); border-radius: 15%;' onclick='toggleActiveElement(${i})'>${i}</li>`;
 
         }
 

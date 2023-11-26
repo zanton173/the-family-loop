@@ -1443,7 +1443,7 @@ func main() {
 */
 func setLoginCookie(w http.ResponseWriter, db *sql.DB, userStr string, r *http.Request) {
 	sessionToken := uuid.NewString()
-	expiresAt := time.Now().Add(4320 * time.Minute)
+	expiresAt := time.Now().Add(3600 * time.Hour)
 	//fmt.Println(expiresAt.Local().Format(time.DateTime))
 	//fmt.Println(userStr)
 	/*_, inserterr := db.Exec(fmt.Sprintf("insert into tfldata.sessions(\"username\", \"session_token\", \"expiry\", \"ip_addr\") values('%s', '%s', '%s', '%s') on conflict(ip_addr) do update set session_token='%s', expiry='%s';", userStr, sessionToken, expiresAt.Format(time.DateTime), strings.Split(r.RemoteAddr, ":")[0], sessionToken, expiresAt.Format(time.DateTime)))

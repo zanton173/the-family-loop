@@ -999,7 +999,7 @@ func main() {
 		} else {
 			orderAscOrDesc = "desc"
 		}
-		output, err := db.Query(fmt.Sprintf("select id, chat, author, createdon from (select * from tfldata.gchat where thread='%s' order by id DESC limit 20) as tmp order by createdon %s;", r.URL.Query().Get("threadval"), orderAscOrDesc))
+		output, err := db.Query(fmt.Sprintf("select id, chat, author, createdon from (select * from tfldata.gchat where thread='%s' order by id DESC limit 35) as tmp order by createdon %s;", r.URL.Query().Get("threadval"), orderAscOrDesc))
 
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)

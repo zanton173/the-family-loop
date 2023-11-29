@@ -208,7 +208,6 @@ CREATE TABLE tfldata.gchat (
 
 
 ALTER TABLE tfldata.gchat OWNER TO tfldbrole;
-
 --
 -- TOC entry 223 (class 1259 OID 16632)
 -- Name: gchat_id_seq; Type: SEQUENCE; Schema: tfldata; Owner: tfldbrole
@@ -233,6 +232,7 @@ ALTER TABLE tfldata.gchat_id_seq OWNER TO tfldbrole;
 
 ALTER SEQUENCE tfldata.gchat_id_seq OWNED BY tfldata.gchat.id;
 
+INSERT INTO tfldata.gchat("chat", "author", "thread") VALUES('Welcome to TFL!', 'Admin', 'main thread');
 
 --
 -- TOC entry 224 (class 1259 OID 16633)

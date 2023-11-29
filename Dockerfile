@@ -9,7 +9,7 @@ RUN go mod download
 
 # Copy the source code. Note the slash at the end, as explained in
 # https://docs.docker.com/engine/reference/builder/#copy
-COPY *.go *.html *.js .env ./
+COPY *.go *.html *.js *.json .env ./
 RUN mkdir ./css ./js ./assets
 COPY css/ ./css/
 COPY js/ ./js/

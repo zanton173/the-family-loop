@@ -213,7 +213,7 @@ func main() {
 		}
 
 		// TODO: Add pfp insert
-		_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.users(\"username\", \"password\", \"pfp_name\", \"email\", \"firebase_user_uid\", \"gchat_bg_theme\", \"gchat_order_option\") values('%s', '%s', '%s', '%s', '%s', '%s', %t);", strings.ToLower(r.PostFormValue("usernamesignup")), bytesOfPass, filename.Filename, strings.ToLower(r.PostFormValue("emailsignup")), record.UID, "background: linear-gradient(142deg, #00009f, #3dff3d 26%", true))
+		_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.users(\"username\", \"password\", \"pfp_name\", \"email\", \"firebase_user_uid\", \"gchat_bg_theme\", \"gchat_order_option\") values('%s', '%s', '%s', '%s', '%s', '%s', %t);", strings.ToLower(r.PostFormValue("usernamesignup")), bytesOfPass, filename.Filename, strings.ToLower(r.PostFormValue("emailsignup")), record.UID, "background: linear-gradient(142deg, #00009f, #3dc9ff 26%)", true))
 
 		if errinsert != nil {
 			fmt.Println(errinsert)
@@ -938,6 +938,9 @@ func main() {
 		userNameRow := db.QueryRow(fmt.Sprintf("select username from tfldata.users where session_token='%s';", c.Value))
 		userNameRow.Scan(&userName)
 		threadVal := r.PostFormValue("threadval")
+		if threadVal == "" {
+			threadVal = "main thread"
+		}
 		var fcmRegToken string
 
 		if len(listOfUsersTagged) > 0 {

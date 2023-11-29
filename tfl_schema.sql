@@ -232,7 +232,7 @@ ALTER TABLE tfldata.gchat_id_seq OWNER TO tfldbrole;
 
 ALTER SEQUENCE tfldata.gchat_id_seq OWNED BY tfldata.gchat.id;
 
-INSERT INTO tfldata.gchat("chat", "author", "thread") VALUES('Welcome to TFL!', 'Admin', 'main thread');
+INSERT INTO tfldata.gchat("id", "chat", "author", "thread") VALUES(0, 'Welcome to TFL!', 'Admin', 'main thread');
 
 --
 -- TOC entry 224 (class 1259 OID 16633)

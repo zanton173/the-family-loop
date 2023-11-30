@@ -425,7 +425,7 @@ func main() {
 		row := db.QueryRow(fmt.Sprintf("select username from tfldata.users where session_token='%s';", c.Value))
 		row.Scan(&username)
 
-		/*postFilesKey := uuid.NewString()
+		postFilesKey := uuid.NewString()
 
 		_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.posts(\"title\", \"description\", \"author\", \"post_files_key\") values(E'%s', E'%s', '%s', '%s');", replacer.Replace(r.PostFormValue("title")), replacer.Replace(r.PostFormValue("description")), username, postFilesKey))
 
@@ -433,7 +433,7 @@ func main() {
 			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", errinsert, time.Now().In(nyLoc).Format(time.DateTime)))
 			w.WriteHeader(http.StatusBadRequest)
 			return
-		}*/
+		}
 
 		parseerr := r.ParseMultipartForm(10 << 20)
 		if parseerr != nil {
@@ -449,12 +449,12 @@ func main() {
 				w.WriteHeader(http.StatusBadRequest)
 			}
 			filetype := uploadFileToS3(awskey, awskeysecret, false, f, fh.Filename, r)
-			fmt.Println(filetype)
-			//_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.postfiles(\"file_name\", \"file_type\", \"post_files_key\") values('%s', '%s', '%s');", fh.Filename, filetype, postFilesKey))
 
-			/*if errinsert != nil {
+			_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.postfiles(\"file_name\", \"file_type\", \"post_files_key\") values('%s', '%s', '%s');", fh.Filename, filetype, postFilesKey))
+
+			if errinsert != nil {
 				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", errinsert, time.Now().In(nyLoc).Format(time.DateTime)))
-			}*/
+			}
 
 			defer f.Close()
 		}
@@ -1484,7 +1484,7 @@ func uploadPfpToS3(k string, s string, f multipart.File, fn string, r *http.Requ
 	filetype := http.DetectContentType(fileContents)
 
 	defer ourfile.Close()
-	fmt.Println(s3Domain)
+
 	_, err4 := client.PutObject(context.TODO(), &s3.PutObjectInput{
 		Bucket:       aws.String(s3Domain),
 		Key:          aws.String("pfp/" + fn),
@@ -1525,7 +1525,7 @@ func uploadFileToS3(k string, s string, bucketexists bool, f multipart.File, fn 
 
 	ourfile.Read(fileContents)
 	filetype := http.DetectContentType(fileContents)
-	fmt.Println(fn)
+
 	if strings.Contains(filetype, "image") {
 		_, err4 := client.PutObject(context.TODO(), &s3.PutObjectInput{
 			Bucket:       aws.String(s3Domain),

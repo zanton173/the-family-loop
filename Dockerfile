@@ -16,7 +16,7 @@ COPY js/ ./js/
 COPY assets/ ./assets/
 # Build
 
-RUN CGO_ENABLED=0 GOOS=linux go build -o thefamilyloop .
+RUN CGO_ENABLED=0 GOOS=linux GOMAXPROCS=1 go build -o thefamilyloop .
 #RUN CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -o thefamilyloop.exe .
 RUN chmod 0755 thefamilyloop
 # Run

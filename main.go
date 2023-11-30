@@ -22,7 +22,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/google/go-github/github"
 	"github.com/google/uuid"
 	"github.com/joho/godotenv"
@@ -48,11 +47,13 @@ type seshStruct struct {
 	Pfpname       string
 	BGtheme       string
 	GchatOrderOpt bool
+	CFDomain      string
 }
 
 var awskey string
 var awskeysecret string
 var ghissuetoken string
+var s3Domain string
 var nyLoc *time.Location
 
 func main() {
@@ -67,15 +68,8 @@ func main() {
 	awskey = os.Getenv("AWS_ACCESS_KEY")
 	awskeysecret = os.Getenv("AWS_ACCESS_SECRET")
 	ghissuetoken = os.Getenv("GH_BEARER")
-
-	//fbapikey := os.Getenv("FIREBASE_API_KEY")
-
-	/*fbauthdomain := os.Getenv("FIREBASE_AUTH_DOMAIN")
-	fbprojectid := os.Getenv("FIREBASE_PROJECT_ID")
-	fbstoragebucket := os.Getenv("FIREBASE_STORAGE_BUCKET")
-	fbmessagesenderid := os.Getenv("FIREBASE_MESSAGING_SENDER_ID")
-	fbappid := os.Getenv("FIREBASE_APP_ID")
-	fbconfig := os.Getenv("FIREBASE_CONFIG")*/
+	cfdistro := os.Getenv("CF_DOMAIN")
+	s3Domain = os.Getenv("S3_BUCKET_NAME")
 
 	opts := []option.ClientOption{option.WithCredentialsFile("the-family-loop-fb0d9-firebase-adminsdk-k6sxl-14c7d4c4f7.json")}
 
@@ -99,7 +93,6 @@ func main() {
 	connStr := fmt.Sprintf("postgresql://tfldbrole:%s@localhost/tfl?sslmode=disable", dbpass)
 	db, err := sql.Open("postgres", connStr)
 
-	db.SetConnMaxLifetime(6 * time.Hour)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -205,7 +198,7 @@ func main() {
 		if err != nil {
 			fmt.Println(err)
 		}
-		record, usererr := fb_auth_client.CreateUser(context.TODO(), (&auth.UserToCreate{}).DisplayName(strings.ToLower(r.PostFormValue("usernamesignup"))).Email(strings.ToLower(r.PostFormValue("emailsignup"))).Password(r.PostFormValue("passwordsignup")).PhotoURL(fmt.Sprintf("https://d33gjmrumfzeah.cloudfront.net/pfp/%s", filename.Filename)))
+		record, usererr := fb_auth_client.CreateUser(context.TODO(), (&auth.UserToCreate{}).DisplayName(strings.ToLower(r.PostFormValue("usernamesignup"))).Email(strings.ToLower(r.PostFormValue("emailsignup"))).Password(r.PostFormValue("passwordsignup")).PhotoURL(fmt.Sprintf("https://%s/pfp/%s", cfdistro, filename.Filename)))
 		if usererr != nil {
 			fmt.Println(usererr)
 			w.WriteHeader(http.StatusConflict)
@@ -213,7 +206,7 @@ func main() {
 		}
 
 		// TODO: Add pfp insert
-		_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.users(\"username\", \"password\", \"pfp_name\", \"email\", \"firebase_user_uid\", \"gchat_bg_theme\", \"gchat_order_option\") values('%s', '%s', '%s', '%s', '%s', '%s', %t);", strings.ToLower(r.PostFormValue("usernamesignup")), bytesOfPass, filename.Filename, strings.ToLower(r.PostFormValue("emailsignup")), record.UID, "background: linear-gradient(142deg, #00009f, #3dc9ff 26%)", true))
+		_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.users(\"username\", \"password\", \"pfp_name\", \"email\", \"firebase_user_uid\", \"gchat_bg_theme\", \"gchat_order_option\", \"cf_domain_name\") values('%s', '%s', '%s', '%s', '%s', '%s', %t, '%s');", strings.ToLower(r.PostFormValue("usernamesignup")), bytesOfPass, filename.Filename, strings.ToLower(r.PostFormValue("emailsignup")), record.UID, "background: linear-gradient(142deg, #00009f, #3dc9ff 26%)", true, cfdistro))
 
 		if errinsert != nil {
 			fmt.Println(errinsert)
@@ -380,23 +373,16 @@ func main() {
 			firstRow := db.QueryRow(fmt.Sprintf("select file_name, file_type from tfldata.postfiles where post_files_key='%s' order by id desc limit 1;", postrows.Postfileskey))
 			firstRow.Scan(&firstImg.filename, &firstImg.filetype)
 
-			// TODO cache images
 			if strings.Contains(firstImg.filetype, "image") {
-				/*imgclient := http.Client{}
 
-				imgreq, _ := http.NewRequest("GET", fmt.Sprintf("https://d33gjmrumfzeah.cloudfront.net/posts/images/%s", postrows.File_name), nil)
-
-				imgreq.Header.Set("Cache-Control", "max-age=86400")
-				resp, _ := imgclient.Do(imgreq)*/
 				if countOfImg > 1 {
-					dataStr = fmt.Sprintf("<div class='card my-4' style='background-color: rgb(22 30 255 / .42); border-radius: 106px 106px / 91px; box-shadow: 12px 12px 2px 1px rgb(41 88 93 / 20&percnt;);'><img class='img-fluid' id='%s' src='https://d33gjmrumfzeah.cloudfront.net/posts/images/%s' alt='%s' style='border-radius: 65px 65px / 50px;' alt='default' /><div class='p-2' style='display: flex; justify-content: space-around;'><i onclick='nextLeftImage(`%s`)' class='bi bi-arrow-90deg-left'></i><i onclick='nextRightImage(`%s`)' class='bi bi-arrow-90deg-right'></i></div><div id='%s' class='card-body'><h5 class='card-title'>%s - %s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' class='btn btn-primary' hx-swap='innerHTML'>Comments (%s)</button>%s</div></div>", postrows.Postfileskey, firstImg.filename, firstImg.filename, postrows.Postfileskey, postrows.Postfileskey, postrows.Author+"_author_"+postrows.Title, postrows.Title, postrows.Author, postrows.Description, postrows.Id, postrows.Id, commentCount, reactionBtn)
+					dataStr = fmt.Sprintf("<div class='card my-4' style='background-color: rgb(22 30 255 / .42); border-radius: 106px 106px / 91px; box-shadow: 12px 12px 2px 1px rgb(41 88 93 / 20&percnt;);'><img class='img-fluid' id='%s' src='https://%s/posts/images/%s' alt='%s' style='border-radius: 65px 65px / 50px;' alt='default' /><div class='p-2' style='display: flex; justify-content: space-around;'><i onclick='nextLeftImage(`%s`)' class='bi bi-arrow-90deg-left'></i><i onclick='nextRightImage(`%s`)' class='bi bi-arrow-90deg-right'></i></div><div id='%s' class='card-body'><h5 class='card-title'>%s - %s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' class='btn btn-primary' hx-swap='innerHTML'>Comments (%s)</button>%s</div></div>", postrows.Postfileskey, cfdistro, firstImg.filename, firstImg.filename, postrows.Postfileskey, postrows.Postfileskey, postrows.Author+"_author_"+postrows.Title, postrows.Title, postrows.Author, postrows.Description, postrows.Id, postrows.Id, commentCount, reactionBtn)
 				} else if countOfImg == 1 {
-					dataStr = fmt.Sprintf("<div class='card my-4' style='background-color: rgb(22 30 255 / .42); border-radius: 106px 106px / 91px; box-shadow: 12px 12px 2px 1px rgb(41 88 93 / 20&percnt;);'><img class='img-fluid' id='%s' src='https://d33gjmrumfzeah.cloudfront.net/posts/images/%s' alt='%s' style='border-radius: 65px 65px / 50px;' alt='default' /><div class='p-2' style='display: flex; justify-content: space-around;'></div><div id='%s' class='card-body'><h5 class='card-title'>%s - %s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' hx-swap='innerHTML' class='btn btn-primary'>Comments (%s)</button>%s</div></div>", postrows.Postfileskey, firstImg.filename, firstImg.filename, postrows.Author+"_author_"+postrows.Title, postrows.Title, postrows.Author, postrows.Description, postrows.Id, postrows.Id, commentCount, reactionBtn)
+					dataStr = fmt.Sprintf("<div class='card my-4' style='background-color: rgb(22 30 255 / .42); border-radius: 106px 106px / 91px; box-shadow: 12px 12px 2px 1px rgb(41 88 93 / 20&percnt;);'><img class='img-fluid' id='%s' src='https://%s/posts/images/%s' alt='%s' style='border-radius: 65px 65px / 50px;' alt='default' /><div class='p-2' style='display: flex; justify-content: space-around;'></div><div id='%s' class='card-body'><h5 class='card-title'>%s - %s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' hx-swap='innerHTML' class='btn btn-primary'>Comments (%s)</button>%s</div></div>", postrows.Postfileskey, cfdistro, firstImg.filename, firstImg.filename, postrows.Author+"_author_"+postrows.Title, postrows.Title, postrows.Author, postrows.Description, postrows.Id, postrows.Id, commentCount, reactionBtn)
 				}
-				//imgclient.CloseIdleConnections()
-				//defer resp.Body.Close()
+
 			} else if strings.Contains(firstImg.filetype, "video") || strings.Contains(firstImg.filetype, "octet-stream") {
-				dataStr = fmt.Sprintf("<div class='card my-4' style='background-color: rgb(22 30 255 / .42); border-radius: 106px 106px / 91px; box-shadow: 12px 12px 2px 1px rgb(41 88 93 / 20&percnt;);'><video style='border-radius: 65px 65px / 91px;' controls id='video'><source src='https://d33gjmrumfzeah.cloudfront.net/posts/videos/%s'></video><div class='p-2' style='display: flex; justify-content: space-around;'></div><div id='%s' class='card-body'><h5 class='card-title'>%s - %s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' hx-swap='innerHTML' class='btn btn-primary'>Comments (%s)</button>%s</div></div>", firstImg.filename, postrows.Author+"_author_"+postrows.Title, postrows.Title, postrows.Author, postrows.Description, postrows.Id, postrows.Id, commentCount, reactionBtn)
+				dataStr = fmt.Sprintf("<div class='card my-4' style='background-color: rgb(22 30 255 / .42); border-radius: 106px 106px / 91px; box-shadow: 12px 12px 2px 1px rgb(41 88 93 / 20&percnt;);'><video style='border-radius: 65px 65px / 91px;' controls id='video'><source src='https://%s/posts/videos/%s'></video><div class='p-2' style='display: flex; justify-content: space-around;'></div><div id='%s' class='card-body'><h5 class='card-title'>%s - %s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' hx-swap='innerHTML' class='btn btn-primary'>Comments (%s)</button>%s</div></div>", cfdistro, firstImg.filename, postrows.Author+"_author_"+postrows.Title, postrows.Title, postrows.Author, postrows.Description, postrows.Id, postrows.Id, commentCount, reactionBtn)
 			}
 
 			postTmpl, tmerr = template.New("tem").Parse(dataStr)
@@ -439,7 +425,7 @@ func main() {
 		row := db.QueryRow(fmt.Sprintf("select username from tfldata.users where session_token='%s';", c.Value))
 		row.Scan(&username)
 
-		postFilesKey := uuid.NewString()
+		/*postFilesKey := uuid.NewString()
 
 		_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.posts(\"title\", \"description\", \"author\", \"post_files_key\") values(E'%s', E'%s', '%s', '%s');", replacer.Replace(r.PostFormValue("title")), replacer.Replace(r.PostFormValue("description")), username, postFilesKey))
 
@@ -447,7 +433,7 @@ func main() {
 			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", errinsert, time.Now().In(nyLoc).Format(time.DateTime)))
 			w.WriteHeader(http.StatusBadRequest)
 			return
-		}
+		}*/
 
 		parseerr := r.ParseMultipartForm(10 << 20)
 		if parseerr != nil {
@@ -462,13 +448,13 @@ func main() {
 				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", err, time.Now().In(nyLoc).Format(time.DateTime)))
 				w.WriteHeader(http.StatusBadRequest)
 			}
-			filetype := createTFLBucketAndUpload(awskey, awskeysecret, false, f, fh.Filename, r)
+			filetype := uploadFileToS3(awskey, awskeysecret, false, f, fh.Filename, r)
+			fmt.Println(filetype)
+			//_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.postfiles(\"file_name\", \"file_type\", \"post_files_key\") values('%s', '%s', '%s');", fh.Filename, filetype, postFilesKey))
 
-			_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.postfiles(\"file_name\", \"file_type\", \"post_files_key\") values('%s', '%s', '%s');", fh.Filename, filetype, postFilesKey))
-
-			if errinsert != nil {
+			/*if errinsert != nil {
 				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", errinsert, time.Now().In(nyLoc).Format(time.DateTime)))
-			}
+			}*/
 
 			defer f.Close()
 		}
@@ -479,7 +465,7 @@ func main() {
 		/*
 			// Returning a filetype from the createandupload function
 			// somehow gets the right filetype
-			filetype := createTFLBucketAndUpload(awskey, awskeysecret, false, upload, filename.Filename, r)
+			filetype := uploadFileToS3(awskey, awskeysecret, false, upload, filename.Filename, r)
 
 			_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.posts(\"title\", \"description\", \"file_name\", \"file_type\", \"author\") values('%s', '%s', '%s', '%s', '%s');", r.PostFormValue("title"), r.PostFormValue("description"), filename.Filename, filetype, username))
 
@@ -1097,8 +1083,8 @@ func main() {
 
 		var ourSeshStruct seshStruct
 
-		row := db.QueryRow(fmt.Sprintf("select username, pfp_name, gchat_bg_theme, gchat_order_option from tfldata.users where session_token='%s';", r.URL.Query().Get("id")))
-		scnerr := row.Scan(&ourSeshStruct.Username, &ourSeshStruct.Pfpname, &ourSeshStruct.BGtheme, &ourSeshStruct.GchatOrderOpt)
+		row := db.QueryRow(fmt.Sprintf("select username, pfp_name, gchat_bg_theme, gchat_order_option, cf_domain_name from tfldata.users where session_token='%s';", r.URL.Query().Get("id")))
+		scnerr := row.Scan(&ourSeshStruct.Username, &ourSeshStruct.Pfpname, &ourSeshStruct.BGtheme, &ourSeshStruct.GchatOrderOpt, &ourSeshStruct.CFDomain)
 		if scnerr != nil {
 			fmt.Println(scnerr)
 		}
@@ -1477,7 +1463,7 @@ func uploadPfpToS3(k string, s string, f multipart.File, fn string, r *http.Requ
 		config.WithDefaultRegion("us-east-1"),
 		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(k, s, "")),
 	)
-
+	//conf, err := config.NewEnvConfig(config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(k, s, "")))
 	if err != nil {
 		log.Fatal(err)
 		os.Exit(9)
@@ -1498,9 +1484,9 @@ func uploadPfpToS3(k string, s string, f multipart.File, fn string, r *http.Requ
 	filetype := http.DetectContentType(fileContents)
 
 	defer ourfile.Close()
-
+	fmt.Println(s3Domain)
 	_, err4 := client.PutObject(context.TODO(), &s3.PutObjectInput{
-		Bucket:       aws.String("the-family-loop" + "-customer-hash"),
+		Bucket:       aws.String(s3Domain),
 		Key:          aws.String("pfp/" + fn),
 		Body:         f,
 		ContentType:  &filetype,
@@ -1509,11 +1495,11 @@ func uploadPfpToS3(k string, s string, f multipart.File, fn string, r *http.Requ
 
 	if err4 != nil {
 		fmt.Println("error on upload")
-		fmt.Println(err)
+		fmt.Println(err.Error())
 	}
 
 }
-func createTFLBucketAndUpload(k string, s string, bucketexists bool, f multipart.File, fn string, r *http.Request) string {
+func uploadFileToS3(k string, s string, bucketexists bool, f multipart.File, fn string, r *http.Request) string {
 
 	cfg, err := config.LoadDefaultConfig(context.TODO(),
 		config.WithDefaultRegion("us-east-1"),
@@ -1527,95 +1513,22 @@ func createTFLBucketAndUpload(k string, s string, bucketexists bool, f multipart
 
 	client := s3.NewFromConfig(cfg)
 
-	listbuck, err := client.ListBuckets(context.TODO(), &s3.ListBucketsInput{})
-
-	if err != nil {
-		log.Fatal(err)
-	}
-	for _, val := range listbuck.Buckets {
-		if strings.EqualFold(*val.Name, *aws.String("the-family-loop" + "-customer-hash")) {
-			//fmt.Println("Bucket exists!")
-			bucketexists = true
-		} else {
-			//fmt.Println("lets create the bucket")
-			bucketexists = false
-		}
-	}
-	if !bucketexists {
-		_, err := client.CreateBucket(context.TODO(),
-			&s3.CreateBucketInput{
-				Bucket: aws.String("the-family-loop" + "-customer-hash"),
-			},
-		)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-	_, err2 := client.PutPublicAccessBlock(context.TODO(),
-		&s3.PutPublicAccessBlockInput{
-			Bucket: aws.String("the-family-loop" + "-customer-hash"),
-			PublicAccessBlockConfiguration: &types.PublicAccessBlockConfiguration{
-				BlockPublicPolicy:     false,
-				BlockPublicAcls:       false,
-				RestrictPublicBuckets: false,
-				IgnorePublicAcls:      true,
-			},
-		})
-	if err2 != nil {
-		log.Fatal(err2)
-
-	}
-	_, err3 := client.PutBucketPolicy(context.TODO(),
-		&s3.PutBucketPolicyInput{
-			Bucket: aws.String("the-family-loop" + "-customer-hash"),
-			Policy: aws.String(`{
-	"Version": "2012-10-17",
-	"Statement": [
-		{
-			"Sid": "Statement",
-			"Effect": "Allow",
-			"Principal": {
-			    "Service": "cloudfront.amazonaws.com"
-			},
-			"Action": [
-				"s3:GetObject*",
-				"s3:PutObject*"
-			],
-			"Resource": [
-				"arn:aws:s3:::the-family-loop-customer-hash/posts/*",
-				"arn:aws:s3:::the-family-loop-customer-hash/pfp/*"
-			],
-			"Condition": {
-                    "StringEquals": {
-                      "AWS:SourceArn": "arn:aws:cloudfront::529465713677:distribution/EYETELDNATROU"
-                    }
-                }
-		}
-	]
-}`),
-		})
-	if err3 != nil {
-		fmt.Println(err3)
-	}
-
 	defer f.Close()
 	ourfile, fileHeader, errfile := r.FormFile("file_name")
 
 	if errfile != nil {
-		log.Fatal(errfile)
+		//log.Fatal(errfile)
+		fmt.Println(errfile)
 	}
 
 	fileContents := make([]byte, fileHeader.Size)
 
 	ourfile.Read(fileContents)
 	filetype := http.DetectContentType(fileContents)
-
-	defer ourfile.Close()
-
+	fmt.Println(fn)
 	if strings.Contains(filetype, "image") {
-
 		_, err4 := client.PutObject(context.TODO(), &s3.PutObjectInput{
-			Bucket:       aws.String("the-family-loop" + "-customer-hash"),
+			Bucket:       aws.String(s3Domain),
 			Key:          aws.String("posts/images/" + fn),
 			Body:         f,
 			ContentType:  &filetype,
@@ -1624,12 +1537,12 @@ func createTFLBucketAndUpload(k string, s string, bucketexists bool, f multipart
 
 		if err4 != nil {
 			fmt.Println("error on upload")
-			fmt.Println(err)
+			fmt.Println(err4.Error())
 		}
 	} else {
 
 		_, err4 := client.PutObject(context.TODO(), &s3.PutObjectInput{
-			Bucket:      aws.String("the-family-loop" + "-customer-hash"),
+			Bucket:      aws.String(s3Domain),
 			Key:         aws.String("posts/videos/" + fn),
 			Body:        f,
 			ContentType: &filetype,
@@ -1637,10 +1550,11 @@ func createTFLBucketAndUpload(k string, s string, bucketexists bool, f multipart
 
 		if err4 != nil {
 			fmt.Println("error on upload")
-			fmt.Println(err)
+			fmt.Println(err4.Error())
 		}
 
 	}
+	defer ourfile.Close()
 	return filetype
 }
 

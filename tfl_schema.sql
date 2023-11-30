@@ -232,7 +232,7 @@ ALTER TABLE tfldata.gchat_id_seq OWNER TO tfldbrole;
 
 ALTER SEQUENCE tfldata.gchat_id_seq OWNED BY tfldata.gchat.id;
 
-INSERT INTO tfldata.gchat("id", "chat", "author", "thread") VALUES(0, 'Welcome to TFL!', 'Admin', 'main thread');
+INSERT INTO tfldata.gchat("id", "chat", "author", "thread", "createdon") VALUES(0, 'Welcome to TFL!', 'Admin', 'main thread', now() - interval '12 hours');
 
 --
 -- TOC entry 224 (class 1259 OID 16633)
@@ -564,7 +564,8 @@ CREATE TABLE tfldata.users (
     fcm_registration_id character varying(168),
     gchat_bg_theme character varying(65),
     last_sign_on timestamp without time zone,
-    gchat_order_option boolean
+    gchat_order_option boolean,
+    cf_domain_name character varying(30)
 );
 
 

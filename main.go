@@ -207,7 +207,7 @@ func main() {
 		}
 
 		// TODO: Add pfp insert
-		_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.users(\"username\", \"password\", \"pfp_name\", \"email\", \"firebase_user_uid\", \"gchat_bg_theme\", \"gchat_order_option\", \"cf_domain_name\", \"orgid\") values('%s', '%s', '%s', '%s', '%s', '%s', %t, '%s');", strings.ToLower(r.PostFormValue("usernamesignup")), bytesOfPass, filename.Filename, strings.ToLower(r.PostFormValue("emailsignup")), record.UID, "background: linear-gradient(142deg, #00009f, #3dc9ff 26%)", true, cfdistro, orgId))
+		_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.users(\"username\", \"password\", \"pfp_name\", \"email\", \"firebase_user_uid\", \"gchat_bg_theme\", \"gchat_order_option\", \"cf_domain_name\", \"orgid\") values('%s', '%s', '%s', '%s', '%s', '%s', %t, '%s', '%s');", strings.ToLower(r.PostFormValue("usernamesignup")), bytesOfPass, filename.Filename, strings.ToLower(r.PostFormValue("emailsignup")), record.UID, "background: linear-gradient(142deg, #00009f, #3dc9ff 26%)", true, cfdistro, orgId))
 
 		if errinsert != nil {
 			fmt.Println(errinsert)

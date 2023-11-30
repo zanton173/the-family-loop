@@ -7,8 +7,6 @@ WORKDIR /htmx-the-family-loop
 COPY go.mod go.sum ./
 RUN go mod download
 
-RUN go mod tidy
-
 # Copy the source code. Note the slash at the end, as explained in
 # https://docs.docker.com/engine/reference/builder/#copy
 COPY *.go *.html *.js *.json .env ./
@@ -18,7 +16,7 @@ COPY js/ ./js/
 COPY assets/ ./assets/
 # Build
 
-RUN CGO_ENABLED=0 GOOS=linux GOMAXPROCS=1 go build -o thefamilyloop .
+RUN CGO_ENABLED=0 GOOS=linux go build -o thefamilyloop .
 #RUN CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -o thefamilyloop.exe .
 RUN chmod 0755 thefamilyloop
 # Run

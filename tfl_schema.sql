@@ -232,8 +232,6 @@ ALTER TABLE tfldata.gchat_id_seq OWNER TO tfldbrole;
 
 ALTER SEQUENCE tfldata.gchat_id_seq OWNED BY tfldata.gchat.id;
 
-INSERT INTO tfldata.gchat("id", "chat", "author", "thread", "createdon") VALUES(0, 'Welcome to TFL!', 'Admin', 'main thread', now() - interval '12 hours');
-
 --
 -- TOC entry 224 (class 1259 OID 16633)
 -- Name: inclog; Type: TABLE; Schema: tfldata; Owner: tfldbrole

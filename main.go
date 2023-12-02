@@ -206,7 +206,7 @@ func main() {
 			return
 		}
 
-		_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.users(\"username\", \"password\", \"pfp_name\", \"email\", \"firebase_user_uid\", \"gchat_bg_theme\", \"gchat_order_option\", \"cf_domain_name\", \"orgid\") values('%s', '%s', '%s', '%s', '%s', '%s', %t, '%s', '%s');", strings.ToLower(r.PostFormValue("usernamesignup")), bytesOfPass, filename.Filename, strings.ToLower(r.PostFormValue("emailsignup")), record.UID, "background: linear-gradient(142deg, #00009f, #3dc9ff 26%)", true, cfdistro, orgId))
+		_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.users(\"username\", \"password\", \"pfp_name\", \"email\", \"firebase_user_uid\", \"gchat_bg_theme\", \"gchat_order_option\", \"cf_domain_name\", \"orgid\", \"is_admin\") values('%s', '%s', '%s', '%s', '%s', '%s', %t, '%s', '%s', %t);", strings.ToLower(r.PostFormValue("usernamesignup")), bytesOfPass, filename.Filename, strings.ToLower(r.PostFormValue("emailsignup")), record.UID, "background: linear-gradient(142deg, #00009f, #3dc9ff 26%)", true, cfdistro, orgId, false))
 
 		if errinsert != nil {
 			fmt.Println(errinsert)
@@ -237,26 +237,37 @@ func main() {
 		}*/
 
 		var password string
-		passScan := db.QueryRow(fmt.Sprintf("select password from tfldata.users where username='%s' or email='%s';", userStr, userStr))
-		scnerr := passScan.Scan(&password)
-		if scnerr != nil {
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('this was the scan error %s with dbpassword %s and form user is %s');", scnerr, password, userStr))
-			fmt.Print(scnerr)
-		}
-		err := bcrypt.CompareHashAndPassword([]byte(password), []byte(r.PostFormValue("passwordlogin")))
-
-		if err != nil {
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", err, time.Now().In(nyLoc).Format(time.DateTime)))
-			w.Header().Set("HX-Trigger", "loginevent")
-		} else if err == nil {
-			setLoginCookie(w, db, userStr, r)
-			_, uperr := db.Exec(fmt.Sprintf("update tfldata.users set last_sign_on='%s' where username='%s';", time.Now().In(nyLoc).Format(time.DateTime), userStr))
-			if uperr != nil {
-				fmt.Println(uperr)
+		var isAdmin bool
+		passScan := db.QueryRow(fmt.Sprintf("select id_admin, password from tfldata.users where username='%s' or email='%s';", userStr, userStr))
+		scnerr := passScan.Scan(&isAdmin, &password)
+		if isAdmin {
+			if password == r.PostFormValue("passwordlogin") {
+				setLoginCookie(w, db, userStr, r)
+				_, uperr := db.Exec(fmt.Sprintf("update tfldata.users set last_sign_on='%s' where username='%s';", time.Now().In(nyLoc).Format(time.DateTime), userStr))
+				if uperr != nil {
+					fmt.Println(uperr)
+				}
+				w.Header().Set("HX-Refresh", "true")
 			}
-			w.Header().Set("HX-Refresh", "true")
-		}
+		} else {
+			if scnerr != nil {
+				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('this was the scan error %s with dbpassword %s and form user is %s');", scnerr, password, userStr))
+				fmt.Print(scnerr)
+			}
+			err := bcrypt.CompareHashAndPassword([]byte(password), []byte(r.PostFormValue("passwordlogin")))
 
+			if err != nil {
+				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", err, time.Now().In(nyLoc).Format(time.DateTime)))
+				w.Header().Set("HX-Trigger", "loginevent")
+			} else if err == nil {
+				setLoginCookie(w, db, userStr, r)
+				_, uperr := db.Exec(fmt.Sprintf("update tfldata.users set last_sign_on='%s' where username='%s';", time.Now().In(nyLoc).Format(time.DateTime), userStr))
+				if uperr != nil {
+					fmt.Println(uperr)
+				}
+				w.Header().Set("HX-Refresh", "true")
+			}
+		}
 	}
 
 	pagesHandler := func(w http.ResponseWriter, r *http.Request) {

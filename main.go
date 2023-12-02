@@ -238,7 +238,7 @@ func main() {
 
 		var password string
 		var isAdmin bool
-		passScan := db.QueryRow(fmt.Sprintf("select id_admin, password from tfldata.users where username='%s' or email='%s';", userStr, userStr))
+		passScan := db.QueryRow(fmt.Sprintf("select is_admin, password from tfldata.users where username='%s' or email='%s';", userStr, userStr))
 		scnerr := passScan.Scan(&isAdmin, &password)
 		if isAdmin {
 			if password == r.PostFormValue("passwordlogin") {

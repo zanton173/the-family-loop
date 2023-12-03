@@ -59,7 +59,7 @@
         <div class="modal-content border-2"
             style="background-color: rgb(146 255 231 / 89%); border-radius: 15px / 15px; box-shadow: 2px 2px 6px 0px;">
             <div class="modal-header" id="login-modal-header" style="display: block;">
-                <h4 class="modal-title" style="text-align: center;">Login or Sign Up</h4>
+                <h4 id="loginModalHeader" class="modal-title" style="text-align: center;">Login or Sign Up</h4>
                 <!--<p style='color: cornflowerblue'>Everyone's account has been deleted so I could setup notifications in
                     the near future.
                     Please sign up again with an email. After you sign up, follow the instructions to install the app.
@@ -76,11 +76,25 @@
                         onclick='showSignUpForm()'>Sign-up</button>
                 </div>
                 <div id="togglesignuplogin">
+                    <form class="form" style="display: none; z-index: 5;" name="changeAdminPassForm"
+                        id="changeAdminPassForm" hx-post="/update-admin-pass"
+                        hx-vals="js:{'username': document.getElementById('usernamelogininput').value}" hx-ext="json-enc"
+                        hx-trigger="submit" hx-swap="none" hx-indicator="#loadingspinner">
+                        <div class="p-4">
+                            <label>New Password:</label>
+                            <input class="form-control" type="password" name="newadminpassinput"
+                                autocomplete="new-password" placeholder="Password"
+                                oninput="checkForValidAdminPassChange()" required id="newadminpassin" />
+                        </div>
+                        <div class="p-4">
+                            <label>Confirm New Password:</label>
+                            <input class="form-control" type="password" autocomplete="new-password"
+                                placeholder="Password" oninput="checkForValidAdminPassChange()" required
+                                id="confirmnewadminpassin" name="confirmnewadminpassinput" />
+                        </div>
+                    </form>
                     <form class="form" id="login-form" name="loginform" hx-post="/login" hx-trigger="submit"
                         hx-on="loginevent: loginFunction()" hx-swap="none" hx-indicator="#loadingspinner">
-                        <!--<<form id="loginSignupForm" name="loginform" hx-post="/login" class="form" hx-trigger="submit"
-                        hx-swap="none">-->
-
                         <div class="p-4">
                             <h5>Login</h5>
                             <label>Username or email:</label>
@@ -99,9 +113,6 @@
                     <form class="form" hx-post="/signup" id="sign-up-form" hx-trigger="submit"
                         hx-encoding="multipart/form-data" hx-swap="none" hx-target="this"
                         hx-indicator="#loadingspinner">
-                        <!-- <form method="post" action="/signup" enctype="multipart/form-data" class="form" id="sign-up-form"
-                        name="signupform" target="_blank" onsubmit="signUpFormSubmitted()">-->
-
                         <div class="p-4">
                             <h5>Sign Up</h5>
                             <label>Username:</label>
@@ -154,6 +165,7 @@
 
     var signup = document.getElementById('sign-up-form')
     var loginele = document.getElementById('login-form')
+    const changeAdminPassForm = document.getElementById('changeAdminPassForm')
     let parentauth = document.getElementById('togglesignuplogin')
     //let parentauth = document.getElementById('loginSignupForm')
     let loginbtn = document.getElementById('login-button')
@@ -164,6 +176,9 @@
 
     let usernamelogininput = document.getElementById('usernamelogininput')
     let passwordlogininput = document.getElementById('passwordlogininput')
+
+    let changeAdminPassIn = document.getElementById('newadminpassin')
+    let confirmChangeAdminPassIn = document.getElementById('confirmnewadminpassin')
 
     let usernamesignupinput = document.getElementById('usernamesignupinput')
     let emailsignupinput = document.getElementById("emailsignupinput")
@@ -176,6 +191,8 @@
 
     var navItemToReplace = document.getElementById('navitemforwelcome')
     var navInnerToReplace = document.getElementById('loginlogoutnav')
+
+    const adminPassSubmitBtn = document.createElement('button')
 
     const logoutButton = document.createElement('button')
     logoutButton.setAttribute("class", "btn btn-outline-secondary")
@@ -194,7 +211,7 @@
     // clip-path: inset(30px 7px 30px 7px round 100%)
     navItemWelcomeAvatar.setAttribute("style", "width: 8%; height: auto; border-radius: 35%;")
     navItemWelcomeAvatar.setAttribute("id", "pfpavatar")
-    navItemWelcomeAvatar.setAttribute("alt", "Your family loop pfp")
+    navItemWelcomeAvatar.setAttribute("alt", "Click here to change")
     var username = ''
 
     p.append(c)
@@ -213,8 +230,12 @@
         chatTheme = text.BGtheme
         gchatOrderOpt = text.GchatOrderOpt
         cfDomain = text.CFDomain
-        console.log("https://" + cfDomain + "/pfp/")
-        text.Pfpname <= ""
+
+        if (cfDomain <= "") {
+            navItemWelcomeAvatar.setAttribute("src", "")
+        }
+
+        text.Username <= ""
             ? logoutFunction()
             : navItemWelcomeAvatar.setAttribute("src", "https://" + cfDomain + "/pfp/" + text.Pfpname)
         return text
@@ -252,6 +273,19 @@
         })
     }
 
+    loginele.addEventListener("changeAdminPassword", () => {
+        alert("Please create a new personal password")
+        loginbtn.disabled = true
+        signupbtn.disabled = true
+        document.getElementById('loginModalHeader').innerHTML = "Change password"
+        updateAdminPassword()
+    })
+    function updateAdminPassword() {
+
+        loginModal.toggle()
+        loginele.style.display = "none"
+        changeAdminPassForm.style.display = "block"
+    }
     function logoutFunction() {
         location.href = "/"
         document.cookie = "session_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
@@ -274,6 +308,21 @@
         //document.getElementById('login-modal').setAttribute('data-bs-keyboard', 'false')
         document.getElementById('login-modal-header').contains(document.getElementById('modalclose')) &&
             document.getElementById('login-modal-header').removeChild(document.getElementById('modalclose'))
+    }
+    function checkForValidAdminPassChange() {
+
+
+        adminPassSubmitBtn.setAttribute("class", "btn btn-success")
+        adminPassSubmitBtn.setAttribute("type", "submit")
+        adminPassSubmitBtn.innerHTML = "Change"
+
+        if (changeAdminPassIn.value == confirmChangeAdminPassIn.value && confirmChangeAdminPassIn.value > '' && changeAdminPassIn.value > '') {
+            changeAdminPassForm.append(adminPassSubmitBtn)
+        } else if (changeAdminPassIn.value !== confirmChangeAdminPassIn.value && changeAdminPassForm.contains(adminPassSubmitBtn)) {
+
+            changeAdminPassForm.removeChild(adminPassSubmitBtn)
+        }
+
     }
     function checkForValidLoginSubmission() {
 

@@ -238,16 +238,47 @@ func main() {
 
 		var password string
 		var isAdmin bool
-		passScan := db.QueryRow(fmt.Sprintf("select is_admin, password from tfldata.users where username='%s' or email='%s';", userStr, userStr))
-		scnerr := passScan.Scan(&isAdmin, &password)
+		var curFirebaseUid string
+		var emailIn string
+		passScan := db.QueryRow(fmt.Sprintf("select is_admin, password, email, firebase_user_uid from tfldata.users where username='%s' or email='%s';", userStr, userStr))
+		scnerr := passScan.Scan(&isAdmin, &password, &emailIn, &curFirebaseUid)
+
 		if isAdmin {
+			if curFirebaseUid <= "" {
+				fb_auth_client, clienterr := app.Auth(context.TODO())
+				if clienterr != nil {
+					fmt.Println(clienterr)
+				}
+				record, usererr := fb_auth_client.CreateUser(context.TODO(), (&auth.UserToCreate{}).DisplayName(strings.ToLower(userStr)).Email(strings.ToLower(emailIn)).Password(password))
+				if usererr != nil {
+					fmt.Println(usererr)
+					w.WriteHeader(http.StatusConflict)
+					return
+				}
+				db.Exec(fmt.Sprintf("update tfldata.users set firebase_user_uid='%s' where username='%s' or email='%s';", record.UID, userStr, userStr))
+			}
 			if password == r.PostFormValue("passwordlogin") {
+
+				w.Header().Set("HX-Trigger", "changeAdminPassword")
 				setLoginCookie(w, db, userStr, r)
 				_, uperr := db.Exec(fmt.Sprintf("update tfldata.users set last_sign_on='%s' where username='%s';", time.Now().In(nyLoc).Format(time.DateTime), userStr))
 				if uperr != nil {
 					fmt.Println(uperr)
 				}
-				w.Header().Set("HX-Refresh", "true")
+			} else {
+				err := bcrypt.CompareHashAndPassword([]byte(password), []byte(r.PostFormValue("passwordlogin")))
+
+				if err != nil {
+					db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", err, time.Now().In(nyLoc).Format(time.DateTime)))
+					w.Header().Set("HX-Trigger", "loginevent")
+				} else if err == nil {
+					setLoginCookie(w, db, userStr, r)
+					_, uperr := db.Exec(fmt.Sprintf("update tfldata.users set last_sign_on='%s' where username='%s';", time.Now().In(nyLoc).Format(time.DateTime), userStr))
+					if uperr != nil {
+						fmt.Println(uperr)
+					}
+					w.Header().Set("HX-Refresh", "true")
+				}
 			}
 		} else {
 			if scnerr != nil {
@@ -269,7 +300,34 @@ func main() {
 			}
 		}
 	}
+	updateAdminPassHandler := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		bs, _ := io.ReadAll(r.Body)
+		type postBody struct {
+			Username            string `json:"username"`
+			Newadminpass        string `json:"newadminpassinput"`
+			Confirmnewadminpass string `json:"confirmnewadminpassinput"`
+		}
+		var postData postBody
+		json.Unmarshal(bs, &postData)
 
+		if postData.Newadminpass != postData.Confirmnewadminpass {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		newadminpassbs := []byte(postData.Newadminpass)
+
+		newAdminbytesOfPass, err := bcrypt.GenerateFromPassword(newadminpassbs, len(newadminpassbs))
+		if err != nil {
+			fmt.Println(err)
+		}
+		_, uperr := db.Exec(fmt.Sprintf("update tfldata.users set password='%s' where username='%s';", newAdminbytesOfPass, postData.Username))
+		if uperr != nil {
+			fmt.Println(uperr)
+		}
+		w.Header().Set("HX-Refresh", "true")
+	}
 	pagesHandler := func(w http.ResponseWriter, r *http.Request) {
 
 		//tmpl := template.Must(template.ParseFiles("index.html"))
@@ -1393,6 +1451,7 @@ func main() {
 
 	http.HandleFunc("/signup", signUpHandler)
 	http.HandleFunc("/login", loginHandler)
+	http.HandleFunc("/update-admin-pass", updateAdminPassHandler)
 
 	//http.HandleFunc("/upload-file", h3)
 	http.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("css"))))
@@ -1444,6 +1503,7 @@ func main() {
 }
 */
 func setLoginCookie(w http.ResponseWriter, db *sql.DB, userStr string, r *http.Request) {
+
 	sessionToken := uuid.NewString()
 	expiresAt := time.Now().Add(3600 * time.Hour)
 	//fmt.Println(expiresAt.Local().Format(time.DateTime))

@@ -4,51 +4,60 @@
     "start_url": "/",
     "icons": [
         {
-            "src": "android-chrome-192x192.png",
-            "type": "image/png",
-            "sizes": "192x192"
-        },
-        {
-            "src": "android-chrome-512x512.png",
-            "type": "image/png",
-            "sizes": "512x512"
-        },
-        {
-            "src": "apple-touch-icon.png",
+            "src": "180x180/ZCAN2301 The Family Loop Favicon_B_180 x 180.png",
             "type": "image/png",
             "sizes": "180x180"
         },
         {
-            "src": "favicon-16x16.png",
+            "src": "16x16/ZCAN2301 The Family Loop Favicon_B_16 x 16.png",
             "type": "image/png",
             "sizes": "16x16"
         },
         {
-            "src": "favicon-32x32.png",
+            "src": "32x32/ZCAN2301 The Family Loop Favicon_B_32 x 32.png",
             "type": "image/png",
             "sizes": "32x32"
+        },
+        {
+            "src": "96x96/ZCAN2301 The Family Loop Favicon_B_96 x 96.png",
+            "type": "image/png",
+            "sizes": "96x96"
+        },
+        {
+            "src": "300x300/ZCAN2301 The Family Loop Favicon_B_300 x 300.png",
+            "type": "image/png",
+            "sizes": "300x300"
+        },
+        {
+            "src": "512x512/ZCAN2301 The Family Loop Favicon_B_512 x 512.png",
+            "type": "image/png",
+            "sizes": "512x512"
         }
     ],
     "shortcuts": [
         {
             "name": "Posts",
             "url": "/home",
-            "description": "tfl posts"
+            "description": "tfl posts",
+            "icon": "96x96/ZCAN2301 The Family Loop Favicon_B_96 x 96.png"
         },
         {
             "name": "Calendar",
             "url": "/calendar",
-            "description": "upcoming events"
+            "description": "upcoming events",
+            "icon": "96x96/ZCAN2301 The Family Loop Favicon_B_96 x 96.png"
         },
         {
             "name": "Chat",
             "url": "/groupchat",
-            "description": "group chat"
+            "description": "group chat",
+            "icon": "96x96/ZCAN2301 The Family Loop Favicon_B_96 x 96.png"
         },
         {
             "name": "Bug",
             "url": "/bugreport",
-            "description": "report a bug"
+            "description": "report a bug",
+            "icon": "96x96/ZCAN2301 The Family Loop Favicon_B_96 x 96.png"
         }
     ],
     "display": "standalone",

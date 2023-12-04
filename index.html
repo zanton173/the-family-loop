@@ -28,7 +28,7 @@
     <title>The Family Loop</title>
 </head>
 
-<body style="background: linear-gradient(142deg, #00009f, #00ecff 9%)">
+<body style="background: linear-gradient(180deg, #00106e, #00ecff 55%)">
     <!--<body style="background-image: url('assets/bg_img.svg'); ">-->
 
     <div class="spinner-indicator" id="loadingspinner"
@@ -45,7 +45,8 @@
                 data-bs-toggle="modal" data-bs-target="#installmodal">Install</button>
         </div>
     </header>-->
-    <h3 style="text-align: center; padding: 1%; ">Home</h3>
+    <img id="bannerimg" src="assets/TFLBannerW.png" alt="Welcome to TFL!"
+        style="text-align: center; width: 35dvw; left: 50dvw;" />
 
     <div class="sticky-top" id="anchor">
 
@@ -319,7 +320,7 @@
 
 
         function thisFunc() {
-            if (document.getElementById('post-items').scrollHeight - window.pageYOffset <= (window.visualViewport.height - 150)) {
+            if (document.getElementById('post-items').scrollHeight - window.pageYOffset <= (window.visualViewport.height - 50)) {
                 document.getElementById('divofposts').dispatchEvent(new Event('anotherCustomEvent'))
                 //alert('load')
                 window.removeEventListener('scroll', thisFunc)

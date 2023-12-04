@@ -24,19 +24,22 @@
     <title>The Family Loop - Bug Report</title>
 </head>
 
-<body style="background: linear-gradient(142deg, #00009f, #00ecff 9%)">
+<body style="background: linear-gradient(180deg, #00106e, #00ecff 55%); height: 100dvh">
     <div class="spinner-indicator" id="loadingspinner"
         style="width: 100%; height: 100%; background-color: rgb(197, 197, 197);">
 
         <img width="90px" height="90px" class="spinner-indicator" src="assets/LoadingSpinner.png" />
     </div>
-    <h3 style="text-align: center;">Report an Issue</h3>
+
+    <img id="bannerimg" src="assets/TFLBannerW.png" alt="Welcome to TFL!"
+        style="text-align: center; width: 35dvw; left: 50dvw;" />
     <div id="anchor">
 
     </div>
 
 
     <div style="display: grid; justify-content: center; margin: auto; padding: 5%;">
+        <h3 style="text-align: center; color: white">Report an Issue</h3>
         <form style="width: auto; margin: auto;" hx-swap="none" hx-post="/create-issue" hx-ext='json-enc'
             hx-on::after-request="receiveStatus()">
             <input class="my-3 border-1 text-center" style="border-radius: 3%; width: 85%; margin: auto;"
@@ -83,12 +86,18 @@
                         Calendar
                     </label>
                 </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" value="games" name="bugerrmessages" id="gamesradio">
+                    <label class="form-check-label" for="gamesradiolabel">
+                        Games
+                    </label>
+                </div>
             </div>
             <h3>Provide any error messages if you had any</h3>
             <input class="my-3 border-1 text-center" style="border-radius: 3%; width: 85%; margin: auto;"
                 name="bugerrmessages" id="bugerrmessagesinput" type="text" placeholder="Any relevant error messages"
                 maxlength="420" />
-            <button type="submit" style="width: 75%; margin: auto;" class="btn btn-outline-success my-4"><i
+            <button type="submit" style="width: 75%; margin: auto;" class="btn btn-success my-4"><i
                     class="bi bi-send"></i></button>
         </form>
         <div>

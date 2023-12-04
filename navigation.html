@@ -2,18 +2,24 @@
     hx-target="#anchor">
 
     <div class="container">
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarText"
-            aria-controls="navbarText" aria-expanded="false" aria-label="Toggle navigation">
+        <button class="navbar-toggler navbar-dark" style="color: white" type="button" data-bs-toggle="collapse"
+            data-bs-target="#navbarText" aria-controls="navbarText" aria-expanded="false"
+            aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" style="text-align-last: center; font-size: medium;" id="navbarText">
             <ul class="navbar-nav nav-fill w-100" style="display: contents;" id="navlist">
                 <!--<li class="nav-item"><img src='assets/favicon-32x32.png' alt="tfl-logo" /></li>-->
-                <li class="nav-item navCustomItem"><a class="nav-link" href="/calendar">calendar</a></li>
-                <li class="nav-item navCustomItem"><a class="nav-link" href="/groupchat">chat</a></li>
-                <li class="nav-item navCustomItem"><a class="nav-link" href="/posts">posts</a></li>
+                <li class="nav-item navCustomItem"><a class="nav-link" href="/calendar"
+                        style="color: rgb(200, 210, 230)">calendar</a>
+                </li>
+                <li class="nav-item navCustomItem"><a class="nav-link" href="/groupchat"
+                        style="color: rgb(200, 210, 230)">chat</a>
+                </li>
+                <li class="nav-item navCustomItem"><a class="nav-link" href="/posts"
+                        style="color: rgb(200, 210, 230)">posts</a></li>
                 <li class="nav-item navCustomItem"><a class="nav-link dropdown-toggle" href="#" role="button"
-                        data-bs-toggle="dropdown" aria-expanded="false">
+                        data-bs-toggle="dropdown" aria-expanded="false" style="color: rgb(200, 210, 230)">
                         games
                     </a>
                     <ul class="dropdown-menu" style="left: auto;">
@@ -24,7 +30,9 @@
                                 style="background-color: rgb(99 81 95 / 15%);">Stackerz</a></li>
                     </ul>
                 </li>
-                <li class="nav-item navCustomItem"><a class="nav-link" href="/bugreport">report an issue</a></li>
+                <li class="nav-item navCustomItem"><a class="nav-link" href="/bugreport"
+                        style="color: rgb(200, 210, 230)">report an
+                        issue</a></li>
                 <!--<li><button onclick="sendMessageToWorker()">Testme</button></li>-->
                 <li class="nav-item" id="navitemforwelcome"><button id="loginlogoutnav" class="nav-link"
                         onclick='{loginModal.toggle(); showLoginForm()}'>login</button>
@@ -222,7 +230,7 @@
     const resetPassSubmitBtn = document.createElement('button')
 
     const logoutButton = document.createElement('button')
-    logoutButton.setAttribute("class", "btn btn-outline-secondary")
+    logoutButton.setAttribute("class", "btn btn-secondary")
 
     logoutButton.setAttribute("onclick", 'logoutFunction()')
     logoutButton.innerHTML = "Logout"
@@ -376,7 +384,7 @@
         adminPassSubmitBtn.setAttribute("type", "submit")
         adminPassSubmitBtn.innerHTML = "Change"
 
-        if (changeAdminPassIn.value == confirmChangeAdminPassIn.value && confirmChangeAdminPassIn.value > '' && changeAdminPassIn.value > '') {
+        if (changeAdminPassIn.value == confirmChangeAdminPassIn.value && changeAdminPassIn.value.length > 7) {
             changeAdminPassForm.append(adminPassSubmitBtn)
         } else if (changeAdminPassIn.value !== confirmChangeAdminPassIn.value && changeAdminPassForm.contains(adminPassSubmitBtn)) {
 
@@ -391,7 +399,7 @@
         resetPassSubmitBtn.setAttribute("type", "submit")
         resetPassSubmitBtn.innerHTML = "Change"
 
-        if (changeResetPassIn.value == confirmChangeResetPassIn.value && confirmChangeResetPassIn.value > '' && changeResetPassIn.value > '') {
+        if (changeResetPassIn.value == confirmChangeResetPassIn.value && changeResetPassIn.value.length > 7) {
             changePassForm.append(resetPassSubmitBtn)
         } else if (changeAdminPassIn.value !== confirmChangeResetPassIn.value && changePassForm.contains(resetPassSubmitBtn)) {
 
@@ -418,7 +426,7 @@
         }
     }
     function checkForValidSignUpSubmission() {
-        if (usernamesignupinput.value > '' && emailsignupinput.value > '' && passwordsignupinput.value > '' && passwordsignupinput.value === confirmpasswordsignupinput.value) {
+        if (usernamesignupinput.value > '' && emailsignupinput.value > '' && passwordsignupinput.value > '' && passwordsignupinput.value === confirmpasswordsignupinput.value && passwordsignupinput.value.length > 7) {
 
             gosignup.setAttribute("type", "submit")
             gosignup.setAttribute("id", 'signupgobutton')

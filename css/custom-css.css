@@ -36,7 +36,7 @@ button.btn.btn-primary {
     padding-top: 1%;
     padding-bottom: 1%;
     margin: 1%;
-    background-color: rgb(41 116 242 / 50%);
+    background-color: rgba(25, 38, 175, 0.89);
     z-index: 3;
     border-radius: 3px / 3px;
     box-shadow: 1px 1px 3px;
@@ -44,6 +44,11 @@ button.btn.btn-primary {
 
 #stGameObj {
     animation: bounce 2s linear infinite
+}
+
+#bannerimg {
+    position: absolute;
+    transform: translateX(-50%);
 }
 
 @keyframes bounce {

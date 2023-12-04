@@ -25,17 +25,18 @@
     <title>The Family Loop - Calendar</title>
 </head>
 
-<body style="background: linear-gradient(142deg, #00009f, #00ecff 9%)">
+<body style="background: linear-gradient(180deg, #00106e, #00ecff 75%); height: 100dvh">
     <div class="spinner-indicator" id="loadingspinner"
         style="width: 100%; height: 100%; background-color: rgb(197, 197, 197);">
 
         <img width="90px" height="90px" class="spinner-indicator" src="assets/LoadingSpinner.png" />
     </div>
-    <h3 style="text-align: center;">Calendar</h3>
+    <img id="bannerimg" src="assets/TFLBannerW.png" alt="Welcome to TFL!"
+        style="text-align: center; width: 35dvw; left: 50dvw;" />
     <div id="anchor">
 
     </div>
-    <div style="text-align: center;">
+    <div style="text-align: center; height: 15px">
 
         <!--<p id="cal-header-for-popover" data-bs-container="body" data-bs-placement="top" data-bs-toggle="popover"
             data-bs-content="If the event is more than one day, you can select just the start & end date
@@ -313,12 +314,12 @@
     titleInputToAddEvent.setAttribute("name", "eventtitle")
     titleInputToAddEvent.setAttribute("placeholder", 'event title')
     titleInputToAddEvent.setAttribute("maxlength", "42")
-    titleInputToAddEvent.setAttribute("class", "my-2")
+    titleInputToAddEvent.setAttribute("class", "my-1")
     titleInputToAddEvent.setAttribute("id", "eventtitleid")
 
 
-    btnToAddEvent.setAttribute("class", "btn btn-outline-secondary w-50")
-    btnToAddEvent.setAttribute("style", "margin-left: 25%; margin-top: 2%;")
+    btnToAddEvent.setAttribute("class", "btn btn-secondary w-75 text-center justify-center")
+    btnToAddEvent.setAttribute("style", "margin-top: 2%; margin-bottom: 2%; position: relative; justify-self: center")
     btnToAddEvent.setAttribute("onclick", 'currentSelectedDate()')
 
     btnToAddEvent.addEventListener("click", async function (event) {

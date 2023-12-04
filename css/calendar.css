@@ -42,7 +42,7 @@ header .calendar-navigation span:hover {
 header .calendar-current-date {
     font-weight: 500;
     font-size: 1.45rem;
-
+    color: rgb(170 170 170 / 82%);
 }
 
 .calendar-body {
@@ -69,6 +69,7 @@ header .calendar-current-date {
 .calendar-body .calendar-weekdays li {
     cursor: default;
     font-weight: 500;
+    color: rgb(214 214 214 / 85%);
 }
 
 .calendar-body .calendar-dates li {

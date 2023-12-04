@@ -1062,9 +1062,9 @@ func main() {
 		if scnerr != nil {
 			if scnerr.Error() == "sql: no rows in result set" {
 				w.WriteHeader(http.StatusAccepted)
+			} else {
+				w.WriteHeader(http.StatusBadRequest)
 			}
-			db.Exec("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", scnerr, time.Now().In(nyLoc).Local().Format(time.DateTime))
-			w.WriteHeader(http.StatusBadRequest)
 		}
 		w.Write([]byte(status))
 	}
@@ -1080,7 +1080,9 @@ func main() {
 			return
 		}
 		defer output.Close()
+
 		for output.Next() {
+
 			output.Scan(&username, &status)
 
 			var fontColor string

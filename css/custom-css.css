@@ -61,6 +61,7 @@ button.btn.btn-primary {
 #bannerimg {
     position: absolute;
     transform: translateX(-50%);
+    -webkit-transform: translateX(-50%)
 }
 
 @keyframes movein {

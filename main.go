@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"crypto/rand"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -22,6 +23,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/google/go-github/github"
 	"github.com/google/uuid"
 	"github.com/joho/godotenv"
@@ -98,6 +100,12 @@ func main() {
 		log.Fatal(err)
 	}
 	defer db.Close()
+
+	awscfg, err := config.LoadDefaultConfig(context.TODO(),
+		config.WithDefaultRegion("us-east-1"),
+		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(awskey, awskeysecret, "")),
+	)
+	sqsClient := sqs.NewFromConfig(awscfg)
 
 	var postTmpl *template.Template
 	var tmerr error
@@ -255,6 +263,7 @@ func main() {
 					w.WriteHeader(http.StatusConflict)
 					return
 				}
+
 				db.Exec(fmt.Sprintf("update tfldata.users set firebase_user_uid='%s' where username='%s' or email='%s';", record.UID, userStr, userStr))
 			}
 			if password == r.PostFormValue("passwordlogin") {
@@ -327,6 +336,130 @@ func main() {
 			fmt.Println(uperr)
 		}
 		w.Header().Set("HX-Refresh", "true")
+	}
+	getResetPasswordCodeHandler := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		emailInput := r.Header.Get("HX-Prompt")
+
+		var userEmail string
+		var userName string
+		var lastPassReset time.Time
+		row := db.QueryRow(fmt.Sprintf("select email, username, last_pass_reset from tfldata.users where email='%s' and (last_pass_reset < now() - interval '32 hours' or last_pass_reset is null);", emailInput))
+		scnerr := row.Scan(&userEmail, &userName, &lastPassReset)
+		if scnerr != nil {
+
+			if strings.Contains(scnerr.Error(), "no rows in result") {
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+		}
+
+		var table = [...]byte{'1', '2', '3', '4', '5', '6', '7', '8', '9', '0'}
+		b := make([]byte, 6)
+		n, err := io.ReadAtLeast(rand.Reader, b, 6)
+		if n != 6 {
+			panic(err)
+		}
+		for i := 0; i < len(b); i++ {
+			b[i] = table[int(b[i])%len(table)]
+		}
+
+		_, senderr := sqsClient.SendMessage(context.TODO(), &sqs.SendMessageInput{
+			QueueUrl:    aws.String("https://sqs.us-east-1.amazonaws.com/529465713677/sendresetcode"),
+			MessageBody: aws.String(fmt.Sprintf("{\"user\": \"%s\", \"resetcode\": \"%s\", \"email\": \"%s\", \"username\": \"%s\"}", emailInput, string(b), userEmail, userName)),
+		})
+		if senderr != nil {
+			fmt.Println(senderr)
+		}
+
+		w.Write([]byte(fmt.Sprintf("{\"user\":\"%s\", \"code\": \"%s\", \"email\": \"%s\"}", userName, string(b), userEmail)))
+	}
+	resetPasswordHandler := func(w http.ResponseWriter, r *http.Request) {
+		newPass := r.PostFormValue("resetnewpassinput")
+		verifyCode := r.PostFormValue("resetCodeInput")
+		emailInput := r.PostFormValue("email")
+		userInput := r.PostFormValue("user")
+		userInStr := userInput
+		type messageBody struct {
+			Userinput string `json:"user"`
+			ResetCode string `json:"resetcode"`
+			Useremail string `json:"email"`
+			Username  string `json:"username"`
+		}
+		var messageData messageBody
+
+		out, geterr := sqsClient.ReceiveMessage(context.TODO(), &sqs.ReceiveMessageInput{
+			QueueUrl: aws.String("https://sqs.us-east-1.amazonaws.com/529465713677/sendresetcode"),
+			MessageAttributeNames: []string{
+				userInStr,
+				"secondname",
+			},
+		})
+
+		if geterr != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		var deleteReceipt string
+		for _, val := range out.Messages {
+
+			marsherr := json.Unmarshal([]byte(*val.Body), &messageData)
+			if marsherr != nil {
+				fmt.Print(marsherr)
+			}
+			deleteReceipt = *val.ReceiptHandle
+			//fmt.Println(val.MessageAttributes)
+		}
+
+		for emailInput != messageData.Useremail || userInput != messageData.Username {
+
+			out, _ := sqsClient.ReceiveMessage(context.TODO(), &sqs.ReceiveMessageInput{
+				QueueUrl: aws.String("https://sqs.us-east-1.amazonaws.com/529465713677/sendresetcode"),
+				MessageAttributeNames: []string{
+					userInStr,
+					"secondname",
+				},
+			})
+			for _, val := range out.Messages {
+
+				marsherr := json.Unmarshal([]byte(*val.Body), &messageData)
+				if marsherr != nil {
+					fmt.Print(marsherr)
+				}
+				deleteReceipt = *val.ReceiptHandle
+
+			}
+
+		}
+
+		if messageData.ResetCode == verifyCode {
+
+			newpassbs := []byte(newPass)
+
+			newPassbytesOfPass, err := bcrypt.GenerateFromPassword(newpassbs, len(newpassbs))
+			if err != nil {
+				fmt.Println(err)
+			}
+			_, uperr := db.Exec(fmt.Sprintf("update tfldata.users set password='%s', last_pass_reset=now() where username='%s' or email='%s';", newPassbytesOfPass, messageData.Username, messageData.Useremail))
+			if uperr != nil {
+				fmt.Println(uperr)
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+
+			_, delErr := sqsClient.DeleteMessage(context.TODO(), &sqs.DeleteMessageInput{
+				QueueUrl:      aws.String("https://sqs.us-east-1.amazonaws.com/529465713677/sendresetcode"),
+				ReceiptHandle: aws.String(deleteReceipt),
+			})
+			if delErr != nil {
+				fmt.Print("del err: " + delErr.Error())
+			}
+
+		} else {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
 	}
 	pagesHandler := func(w http.ResponseWriter, r *http.Request) {
 
@@ -1451,6 +1584,8 @@ func main() {
 
 	http.HandleFunc("/signup", signUpHandler)
 	http.HandleFunc("/login", loginHandler)
+	http.HandleFunc("/reset-password", getResetPasswordCodeHandler)
+	http.HandleFunc("/reset-password-with-code", resetPasswordHandler)
 	http.HandleFunc("/update-admin-pass", updateAdminPassHandler)
 
 	//http.HandleFunc("/upload-file", h3)

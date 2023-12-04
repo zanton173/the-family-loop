@@ -60,10 +60,7 @@
             style="background-color: rgb(146 255 231 / 89%); border-radius: 15px / 15px; box-shadow: 2px 2px 6px 0px;">
             <div class="modal-header" id="login-modal-header" style="display: block;">
                 <h4 id="loginModalHeader" class="modal-title" style="text-align: center;">Login or Sign Up</h4>
-                <!--<p style='color: cornflowerblue'>Everyone's account has been deleted so I could setup notifications in
-                    the near future.
-                    Please sign up again with an email. After you sign up, follow the instructions to install the app.
-                    Thanks :)</p>-->
+
                 <button id="modalclose" type="button" class="btn-close" data-bs-dismiss="modal"
                     aria-label="Close"></button>
             </div>
@@ -76,6 +73,28 @@
                         onclick='showSignUpForm()'>Sign-up</button>
                 </div>
                 <div id="togglesignuplogin">
+                    <form id="resetPassForm" style="display: none" class="form" hx-swap="none"
+                        hx-post="/reset-password-with-code"
+                        hx-vals="js:{'user': usernameToResetPass, 'email': emailToResetPass}"
+                        hx-on::after-request="afterResetRequest(event)" hx-indicator="#loadingspinner">
+                        <div class="p-4">
+                            <label>New Password:</label>
+                            <input class="form-control" type="password" name="resetnewpassinput"
+                                autocomplete="new-password" placeholder="Password"
+                                oninput="checkForValidResetPassChange()" required id="resetnewpassin" />
+                        </div>
+                        <div class="p-4">
+                            <label>Confirm New Password:</label>
+                            <input class="form-control" type="password" autocomplete="new-password"
+                                placeholder="Password" oninput="checkForValidResetPassChange()" required
+                                id="resetconfirmnewpassin" name="resetconfirmnewpassinput" />
+                        </div>
+                        <div class="p-4">
+                            <label>Reset Code:</label>
+                            <input class="form-control" type="text" maxlength="6" placeholder="000000" required
+                                id="resetCodeIn" name="resetCodeInput" />
+                        </div>
+                    </form>
                     <form class="form" style="display: none; z-index: 5;" name="changeAdminPassForm"
                         id="changeAdminPassForm" hx-post="/update-admin-pass"
                         hx-vals="js:{'username': document.getElementById('usernamelogininput').value}" hx-ext="json-enc"
@@ -108,7 +127,10 @@
                                 autocomplete="new-password" placeholder="Password"
                                 oninput="checkForValidLoginSubmission()" required id="passwordlogininput" />
                         </div>
-
+                        <a hx-prompt="What is your email associated with the account?" hx-post="/reset-password"
+                            hx-ext="json-enc" hx-on::after-request="showResetLink(event)" hx-swap="none"
+                            style="right: 20%; position: relative; left: 65%" class="link" id="resetPassLink">forgot
+                            password</a>
                     </form>
                     <form class="form" hx-post="/signup" id="sign-up-form" hx-trigger="submit"
                         hx-encoding="multipart/form-data" hx-swap="none" hx-target="this"
@@ -162,10 +184,12 @@
     let p = document.getElementById('anchor')
     let c = document.getElementById('ournav')
 
-
+    var usernameToResetPass = null
+    var emailToResetPass = null
     var signup = document.getElementById('sign-up-form')
     var loginele = document.getElementById('login-form')
     const changeAdminPassForm = document.getElementById('changeAdminPassForm')
+    const changePassForm = document.getElementById('resetPassForm')
     let parentauth = document.getElementById('togglesignuplogin')
     //let parentauth = document.getElementById('loginSignupForm')
     let loginbtn = document.getElementById('login-button')
@@ -179,6 +203,8 @@
 
     let changeAdminPassIn = document.getElementById('newadminpassin')
     let confirmChangeAdminPassIn = document.getElementById('confirmnewadminpassin')
+    let changeResetPassIn = document.getElementById('resetnewpassin')
+    let confirmChangeResetPassIn = document.getElementById('resetconfirmnewpassin')
 
     let usernamesignupinput = document.getElementById('usernamesignupinput')
     let emailsignupinput = document.getElementById("emailsignupinput")
@@ -193,6 +219,7 @@
     var navInnerToReplace = document.getElementById('loginlogoutnav')
 
     const adminPassSubmitBtn = document.createElement('button')
+    const resetPassSubmitBtn = document.createElement('button')
 
     const logoutButton = document.createElement('button')
     logoutButton.setAttribute("class", "btn btn-outline-secondary")
@@ -272,12 +299,29 @@
 
         })
     }
-
+    function showResetLink(event) {
+        if (event.detail.xhr.status == 400) {
+            alert("Make sure you are using the correct email. You can only reset your password once every 24 hours.")
+        }
+        const parseJson = JSON.parse(event.detail.xhr.response)
+        alert("Here is your reset code. Do not lose this code. It will expire in 10 minutes: " + parseJson.code)
+        showChangePassForm(parseJson.user, parseJson.email)
+    }
+    function showChangePassForm(username, email) {
+        changePassForm.style.display = "block"
+        usernameToResetPass = username
+        emailToResetPass = email
+        loginbtn.disabled = true
+        signupbtn.disabled = true
+        loginele.style.display = "none"
+        document.getElementById('loginModalHeader').innerHTML = "Change password"
+    }
     loginele.addEventListener("changeAdminPassword", () => {
         alert("Please create a new personal password")
         loginbtn.disabled = true
         signupbtn.disabled = true
         document.getElementById('loginModalHeader').innerHTML = "Change password"
+        document.getElementById('resetPassLink').remove()
         updateAdminPassword()
     })
     function updateAdminPassword() {
@@ -285,6 +329,22 @@
         loginModal.toggle()
         loginele.style.display = "none"
         changeAdminPassForm.style.display = "block"
+    }
+    function afterResetRequest(event) {
+        if (event.detail.xhr.status == 200) {
+            alert("Success")
+            loginbtn.disabled = false
+            signupbtn.disabled = false
+            loginele.style.display = "block"
+            changePassForm.style.display = "none"
+            document.getElementById('loginModalHeader').innerHTML = "Login or Sign Up"
+            showLoginForm();
+        } else if (event.detail.xhr.status == 400) {
+            alert("Unable to change your password. Please try again")
+        } else if (event.detail.xhr.status == 401) {
+            alert("Incorrect reset code")
+        }
+
     }
     function logoutFunction() {
         location.href = "/"
@@ -324,15 +384,32 @@
         }
 
     }
+    function checkForValidResetPassChange() {
+
+
+        resetPassSubmitBtn.setAttribute("class", "btn btn-success")
+        resetPassSubmitBtn.setAttribute("type", "submit")
+        resetPassSubmitBtn.innerHTML = "Change"
+
+        if (changeResetPassIn.value == confirmChangeResetPassIn.value && confirmChangeResetPassIn.value > '' && changeResetPassIn.value > '') {
+            changePassForm.append(resetPassSubmitBtn)
+        } else if (changeAdminPassIn.value !== confirmChangeResetPassIn.value && changePassForm.contains(resetPassSubmitBtn)) {
+
+            changePassForm.removeChild(resetPassSubmitBtn)
+        }
+
+    }
     function checkForValidLoginSubmission() {
 
         if (usernamelogininput.value > '' && passwordlogininput.value > '') {
 
             gologin.setAttribute("type", "submit")
             gologin.setAttribute("id", 'logingobutton')
-            gologin.setAttribute("class", "btn btn-outline-success")
+            gologin.setAttribute("class", "btn btn-success")
             gologin.setAttribute("data-bs-dismiss", "modal")
-
+            gologin.style.position = "relative"
+            gologin.style.right = "25%"
+            gologin.style.width = "25%"
             gologin.innerHTML = "Go!"
 
             loginele.append(gologin)

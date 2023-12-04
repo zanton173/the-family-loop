@@ -8,10 +8,22 @@ img.spinner-indicator {
     position: fixed;
     top: calc(50% - 45px);
     left: calc(50% - 45px);
+
     z-index: 2;
     animation: spin 1500ms cubic-bezier(0.75, 0.39, 1, 1) infinite;
 
 }
+
+#pwafooter {
+    bottom: 0%;
+    height: 85px;
+    z-index: 0;
+    position: sticky;
+    background-color: rgb(21 122 146 / 0%);
+    /*animation: pullup 3s ease-in;*/
+
+}
+
 
 div.htmx-request.spinner-indicator {
 
@@ -49,6 +61,42 @@ button.btn.btn-primary {
 #bannerimg {
     position: absolute;
     transform: translateX(-50%);
+}
+
+@keyframes movein {
+    0% {
+        right: -50%
+    }
+
+    100% {
+        right: 5%
+    }
+}
+
+@keyframes pullup {
+    0% {
+        right: calc(0% - 75px);
+        bottom: 0%;
+        height: 85px;
+        position: sticky;
+        background-color: rgb(21 122 146 / 0%);
+    }
+
+    1% {
+        height: 85px;
+        position: sticky;
+        background-color: rgb(21 122 146 / 0%);
+    }
+
+    100% {
+        bottom: 0%;
+        right: calc(15%);
+        height: 85px;
+        z-index: 2;
+        position: sticky;
+        width: 100dvw;
+        background-color: rgb(21 122 146 / 0%);
+    }
 }
 
 @keyframes bounce {

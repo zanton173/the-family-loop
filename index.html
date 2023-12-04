@@ -29,7 +29,7 @@
 </head>
 
 <body style="background: linear-gradient(180deg, #00106e, #00ecff 55%)">
-    <!--<body style="background-image: url('assets/bg_img.svg'); ">-->
+
 
     <div class="spinner-indicator" id="loadingspinner"
         style="width: 100%; height: 100%; background-color: rgb(197, 197, 197);">
@@ -47,6 +47,7 @@
     </header>-->
     <img id="bannerimg" src="assets/TFLBannerW.png" alt="Welcome to TFL!"
         style="text-align: center; width: 35dvw; left: 50dvw;" />
+
 
     <div class="sticky-top" id="anchor">
 
@@ -450,8 +451,45 @@
     </script>
 
 
-    <!--<footer><button id="myTestBtn" onclick="sendEventToLoad()">try
-            me</button></footer>-->
+    <footer style="display: none" id="pwafooter">
+        <button id="pwainstall" class="btn btn-success"
+            style="flex-wrap: wrap; text-wrap: wrap; border-radius: 15px / 15px; position: absolute; top: calc(50% - 33px); right: 5%; width: 65px; height: 65px; border: none; box-shadow: 3px 3px 6px black; text-align: center;">install
+            app</button>
+    </footer>
+    <script>
+        var deferredPrompt = null;
+        if (!window.matchMedia('(display-mode: standalone)').matches) {
+            document.getElementById('pwafooter').style.display = ""
+        }
+        const pwaInstallBtn = document.getElementById('pwainstall')
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // Prevents the default mini-infobar or install dialog from appearing on mobile
+            e.preventDefault();
+            // Save the event because you'll need to trigger it later.
+            deferredPrompt = e;
+            // Show your customized install prompt for your PWA
+            // Your own UI doesn't have to be a single element, you
+            // can have buttons in different locations, or wait to prompt
+            // as part of a critical journey.
+            console.log(e)
+        });
+
+        pwaInstallBtn.addEventListener('click', async () => {
+            // deferredPrompt is a global variable we've been using in the sample to capture the `beforeinstallevent`
+            deferredPrompt.prompt();
+            // Find out whether the user confirmed the installation or not
+            const { outcome } = await deferredPrompt.userChoice;
+            // The deferredPrompt can only be used once.
+            deferredPrompt = null;
+            // Act on the user's choice
+            if (outcome === 'accepted') {
+                console.log('User accepted the install prompt.');
+            } else if (outcome === 'dismissed') {
+                console.log('User dismissed the install prompt');
+            }
+        });
+    </script>
 </body>
 
 </html>

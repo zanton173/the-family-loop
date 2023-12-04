@@ -4,32 +4,32 @@
     "start_url": "/",
     "icons": [
         {
-            "src": "180x180/ZCAN2301 The Family Loop Favicon_B_180 x 180.png",
+            "src": "180x180/ZCAN2301 The Family Loop Favicon_B_180 x 180.jpg",
             "type": "image/png",
             "sizes": "180x180"
         },
         {
-            "src": "16x16/ZCAN2301 The Family Loop Favicon_B_16 x 16.png",
+            "src": "16x16/ZCAN2301 The Family Loop Favicon_B_16 x 16.jpg",
             "type": "image/png",
             "sizes": "16x16"
         },
         {
-            "src": "32x32/ZCAN2301 The Family Loop Favicon_B_32 x 32.png",
+            "src": "32x32/ZCAN2301 The Family Loop Favicon_B_32 x 32.jpg",
             "type": "image/png",
             "sizes": "32x32"
         },
         {
-            "src": "96x96/ZCAN2301 The Family Loop Favicon_B_96 x 96.png",
+            "src": "96x96/ZCAN2301 The Family Loop Favicon_B_96 x 96.jpg",
             "type": "image/png",
             "sizes": "96x96"
         },
         {
-            "src": "300x300/ZCAN2301 The Family Loop Favicon_B_300 x 300.png",
+            "src": "300x300/ZCAN2301 The Family Loop Favicon_B_300 x 300.jpg",
             "type": "image/png",
             "sizes": "300x300"
         },
         {
-            "src": "512x512/ZCAN2301 The Family Loop Favicon_B_512 x 512.png",
+            "src": "512x512/ZCAN2301 The Family Loop Favicon_B_512 x 512.jpg",
             "type": "image/png",
             "sizes": "512x512"
         }
@@ -39,25 +39,25 @@
             "name": "Posts",
             "url": "/home",
             "description": "tfl posts",
-            "icon": "96x96/ZCAN2301 The Family Loop Favicon_B_96 x 96.png"
+            "icon": "96x96/ZCAN2301 The Family Loop Favicon_B_96 x 96.jpg"
         },
         {
             "name": "Calendar",
             "url": "/calendar",
             "description": "upcoming events",
-            "icon": "96x96/ZCAN2301 The Family Loop Favicon_B_96 x 96.png"
+            "icon": "96x96/ZCAN2301 The Family Loop Favicon_B_96 x 96.jpg"
         },
         {
             "name": "Chat",
             "url": "/groupchat",
             "description": "group chat",
-            "icon": "96x96/ZCAN2301 The Family Loop Favicon_B_96 x 96.png"
+            "icon": "96x96/ZCAN2301 The Family Loop Favicon_B_96 x 96.jpg"
         },
         {
             "name": "Bug",
             "url": "/bugreport",
             "description": "report a bug",
-            "icon": "96x96/ZCAN2301 The Family Loop Favicon_B_96 x 96.png"
+            "icon": "96x96/ZCAN2301 The Family Loop Favicon_B_96 x 96.jpg"
         }
     ],
     "display": "standalone",

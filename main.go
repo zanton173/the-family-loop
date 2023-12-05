@@ -707,7 +707,7 @@ func main() {
 
 		//var commentTmpl *template.Template
 
-		output, err := db.Query(fmt.Sprintf("select c.comment, c.author, u.pfp_name from tfldata.comments as c join tfldata.users as u on c.author = u.username where c.post_id='%s'::integer order by c.id asc;", r.URL.Query().Get("post-id")))
+		output, err := db.Query(fmt.Sprintf("select c.comment, substr(c.author, 0, 14), u.pfp_name from tfldata.comments as c join tfldata.users as u on c.author = u.username where c.post_id='%s'::integer order by c.id asc;", r.URL.Query().Get("post-id")))
 
 		var dataStr string
 		if err != nil {
@@ -723,7 +723,7 @@ func main() {
 				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", err, time.Now().In(nyLoc).Format(time.DateTime)))
 
 			}
-			dataStr = "<div class='row'><p style='display: flex; align-items: center;' class='m-1 col-7'>" + posts.Comment + "</p><div style='align-items: center; position: relative; display: flex; padding-left: 0%; left: 1%;' class='col'><b>" + posts.Author + "</b><img width='50px' class='my-1' style='margin-left: 1%; position: relative; right: -5%; border-style: solid; border-radius: 13px / 13px; box-shadow: 3px 3px 5px; border-width: thin;' src='https://" + cfdistro + "/pfp/" + posts.Pfpname + "' alt='tfl pfp' /></div></div>"
+			dataStr = "<div class='row'><p style='display: flex; align-items: center; padding-right: 0%;' class='m-1 col-7'>" + posts.Comment + "</p><div style='align-items: center; position: relative; display: flex; padding-left: 0%; left: 1%;' class='col my-5'><b style='position: absolute; bottom: 5%'>" + posts.Author + "</b><img width='30px' class='my-1' style='margin-left: 1%; position: absolute; right: 20%; border-style: solid; border-radius: 13px / 13px; box-shadow: 3px 3px 5px; border-width: thin; top: 5%;' src='https://" + cfdistro + "/pfp/" + posts.Pfpname + "' alt='tfl pfp' /></div></div>"
 
 			w.Write([]byte(dataStr))
 		}

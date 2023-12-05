@@ -73,8 +73,14 @@
         <button id="changeChatOrderOptBtn" type="button"
             hx-on::after-request="document.dispatchEvent(new Event('DOMContentLoaded'))" hx-ext="json-enc"
             hx-post="/change-gchat-order-opt" hx-vals="js:{'order_option': !gchatOrderOpt, 'username': username}"
-            hx-swap="none" hx-trigger="click" class="btn btn-dark border-0 btn-sm" style="box-shadow: 3px 3px 6px"><i
+            hx-swap="none" hx-trigger="click" class="btn btn-dark border-0 btn-sm" style="box-shadow: 3px 3px 6px;"><i
                 class="bi bi-arrow-down-circle"></i></button>
+        <button id="subscribeToThisThreadBtn" hx-post="/change-if-notified-for-thread"
+            hx-vals="js:{'username': username, 'curThread': document.getElementById('threadSelector').value, 'currentlyNotifiedVal': !isCurUserSubbed}"
+            hx-swap="none" hx-ext="json-enc"
+            hx-on::after-request="document.dispatchEvent(new Event('DOMContentLoaded'))" type="button"
+            class="btn btn-dark border-0 my-1 btn-sm" style="box-shadow: 3px 3px 6px;">Get
+            thread's notifications&nbsp;<i class="bi bi-bell-fill"></i></button>
     </div>
 
     <div id="themepanel" style="display: none; text-align: center;">
@@ -97,12 +103,7 @@
             name="threadSelector"
             style="padding: 5px; border: 0; border-radius: 8px / 8px; box-shadow: 3px 3px 7px white;">
         </select>
-        <button id="subscribeToThisThreadBtn" hx-post="/change-if-notified-for-thread"
-            hx-vals="js:{'username': username, 'curThread': document.getElementById('threadSelector').value, 'currentlyNotifiedVal': !isCurUserSubbed}"
-            hx-swap="none" hx-ext="json-enc" type="button" class="btn btn-dark border-0 my-1 btn-sm"
-            style="box-shadow: 3px 3px 6px;">Get
-            notifications from this
-            thread &nbsp;<i class="bi bi-bell-fill"></i></button>
+
     </div>
     <div id="prependhere"></div>
     <div id="loadGChathere" hx-get="/group-chat-messages"
@@ -221,17 +222,18 @@
         function checkIfSubbed() {
 
             selectedThread = usersSubbedThreads.filter((data) => data.thread == document.getElementById('threadSelector').value)
-
             if (selectedThread.length === 1) {
-                if (Boolean(selectedThread[0].is_subbed)) {
-                    document.getElementById('subscribeToThisThreadBtn').innerHTML = "disable notifications from this thread" + "&nbsp;<i class='bi bi-bell-fill' ></i>"
+
+                if (selectedThread[0].is_subbed == 'true') {
+                    document.getElementById('subscribeToThisThreadBtn').innerHTML = "disable thread\'s notifications" + "&nbsp;<i class='bi bi-bell-fill' ></i>"
                     isCurUserSubbed = true
-                } else {
-                    document.getElementById('subscribeToThisThreadBtn').innerHTML = "Get notifications from this thread" + "&nbsp;<i class='bi bi-bell-fill' ></i>"
+                } else if (selectedThread[0].is_subbed == 'false') {
+
+                    document.getElementById('subscribeToThisThreadBtn').innerHTML = "Get thread\'s notifications" + "&nbsp;<i class='bi bi-bell-fill' ></i>"
                     isCurUserSubbed = false
                 }
             } else {
-                document.getElementById('subscribeToThisThreadBtn').innerHTML = "Get notifications from this thread" + "&nbsp;<i class='bi bi-bell-fill' ></i>"
+                document.getElementById('subscribeToThisThreadBtn').innerHTML = "Get thread\'s notifications" + "&nbsp;<i class='bi bi-bell-fill' ></i>"
                 isCurUserSubbed = false
             }
         }

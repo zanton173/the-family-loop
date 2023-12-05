@@ -1540,6 +1540,26 @@ func main() {
 
 	}
 
+	changeUserSubscriptionToThreadHandler := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		bs, _ := io.ReadAll(r.Body)
+		type postBody struct {
+			User            string `json:"username"`
+			CurrentlySubbed bool   `json:"currentlyNotifiedVal"`
+			Thread          string `json:"curThread"`
+		}
+		var postData postBody
+		marsherr := json.Unmarshal(bs, &postData)
+		if marsherr != nil {
+			fmt.Println(marsherr)
+		}
+		_, inserr := db.Exec(fmt.Sprintf("insert into tfldata.users_to_threads(\"username\",\"thread\",\"is_subscribed\") values('%s','%s',%t) on conflict(username,thread) do update set is_subscribed=%t;", postData.User, postData.Thread, postData.CurrentlySubbed, postData.CurrentlySubbed))
+		if inserr != nil {
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s');", inserr, time.Now().In(nyLoc).Format(time.DateTime)))
+		}
+
+	}
+
 	/*h3 := func(w http.ResponseWriter, r *http.Request) {
 		upload, filename, err := r.FormFile("file_name")
 		if err != nil {
@@ -1606,6 +1626,7 @@ func main() {
 	http.HandleFunc("/get-open-threads", getOpenThreadsHandler)
 
 	http.HandleFunc("/get-users-subscribed-threads", getUsersSubscribedThreadsHandler)
+	http.HandleFunc("/change-if-notified-for-thread", changeUserSubscriptionToThreadHandler)
 
 	http.HandleFunc("/signup", signUpHandler)
 	http.HandleFunc("/login", loginHandler)

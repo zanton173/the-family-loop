@@ -14,6 +14,7 @@
             crossorigin="anonymous"></script>-->
     <link href="css/bootstrap.min.css" rel="stylesheet">
     <link href="css/custom-css.css" rel="stylesheet">
+    <link href="css/font-css.css" rel="stylesheet">
     <script src="js/bootstrap.bundle.min.js"></script>
     <!--<script src="https://unpkg.com/htmx.org@1.9.5"
             integrity="sha384-xcuj3WpfgjlKF+FXhSQFQ0ZNr39ln+hwjN3npfM9VBnUskLolQAcN80McRIVOPuO"
@@ -100,8 +101,8 @@
     <div id="prependhere"></div>
     <div id="loadGChathere" hx-get="/group-chat-messages"
         hx-vals="js:{'threadval': document.getElementById('threadSelector').value, 'order_option': gchatOrderOpt}"
-        hx-trigger="afterThreadSelectorLoadsEvent, every 3s, success-send from:#messageform"
-        class="border-1 d-block m-2" style="justify-content: center; text-align: center; border-radius: 1%;">
+        hx-trigger="afterThreadSelectorLoadsEvent, success-send from:#messageform" class="border-1 d-block m-2"
+        style="justify-content: center; text-align: center; border-radius: 1%;">
 
     </div>
     <div id="appendhere"></div>

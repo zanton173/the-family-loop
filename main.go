@@ -872,7 +872,7 @@ func main() {
 				return
 			}
 			db.Exec("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", scnerr, time.Now().In(nyLoc).Local().Format(time.DateTime))
-			w.WriteHeader(http.StatusBadRequest)
+
 			return
 		} else {
 
@@ -1205,8 +1205,15 @@ func main() {
 			var author string
 			var createdat time.Time
 			var formatCreatedatTime string
+			var pfpImg string
 
 			output.Scan(&gchatid, &message, &author, &createdat)
+			row := db.QueryRow(fmt.Sprintf("select pfp_name from tfldata.users where username='%s';", author))
+			pfpscnerr := row.Scan(&pfpImg)
+			if pfpscnerr != nil {
+				pfpImg = "https://" + cfdistro + "/pfp/question.png"
+			}
+			pfpImg = "https://" + cfdistro + "/pfp/" + pfpImg
 			if time.Now().UTC().Sub(createdat) > (72 * time.Hour) {
 				formatCreatedatTime = time.DateOnly
 
@@ -1220,7 +1227,7 @@ func main() {
 			if author == curUser {
 				editDelBtn = "<i class='bi bi-three-dots-vertical px-1' onclick='editOrDeleteChat(`" + gchatid + "`)'></i>"
 			}
-			dataStr := "<div style='max-width: 100%; background-color: rgb(22 53 255 / 13%); border-width: thin; border-style: solid; box-shadow: 4px 4px 5px; border-radius: 16px 5px 23px 3px' class='container my-2'><div class='row'><b class='col-2 px-1'>" + author + "</b><p class='col-10 my-0' style='padding-top: 1rem!important'>" + message + "</p></div><div class='row'><p class='col' style='margin-left: 70%; font-size: small;'>" + createdat.Format(formatCreatedatTime) + editDelBtn + "</p></div></div>"
+			dataStr := "<div style='max-width: 100%; background-color: rgb(22 53 255 / 13%); border-width: thin; border-style: solid; box-shadow: 4px 4px 5px; border-radius: 16px 5px 23px 3px' class='container my-2'><div class='row'><b class='col-2 px-1'>" + author + "</b><div class='row'><img style='width: 15%; position: absolute;' class='col-2 px-2 my-1' src='" + pfpImg + "' alt='tfl pfp' /></div><p class='col-10 my-0' style='position: relative; left: 10%;'>" + message + "</p></div><div class='row'><p class='col' style='margin-left: 60%; font-size: smaller;'>" + createdat.Format(formatCreatedatTime) + editDelBtn + "</p></div></div>"
 			chattmp, tmperr := template.New("gchat").Parse(dataStr)
 			if tmperr != nil {
 				fmt.Println(tmperr)

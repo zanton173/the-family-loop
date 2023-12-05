@@ -1,0 +1,19 @@
+@font-face {
+    font-family: "sans-serif";
+    /*src: url("static/RedHatText-Regular.ttf");*/
+    src: url("RedHatText-VariableFont_wght.ttf");
+    /*src: url("static/RedHatText-BoldItalic.ttf");
+    src: url("static/RedHatText-SemiBold.ttf");
+    src: url("static/RedHatText-Light.ttf");
+    src: url("static/RedHatText-LightItalic.ttf");
+    src: url("static/RedHatText-Medium.ttf");
+    src: url("static/RedHatText-MediumItalic.ttf");*/
+}
+
+html,
+body {
+    font-family: "sans-serif";
+    /*Specify your font name here*/
+    -ms-text-size-adjust: 100%;
+    -webkit-text-size-adjust: 100%;
+}

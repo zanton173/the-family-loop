@@ -1129,6 +1129,7 @@ func main() {
 		}
 		var fcmRegToken string
 
+		sendNotificationToAllUsers(threadVal, db, app, chatMessage)
 		if len(listOfUsersTagged) > 0 {
 			for _, val := range listOfUsersTagged {
 				fcmRegRow := db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where username='%s' and username != '%s';", val, userName))
@@ -1223,7 +1224,7 @@ func main() {
 			if author == curUser {
 				editDelBtn = "<i class='bi bi-three-dots-vertical px-1' onclick='editOrDeleteChat(`" + gchatid + "`)'></i>"
 			}
-			dataStr := "<div style='max-width: 100%; background-color: rgb(22 53 255 / 13%); border-width: thin; border-style: solid; box-shadow: 4px 4px 5px; border-radius: 16px 5px 23px 3px' class='container my-2'><div class='row'><b class='col-2 px-1'>" + author + "</b><div class='row'><img style='width: 15%; position: absolute;' class='col-2 px-2 my-1' src='" + pfpImg + "' alt='tfl pfp' /></div><p class='col-10 my-0' style='position: relative; left: 10%;'>" + message + "</p></div><div class='row'><p class='col' style='margin-left: 60%; font-size: smaller;'>" + createdat.Format(formatCreatedatTime) + editDelBtn + "</p></div></div>"
+			dataStr := "<div style='max-width: 100%; background-color: rgb(22 53 255 / 13%); border-width: thin; border-style: solid; box-shadow: 4px 4px 5px; border-radius: 16px 5px 23px 3px; padding-bottom: 3%' class='container my-2'><div class='row'><b class='col-2 px-1'>" + author + "</b><div class='row'><img style='width: 15%; position: sticky;' class='col-2 px-2 my-1' src='" + pfpImg + "' alt='tfl pfp' /></div><p class='col-10' style='position: relative; left: 10%; margin-bottom: 5%; margin-top: -10%;'>" + message + "</p></div><div class='row'><p class='col' style='margin-left: 60%; font-size: smaller;'>" + createdat.Format(formatCreatedatTime) + editDelBtn + "</p></div></div>"
 			chattmp, tmperr := template.New("gchat").Parse(dataStr)
 			if tmperr != nil {
 				fmt.Println(tmperr)
@@ -1522,6 +1523,23 @@ func main() {
 			w.Write([]byte(dataStr))
 		}
 	}
+	getUsersSubscribedThreadsHandler := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		output, outerr := db.Query(fmt.Sprintf("select thread, is_subscribed::text from tfldata.users_to_threads where username='%s';", r.URL.Query().Get("username")))
+		if outerr != nil {
+			fmt.Println(outerr)
+		}
+		defer output.Close()
+
+		for output.Next() {
+			var thread string
+			var isSubbed string
+			output.Scan(&thread, &isSubbed)
+			w.Write([]byte(thread + "," + isSubbed + "\n"))
+		}
+
+	}
+
 	/*h3 := func(w http.ResponseWriter, r *http.Request) {
 		upload, filename, err := r.FormFile("file_name")
 		if err != nil {
@@ -1586,6 +1604,8 @@ func main() {
 	http.HandleFunc("/update-stackerz-score", updateStackerzScoreHandler)
 
 	http.HandleFunc("/get-open-threads", getOpenThreadsHandler)
+
+	http.HandleFunc("/get-users-subscribed-threads", getUsersSubscribedThreadsHandler)
 
 	http.HandleFunc("/signup", signUpHandler)
 	http.HandleFunc("/login", loginHandler)
@@ -1797,6 +1817,51 @@ func sendNotificationToTaggedUser(w http.ResponseWriter, r *http.Request, fcmTok
 		fmt.Print(sendErr)
 	}
 	db.Exec(fmt.Sprintf("insert into tfldata.sent_notification_log(\"notification_result\", \"createdon\") values('%s', '%s');", sentRes, time.Now().In(nyLoc).Format(time.DateTime)))
+}
+
+func sendNotificationToAllUsers(threadVal string, db *sql.DB, fbapp *firebase.App, message string) {
+
+	output, outerr := db.Query(fmt.Sprintf("select username, is_subscribed from tfldata.users_to_threads where thread='%s';", threadVal))
+	if outerr != nil {
+		fmt.Println(outerr)
+	}
+	defer output.Close()
+	fb_message_client, _ := fbapp.Messaging(context.TODO())
+	typePayload := make(map[string]string)
+	typePayload["type"] = "groupchat"
+	for output.Next() {
+		var userToSend string
+		var isSubbed bool
+		output.Scan(&userToSend, &isSubbed)
+		if isSubbed {
+			var fcmToken string
+			tokenRow := db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where username='%s';", userToSend))
+			scnerr := tokenRow.Scan(&fcmToken)
+
+			if scnerr != nil {
+				fmt.Println(scnerr)
+			} else {
+
+				sendRes, sendErr := fb_message_client.Send(context.TODO(), &messaging.Message{
+					Token: fcmToken,
+
+					Webpush: &messaging.WebpushConfig{
+						Notification: &messaging.WebpushNotification{
+							Title: "message in: " + threadVal,
+							Body:  message,
+							Data:  typePayload,
+						},
+					},
+				})
+				if sendErr != nil {
+					fmt.Print(sendErr)
+				}
+				db.Exec(fmt.Sprintf("insert into tfldata.sent_notification_log(\"notification_result\", \"createdon\") values('%s', '%s');", sendRes, time.Now().In(nyLoc).Local().Format(time.DateTime)))
+			}
+
+		}
+	}
+
 }
 
 /*func uploadPostPhotoTos3(f multipart.File, fn string, client *s3.Client) {

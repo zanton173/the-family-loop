@@ -93,10 +93,16 @@
         <select id="threadSelector" hx-get="/get-open-threads"
             hx-on::after-request="document.getElementById('loadGChathere').dispatchEvent(new Event('afterThreadSelectorLoadsEvent'))"
             hx-swap="beforeend" hx-trigger="load"
-            onchange="document.getElementById('loadGChathere').dispatchEvent(new Event('afterThreadSelectorLoadsEvent'))"
+            onchange="{document.getElementById('loadGChathere').dispatchEvent(new Event('afterThreadSelectorLoadsEvent')); checkIfSubbed()}"
             name="threadSelector"
             style="padding: 5px; border: 0; border-radius: 8px / 8px; box-shadow: 3px 3px 7px white;">
         </select>
+        <button id="subscribeToThisThreadBtn" hx-post="/change-if-notified-for-thread"
+            hx-vals="js:{'username': username, 'curThread': document.getElementById('threadSelector').value, 'currentlyNotifiedVal': !isCurUserSubbed}"
+            hx-swap="none" hx-ext="json-enc" type="button" class="btn btn-dark border-0 my-1 btn-sm"
+            style="box-shadow: 3px 3px 6px;">Get
+            notifications from this
+            thread &nbsp;<i class="bi bi-bell-fill"></i></button>
     </div>
     <div id="prependhere"></div>
     <div id="loadGChathere" hx-get="/group-chat-messages"
@@ -164,9 +170,16 @@
         var selectedChatId = null
         var gchatOrderOpt = true
 
+        var isCurUserSubbed = null
+
         const editOrDeleteModal = new bootstrap.Modal(document.getElementById('editOrDeleteModal'), {})
 
+        const subscribeToThreadBtn = document.getElementById('subscribeToThisThreadBtn')
+
+        var usersSubbedThreads = []
+
         document.addEventListener("DOMContentLoaded", async () => {
+            usersSubbedThreads = []
             curUserData = await fetchSeshDetails(document.cookie.split("session_id=")[1])
 
             document.body.setAttribute('style', curUserData.BGtheme)
@@ -187,8 +200,41 @@
                 document.getElementById('prependhere').prepend(document.getElementById('orderDependentDiv'))
                 document.getElementById('changeChatOrderOptBtn').innerHTML = '<i class="bi bi-arrow-up-circle"></i>'
             }
-        })
 
+            const subthreadsresp = await fetch("/get-users-subscribed-threads?username=" + username, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            })
+            usersSubbedThreadResp = await subthreadsresp.text()
+            var arrayOfSubData = usersSubbedThreadResp.split("\n")
+            for (var i = 0; i < arrayOfSubData.length - 1; i++) {
+                threadVal = arrayOfSubData[i].split(",")[0]
+                subbedVal = arrayOfSubData[i].split(",")[1]
+
+                usersSubbedThreads.push({ "thread": threadVal, "is_subbed": subbedVal })
+
+            }
+            checkIfSubbed()
+        })
+        function checkIfSubbed() {
+
+            selectedThread = usersSubbedThreads.filter((data) => data.thread == document.getElementById('threadSelector').value)
+
+            if (selectedThread.length === 1) {
+                if (Boolean(selectedThread[0].is_subbed)) {
+                    document.getElementById('subscribeToThisThreadBtn').innerHTML = "disable notifications from this thread" + "&nbsp;<i class='bi bi-bell-fill' ></i>"
+                    isCurUserSubbed = true
+                } else {
+                    document.getElementById('subscribeToThisThreadBtn').innerHTML = "Get notifications from this thread" + "&nbsp;<i class='bi bi-bell-fill' ></i>"
+                    isCurUserSubbed = false
+                }
+            } else {
+                document.getElementById('subscribeToThisThreadBtn').innerHTML = "Get notifications from this thread" + "&nbsp;<i class='bi bi-bell-fill' ></i>"
+                isCurUserSubbed = false
+            }
+        }
         function setBgLeftVal() {
             leftSideVal = document.getElementById('leftsidethemeinput').value
             document.body.setAttribute("style", "background: linear-gradient(142deg, " + leftSideVal + ", " + rightSideVal + " " + gradPercent + "%)")

@@ -57,10 +57,11 @@
     <div id='reactionicons' style="display: none;">
 
         <p onclick="postEmoji(event)" class="p-2 my-0 mx-2">&#128512;</p>
-        <p onclick="postEmoji(event)" class="p-2 my-0 mx-2">&#128513;</p>
+        <p onclick="postEmoji(event)" class="p-2 my-0 mx-2">&#128077;</p>
+        <p onclick="postEmoji(event)" class="p-2 my-0 mx-2">&#128151;</p>
         <p onclick="postEmoji(event)" class="p-2 my-0 mx-2">&#128514;</p>
         <p onclick="postEmoji(event)" class="p-2 my-0 mx-2">&#128515;</p><br /><br />
-        <p onclick="postEmoji(event)" class="p-2 my-0 mx-2">&#128516;</p>
+        <p onclick="postEmoji(event)" class="p-2 my-0 mx-2">&#128525;</p>
         <p onclick="postEmoji(event)" class="p-2 my-0 mx-2">&#128517;</p>
         <p onclick="postEmoji(event)" class="p-2 my-0 mx-2">&#128545;</p>
     </div>
@@ -81,7 +82,7 @@
     <div class="modal customModalTrans" id="openPostModal" tabindex="-1" aria-labelledby="openPostModalLabel"
         aria-hidden="true">
         <div class="modal-dialog">
-            <div id="post-comments" class="modal-content p-3"
+            <div id="post-comments" class="modal-content p-1"
                 style="border-radius: 15px / 15px; background-color: rgb(99 81 255 / 65%);">
                 <div class="modal-content my-1" id="modal-post-reactions" hx-target="#reactionContent"
                     hx-trigger="getReactionsEvent" hx-get="/get-posts-reactions"

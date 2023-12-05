@@ -702,11 +702,12 @@ func main() {
 		type postComment struct {
 			Comment string
 			Author  string
+			Pfpname string
 		}
 
 		//var commentTmpl *template.Template
 
-		output, err := db.Query(fmt.Sprintf("select comment, author from tfldata.comments where post_id='%s'::integer order by post_id desc;", r.URL.Query().Get("post-id")))
+		output, err := db.Query(fmt.Sprintf("select c.comment, c.author, u.pfp_name from tfldata.comments as c join tfldata.users as u on c.author = u.username where c.post_id='%s'::integer order by c.post_id desc;", r.URL.Query().Get("post-id")))
 
 		var dataStr string
 		if err != nil {
@@ -718,17 +719,13 @@ func main() {
 		for output.Next() {
 			var posts postComment
 
-			if err := output.Scan(&posts.Comment, &posts.Author); err != nil {
+			if err := output.Scan(&posts.Comment, &posts.Author, &posts.Pfpname); err != nil {
 				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", err, time.Now().In(nyLoc).Format(time.DateTime)))
 
 			}
-			dataStr = "<p class='p-2'>" + posts.Comment + " - " + posts.Author + "</p>"
+			dataStr = "<div class='row'><p style='display: flex; align-items: center;' class='m-1 col-8'>" + posts.Comment + "<div style='align-items: center; position: relative; display: flex; padding-left: 0%; left: -5%;' class='col'><b>" + posts.Author + "</b><img class='my-1' style='margin-left: 1%; width: 40%; position: relative; right: -5%; border-style: solid; border-radius: 13px / 13px; box-shadow: 3px 3px 5px; border-width: thin;' src='https://" + cfdistro + "/pfp/" + posts.Pfpname + "' alt='tfl pfp' /></p></div></div>"
 
-			/*commentTmpl, err = template.New("com").Parse(dataStr)
-			if err != nil {
-				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", err, time.Now().In(nyLoc).Format(time.DateTime)))
-			}
-			commentTmpl.Execute(w, nil)*/
+			
 			w.Write([]byte(dataStr))
 		}
 

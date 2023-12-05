@@ -1129,7 +1129,7 @@ func main() {
 		}
 		var fcmRegToken string
 
-		sendNotificationToAllUsers(threadVal, db, app, chatMessage)
+		sendNotificationToAllUsers(threadVal, db, *app, chatMessage)
 		if len(listOfUsersTagged) > 0 {
 			for _, val := range listOfUsersTagged {
 				fcmRegRow := db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where username='%s' and username != '%s';", val, userName))
@@ -1840,7 +1840,7 @@ func sendNotificationToTaggedUser(w http.ResponseWriter, r *http.Request, fcmTok
 	db.Exec(fmt.Sprintf("insert into tfldata.sent_notification_log(\"notification_result\", \"createdon\") values('%s', '%s');", sentRes, time.Now().In(nyLoc).Format(time.DateTime)))
 }
 
-func sendNotificationToAllUsers(threadVal string, db *sql.DB, fbapp *firebase.App, message string) {
+func sendNotificationToAllUsers(threadVal string, db *sql.DB, fbapp firebase.App, message string) {
 
 	output, outerr := db.Query(fmt.Sprintf("select username, is_subscribed from tfldata.users_to_threads where thread='%s';", threadVal))
 	if outerr != nil {
@@ -1861,24 +1861,23 @@ func sendNotificationToAllUsers(threadVal string, db *sql.DB, fbapp *firebase.Ap
 
 			if scnerr != nil {
 				fmt.Println(scnerr)
-			} else {
-
-				sendRes, sendErr := fb_message_client.Send(context.TODO(), &messaging.Message{
-					Token: fcmToken,
-
-					Webpush: &messaging.WebpushConfig{
-						Notification: &messaging.WebpushNotification{
-							Title: "message in: " + threadVal,
-							Body:  message,
-							Data:  typePayload,
-						},
-					},
-				})
-				if sendErr != nil {
-					fmt.Print(sendErr)
-				}
-				db.Exec(fmt.Sprintf("insert into tfldata.sent_notification_log(\"notification_result\", \"createdon\") values('%s', '%s');", sendRes, time.Now().In(nyLoc).Local().Format(time.DateTime)))
 			}
+
+			sendRes, sendErr := fb_message_client.Send(context.TODO(), &messaging.Message{
+				Token: fcmToken,
+
+				Webpush: &messaging.WebpushConfig{
+					Notification: &messaging.WebpushNotification{
+						Title: "message in: " + threadVal,
+						Body:  message,
+						Data:  typePayload,
+					},
+				},
+			})
+			if sendErr != nil {
+				fmt.Print(sendErr)
+			}
+			db.Exec(fmt.Sprintf("insert into tfldata.sent_notification_log(\"notification_result\", \"createdon\") values('%s', '%s');", sendRes, time.Now().In(nyLoc).Local().Format(time.DateTime)))
 
 		}
 	}

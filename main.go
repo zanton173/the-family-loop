@@ -1826,21 +1826,7 @@ func uploadFileToS3(k string, s string, bucketexists bool, f multipart.File, fn 
 		//log.Fatal(errfile)
 		fmt.Println(errfile)
 	}
-	/*
-		getout, geterr := client.GetObject(context.TODO(), &s3.GetObjectInput{
-			Bucket: aws.String(s3Domain),
-			Key:    aws.String("posts/images/" + fn),
-		})
 
-		if geterr != nil {
-			fmt.Println(geterr)
-		} else {
-
-			if *getout.ContentLength > 1 {
-				fn = fn + "_" + time.Now().GoString()
-			}
-		}
-	*/
 	fileContents := make([]byte, fileHeader.Size)
 
 	ourfile.Read(fileContents)
@@ -1954,6 +1940,7 @@ func sendNotificationToAllUsers(threadVal string, db *sql.DB, fbapp firebase.App
 			})
 			if sendErr != nil {
 				fmt.Print(sendErr)
+				db.Exec(fmt.Sprintf("update tfldata.users set fcm_registration_id=null where username='%s';", userToSend))
 			}
 			db.Exec(fmt.Sprintf("insert into tfldata.sent_notification_log(\"notification_result\", \"createdon\") values('%s', '%s');", sendRes, time.Now().In(nyLoc).Local().Format(time.DateTime)))
 

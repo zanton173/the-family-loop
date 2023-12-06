@@ -64,6 +64,21 @@ button.btn.btn-primary {
     -webkit-transform: translateX(-50%)
 }
 
+@media all and (min-width: 301px) {
+    #stackerzbody {
+        display: block;
+    }
+}
+
+
+@media all and (max-width: 300px) {
+    #stackerzbody {
+        display: none;
+    }
+
+
+}
+
 @keyframes movein {
     0% {
         right: -50%

@@ -23,6 +23,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/google/go-github/github"
 	"github.com/google/uuid"
@@ -623,6 +624,17 @@ func main() {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
+		cfg, err := config.LoadDefaultConfig(context.TODO(),
+			config.WithDefaultRegion("us-east-1"),
+			config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(awskey, awskeysecret, "")),
+		)
+
+		if err != nil {
+			log.Fatal(err)
+			os.Exit(4)
+		}
+
+		client := s3.NewFromConfig(cfg)
 		var username string
 		row := db.QueryRow(fmt.Sprintf("select username from tfldata.users where session_token='%s';", c.Value))
 		row.Scan(&username)
@@ -650,7 +662,48 @@ func main() {
 				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", err, time.Now().In(nyLoc).Format(time.DateTime)))
 				w.WriteHeader(http.StatusBadRequest)
 			}
-			filetype := uploadFileToS3(awskey, awskeysecret, false, f, fh.Filename, r)
+
+			tmpFileName := fh.Filename
+
+			getout, geterr := client.GetObjectAttributes(context.TODO(), &s3.GetObjectAttributesInput{
+				Bucket: aws.String(s3Domain),
+				Key:    aws.String("posts/images/" + tmpFileName),
+				ObjectAttributes: []types.ObjectAttributes{
+					"ObjectSize",
+				},
+			})
+
+			if geterr != nil {
+				fmt.Println("image: " + geterr.Error())
+				getvidout, getviderr := client.GetObjectAttributes(context.TODO(), &s3.GetObjectAttributesInput{
+					Bucket: aws.String(s3Domain),
+					Key:    aws.String("posts/videos/" + tmpFileName),
+					ObjectAttributes: []types.ObjectAttributes{
+						"ObjectSize",
+					},
+				})
+
+				if getviderr != nil {
+					fmt.Println("video: " + getviderr.Error())
+				} else {
+					if *getvidout.ObjectSize > 1 {
+						tmpFileName = strings.ReplaceAll(strings.ReplaceAll(time.Now().Format(time.DateTime), " ", "_"), ":", "") + "_" + tmpFileName
+						fh.Filename = tmpFileName
+					}
+				}
+			} else {
+
+				if *getout.ObjectSize > 1 {
+					tmpFileName = strings.ReplaceAll(strings.ReplaceAll(time.Now().Format(time.DateTime), " ", "_"), ":", "") + "_" + tmpFileName
+					fh.Filename = tmpFileName
+				}
+			}
+
+			if len(tmpFileName) > 55 {
+				fh.Filename = tmpFileName[len(tmpFileName)-35:]
+			}
+
+			filetype := uploadFileToS3(awskey, awskeysecret, false, f, tmpFileName, r)
 
 			_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.postfiles(\"file_name\", \"file_type\", \"post_files_key\") values('%s', '%s', '%s');", fh.Filename, filetype, postFilesKey))
 
@@ -1773,7 +1826,21 @@ func uploadFileToS3(k string, s string, bucketexists bool, f multipart.File, fn 
 		//log.Fatal(errfile)
 		fmt.Println(errfile)
 	}
+	/*
+		getout, geterr := client.GetObject(context.TODO(), &s3.GetObjectInput{
+			Bucket: aws.String(s3Domain),
+			Key:    aws.String("posts/images/" + fn),
+		})
 
+		if geterr != nil {
+			fmt.Println(geterr)
+		} else {
+
+			if *getout.ContentLength > 1 {
+				fn = fn + "_" + time.Now().GoString()
+			}
+		}
+	*/
 	fileContents := make([]byte, fileHeader.Size)
 
 	ourfile.Read(fileContents)

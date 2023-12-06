@@ -57,7 +57,7 @@
                     accept="image/*" oninput="checkPfpChangeValidity()" />
                 <input style="display: none;" name="usernameinput" id="invisibleusernameinput" />
                 <button id="changePfpSubmitBtn" disabled="true" class="btn btn-outline-success col my-2">change</button>
-                <button type="button" class="btn btn-outline-dark col my-2" data-bs-dismiss="modal">close</button><br />
+                <button type="button" class="btn btn-dark col my-2" data-bs-dismiss="modal">close</button><br />
             </form>
         </div>
     </div>
@@ -221,6 +221,11 @@
 
     var loginModal = new bootstrap.Modal(document.getElementById('login-modal'), {});
 
+    var pfpChangeInput = document.getElementById('pfpchangeinput')
+    var pfpChangeBtn = document.getElementById('changePfpSubmitBtn')
+    var updatePfpForm = document.getElementById('updatepfpform')
+    var invisibleInputForUsername = document.getElementById('invisibleusernameinput')
+
     var navbarItems = document.getElementById('navbarText')
 
     var navItemToReplace = document.getElementById('navitemforwelcome')
@@ -285,15 +290,14 @@
         document.getElementById('toggleNavItems').dispatchEvent(new Event('click'))
     })*/
     function checkPfpChangeValidity() {
-        var pfpChangeInput = document.getElementById('pfpchangeinput')
-        var pfpChangeBtn = document.getElementById('changePfpSubmitBtn')
-        var updatePfpForm = document.getElementById('updatepfpform')
-        var invisibleInputForUsername = document.getElementById('invisibleusernameinput')
+
         invisibleInputForUsername.value = username
-        if (pfpChangeInput.value == '')
-            pfpChangeBtn.setAttribute("disabled", "true")
-        else
-            pfpChangeBtn.removeAttribute('disabled')
+        if (pfpChangeInput.value >= '') {
+            pfpChangeBtn.disabled = false
+            pfpChangeBtn.className = "btn btn-success col my-2"
+        } else
+            pfpChangeBtn.disabled = true
+
 
         updatepfpform.addEventListener('htmx:afterRequest', async function setPfp(event) {
             pfpChangeBtn.setAttribute("disabled", "true")

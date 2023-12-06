@@ -578,7 +578,7 @@ CREATE TABLE tfldata.users (
     last_sign_on timestamp without time zone,
     gchat_order_option boolean,
     cf_domain_name character varying(30),
-    is_admin boolean
+    is_admin boolean,
     last_pass_reset timestamp without time zone
 );
 

@@ -1864,13 +1864,23 @@ func sendNotificationToAllUsers(threadVal string, db *sql.DB, fbapp firebase.App
 			}
 
 			sendRes, sendErr := fb_message_client.Send(context.TODO(), &messaging.Message{
-				Token: fcmToken,
 
+				Token: fcmToken,
+				Notification: &messaging.Notification{
+					Title: "message in: " + threadVal,
+					Body:  message,
+				},
 				Webpush: &messaging.WebpushConfig{
 					Notification: &messaging.WebpushNotification{
 						Title: "message in: " + threadVal,
 						Body:  message,
 						Data:  typePayload,
+					},
+				},
+				Android: &messaging.AndroidConfig{
+					Notification: &messaging.AndroidNotification{
+						Title: "message in: " + threadVal,
+						Body:  message,
 					},
 				},
 			})

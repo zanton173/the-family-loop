@@ -56,7 +56,7 @@
                 <input id="pfpchangeinput" type="file" class="my-2" name="changepfp" placeholder="Upload new pfp"
                     accept="image/*" oninput="checkPfpChangeValidity()" />
                 <input style="display: none;" name="usernameinput" id="invisibleusernameinput" />
-                <button id="changePfpSubmitBtn" disabled="true" class="btn btn-outline-success col my-2">change</button>
+                <button id="changePfpSubmitBtn" disabled class="btn btn-outline-success col my-2">change</button>
                 <button type="button" class="btn btn-dark col my-2" data-bs-dismiss="modal">close</button><br />
             </form>
         </div>
@@ -292,25 +292,23 @@
     function checkPfpChangeValidity() {
 
         invisibleInputForUsername.value = username
-        if (pfpChangeInput.value >= '') {
+        if (pfpChangeInput.value.length > 1) {
             pfpChangeBtn.disabled = false
             pfpChangeBtn.className = "btn btn-success col my-2"
-        } else
-            pfpChangeBtn.disabled = true
+        }
 
-
-        updatepfpform.addEventListener('htmx:afterRequest', async function setPfp(event) {
-            pfpChangeBtn.setAttribute("disabled", "true")
-
-            pfpChangeBtn.removeEventListener('click', setPfp)
-
-            if (event.detail.xhr.status == 200)
-                window.location.reload()
-            else if (event.detail.xhr.status == 400)
-                alert("Something was wrong with that picture :(")
-
-        })
     }
+    updatepfpform.addEventListener('htmx:afterRequest', async function setPfp(event) {
+        pfpChangeBtn.setAttribute("disabled", "true")
+
+        pfpChangeBtn.removeEventListener('click', setPfp)
+
+        if (event.detail.xhr.status == 200)
+            window.location.reload()
+        else if (event.detail.xhr.status == 400)
+            alert("Something was wrong with that picture :(")
+
+    })
     function showResetLink(event) {
         if (event.detail.xhr.status == 400) {
             alert("Make sure you are using the correct email. You can only reset your password once every 24 hours.")

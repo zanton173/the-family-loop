@@ -1209,8 +1209,9 @@ func main() {
 			pfpscnerr := row.Scan(&pfpImg)
 			if pfpscnerr != nil {
 				pfpImg = "https://" + cfdistro + "/pfp/question.png"
+			} else {
+				pfpImg = "https://" + cfdistro + "/pfp/" + pfpImg
 			}
-			pfpImg = "https://" + cfdistro + "/pfp/" + pfpImg
 			if time.Now().UTC().Sub(createdat) > (72 * time.Hour) {
 				formatCreatedatTime = time.DateOnly
 

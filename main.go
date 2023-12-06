@@ -1182,7 +1182,7 @@ func main() {
 		}
 		var fcmRegToken string
 
-		sendNotificationToAllUsers(threadVal, db, *app, chatMessage)
+		sendNotificationToAllUsers(threadVal, db, *app, chatMessage, userName)
 		if len(listOfUsersTagged) > 0 {
 			for _, val := range listOfUsersTagged {
 				fcmRegRow := db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where username='%s' and username != '%s';", val, userName))
@@ -1908,9 +1908,9 @@ func sendNotificationToTaggedUser(w http.ResponseWriter, r *http.Request, fcmTok
 	db.Exec(fmt.Sprintf("insert into tfldata.sent_notification_log(\"notification_result\", \"createdon\") values('%s', '%s');", sentRes, time.Now().In(nyLoc).Format(time.DateTime)))
 }
 
-func sendNotificationToAllUsers(threadVal string, db *sql.DB, fbapp firebase.App, message string) {
+func sendNotificationToAllUsers(threadVal string, db *sql.DB, fbapp firebase.App, message string, curUser string) {
 
-	output, outerr := db.Query(fmt.Sprintf("select username, is_subscribed from tfldata.users_to_threads where thread='%s';", threadVal))
+	output, outerr := db.Query(fmt.Sprintf("select username, is_subscribed from tfldata.users_to_threads where thread='%s' and username != '%s';", threadVal, curUser))
 	if outerr != nil {
 		fmt.Println(outerr)
 	}

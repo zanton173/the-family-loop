@@ -226,6 +226,8 @@
     var updatePfpForm = document.getElementById('updatepfpform')
     var invisibleInputForUsername = document.getElementById('invisibleusernameinput')
 
+
+
     var navbarItems = document.getElementById('navbarText')
 
     var navItemToReplace = document.getElementById('navitemforwelcome')
@@ -252,6 +254,7 @@
     navItemWelcomeAvatar.setAttribute("style", "width: 8%; height: auto; border-radius: 35%;")
     navItemWelcomeAvatar.setAttribute("id", "pfpavatar")
     navItemWelcomeAvatar.setAttribute("alt", "Click here to change")
+
     var username = ''
 
     p.append(c)
@@ -282,9 +285,12 @@
     }
 
 
-    navItemWelcomeAvatar.addEventListener('click', async (event) => {
+    navItemWelcomeAvatar.addEventListener('click', showPfpModal = async (event) => {
         changePfpModal.show()
     })
+    if (window.location.pathname == "/groupchat")
+        navItemWelcomeAvatar.removeEventListener("click", showPfpModal)
+
     /*p.addEventListener("scroll", function () {
         console.log("scroll")
         document.getElementById('toggleNavItems').dispatchEvent(new Event('click'))
@@ -293,7 +299,7 @@
 
         invisibleInputForUsername.value = username
         if (pfpChangeInput.value.length > 1) {
-            pfpChangeBtn.disabled = false
+            document.getElementById("changePfpSubmitBtn").disabled = false
             pfpChangeBtn.className = "btn btn-success col my-2"
         }
 

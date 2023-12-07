@@ -1904,40 +1904,45 @@ func sendNotificationToAllUsers(threadVal string, db *sql.DB, fbapp firebase.App
 	fb_message_client, _ := fbapp.Messaging(context.TODO())
 	typePayload := make(map[string]string)
 	typePayload["type"] = "groupchat"
+	typePayload["thread"] = threadVal
 	for output.Next() {
 		var userToSend string
 		var isSubbed bool
 		output.Scan(&userToSend, &isSubbed)
 		if isSubbed {
 			var fcmToken string
+			var sendRes string
+			var sendErr error
+
 			tokenRow := db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where username='%s';", userToSend))
 			scnerr := tokenRow.Scan(&fcmToken)
 
 			if scnerr != nil {
 				fmt.Println(scnerr)
+			} else {
+
+				sendRes, sendErr = fb_message_client.Send(context.TODO(), &messaging.Message{
+
+					Token: fcmToken,
+					Notification: &messaging.Notification{
+						Title: "message in: " + threadVal,
+						Body:  message,
+					},
+					Webpush: &messaging.WebpushConfig{
+						Notification: &messaging.WebpushNotification{
+							Title: "message in: " + threadVal,
+							Body:  message,
+							Data:  typePayload,
+						},
+					},
+					Android: &messaging.AndroidConfig{
+						Notification: &messaging.AndroidNotification{
+							Title: "message in: " + threadVal,
+							Body:  message,
+						},
+					},
+				})
 			}
-
-			sendRes, sendErr := fb_message_client.Send(context.TODO(), &messaging.Message{
-
-				Token: fcmToken,
-				Notification: &messaging.Notification{
-					Title: "message in: " + threadVal,
-					Body:  message,
-				},
-				Webpush: &messaging.WebpushConfig{
-					Notification: &messaging.WebpushNotification{
-						Title: "message in: " + threadVal,
-						Body:  message,
-						Data:  typePayload,
-					},
-				},
-				Android: &messaging.AndroidConfig{
-					Notification: &messaging.AndroidNotification{
-						Title: "message in: " + threadVal,
-						Body:  message,
-					},
-				},
-			})
 			if sendErr != nil {
 				fmt.Print(sendErr)
 				db.Exec(fmt.Sprintf("update tfldata.users set fcm_registration_id=null where username='%s';", userToSend))

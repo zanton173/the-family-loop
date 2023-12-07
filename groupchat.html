@@ -108,9 +108,8 @@
     <div id="prependhere"></div>
     <div id="loadGChathere" hx-get="/group-chat-messages"
         hx-vals="js:{'threadval': document.getElementById('threadSelector').value, 'order_option': gchatOrderOpt}"
-        hx-trigger="afterThreadSelectorLoadsEvent, success-send from:#messageform"
-        hx-on::after-request="checkIfLoadedFromNotification(event)" class="border-1 d-block m-2"
-        style="justify-content: center; text-align: center; border-radius: 1%;">
+        hx-trigger="afterThreadSelectorLoadsEvent, every 3s, success-send from:#messageform"
+        class="border-1 d-block m-2" style="justify-content: center; text-align: center; border-radius: 1%;">
 
     </div>
     <div id="appendhere"></div>
@@ -219,14 +218,32 @@
 
             }
             checkIfSubbed()
+            document.getElementById("loadGChathere").dispatchEvent(new Event("htmx:afterRequest"))
         })
+        htmx.on("#loadGChathere", "htmx:afterRequest", checkNotified = () => checkIfLoadedFromNotification(event))
         function checkIfLoadedFromNotification(event) {
+
             if (event.detail.xhr.status == 200) {
                 var param = new URL(document.location).searchParams
-                if (param.get('thread').length > 1) {
-                    for (var i = 0; i <= document.getElementById('threadSelector').children.length; i++) {
+                if (param.get('thread') && param.get('thread').length >= 1) {
+
+                    for (var i = 0; i < document.getElementById('threadSelector').children.length; i++) {
                         if (document.getElementById('threadSelector').children[i].value == param.get('thread')) {
+
                             document.getElementById('threadSelector').children[i].selected = true
+                            document.getElementById('loadGChathere').dispatchEvent(new Event('afterThreadSelectorLoadsEvent'))
+                            //document.getElementById('threadSelector').children[i].dispatchEvent(new Event("onchange"))
+                        }
+                    }
+
+                    var messages = document.querySelectorAll("p.col-10")
+                    for (var i = 0; i < messages.length; i++) {
+                        if (messages[i].innerHTML.includes(param.get('chatMessage'))) {
+                            messages[i].scrollIntoView({ behavior: "smooth", inline: "center" })
+                            window.history.pushState({}, document.title, "/" + "groupchat")
+                            document.getElementById('loadGChathere').removeEventListener("htmx:afterRequest", checkNotified)
+                        } else {
+                            document.getElementById('loadGChathere').removeEventListener("htmx:afterRequest", checkNotified)
                         }
                     }
                 }

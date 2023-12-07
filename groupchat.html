@@ -108,8 +108,9 @@
     <div id="prependhere"></div>
     <div id="loadGChathere" hx-get="/group-chat-messages"
         hx-vals="js:{'threadval': document.getElementById('threadSelector').value, 'order_option': gchatOrderOpt}"
-        hx-trigger="afterThreadSelectorLoadsEvent, every 3s, success-send from:#messageform"
-        class="border-1 d-block m-2" style="justify-content: center; text-align: center; border-radius: 1%;">
+        hx-trigger="afterThreadSelectorLoadsEvent, success-send from:#messageform"
+        hx-on::after-request="checkIfLoadedFromNotification(event)" class="border-1 d-block m-2"
+        style="justify-content: center; text-align: center; border-radius: 1%;">
 
     </div>
     <div id="appendhere"></div>
@@ -219,6 +220,20 @@
             }
             checkIfSubbed()
         })
+        function checkIfLoadedFromNotification(event) {
+            if (event.detail.xhr.status == 200) {
+                var param = new URL(document.location).searchParams
+                if (param.get('thread').length > 1) {
+                    for (var i = 0; i <= document.getElementById('threadSelector').children.length; i++) {
+                        if (document.getElementById('threadSelector').children[i].value == param.get('thread')) {
+                            document.getElementById('threadSelector').children[i].selected = true
+                        }
+                    }
+                }
+                //console.log(param.get('chatMessage'))
+                //console.log(param.get('thread'))
+            }
+        }
         function checkIfSubbed() {
 
             selectedThread = usersSubbedThreads.filter((data) => data.thread == document.getElementById('threadSelector').value)
@@ -263,6 +278,7 @@
                 showThemePanel()
             })
         }
+
         function showThemePanel() {
             if (document.getElementById('showthemebtn').style.display.includes("block") && document.getElementById('themepanel').style.display.includes("none")) {
                 document.getElementById('showthemebtn').style.display = "none"

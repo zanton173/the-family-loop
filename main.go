@@ -516,15 +516,13 @@ func main() {
 
 		var output *sql.Rows
 		if r.URL.Query().Get("page") == "null" {
-			output, err = db.Query("select id, title, description, author, post_files_key from tfldata.posts order by id DESC limit 2;")
+			output, err = db.Query("select id, title, description, author, post_files_key from tfldata.posts order by createdon DESC limit 2;")
 		} else if r.URL.Query().Get("limit") == "current" {
 			w.Header().Set("HX-Reswap", "innerHTML")
-			output, err = db.Query(fmt.Sprintf("select id, title, description, author, post_files_key from tfldata.posts where id >= %s order by id DESC;", r.URL.Query().Get("page")))
+			output, err = db.Query(fmt.Sprintf("select id, title, description, author, post_files_key from tfldata.posts where id >= %s order by createdon DESC;", r.URL.Query().Get("page")))
 		} else {
-			output, err = db.Query(fmt.Sprintf("select id, title, description, author, post_files_key from tfldata.posts where id < %s order by id DESC limit 2;", r.URL.Query().Get("page")))
+			output, err = db.Query(fmt.Sprintf("select id, title, description, author, post_files_key from tfldata.posts where id < %s order by createdon DESC limit 2;", r.URL.Query().Get("page")))
 		}
-		var count string
-		db.QueryRow("select count(*) from tfldata.posts;").Scan(&count)
 
 		var dataStr string
 		if err != nil {
@@ -547,13 +545,7 @@ func main() {
 			reactionRow := db.QueryRow(fmt.Sprintf("select reaction from tfldata.reactions where post_id=%d and author='%s';", postrows.Id, curUser))
 			reactionRow.Scan(&reaction)
 
-			/*
-				No need to error check here
-				if scnerr != nil {
-					//fmt.Println("error here")
-					//db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", scnerr, time.Now().In(nyLoc).Format(time.DateTime)))
-				}*/
-
+			editElement := ""
 			if postrows.Author != curUser {
 				if reaction > " " {
 					reactionBtn = fmt.Sprintf("&nbsp;&nbsp;"+reaction+"<div onclick='addAReaction(%d, `%s`)'><i class='bi bi-three-dots'></i></div>", postrows.Id, postrows.Author+"_author_"+postrows.Title)
@@ -562,6 +554,7 @@ func main() {
 				}
 			} else {
 				reactionBtn = ""
+				editElement = fmt.Sprintf("<i style='position: absolute; background-color: gray; border-radius: 13px / 13px; left: 87%s; z-index: 3' class='bi bi-three-dots m-1 px-1' hx-post='/delete-this-post' hx-swap='none' hx-vals=\"js:{'deletionID': %d}\" hx-params='not page, limit, token' hx-ext='json-enc' hx-confirm='Delete this post forever. This cannot be undone'></i>", "%", postrows.Id)
 			}
 			comment := db.QueryRow(fmt.Sprintf("select count(*) from tfldata.comments where post_id='%d';", postrows.Id))
 			var commentCount string
@@ -579,13 +572,13 @@ func main() {
 			if strings.Contains(firstImg.filetype, "image") {
 
 				if countOfImg > 1 {
-					dataStr = fmt.Sprintf("<div class='card my-4' style='background-color: rgb(22 30 255 / .42); border-radius: 106px 106px / 91px; box-shadow: 12px 12px 2px 1px rgb(41 88 93 / 20&percnt;);'><img class='img-fluid' id='%s' src='https://%s/posts/images/%s' alt='%s' style='border-radius: 65px 65px / 50px;' alt='default' /><div class='p-2' style='display: flex; justify-content: space-around;'><i onclick='nextLeftImage(`%s`)' class='bi bi-arrow-90deg-left'></i><i onclick='nextRightImage(`%s`)' class='bi bi-arrow-90deg-right'></i></div><div id='%s' class='card-body'><h5 class='card-title'>%s - %s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' class='btn btn-primary' hx-swap='innerHTML'>Comments (%s)</button>%s</div></div>", postrows.Postfileskey, cfdistro, firstImg.filename, firstImg.filename, postrows.Postfileskey, postrows.Postfileskey, postrows.Author+"_author_"+postrows.Title, postrows.Title, postrows.Author, postrows.Description, postrows.Id, postrows.Id, commentCount, reactionBtn)
+					dataStr = fmt.Sprintf("<div class='card my-4' style='background-color: rgb(22 30 255 / .42); border-radius: 106px 106px / 91px; box-shadow: 12px 12px 2px 1px rgb(41 88 93 / 20&percnt;);'>%s<img class='img-fluid' id='%s' src='https://%s/posts/images/%s' alt='%s' style='border-radius: 18px 18px;' alt='default' /><div class='p-2' style='display: flex; justify-content: space-around;'><i onclick='nextLeftImage(`%s`)' class='bi bi-arrow-90deg-left'></i><i onclick='nextRightImage(`%s`)' class='bi bi-arrow-90deg-right'></i></div><div id='%s' class='card-body'><h5 class='card-title my-1'><b>%s</b><br/>%s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' class='btn btn-primary' hx-swap='innerHTML'>Comments (%s)</button>%s</div></div>", editElement, postrows.Postfileskey, cfdistro, firstImg.filename, firstImg.filename, postrows.Postfileskey, postrows.Postfileskey, postrows.Author+"_author_"+postrows.Title, postrows.Author, postrows.Title, postrows.Description, postrows.Id, postrows.Id, commentCount, reactionBtn)
 				} else if countOfImg == 1 {
-					dataStr = fmt.Sprintf("<div class='card my-4' style='background-color: rgb(22 30 255 / .42); border-radius: 106px 106px / 91px; box-shadow: 12px 12px 2px 1px rgb(41 88 93 / 20&percnt;);'><img class='img-fluid' id='%s' src='https://%s/posts/images/%s' alt='%s' style='border-radius: 65px 65px / 50px;' alt='default' /><div class='p-2' style='display: flex; justify-content: space-around;'></div><div id='%s' class='card-body'><h5 class='card-title'>%s - %s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' hx-swap='innerHTML' class='btn btn-primary'>Comments (%s)</button>%s</div></div>", postrows.Postfileskey, cfdistro, firstImg.filename, firstImg.filename, postrows.Author+"_author_"+postrows.Title, postrows.Title, postrows.Author, postrows.Description, postrows.Id, postrows.Id, commentCount, reactionBtn)
+					dataStr = fmt.Sprintf("<div class='card my-4' style='background-color: rgb(22 30 255 / .42); border-radius: 106px 106px / 91px; box-shadow: 12px 12px 2px 1px rgb(41 88 93 / 20&percnt;);'>%s<img class='img-fluid' id='%s' src='https://%s/posts/images/%s' alt='%s' style='border-radius: 18px 18px;' alt='default' /><div class='p-2' style='display: flex; justify-content: space-around;'></div><div id='%s' class='card-body'><h5 class='card-title my-1'><b>%s</b><br/>%s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' hx-swap='innerHTML' class='btn btn-primary'>Comments (%s)</button>%s</div></div>", editElement, postrows.Postfileskey, cfdistro, firstImg.filename, firstImg.filename, postrows.Author+"_author_"+postrows.Title, postrows.Author, postrows.Title, postrows.Description, postrows.Id, postrows.Id, commentCount, reactionBtn)
 				}
 
-			} else if strings.Contains(firstImg.filetype, "video") || strings.Contains(firstImg.filetype, "octet-stream") {
-				dataStr = fmt.Sprintf("<div class='card my-4' style='background-color: rgb(22 30 255 / .42); border-radius: 106px 106px / 91px; box-shadow: 12px 12px 2px 1px rgb(41 88 93 / 20&percnt;);'><video style='border-radius: 65px 65px / 91px;' controls id='video'><source src='https://%s/posts/videos/%s'></video><div class='p-2' style='display: flex; justify-content: space-around;'></div><div id='%s' class='card-body'><h5 class='card-title'>%s - %s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' hx-swap='innerHTML' class='btn btn-primary'>Comments (%s)</button>%s</div></div>", cfdistro, firstImg.filename, postrows.Author+"_author_"+postrows.Title, postrows.Title, postrows.Author, postrows.Description, postrows.Id, postrows.Id, commentCount, reactionBtn)
+			} else {
+				dataStr = fmt.Sprintf("<div class='card my-4' style='background-color: rgb(22 30 255 / .42); border-radius: 106px 106px / 91px; box-shadow: 12px 12px 2px 1px rgb(41 88 93 / 20&percnt;);'>%s<video style='border-radius: 18px 18px;' controls id='video'><source src='https://%s/posts/videos/%s'></video><div class='p-2' style='display: flex; justify-content: space-around;'></div><div id='%s' class='card-body'><h5 class='card-title my-1'><b>%s</b><br/>%s</h5><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' hx-swap='innerHTML' class='btn btn-primary'>Comments (%s)</button>%s</div></div>", editElement, cfdistro, firstImg.filename, postrows.Author+"_author_"+postrows.Title, postrows.Author, postrows.Title, postrows.Description, postrows.Id, postrows.Id, commentCount, reactionBtn)
 			}
 
 			postTmpl, tmerr = template.New("tem").Parse(dataStr)
@@ -596,6 +589,78 @@ func main() {
 
 		}
 
+	}
+	deleteThisPostHandler := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		cfg, err := config.LoadDefaultConfig(context.TODO(),
+			config.WithDefaultRegion("us-east-1"),
+			config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(awskey, awskeysecret, "")),
+		)
+
+		if err != nil {
+			w.Write([]byte("<p>This is a delete issue. Please create an issue on the bug report page</p>"))
+
+			return
+		}
+
+		client := s3.NewFromConfig(cfg)
+
+		bs, _ := io.ReadAll(r.Body)
+		type postBody struct {
+			PostID int `json:"deletionID"`
+		}
+		var postData postBody
+		marsherr := json.Unmarshal(bs, &postData)
+		if marsherr != nil {
+			fmt.Println(marsherr)
+		}
+		type workObj struct {
+			Filename string
+			Filetype string
+			Pfilesid int
+		}
+
+		output, outerr := db.Query(fmt.Sprintf("select pf.id,pf.file_name,pf.file_type from tfldata.posts as p join tfldata.postfiles as pf on pf.post_files_key = p.post_files_key where p.id=%d;", postData.PostID))
+		if outerr != nil {
+			fmt.Println(outerr)
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte("<p>Please report this error at the bugreport page. Title the error with delete post issue</p>"))
+			return
+		}
+		defer output.Close()
+		for output.Next() {
+			var workData workObj
+			output.Scan(&workData.Pfilesid, &workData.Filename, &workData.Filetype)
+
+			if strings.Contains(workData.Filetype, "image") {
+				_, err := client.DeleteObject(context.TODO(), &s3.DeleteObjectInput{
+					Bucket: aws.String(s3Domain),
+					Key:    aws.String("posts/images/" + workData.Filename),
+				})
+
+				if err != nil {
+					fmt.Println("error on image delete")
+					fmt.Println(err.Error())
+				}
+			} else {
+				_, err := client.DeleteObject(context.TODO(), &s3.DeleteObjectInput{
+					Bucket: aws.String(s3Domain),
+					Key:    aws.String("posts/videos/" + workData.Filename),
+				})
+
+				if err != nil {
+					fmt.Println("error on video delete")
+					fmt.Println(err.Error())
+				}
+			}
+
+			db.Exec(fmt.Sprintf("delete from tfldata.postfiles where id=%d", workData.Pfilesid))
+		}
+
+		_, delerr := db.Exec(fmt.Sprintf("delete from tfldata.posts where id=%d", postData.PostID))
+		if delerr != nil {
+			fmt.Println(delerr)
+		}
 	}
 
 	getPostCountHandler := func(w http.ResponseWriter, r *http.Request) {
@@ -641,7 +706,7 @@ func main() {
 
 		postFilesKey := uuid.NewString()
 
-		_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.posts(\"title\", \"description\", \"author\", \"post_files_key\") values(E'%s', E'%s', '%s', '%s');", replacer.Replace(r.PostFormValue("title")), replacer.Replace(r.PostFormValue("description")), username, postFilesKey))
+		_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.posts(\"title\", \"description\", \"author\", \"post_files_key\", \"createdon\") values(E'%s', E'%s', '%s', '%s', '%s');", replacer.Replace(r.PostFormValue("title")), replacer.Replace(r.PostFormValue("description")), username, postFilesKey, time.Now().In(nyLoc).Format(time.DateTime)))
 
 		if errinsert != nil {
 			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", errinsert, time.Now().In(nyLoc).Format(time.DateTime)))
@@ -1314,6 +1379,7 @@ func main() {
 		rows, err := db.Query(fmt.Sprintf("select file_name from tfldata.postfiles where post_files_key='%s';", r.URL.Query().Get("id")))
 		if err != nil {
 			fmt.Println(err)
+			return
 		}
 		defer rows.Close()
 		for rows.Next() {
@@ -1629,6 +1695,7 @@ func main() {
 	http.HandleFunc("/create-reaction-to-post", createPostReactionHandler)
 
 	http.HandleFunc("/get-posts", getPostsHandler)
+	http.HandleFunc("/delete-this-post", deleteThisPostHandler)
 	http.HandleFunc("/new-posts", getPostCountHandler)
 
 	http.HandleFunc("/get-selected-post", getSelectedPostsComments)

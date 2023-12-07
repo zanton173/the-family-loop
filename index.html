@@ -213,7 +213,6 @@
         var openPostModalObj = new bootstrap.Modal(document.getElementById('openPostModal'), {});
 
 
-
         var openPostModalEle = document.getElementById('openPostModal')
         const submitBtn = document.createElement('button')
         var divForFormBtns = document.getElementById('post-div')
@@ -282,12 +281,7 @@
         }
 
     </script>
-    <!--<div hx-get="/new-posts" hx-trigger="load, every 5s" hx-target="#refreshbutton" style="text-align: center;"
-        class="px-5" id="polling">
-        <div id="refreshbutton">
 
-        </div>
-    </div>-->
 
     <div style="text-align: center;" class="px-5" id="posts-div">
         <div hx-get="/get-posts" hx-trigger="load, loadNewVars, anotherCustomEvent" hx-target="#post-items"
@@ -331,14 +325,16 @@
         const listOfImageObj = []
         htmx.on("#divofposts", "htmx:load", async function getImgs(event) {
             limit = 10
-            var imgListUUId = event.detail.elt.children[0].getAttribute("id")
-            if (imgListUUId != 'video') {
-                listOfImageObj.push({ id: imgListUUId, imgs: await getListOfImgs(imgListUUId) })
 
+            var imgListUUID = event.detail.elt.querySelector('img, video').getAttribute('id')
+
+            if (imgListUUID != 'video') {
+                listOfImageObj.push({ id: imgListUUID, imgs: await getListOfImgs(imgListUUID) })
             }
+
         })
-        async function getListOfImgs(imgListUUId) {
-            const resp = await fetch("/get-post-images?id=" + imgListUUId, {
+        async function getListOfImgs(imgListUUID) {
+            const resp = await fetch("/get-post-images?id=" + imgListUUID, {
                 method: "GET",
                 headers: {
                     "Content-Type": "application/json"
@@ -384,6 +380,7 @@
 
 
         }
+
         /*var listOfImgsForEvent = document.querySelectorAll('div .card')
         listOfImgsForEvent.forEach((data) => data.children.item)
             .addEventListener("mousedown", function (event) {
@@ -399,27 +396,7 @@
             window.scrollTo({ top: 0, behavior: "smooth" });
             document.getElementById('notification').removeChild(badge)
         }
-        /*var dbCount = null
-        htmx.on('#post-items', 'htmx:afterSettle', function (event) {
- 
-            htmx.on('#polling', 'htmx:afterRequest', function (data) {
- 
-                if (dbCount !== document.getElementById('post-items').childElementCount) {
-                    //console.log("need a refresh")
-                    if (document.getElementById('notification').childElementCount == 0) {
- 
-                        document.getElementById('notification').append(badge)
-                    }
- 
-                } else {
-                    //console.log('no refresh')
-                    if (document.getElementById('notification').contains(badge)) {
-                        document.getElementById('notification').removeChild(badge)
-                    }
- 
-                }
-            })
-        })*/
+
         htmx.on("#createpostele", "htmx:afterRequest", function (event) {
             if (event.detail.xhr.status == 401) {
                 alert("Please login before creating a post.")
@@ -458,7 +435,7 @@
             app</button>
     </footer>
     <script>
-        var deferredPrompt = null;
+        /*var deferredPrompt = null;
         if (!window.matchMedia('(display-mode: standalone)').matches) {
             document.getElementById('pwafooter').style.display = "none"
         }
@@ -489,7 +466,7 @@
             } else if (outcome === 'dismissed') {
                 console.log('User dismissed the install prompt');
             }
-        });
+        });*/
     </script>
 </body>
 

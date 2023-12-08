@@ -165,8 +165,8 @@
         const reactIcons = document.getElementById('reactionicons')
         var sendEmojiTo = null
         limit = 10
-        function addAReaction(postId, divIdToAppend) {
-            var divToAddBtnsTo = document.getElementById(divIdToAppend)
+        function addAReaction(postId) {
+            var divToAddBtnsTo = document.getElementById(postId)
             sendEmojiTo = postId
             divToAddBtnsTo.appendChild(reactIcons)
             if (reactIcons.getAttribute("style").includes("display: flex")) {

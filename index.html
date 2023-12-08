@@ -328,9 +328,9 @@
 
             var imgListUUID = event.detail.elt.querySelector('img, video').getAttribute('id')
 
-            if (imgListUUID != 'video') {
-                listOfImageObj.push({ id: imgListUUID, imgs: await getListOfImgs(imgListUUID) })
-            }
+            //if (imgListUUID != 'video') {
+            listOfImageObj.push({ id: imgListUUID, imgs: await getListOfImgs(imgListUUID) })
+            //}
 
         })
         async function getListOfImgs(imgListUUID) {
@@ -345,35 +345,42 @@
         }
         // consider zindex for img toggling
         function nextLeftImage(id) {
-
+            var itemTag = "IMG"
             var imgCaro = document.getElementById(id)
-
+            imgCaro.tagName == "IMG" ?
+                itemTag = "images"
+                :
+                itemTag = "videos"
             const imgArray = listOfImageObj.filter((data) => data.id === imgCaro.getAttribute('id'))[0].imgs
 
             if (iter == 0) {
                 iter = imgArray.length - 1
-                imgCaro.setAttribute("src", "https://d33gjmrumfzeah.cloudfront.net/posts/images/" + imgArray[iter])
+                imgCaro.setAttribute("src", "https://d33gjmrumfzeah.cloudfront.net/posts/" + itemTag + "/" + imgArray[iter])
                 imgCaro.setAttribute("alt", imgArray[iter])
             }
             else {
-                imgCaro.setAttribute("src", "https://d33gjmrumfzeah.cloudfront.net/posts/images/" + imgArray[iter - 1])
+                imgCaro.setAttribute("src", "https://d33gjmrumfzeah.cloudfront.net/posts/" + itemTag + "/" + imgArray[iter - 1])
                 imgCaro.setAttribute("alt", imgArray[iter - 1])
                 iter--
             }
         }
         function nextRightImage(id) {
-
+            var itemTag = "IMG"
             var imgCaro = document.getElementById(id)
+            imgCaro.tagName == "IMG" ?
+                itemTag = "images"
+                :
+                itemTag = "videos"
 
             const imgArray = listOfImageObj.filter((data) => data.id === imgCaro.getAttribute('id'))[0].imgs
 
             if (iter == imgArray.length - 1) {
                 iter = 0
-                imgCaro.setAttribute("src", "https://d33gjmrumfzeah.cloudfront.net/posts/images/" + imgArray[iter])
+                imgCaro.setAttribute("src", "https://d33gjmrumfzeah.cloudfront.net/posts/" + itemTag + "/" + imgArray[iter])
                 imgCaro.setAttribute("alt", imgArray[iter])
             }
             else {
-                imgCaro.setAttribute("src", "https://d33gjmrumfzeah.cloudfront.net/posts/images/" + imgArray[iter + 1])
+                imgCaro.setAttribute("src", "https://d33gjmrumfzeah.cloudfront.net/posts/" + itemTag + "/" + imgArray[iter + 1])
                 imgCaro.setAttribute("alt", imgArray[iter + 1])
                 iter++
             }

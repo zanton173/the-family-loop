@@ -716,7 +716,7 @@ func main() {
 
 		postFilesKey := uuid.NewString()
 
-		_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.posts(\"title\", \"description\", \"author\", \"post_files_key\", \"createdon\") values(E'%s', E'%s', '%s', '%s', '%s');", replacer.Replace(r.PostFormValue("title")), replacer.Replace(r.PostFormValue("description")), username, postFilesKey, time.Now().In(nyLoc).Format(time.DateTime)))
+		_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.posts(\"title\", \"description\", \"author\", \"post_files_key\", \"createdon\") values(E'%s', E'%s', '%s', '%s', now());", replacer.Replace(r.PostFormValue("title")), replacer.Replace(r.PostFormValue("description")), username, postFilesKey))
 
 		if errinsert != nil {
 			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", errinsert, time.Now().In(nyLoc).Format(time.DateTime)))
@@ -1268,10 +1268,16 @@ func main() {
 			}
 		}
 
+		_, insthreadtfblerr := db.Exec(fmt.Sprintf("insert into tfldata.threads(\"thread\", \"threadAuthor\", \"createdon\") values('%s', '%s', '%s');", threadVal, userName, time.Now().In(nyLoc).Format(time.DateTime)))
+		if insthreadtfblerr != nil {
+			w.Write([]byte("You have already created a thread with this name"))
+		}
+
 		_, inserr := db.Exec(fmt.Sprintf("insert into tfldata.gchat(\"chat\", \"author\", \"createdon\", \"thread\") values(E'%s', '%s', '%s', '%s');", chatMessage, userName, time.Now().In(nyLoc).Format(time.DateTime), threadVal))
 		if inserr != nil {
 			fmt.Println(err)
 			w.WriteHeader(http.StatusBadRequest)
+			return
 		}
 		w.Header().Set("HX-Trigger", "success-send")
 

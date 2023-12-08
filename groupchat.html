@@ -222,7 +222,7 @@
         })
         htmx.on("#loadGChathere", "htmx:afterRequest", checkNotified = () => checkIfLoadedFromNotification(event))
         function checkIfLoadedFromNotification(event) {
-
+            debugger;
             if (event.detail.xhr.status == 200) {
                 var param = new URL(document.location).searchParams
                 if (param.get('thread') && param.get('thread').length >= 1) {

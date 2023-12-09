@@ -569,10 +569,10 @@ func main() {
 			firstRow := db.QueryRow(fmt.Sprintf("select file_name, file_type from tfldata.postfiles where post_files_key='%s' order by id desc limit 1;", postrows.Postfileskey))
 			firstRow.Scan(&firstImg.filename, &firstImg.filetype)
 
-			if strings.Contains(postrows.Title, "'") {
+			/*if strings.Contains(postrows.Title, "'") {
 				postrows.Title = strings.ReplaceAll(postrows.Title, "'", "")
 				fmt.Println(postrows.Title)
-			}
+			}*/
 
 			if strings.Contains(firstImg.filetype, "image") {
 
@@ -1282,6 +1282,20 @@ func main() {
 		w.Header().Set("HX-Trigger", "success-send")
 
 	}
+	delThreadHandler := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		bs, _ := io.ReadAll(r.Body)
+		type postBody struct {
+			ThreadToDel string `json:"threadToDel"`
+		}
+		var postData postBody
+		marsherr := json.Unmarshal(bs, &postData)
+		if marsherr != nil {
+			fmt.Println(marsherr)
+		}
+		db.Exec(fmt.Sprintf("delete from tfldata.gchat where thread='%s';", postData.ThreadToDel))
+		db.Exec(fmt.Sprintf("delete from tfldata.threads where thread='%s';", postData.ThreadToDel))
+	}
 	changeGchatOrderOptHandler := func(w http.ResponseWriter, r *http.Request) {
 		bs, _ := io.ReadAll(r.Body)
 		type postBody struct {
@@ -1644,18 +1658,29 @@ func main() {
 
 	}
 	getOpenThreadsHandler := func(w http.ResponseWriter, r *http.Request) {
-		distinctThreadsOutput, queryErr := db.Query("select distinct(thread) from tfldata.gchat;")
+		c, _ := r.Cookie("session_id")
+
+		row := db.QueryRow(fmt.Sprintf("select username from tfldata.users where session_token='%s';", c.Value))
+		var curUser string
+		row.Scan(&curUser)
+		distinctThreadsOutput, queryErr := db.Query("select distinct(gct.thread), tt.threadauthor from tfldata.gchat as gct join tfldata.threads as tt on tt.thread = gct.thread;")
 		if queryErr != nil {
 			fmt.Println(queryErr)
 		}
 		defer distinctThreadsOutput.Close()
 		for distinctThreadsOutput.Next() {
 			var thread string
-			scnerr := distinctThreadsOutput.Scan(&thread)
+			var threadAuthor string
+			scnerr := distinctThreadsOutput.Scan(&thread, &threadAuthor)
 			if scnerr != nil {
 				fmt.Print("scan error: " + scnerr.Error())
 			}
-			dataStr := fmt.Sprintf("<option value='%s'>%s</option>", thread, thread)
+			var dataStr string
+			if threadAuthor == curUser {
+				dataStr = fmt.Sprintf("<option id='%s_del' value='%s'>%s</option>", thread, thread, thread)
+			} else {
+				dataStr = fmt.Sprintf("<option value='%s'>%s</option>", thread, thread)
+			}
 			w.Write([]byte(dataStr))
 		}
 	}
@@ -1738,6 +1763,7 @@ func main() {
 
 	http.HandleFunc("/group-chat-messages", getGroupChatMessagesHandler)
 	http.HandleFunc("/create-a-group-chat-message", createGroupChatMessageHandler)
+	http.HandleFunc("/del-thread", delThreadHandler)
 	http.HandleFunc("/get-all-users-to-tag", getUsernamesToTagHandler)
 
 	http.HandleFunc("/change-gchat-order-opt", changeGchatOrderOptHandler)

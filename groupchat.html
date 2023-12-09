@@ -70,10 +70,9 @@
     <div id="showthemebtn" style="display: block; text-align: center;">
         <button type="button" onclick="showThemePanel()" class="btn btn-dark border-0 btn-sm"
             style="box-shadow: 3px 3px 6px;">Change Theme</button>
-        <button id="changeChatOrderOptBtn" type="button"
-            hx-on::after-request="document.dispatchEvent(new Event('DOMContentLoaded'))" hx-ext="json-enc"
-            hx-post="/change-gchat-order-opt" hx-vals="js:{'order_option': !gchatOrderOpt, 'username': username}"
-            hx-swap="none" hx-trigger="click" class="btn btn-dark border-0 btn-sm" style="box-shadow: 3px 3px 6px;"><i
+        <button id="changeChatOrderOptBtn" type="button" hx-ext="json-enc" hx-post="/change-gchat-order-opt"
+            hx-vals="js:{'order_option': !gchatOrderOpt, 'username': username}" hx-swap="none" hx-trigger="click"
+            class="btn btn-dark border-0 btn-sm" style="box-shadow: 3px 3px 6px;"><i
                 class="bi bi-arrow-down-circle"></i></button>
         <button id="subscribeToThisThreadBtn" hx-post="/change-if-notified-for-thread"
             hx-vals="js:{'username': username, 'curThread': document.getElementById('threadSelector').value, 'currentlyNotifiedVal': !isCurUserSubbed}"
@@ -94,16 +93,20 @@
         <button type="button" onclick="showThemePanel()" class="btn btn-dark border-0 btn-sm"
             style="box-shadow: 3px 3px 6px;">close</button>
     </div>
-    <div class="text-center my-2">
+    <div id="addDelThreadBtn" class="text-center my-2">
         <label for="threadSelector">Select Chat Thread:</label>
         <select id="threadSelector" hx-get="/get-open-threads"
             hx-on::after-request="document.getElementById('loadGChathere').dispatchEvent(new Event('afterThreadSelectorLoadsEvent'))"
             hx-swap="beforeend" hx-trigger="load"
-            onchange="{document.getElementById('loadGChathere').dispatchEvent(new Event('afterThreadSelectorLoadsEvent')); checkIfSubbed()}"
+            onchange="{document.getElementById('loadGChathere').dispatchEvent(new Event('afterThreadSelectorLoadsEvent')); checkIfSubbed(); checkIfDeletable()}"
             name="threadSelector"
             style="padding: 5px; border: 0; border-radius: 8px / 8px; box-shadow: 3px 3px 7px white;">
         </select>
-
+        <button id="delThreadBtn" class="btn btn-danger" hx-post="/del-thread" hx-ext="json-enc"
+            hx-vals="js:{'threadToDel': document.getElementById('threadSelector').value}"
+            hx-on::after-request="window.location.reload()" hx-indicator="#loadingspinner" hx-swap="none"
+            hx-confirm="This will delete the thread and all chats associated forever. Are you sure you want to delete it?"
+            style="border-radius: 27px / 27px; display: none;" hx-trigger="click">X</button>
     </div>
     <div id="prependhere"></div>
     <div id="loadGChathere" hx-get="/group-chat-messages"
@@ -177,10 +180,13 @@
 
         const subscribeToThreadBtn = document.getElementById('subscribeToThisThreadBtn')
 
+        const delThreadBtn = document.getElementById('delThreadBtn')
+
         var usersSubbedThreads = []
 
         document.addEventListener("DOMContentLoaded", async () => {
             usersSubbedThreads = []
+
             curUserData = await fetchSeshDetails(document.cookie.split("session_id=")[1])
 
             document.body.setAttribute('style', curUserData.BGtheme)
@@ -217,12 +223,16 @@
                 usersSubbedThreads.push({ "thread": threadVal, "is_subbed": subbedVal })
 
             }
+
+            checkIfDeletable()
             checkIfSubbed()
-            document.getElementById("loadGChathere").dispatchEvent(new Event("htmx:afterRequest"))
+
+            document.getElementById("loadGChathere").dispatchEvent(new Event("afterThreadSelectorLoadsEvent"))
+
         })
         htmx.on("#loadGChathere", "htmx:afterRequest", checkNotified = () => checkIfLoadedFromNotification(event))
         function checkIfLoadedFromNotification(event) {
-            debugger;
+
             if (event.detail.xhr.status == 200) {
                 var param = new URL(document.location).searchParams
                 if (param.get('thread') && param.get('thread').length >= 1) {
@@ -267,6 +277,24 @@
             } else {
                 document.getElementById('subscribeToThisThreadBtn').innerHTML = "Get thread\'s notifications" + "&nbsp;<i class='bi bi-bell-fill' ></i>"
                 isCurUserSubbed = false
+            }
+        }
+        function checkIfDeletable() {
+
+            //var threadOptions = document.getElementById('threadSelector').querySelectorAll('option[id]')
+            var threadOptions = document.getElementById('threadSelector').querySelectorAll('option')
+            var curSelection = document.getElementById('threadSelector').value
+
+            for (var i = 0; i < threadOptions.length; i++) {
+
+                if (threadOptions[i].id && threadOptions[i].value == curSelection) {
+                    document.getElementById('delThreadBtn').style.display = "inline"
+                    return
+                } else if (threadOptions[i].id == null) {
+
+                    document.getElementById('delThreadBtn').style.display = "none"
+                    return
+                }
             }
         }
         function setBgLeftVal() {

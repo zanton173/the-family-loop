@@ -1268,16 +1268,15 @@ func main() {
 			}
 		}
 
-		_, insthreadtfblerr := db.Exec(fmt.Sprintf("insert into tfldata.threads(\"thread\", \"threadAuthor\", \"createdon\") values('%s', '%s', '%s');", threadVal, userName, time.Now().In(nyLoc).Format(time.DateTime)))
-		if insthreadtfblerr != nil {
-			w.Write([]byte("You have already created a thread with this name"))
-		}
-
 		_, inserr := db.Exec(fmt.Sprintf("insert into tfldata.gchat(\"chat\", \"author\", \"createdon\", \"thread\") values(E'%s', '%s', '%s', '%s');", chatMessage, userName, time.Now().In(nyLoc).Format(time.DateTime), threadVal))
 		if inserr != nil {
 			fmt.Println(err)
 			w.WriteHeader(http.StatusBadRequest)
 			return
+		}
+		_, ttbleerr := db.Exec(fmt.Sprintf("insert into tfldata.threads(\"thread\", \"threadauthor\", \"createdon\") values('%s', '%s', '%s');", threadVal, userName, time.Now().In(nyLoc).Format(time.DateTime)))
+		if ttbleerr != nil {
+			fmt.Println(ttbleerr)
 		}
 		w.Header().Set("HX-Trigger", "success-send")
 

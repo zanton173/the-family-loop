@@ -29,6 +29,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/api/option"
 )
@@ -74,6 +77,7 @@ func main() {
 	cfdistro := os.Getenv("CF_DOMAIN")
 	s3Domain = os.Getenv("S3_BUCKET_NAME")
 	orgId := os.Getenv("ORG_ID")
+	mongoDBPass := os.Getenv("MONGO_PASS")
 
 	opts := []option.ClientOption{option.WithCredentialsFile("the-family-loop-fb0d9-firebase-adminsdk-k6sxl-14c7d4c4f7.json")}
 
@@ -101,6 +105,14 @@ func main() {
 		log.Fatal(err)
 	}
 	defer db.Close()
+
+	mongoDb, mongoerr := mongo.Connect(context.TODO(), options.Client().ApplyURI("mongodb+srv://tfl-user:"+mongoDBPass+"@tfl-leaderboard.dg95d1f.mongodb.net/?retryWrites=true&w=majority"))
+
+	if mongoerr != nil {
+		fmt.Println(mongoerr)
+	}
+	defer mongoDb.Disconnect(context.TODO())
+	coll := mongoDb.Database("tfl-database").Collection("leaderboards")
 
 	awscfg, err := config.LoadDefaultConfig(context.TODO(),
 		config.WithDefaultRegion("us-east-1"),
@@ -1617,6 +1629,7 @@ func main() {
 		if inserr != nil {
 			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s');", inserr, time.Now().In(nyLoc).Format(time.DateTime)))
 		}
+		coll.InsertOne(context.TODO(), bson.M{"org_id": orgId, "game": "stackerz", "bonus_points": postData.BonusPoints, "level": postData.Level, "username": postData.Username, "createdOn": time.Now().Format(time.DateOnly)})
 	}
 	getLeaderboardHandler := func(w http.ResponseWriter, r *http.Request) {
 		output, outerr := db.Query("select username, score from tfldata.ss_leaderboard order by score desc limit 20;")
@@ -1632,7 +1645,8 @@ func main() {
 			if scnerr != nil {
 				fmt.Println(scnerr)
 			}
-			dataStr := "<div class='py-0 my-0' style='display: inline-flex;'><p class='px-2 m-0'>" + fmt.Sprintf("%d", iter) + "</p><p class='px-2 m-0' style='text-align: center;'>" + username + " - " + score + "</p></div><br/>"
+			//dataStr := "<div class='py-0 my-0' style='display: inline-flex;'><p class='px-2 m-0'>" + fmt.Sprintf("%d", iter) + "</p><p class='px-2 m-0' style='text-align: center;'>" + username + " - " + score + "</p></div><br/>"
+			dataStr := "<div class='py-0 my-0' style='display: inline-flex;'><p class='px-2 m-0' style='position: absolute; left: 2%;'>" + fmt.Sprintf("%d", iter) + ".)&nbsp;&nbsp;</p><p class='px-2 m-0' style='text-align: center; position: absolute; left: 15%;'>" + username + "</p><p class='px-2 m-0' style='text-align: center; position: relative; left: 25%;'>" + score + "</p></div><br/>"
 			iter++
 			w.Write([]byte(dataStr))
 		}
@@ -1654,6 +1668,7 @@ func main() {
 		if inserr != nil {
 			w.WriteHeader(http.StatusBadRequest)
 		}
+		coll.InsertOne(context.TODO(), bson.M{"org_id": orgId, "game": "simple_shades", "score": postData.Score, "username": postData.Username, "createdOn": time.Now().Format(time.DateOnly)})
 
 	}
 	getOpenThreadsHandler := func(w http.ResponseWriter, r *http.Request) {

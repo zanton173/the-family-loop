@@ -5,7 +5,7 @@
 -- Dumped from database version 15.4
 -- Dumped by pg_dump version 15.4
 
--- Started on 2023-12-07 04:46:23 EST
+-- Started on 2023-12-11 06:30:06 EST
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -65,7 +65,7 @@ CREATE SEQUENCE tfldata.calendar_event_date_id_seq
 ALTER TABLE tfldata.calendar_event_date_id_seq OWNER TO tfldbrole;
 
 --
--- TOC entry 3713 (class 0 OID 0)
+-- TOC entry 3723 (class 0 OID 0)
 -- Dependencies: 217
 -- Name: calendar_event_date_id_seq; Type: SEQUENCE OWNED BY; Schema: tfldata; Owner: tfldbrole
 --
@@ -74,7 +74,7 @@ ALTER SEQUENCE tfldata.calendar_event_date_id_seq OWNED BY tfldata.calendar.id;
 
 
 --
--- TOC entry 239 (class 1259 OID 16752)
+-- TOC entry 234 (class 1259 OID 16752)
 -- Name: calendar_rsvp; Type: TABLE; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -89,7 +89,7 @@ CREATE TABLE tfldata.calendar_rsvp (
 ALTER TABLE tfldata.calendar_rsvp OWNER TO tfldbrole;
 
 --
--- TOC entry 238 (class 1259 OID 16751)
+-- TOC entry 233 (class 1259 OID 16751)
 -- Name: calendar_rsvp_id_seq; Type: SEQUENCE; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -105,8 +105,8 @@ CREATE SEQUENCE tfldata.calendar_rsvp_id_seq
 ALTER TABLE tfldata.calendar_rsvp_id_seq OWNER TO tfldbrole;
 
 --
--- TOC entry 3714 (class 0 OID 0)
--- Dependencies: 238
+-- TOC entry 3724 (class 0 OID 0)
+-- Dependencies: 233
 -- Name: calendar_rsvp_id_seq; Type: SEQUENCE OWNED BY; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -146,7 +146,7 @@ CREATE SEQUENCE tfldata.comments_id_seq
 ALTER TABLE tfldata.comments_id_seq OWNER TO tfldbrole;
 
 --
--- TOC entry 3715 (class 0 OID 0)
+-- TOC entry 3725 (class 0 OID 0)
 -- Dependencies: 219
 -- Name: comments_id_seq; Type: SEQUENCE OWNED BY; Schema: tfldata; Owner: tfldbrole
 --
@@ -185,7 +185,7 @@ CREATE SEQUENCE tfldata.errlog_id_seq
 ALTER TABLE tfldata.errlog_id_seq OWNER TO tfldbrole;
 
 --
--- TOC entry 3716 (class 0 OID 0)
+-- TOC entry 3726 (class 0 OID 0)
 -- Dependencies: 221
 -- Name: errlog_id_seq; Type: SEQUENCE OWNED BY; Schema: tfldata; Owner: tfldbrole
 --
@@ -226,7 +226,7 @@ CREATE SEQUENCE tfldata.gchat_id_seq
 ALTER TABLE tfldata.gchat_id_seq OWNER TO tfldbrole;
 
 --
--- TOC entry 3717 (class 0 OID 0)
+-- TOC entry 3727 (class 0 OID 0)
 -- Dependencies: 223
 -- Name: gchat_id_seq; Type: SEQUENCE OWNED BY; Schema: tfldata; Owner: tfldbrole
 --
@@ -264,7 +264,7 @@ CREATE SEQUENCE tfldata.inclog_id_seq
 ALTER TABLE tfldata.inclog_id_seq OWNER TO tfldbrole;
 
 --
--- TOC entry 3718 (class 0 OID 0)
+-- TOC entry 3728 (class 0 OID 0)
 -- Dependencies: 225
 -- Name: inclog_id_seq; Type: SEQUENCE OWNED BY; Schema: tfldata; Owner: tfldbrole
 --
@@ -273,7 +273,7 @@ ALTER SEQUENCE tfldata.inclog_id_seq OWNED BY tfldata.inclog.id;
 
 
 --
--- TOC entry 230 (class 1259 OID 16673)
+-- TOC entry 244 (class 1259 OID 16921)
 -- Name: postfiles; Type: TABLE; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -288,13 +288,28 @@ CREATE TABLE tfldata.postfiles (
 ALTER TABLE tfldata.postfiles OWNER TO tfldbrole;
 
 --
--- TOC entry 229 (class 1259 OID 16672)
+-- TOC entry 241 (class 1259 OID 16908)
+-- Name: postfiles_bkp; Type: TABLE; Schema: tfldata; Owner: tfldbrole
+--
+
+CREATE TABLE tfldata.postfiles_bkp (
+    id integer,
+    file_name character varying(64),
+    file_type character varying(64),
+    post_files_key uuid
+);
+
+
+ALTER TABLE tfldata.postfiles_bkp OWNER TO tfldbrole;
+
+--
+-- TOC entry 245 (class 1259 OID 16924)
 -- Name: postfiles_id_seq; Type: SEQUENCE; Schema: tfldata; Owner: tfldbrole
 --
 
 CREATE SEQUENCE tfldata.postfiles_id_seq
     AS integer
-    START WITH 83
+    START WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
@@ -304,8 +319,8 @@ CREATE SEQUENCE tfldata.postfiles_id_seq
 ALTER TABLE tfldata.postfiles_id_seq OWNER TO tfldbrole;
 
 --
--- TOC entry 3719 (class 0 OID 0)
--- Dependencies: 229
+-- TOC entry 3729 (class 0 OID 0)
+-- Dependencies: 245
 -- Name: postfiles_id_seq; Type: SEQUENCE OWNED BY; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -313,7 +328,7 @@ ALTER SEQUENCE tfldata.postfiles_id_seq OWNED BY tfldata.postfiles.id;
 
 
 --
--- TOC entry 233 (class 1259 OID 16718)
+-- TOC entry 242 (class 1259 OID 16912)
 -- Name: posts; Type: TABLE; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -321,15 +336,16 @@ CREATE TABLE tfldata.posts (
     id integer NOT NULL,
     title character varying(128),
     description character varying(420),
-    author character varying(128),
-    post_files_key uuid
+    author character varying(32),
+    post_files_key uuid,
+    createdon timestamp without time zone
 );
 
 
 ALTER TABLE tfldata.posts OWNER TO tfldbrole;
 
 --
--- TOC entry 231 (class 1259 OID 16696)
+-- TOC entry 240 (class 1259 OID 16903)
 -- Name: posts_bkp; Type: TABLE; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -337,16 +353,15 @@ CREATE TABLE tfldata.posts_bkp (
     id integer,
     title character varying(128),
     description character varying(420),
-    file_name character varying(64),
-    file_type character varying(64),
-    author character varying(32)
+    author character varying(128),
+    post_files_key uuid
 );
 
 
 ALTER TABLE tfldata.posts_bkp OWNER TO tfldbrole;
 
 --
--- TOC entry 232 (class 1259 OID 16717)
+-- TOC entry 243 (class 1259 OID 16917)
 -- Name: posts_id_seq; Type: SEQUENCE; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -362,8 +377,8 @@ CREATE SEQUENCE tfldata.posts_id_seq
 ALTER TABLE tfldata.posts_id_seq OWNER TO tfldbrole;
 
 --
--- TOC entry 3720 (class 0 OID 0)
--- Dependencies: 232
+-- TOC entry 3730 (class 0 OID 0)
+-- Dependencies: 243
 -- Name: posts_id_seq; Type: SEQUENCE OWNED BY; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -371,7 +386,7 @@ ALTER SEQUENCE tfldata.posts_id_seq OWNED BY tfldata.posts.id;
 
 
 --
--- TOC entry 241 (class 1259 OID 16775)
+-- TOC entry 236 (class 1259 OID 16775)
 -- Name: reactions; Type: TABLE; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -387,7 +402,7 @@ CREATE TABLE tfldata.reactions (
 ALTER TABLE tfldata.reactions OWNER TO tfldbrole;
 
 --
--- TOC entry 240 (class 1259 OID 16774)
+-- TOC entry 235 (class 1259 OID 16774)
 -- Name: reactions_id_seq; Type: SEQUENCE; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -403,8 +418,8 @@ CREATE SEQUENCE tfldata.reactions_id_seq
 ALTER TABLE tfldata.reactions_id_seq OWNER TO tfldbrole;
 
 --
--- TOC entry 3721 (class 0 OID 0)
--- Dependencies: 240
+-- TOC entry 3731 (class 0 OID 0)
+-- Dependencies: 235
 -- Name: reactions_id_seq; Type: SEQUENCE OWNED BY; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -412,7 +427,7 @@ ALTER SEQUENCE tfldata.reactions_id_seq OWNED BY tfldata.reactions.id;
 
 
 --
--- TOC entry 235 (class 1259 OID 16729)
+-- TOC entry 230 (class 1259 OID 16729)
 -- Name: sent_notification_log; Type: TABLE; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -426,7 +441,7 @@ CREATE TABLE tfldata.sent_notification_log (
 ALTER TABLE tfldata.sent_notification_log OWNER TO tfldbrole;
 
 --
--- TOC entry 234 (class 1259 OID 16728)
+-- TOC entry 229 (class 1259 OID 16728)
 -- Name: sent_notification_log_id_seq; Type: SEQUENCE; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -442,8 +457,8 @@ CREATE SEQUENCE tfldata.sent_notification_log_id_seq
 ALTER TABLE tfldata.sent_notification_log_id_seq OWNER TO tfldbrole;
 
 --
--- TOC entry 3722 (class 0 OID 0)
--- Dependencies: 234
+-- TOC entry 3732 (class 0 OID 0)
+-- Dependencies: 229
 -- Name: sent_notification_log_id_seq; Type: SEQUENCE OWNED BY; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -466,7 +481,7 @@ CREATE TABLE tfldata.sessions (
 ALTER TABLE tfldata.sessions OWNER TO tfldbrole;
 
 --
--- TOC entry 237 (class 1259 OID 16736)
+-- TOC entry 232 (class 1259 OID 16736)
 -- Name: ss_leaderboard; Type: TABLE; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -481,7 +496,7 @@ CREATE TABLE tfldata.ss_leaderboard (
 ALTER TABLE tfldata.ss_leaderboard OWNER TO tfldbrole;
 
 --
--- TOC entry 236 (class 1259 OID 16735)
+-- TOC entry 231 (class 1259 OID 16735)
 -- Name: ss_leaderboard_id_seq; Type: SEQUENCE; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -497,8 +512,8 @@ CREATE SEQUENCE tfldata.ss_leaderboard_id_seq
 ALTER TABLE tfldata.ss_leaderboard_id_seq OWNER TO tfldbrole;
 
 --
--- TOC entry 3723 (class 0 OID 0)
--- Dependencies: 236
+-- TOC entry 3733 (class 0 OID 0)
+-- Dependencies: 231
 -- Name: ss_leaderboard_id_seq; Type: SEQUENCE OWNED BY; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -506,7 +521,7 @@ ALTER SEQUENCE tfldata.ss_leaderboard_id_seq OWNED BY tfldata.ss_leaderboard.id;
 
 
 --
--- TOC entry 243 (class 1259 OID 16867)
+-- TOC entry 238 (class 1259 OID 16867)
 -- Name: stack_leaderboard; Type: TABLE; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -522,7 +537,7 @@ CREATE TABLE tfldata.stack_leaderboard (
 ALTER TABLE tfldata.stack_leaderboard OWNER TO tfldbrole;
 
 --
--- TOC entry 242 (class 1259 OID 16866)
+-- TOC entry 237 (class 1259 OID 16866)
 -- Name: stack_leaderboard_id_seq; Type: SEQUENCE; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -538,13 +553,27 @@ CREATE SEQUENCE tfldata.stack_leaderboard_id_seq
 ALTER TABLE tfldata.stack_leaderboard_id_seq OWNER TO tfldbrole;
 
 --
--- TOC entry 3724 (class 0 OID 0)
--- Dependencies: 242
+-- TOC entry 3734 (class 0 OID 0)
+-- Dependencies: 237
 -- Name: stack_leaderboard_id_seq; Type: SEQUENCE OWNED BY; Schema: tfldata; Owner: tfldbrole
 --
 
 ALTER SEQUENCE tfldata.stack_leaderboard_id_seq OWNED BY tfldata.stack_leaderboard.id;
 
+
+--
+-- TOC entry 246 (class 1259 OID 16928)
+-- Name: threads; Type: TABLE; Schema: tfldata; Owner: tfldbrole
+--
+
+CREATE TABLE tfldata.threads (
+    thread character varying(32),
+    threadauthor character varying(128),
+    createdon timestamp without time zone
+);
+
+
+ALTER TABLE tfldata.threads OWNER TO tfldbrole;
 
 --
 -- TOC entry 227 (class 1259 OID 16640)
@@ -590,7 +619,7 @@ CREATE SEQUENCE tfldata.users_id_seq
 ALTER TABLE tfldata.users_id_seq OWNER TO tfldbrole;
 
 --
--- TOC entry 3725 (class 0 OID 0)
+-- TOC entry 3735 (class 0 OID 0)
 -- Dependencies: 228
 -- Name: users_id_seq; Type: SEQUENCE OWNED BY; Schema: tfldata; Owner: tfldbrole
 --
@@ -599,7 +628,7 @@ ALTER SEQUENCE tfldata.users_id_seq OWNED BY tfldata.users.id;
 
 
 --
--- TOC entry 244 (class 1259 OID 16893)
+-- TOC entry 239 (class 1259 OID 16893)
 -- Name: users_to_threads; Type: TABLE; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -613,7 +642,7 @@ CREATE TABLE tfldata.users_to_threads (
 ALTER TABLE tfldata.users_to_threads OWNER TO tfldbrole;
 
 --
--- TOC entry 3515 (class 2604 OID 16701)
+-- TOC entry 3523 (class 2604 OID 16701)
 -- Name: calendar id; Type: DEFAULT; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -621,7 +650,7 @@ ALTER TABLE ONLY tfldata.calendar ALTER COLUMN id SET DEFAULT nextval('tfldata.c
 
 
 --
--- TOC entry 3525 (class 2604 OID 16755)
+-- TOC entry 3531 (class 2604 OID 16755)
 -- Name: calendar_rsvp id; Type: DEFAULT; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -629,7 +658,7 @@ ALTER TABLE ONLY tfldata.calendar_rsvp ALTER COLUMN id SET DEFAULT nextval('tfld
 
 
 --
--- TOC entry 3516 (class 2604 OID 16702)
+-- TOC entry 3524 (class 2604 OID 16702)
 -- Name: comments id; Type: DEFAULT; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -637,7 +666,7 @@ ALTER TABLE ONLY tfldata.comments ALTER COLUMN id SET DEFAULT nextval('tfldata.c
 
 
 --
--- TOC entry 3517 (class 2604 OID 16703)
+-- TOC entry 3525 (class 2604 OID 16703)
 -- Name: errlog id; Type: DEFAULT; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -645,7 +674,7 @@ ALTER TABLE ONLY tfldata.errlog ALTER COLUMN id SET DEFAULT nextval('tfldata.err
 
 
 --
--- TOC entry 3518 (class 2604 OID 16704)
+-- TOC entry 3526 (class 2604 OID 16704)
 -- Name: gchat id; Type: DEFAULT; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -653,7 +682,7 @@ ALTER TABLE ONLY tfldata.gchat ALTER COLUMN id SET DEFAULT nextval('tfldata.gcha
 
 
 --
--- TOC entry 3519 (class 2604 OID 16705)
+-- TOC entry 3527 (class 2604 OID 16705)
 -- Name: inclog id; Type: DEFAULT; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -661,7 +690,7 @@ ALTER TABLE ONLY tfldata.inclog ALTER COLUMN id SET DEFAULT nextval('tfldata.inc
 
 
 --
--- TOC entry 3521 (class 2604 OID 16676)
+-- TOC entry 3535 (class 2604 OID 16925)
 -- Name: postfiles id; Type: DEFAULT; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -669,7 +698,7 @@ ALTER TABLE ONLY tfldata.postfiles ALTER COLUMN id SET DEFAULT nextval('tfldata.
 
 
 --
--- TOC entry 3522 (class 2604 OID 16721)
+-- TOC entry 3534 (class 2604 OID 16918)
 -- Name: posts id; Type: DEFAULT; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -677,7 +706,7 @@ ALTER TABLE ONLY tfldata.posts ALTER COLUMN id SET DEFAULT nextval('tfldata.post
 
 
 --
--- TOC entry 3526 (class 2604 OID 16778)
+-- TOC entry 3532 (class 2604 OID 16778)
 -- Name: reactions id; Type: DEFAULT; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -685,7 +714,7 @@ ALTER TABLE ONLY tfldata.reactions ALTER COLUMN id SET DEFAULT nextval('tfldata.
 
 
 --
--- TOC entry 3523 (class 2604 OID 16732)
+-- TOC entry 3529 (class 2604 OID 16732)
 -- Name: sent_notification_log id; Type: DEFAULT; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -693,7 +722,7 @@ ALTER TABLE ONLY tfldata.sent_notification_log ALTER COLUMN id SET DEFAULT nextv
 
 
 --
--- TOC entry 3524 (class 2604 OID 16739)
+-- TOC entry 3530 (class 2604 OID 16739)
 -- Name: ss_leaderboard id; Type: DEFAULT; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -701,7 +730,7 @@ ALTER TABLE ONLY tfldata.ss_leaderboard ALTER COLUMN id SET DEFAULT nextval('tfl
 
 
 --
--- TOC entry 3527 (class 2604 OID 16870)
+-- TOC entry 3533 (class 2604 OID 16870)
 -- Name: stack_leaderboard id; Type: DEFAULT; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -709,7 +738,7 @@ ALTER TABLE ONLY tfldata.stack_leaderboard ALTER COLUMN id SET DEFAULT nextval('
 
 
 --
--- TOC entry 3520 (class 2604 OID 16707)
+-- TOC entry 3528 (class 2604 OID 16707)
 -- Name: users id; Type: DEFAULT; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -717,7 +746,7 @@ ALTER TABLE ONLY tfldata.users ALTER COLUMN id SET DEFAULT nextval('tfldata.user
 
 
 --
--- TOC entry 3529 (class 2606 OID 16653)
+-- TOC entry 3537 (class 2606 OID 16653)
 -- Name: calendar calendar_pkey; Type: CONSTRAINT; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -726,7 +755,7 @@ ALTER TABLE ONLY tfldata.calendar
 
 
 --
--- TOC entry 3553 (class 2606 OID 16757)
+-- TOC entry 3557 (class 2606 OID 16757)
 -- Name: calendar_rsvp calendar_rsvp_pkey; Type: CONSTRAINT; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -735,7 +764,7 @@ ALTER TABLE ONLY tfldata.calendar_rsvp
 
 
 --
--- TOC entry 3555 (class 2606 OID 16759)
+-- TOC entry 3559 (class 2606 OID 16759)
 -- Name: calendar_rsvp calendar_rsvp_username_event_id_key; Type: CONSTRAINT; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -744,7 +773,7 @@ ALTER TABLE ONLY tfldata.calendar_rsvp
 
 
 --
--- TOC entry 3531 (class 2606 OID 16655)
+-- TOC entry 3539 (class 2606 OID 16655)
 -- Name: comments comments_pkey; Type: CONSTRAINT; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -753,7 +782,7 @@ ALTER TABLE ONLY tfldata.comments
 
 
 --
--- TOC entry 3533 (class 2606 OID 16657)
+-- TOC entry 3541 (class 2606 OID 16657)
 -- Name: errlog errlog_pkey; Type: CONSTRAINT; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -762,7 +791,7 @@ ALTER TABLE ONLY tfldata.errlog
 
 
 --
--- TOC entry 3535 (class 2606 OID 16659)
+-- TOC entry 3543 (class 2606 OID 16659)
 -- Name: gchat gchat_pkey; Type: CONSTRAINT; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -771,7 +800,7 @@ ALTER TABLE ONLY tfldata.gchat
 
 
 --
--- TOC entry 3537 (class 2606 OID 16661)
+-- TOC entry 3545 (class 2606 OID 16661)
 -- Name: inclog inclog_pkey; Type: CONSTRAINT; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -780,7 +809,7 @@ ALTER TABLE ONLY tfldata.inclog
 
 
 --
--- TOC entry 3545 (class 2606 OID 16678)
+-- TOC entry 3573 (class 2606 OID 16927)
 -- Name: postfiles postfiles_pkey; Type: CONSTRAINT; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -789,7 +818,7 @@ ALTER TABLE ONLY tfldata.postfiles
 
 
 --
--- TOC entry 3547 (class 2606 OID 16725)
+-- TOC entry 3571 (class 2606 OID 16920)
 -- Name: posts posts_pkey; Type: CONSTRAINT; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -798,7 +827,7 @@ ALTER TABLE ONLY tfldata.posts
 
 
 --
--- TOC entry 3557 (class 2606 OID 16784)
+-- TOC entry 3561 (class 2606 OID 16784)
 -- Name: reactions reactions_gchat_id_author_key; Type: CONSTRAINT; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -807,7 +836,7 @@ ALTER TABLE ONLY tfldata.reactions
 
 
 --
--- TOC entry 3559 (class 2606 OID 16780)
+-- TOC entry 3563 (class 2606 OID 16780)
 -- Name: reactions reactions_pkey; Type: CONSTRAINT; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -816,7 +845,7 @@ ALTER TABLE ONLY tfldata.reactions
 
 
 --
--- TOC entry 3561 (class 2606 OID 16782)
+-- TOC entry 3565 (class 2606 OID 16782)
 -- Name: reactions reactions_post_id_author_key; Type: CONSTRAINT; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -825,7 +854,7 @@ ALTER TABLE ONLY tfldata.reactions
 
 
 --
--- TOC entry 3549 (class 2606 OID 16734)
+-- TOC entry 3553 (class 2606 OID 16734)
 -- Name: sent_notification_log sent_notification_log_pkey; Type: CONSTRAINT; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -834,7 +863,7 @@ ALTER TABLE ONLY tfldata.sent_notification_log
 
 
 --
--- TOC entry 3539 (class 2606 OID 16663)
+-- TOC entry 3547 (class 2606 OID 16663)
 -- Name: sessions sessions_ip_addr_key; Type: CONSTRAINT; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -843,7 +872,7 @@ ALTER TABLE ONLY tfldata.sessions
 
 
 --
--- TOC entry 3551 (class 2606 OID 16741)
+-- TOC entry 3555 (class 2606 OID 16741)
 -- Name: ss_leaderboard ss_leaderboard_pkey; Type: CONSTRAINT; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -852,7 +881,7 @@ ALTER TABLE ONLY tfldata.ss_leaderboard
 
 
 --
--- TOC entry 3563 (class 2606 OID 16872)
+-- TOC entry 3567 (class 2606 OID 16872)
 -- Name: stack_leaderboard stack_leaderboard_pkey; Type: CONSTRAINT; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -861,7 +890,16 @@ ALTER TABLE ONLY tfldata.stack_leaderboard
 
 
 --
--- TOC entry 3541 (class 2606 OID 16727)
+-- TOC entry 3575 (class 2606 OID 16932)
+-- Name: threads threads_thread_threadauthor_key; Type: CONSTRAINT; Schema: tfldata; Owner: tfldbrole
+--
+
+ALTER TABLE ONLY tfldata.threads
+    ADD CONSTRAINT threads_thread_threadauthor_key UNIQUE (thread, threadauthor);
+
+
+--
+-- TOC entry 3549 (class 2606 OID 16727)
 -- Name: users users_email_key; Type: CONSTRAINT; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -870,7 +908,7 @@ ALTER TABLE ONLY tfldata.users
 
 
 --
--- TOC entry 3543 (class 2606 OID 16665)
+-- TOC entry 3551 (class 2606 OID 16665)
 -- Name: users users_pkey; Type: CONSTRAINT; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -879,7 +917,7 @@ ALTER TABLE ONLY tfldata.users
 
 
 --
--- TOC entry 3565 (class 2606 OID 16901)
+-- TOC entry 3569 (class 2606 OID 16901)
 -- Name: users_to_threads users_to_threads_username_thread_key; Type: CONSTRAINT; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -887,7 +925,7 @@ ALTER TABLE ONLY tfldata.users_to_threads
     ADD CONSTRAINT users_to_threads_username_thread_key UNIQUE (username, thread);
 
 
--- Completed on 2023-12-07 04:46:24 EST
+-- Completed on 2023-12-11 06:30:06 EST
 
 --
 -- PostgreSQL database dump complete

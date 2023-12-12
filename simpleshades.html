@@ -20,11 +20,15 @@
 
         <div style="text-align: center; background-color: rgb(165, 203, 255); height: 100vh;">
             <div style="display: flex;">
-                <button onclick="toggleMenuDisplay()"
-                    style="border-width: 3px; border-radius: 12px; border-color: blue; background-color: rgba(0, 0, 0, 0); box-shadow: 5px 4px 10px 0px #505050">
+                <button onclick="toggleMenuDisplay()" class="m-2 py-2"
+                    style="height: 75%; border-width: 3px; border-radius: 12px; border-color: blue; background-color: rgba(0, 0, 0, 0); box-shadow: 5px 4px 10px 0px #505050">
                     menu
                 </button>&nbsp;
                 <h1 class="mx-auto px-1 text-center">Top 20 Leaderboard</h1>
+                <button onclick="globalLeaerboard()" class="m-1 p-1"
+                    style="border-width: 3px; border-radius: 12px; border-color: blue; background-color: rgba(0, 0, 0, 0); box-shadow: 5px 4px 10px 0px #505050">
+                    Global Leaderboard
+                </button>
             </div>
             <div id="htmxleaderboard" hx-get="/get-leaderboard" hx-trigger="load, click" hx-target="this"
                 style="font-size: larger;"></div>
@@ -170,7 +174,7 @@
                 promptForUsername()
                 timer.innerHTML = 160
             } else if (username < ' ')
-                alert("You're username was not found. Try logging out and logging back in if you would like to be displayed on the leaderboard")
+                alert("Your username was not found. Try logging out and logging back in if you would like to be displayed on the leaderboard")
 
             return username
         }
@@ -315,7 +319,7 @@
                 }).then((data) => {
 
                     if (data.status == 200) {
-                        alert("You're score was added to the record.")
+                        alert("Your score was added to the record.")
                         toggleLeaderboard();
                     }
                     else {

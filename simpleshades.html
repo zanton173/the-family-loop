@@ -37,27 +37,30 @@
 
             </div>
             <div id="selectEventDiv" style="display: none">
-                <select id="eventYearSelect" name="eventYearSelect">
+                <select id="eventYearSelect" name="eventYearSelect"
+                    onchange="document.getElementById('htmxleaderboard').dispatchEvent(new Event('click'))">
 
                 </select>
-                <select id="eventPeriodSelect" name="eventPeriodSelect">
-                    <option value="Period 1">Period 1</option>
-                    <option value="Period 2">Period 2</option>
-                    <option value="Period 3">Period 3</option>
-                    <option value="Period 4">Period 4</option>
+                <select id="eventPeriodSelect" name="eventPeriodSelect"
+                    onchange="document.getElementById('htmxleaderboard').dispatchEvent(new Event('click'))">
+                    <option value="1">Period 1</option>
+                    <option value="2">Period 2</option>
+                    <option value="3">Period 3</option>
+                    <option value="4">Period 4</option>
                 </select>
             </div>
+            <h4 id="delvingprizesbanner"></h4>
             <div style="display: inline-flex">
                 <b id="usernameLeaderBoardTag" class="px-1 m-0"
                     style="position: absolute; left: 16%; font-size: larger; text-align: center">Username</b>
-                <b id="scoreLeaderBoardTag" class="px-2 mx-5"
-                    style="position: relative; left: 2%; font-size: larger; text-align: center">Score</b>
-                <b id="familyLeaderBoardTag" class="px-2 mx-5"
+                <b id="scoreLeaderBoardTag" class="px-2 mx-3"
+                    style="position: absolute; left: 60%; font-size: larger; text-align: center">Score</b>
+                <b id="familyLeaderBoardTag" class="px-2 mx-3"
                     style="display: none; position: absolute; left: 55%; font-size: larger; text-align: center">Family</b>
             </div>
             <div id="htmxleaderboard" hx-get="/get-leaderboard"
-                hx-vals="js:{leaderboardType, 'eventYear': document.getElementById('eventYearSelect').value}"
-                hx-params="leaderboardType, eventYear" hx-trigger="load, click" hx-target="this"
+                hx-vals="js:{leaderboardType, 'eventYear': document.getElementById('eventYearSelect').value, 'eventPeriod': document.getElementById('eventPeriodSelect').value}"
+                hx-params="leaderboardType, eventYear, eventPeriod" hx-trigger="load, click" hx-target="this"
                 style="font-size: larger; margin-top: 2%">
 
             </div>
@@ -179,13 +182,22 @@
 
         var currentDate = new Date()
 
-        for (var i = 0; i < 1000; i++) {
+        for (var i = 0; i < 100; i++) {
             var eventYearOption = document.createElement('option')
             eventYearOption.value = i
             eventYearOption.innerHTML = "Year: " + (2020 + i).toString()
             document.getElementById('eventYearSelect').append(eventYearOption)
         }
 
+        document.getElementById('eventYearSelect').value = currentDate.getFullYear() - 2020
+        if (currentDate.getMonth() + 1 > 0 && currentDate.getMonth() + 1 < 4)
+            document.getElementById('eventPeriodSelect').value = 1
+        else if (currentDate.getMonth() + 1 > 3 && currentDate.getMonth() + 1 < 7)
+            document.getElementById('eventPeriodSelect').value = 2
+        else if (currentDate.getMonth() + 1 > 6 && currentDate.getMonth() + 1 < 10)
+            document.getElementById('eventPeriodSelect').value = 3
+        else if (currentDate.getMonth() + 1 > 9 && currentDate.getMonth() + 1 < 13)
+            document.getElementById('eventPeriodSelect').value = 4
         const usernameModal = new bootstrap.Modal(document.getElementById('enterDisplayName'), {})
         function globalLeaderboard() {
             leaderboardType = "global"
@@ -193,9 +205,11 @@
             document.getElementById('globalLeaderBtn').style.display = "none"
             document.getElementById('familyLeaderBtn').style.display = ""
             document.getElementById('familyLeaderBoardTag').style.display = ""
-            document.getElementById('scoreLeaderBoardTag').style.left = "37%"
-            document.getElementById('scoreLeaderBoardTag').style.position = "absolute"
+            document.getElementById('scoreLeaderBoardTag').style.left = "38%"
             document.getElementById('selectEventDiv').style.display = "block"
+            if ((currentDate.getDate() > 22 || currentDate.getDate() < 32) && (currentDate.getMonth() + 1 == 3 || currentDate.getMonth() + 1 == 6 || currentDate.getMonth() + 1 == 9 || currentDate.getMonth() == 12))
+                if (leaderboardType == "global")
+                    document.getElementById('delvingprizesbanner').innerHTML = "Currently sending prizes to winners. Current scores will not be added to the global leaderboard until the start of next month."
             document.getElementById('htmxleaderboard').dispatchEvent(new Event('click'))
         }
         function familyLeaderboard() {
@@ -204,10 +218,11 @@
             document.getElementById('familyLeaderBtn').style.display = "none"
             document.getElementById('globalLeaderBtn').style.display = ""
             document.getElementById('familyLeaderBoardTag').style.display = "none"
-            document.getElementById('scoreLeaderBoardTag').style.left = "2%"
-            document.getElementById('scoreLeaderBoardTag').style.position = "relative"
+            document.getElementById('scoreLeaderBoardTag').style.left = "60%"
             document.getElementById('selectEventDiv').style.display = "none"
+            document.getElementById('delvingprizesbanner').innerHTML = ""
             document.getElementById('htmxleaderboard').dispatchEvent(new Event('click'))
+
         }
         function promptForUsername() {
             alert("Please enter your display name")

@@ -1676,14 +1676,86 @@ func main() {
 					fmt.Println(scnerr)
 				}
 				//dataStr := "<div class='py-0 my-0' style='display: inline-flex;'><p class='px-2 m-0'>" + fmt.Sprintf("%d", iter) + "</p><p class='px-2 m-0' style='text-align: center;'>" + username + " - " + score + "</p></div><br/>"
-				dataStr := "<div class='py-0 my-0' style='display: inline-flex;'><p class='px-2 m-0' style='position: absolute; left: 2%;'>" + fmt.Sprintf("%d", iter) + ".)&nbsp;&nbsp;</p><p class='px-2 m-0' style='text-align: center; position: absolute; left: 15%;'>" + username + "</p><p class='px-2 m-0' style='text-align: center; position: relative; left: 25%;'>" + score + "</p></div><br/>"
+				dataStr := "<div class='py-0 my-0' style='display: inline-flex;'><p class='px-2 m-0' style='position: absolute; left: 2%;'>" + fmt.Sprintf("%d", iter) + ".)&nbsp;&nbsp;</p><p class='px-2 m-0' style='text-align: center; position: absolute; left: 15%;'>" + username + "</p><p class='px-2 m-0' style='text-align: center; position: absolute; left: 65%;'>" + score + "</p></div><br/>"
 				iter++
 				w.Write([]byte(dataStr))
 			}
 		} else if r.URL.Query().Get("leaderboardType") == "global" {
 			eventYearConverted, _ := strconv.Atoi(r.URL.Query().Get("eventYear"))
-			//resLimit := int64(20)
-			out, err := coll.Aggregate(context.TODO(), bson.A{bson.D{{Key: "$match", Value: bson.D{{Key: "game", Value: "simple_shades"}}}}, bson.D{{Key: "$set", Value: bson.D{{Key: "year", Value: bson.D{{Key: "$abs", Value: bson.D{{Key: "$subtract", Value: bson.A{2020, bson.D{{Key: "$year", Value: "$createdOn"}}}}}}}}}}}, bson.D{{Key: "$match", Value: bson.D{{Key: "year", Value: eventYearConverted}}}}, bson.D{{Key: "$limit", Value: 15}}})
+			eventPeriodConverted, _ := strconv.Atoi(r.URL.Query().Get("eventPeriod"))
+			var startPeriodMonth int
+			var endPeriodMonth int
+			switch eventPeriodConverted {
+			case 1:
+				startPeriodMonth = 0
+				endPeriodMonth = 4
+			case 2:
+				startPeriodMonth = 3
+				endPeriodMonth = 7
+			case 3:
+				startPeriodMonth = 6
+				endPeriodMonth = 10
+			case 4:
+				startPeriodMonth = 9
+				endPeriodMonth = 13
+			}
+
+			out, err := coll.Aggregate(context.TODO(), bson.A{
+				bson.D{{Key: "$match", Value: bson.D{{Key: "game", Value: "simple_shades"}}}},
+				bson.D{
+					{Key: "$set",
+						Value: bson.D{
+							{Key: "year",
+								Value: bson.D{
+									{Key: "$abs",
+										Value: bson.D{
+											{Key: "$subtract",
+												Value: bson.A{
+													2020,
+													bson.D{{Key: "$year", Value: "$createdOn"}},
+												},
+											},
+										},
+									},
+								},
+							},
+							{Key: "month", Value: bson.D{{Key: "$month", Value: "$createdOn"}}},
+						},
+					},
+				},
+				bson.D{
+					{Key: "$match",
+						Value: bson.D{
+							{Key: "year", Value: eventYearConverted},
+							{Key: "month",
+								Value: bson.D{
+									{Key: "$gt", Value: startPeriodMonth},
+									{Key: "$lt", Value: endPeriodMonth},
+								},
+							},
+						},
+					},
+				}, bson.D{{Key: "$and",
+					Value: bson.A{
+						bson.D{{Key: "day", Value: bson.D{{Key: "$lt", Value: 22}}}},
+						bson.D{
+							{Key: "month",
+								Value: bson.D{
+									{Key: "$ne",
+										Value: bson.A{
+											3,
+											6,
+											9,
+											12,
+										},
+									},
+								},
+							},
+						},
+					}}},
+				bson.D{{Key: "$limit", Value: 15}},
+				bson.D{{Key: "$sort", Value: bson.D{{Key: "score", Value: -1}}}},
+			})
 			//out, err := coll.Find(context.TODO(), &bson.D{{Key: "game", Value: "simple_shades"}}, &options.FindOptions{Limit: &resLimit, Sort: bson.D{{Key: "score", Value: -1}}})
 			if err != nil {
 				fmt.Print(err)

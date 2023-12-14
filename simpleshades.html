@@ -9,6 +9,7 @@
 
     <link href="/css/bootstrap.min.css" rel="stylesheet">
     <link href="/css/custom-css.css" rel="stylesheet">
+    <link href="css/font-css.css" rel="stylesheet">
     <script src="/js/bootstrap.bundle.min.js"></script>
     <script src="/js/htmx.min.js"></script>
     <script src="/js/htmx_json-enc.js"></script>
@@ -24,14 +25,42 @@
                     style="height: 75%; border-width: 3px; border-radius: 12px; border-color: blue; background-color: rgba(0, 0, 0, 0); box-shadow: 5px 4px 10px 0px #505050">
                     menu
                 </button>&nbsp;
-                <h1 class="mx-auto px-1 text-center">Top 20 Leaderboard</h1>
-                <button onclick="globalLeaerboard()" class="m-1 p-1"
+                <h1 id="leaderboardTitleEle" class="mx-auto my-3 px-1 text-center">Family Leaderboard</h1>
+                <button id="globalLeaderBtn" onclick="globalLeaderboard()" class="m-1 p-1"
                     style="border-width: 3px; border-radius: 12px; border-color: blue; background-color: rgba(0, 0, 0, 0); box-shadow: 5px 4px 10px 0px #505050">
                     Global Leaderboard
                 </button>
+                <button id="familyLeaderBtn" onclick="familyLeaderboard()" class="m-1 p-1"
+                    style="display: none; border-width: 3px; border-radius: 12px; border-color: blue; background-color: rgba(0, 0, 0, 0); box-shadow: 5px 4px 10px 0px #505050">
+                    Family Leaderboard
+                </button>
+
             </div>
-            <div id="htmxleaderboard" hx-get="/get-leaderboard" hx-trigger="load, click" hx-target="this"
-                style="font-size: larger;"></div>
+            <div id="selectEventDiv" style="display: none">
+                <select id="eventYearSelect" name="eventYearSelect">
+
+                </select>
+                <select id="eventPeriodSelect" name="eventPeriodSelect">
+                    <option value="Period 1">Period 1</option>
+                    <option value="Period 2">Period 2</option>
+                    <option value="Period 3">Period 3</option>
+                    <option value="Period 4">Period 4</option>
+                </select>
+            </div>
+            <div style="display: inline-flex">
+                <b id="usernameLeaderBoardTag" class="px-1 m-0"
+                    style="position: absolute; left: 16%; font-size: larger; text-align: center">Username</b>
+                <b id="scoreLeaderBoardTag" class="px-2 mx-5"
+                    style="position: relative; left: 2%; font-size: larger; text-align: center">Score</b>
+                <b id="familyLeaderBoardTag" class="px-2 mx-5"
+                    style="display: none; position: absolute; left: 55%; font-size: larger; text-align: center">Family</b>
+            </div>
+            <div id="htmxleaderboard" hx-get="/get-leaderboard"
+                hx-vals="js:{leaderboardType, 'eventYear': document.getElementById('eventYearSelect').value}"
+                hx-params="leaderboardType, eventYear" hx-trigger="load, click" hx-target="this"
+                style="font-size: larger; margin-top: 2%">
+
+            </div>
         </div>
 
     </div>
@@ -144,11 +173,42 @@
 
     </div>
     <script>
+        var leaderboardType = "family"
         var playObj = document.getElementById('playerObj')
         var gameObj = document.getElementById('gameObj')
-        var timer = document.getElementById('timer')
-        var score = document.getElementById('score')
+
+        var currentDate = new Date()
+
+        for (var i = 0; i < 1000; i++) {
+            var eventYearOption = document.createElement('option')
+            eventYearOption.value = i
+            eventYearOption.innerHTML = "Year: " + (2020 + i).toString()
+            document.getElementById('eventYearSelect').append(eventYearOption)
+        }
+
         const usernameModal = new bootstrap.Modal(document.getElementById('enterDisplayName'), {})
+        function globalLeaderboard() {
+            leaderboardType = "global"
+            document.getElementById('leaderboardTitleEle').innerHTML = "Global Leaderboard"
+            document.getElementById('globalLeaderBtn').style.display = "none"
+            document.getElementById('familyLeaderBtn').style.display = ""
+            document.getElementById('familyLeaderBoardTag').style.display = ""
+            document.getElementById('scoreLeaderBoardTag').style.left = "37%"
+            document.getElementById('scoreLeaderBoardTag').style.position = "absolute"
+            document.getElementById('selectEventDiv').style.display = "block"
+            document.getElementById('htmxleaderboard').dispatchEvent(new Event('click'))
+        }
+        function familyLeaderboard() {
+            leaderboardType = "family"
+            document.getElementById('leaderboardTitleEle').innerHTML = "Family Leaderboard"
+            document.getElementById('familyLeaderBtn').style.display = "none"
+            document.getElementById('globalLeaderBtn').style.display = ""
+            document.getElementById('familyLeaderBoardTag').style.display = "none"
+            document.getElementById('scoreLeaderBoardTag').style.left = "2%"
+            document.getElementById('scoreLeaderBoardTag').style.position = "relative"
+            document.getElementById('selectEventDiv').style.display = "none"
+            document.getElementById('htmxleaderboard').dispatchEvent(new Event('click'))
+        }
         function promptForUsername() {
             alert("Please enter your display name")
             usernameModal.show()
@@ -172,7 +232,7 @@
 
             if (username < ' ' && window.location.host.includes("simpleshades.the-family-loop")) {
                 promptForUsername()
-                timer.innerHTML = 160
+                document.getElementById('timer').innerHTML = 160
             } else if (username < ' ')
                 alert("Your username was not found. Try logging out and logging back in if you would like to be displayed on the leaderboard")
 
@@ -288,22 +348,22 @@
             if (Math.abs(curPlayObj.playerred - curGameObj.gamered) <= 25 && Math.abs(curPlayObj.playergreen - curGameObj.gamegreen) <= 25 && Math.abs(curPlayObj.playerblue - curGameObj.gameblue) <= 25) {
                 resetGameObj()
 
-                score.innerHTML = Number(score.innerHTML) + 10
-                timer.innerHTML = Number(timer.innerHTML) + 8
+                document.getElementById('score').innerHTML = Number(document.getElementById('score').innerHTML) + 10
+                document.getElementById('timer').innerHTML = Number(document.getElementById('timer').innerHTML) + 8
             }
         }
         const delay = 1000
         let ourGameInterval = null
         const runTimerFunction = async () => {
             //if (!document.getElementById("gamebody").getAttribute('style').includes('display: none;'))
-            timer.innerHTML = Number(timer.innerHTML) - (delay / 1000)
+            document.getElementById('timer').innerHTML = Number(document.getElementById('timer').innerHTML) - (delay / 1000)
             // else {
             //    controlInterval(false)
             //    timer.innerHTML = 45
             //    score.innerHTML = 0
             //}
-            if (Number(timer.innerHTML) == 0) {
-                var finalScore = Number(score.innerHTML)
+            if (Number(document.getElementById('timer').innerHTML) == 0) {
+                var finalScore = Number(document.getElementById('score').innerHTML)
 
                 controlInterval(false)
                 //toggleLeaderboard()
@@ -336,9 +396,9 @@
             else {
                 clearInterval(ourGameInterval)
                 window.location.host.includes("simpleshades.the-family-loop") ?
-                    timer.innerHTML = 160
-                    : timer.innerHTML = 45
-                score.innerHTML = 0
+                    document.getElementById('timer').innerHTML = 160
+                    : document.getElementById('timer').innerHTML = 45
+                document.getElementById('score').innerHTML = 0
             }
         }
 

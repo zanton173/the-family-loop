@@ -82,21 +82,58 @@
     </div>
     <div id="leaderboardWindow" style="display: none; position: absolute; height: 100dvh; width: 100dvw; background-image: linear-gradient(to bottom,
             hsl(264deg 45.29% 56.16%),
-            hsl(31, 100%, 40%))">
-        <h1 style="text-align: center;">Leaderboard</h1>
-        <div hx-get="/get-stackerz-leaderboard" hx-target="#leaderboardLoadTarget"
-            hx-trigger="leaderboardOpenedEvent from:#leaderboardWindow"
-            style="font-size: larger; text-align: center; margin-top: 10%;">
-            <p style="text-align: center; font-weight: bold;">Username - Bonus Points - Level</p>
+            hsl(31, 100%, 40%)); overflow-x: auto">
+        <h3 id="leaderboardTitleEle" style="text-align: center;" class="my-2">Family Leaderboard</h3>
+        <div style="display: inline-flex">
+            <b id="usernameLeaderBoardTag" class="px-1 m-0"
+                style="position: absolute; left: 16%; text-align: center">Username</b>
+            <b id="scoreLeaderBoardTag" class="px-2 mx-3"
+                style="position: absolute; left: 40%; text-align: center">Bonus
+                Points</b>
+            <b id="scoreLeaderBoardTag" class="px-2 mx-3"
+                style="position: absolute; left: 70%; text-align: center">Level</b>
+            <b id="familyLeaderBoardTag" class="px-2 mx-3"
+                style="display: none; position: absolute; left: 55%; text-align: center">Family</b>
+        </div>
+        <div id="htmxleaderboard" hx-get="/get-stackerz-leaderboard" hx-vals="js:{leaderboardType}"
+            hx-params="leaderboardType" hx-target="#leaderboardLoadTarget"
+            hx-trigger="leaderboardOpenedEvent from:#leaderboardWindow, click"
+            style="font-size: larger; text-align: center; margin-top: 5%;">
+
             <div id="leaderboardLoadTarget">
 
             </div>
         </div>
         <button class="btn btn-primary m-1" style="position: absolute; top: 0; left: 0;"
             onclick="showMenuWindow()">home</button>
+        <button id="globalLeaderBtn" class="btn btn-primary m-1" style="position: absolute; top: 0; right: 1%;"
+            onclick="globalLeaderboard()">global</button>
+        <button id="familyLeaderBtn" class="btn btn-primary m-1"
+            style="display: none; position: absolute; top: 0; right: 1%;" onclick="familyLeaderboard()">family</button>
     </div>
     <script>
+        var leaderboardType = "family"
+        function globalLeaderboard() {
+            leaderboardType = "global"
+            document.getElementById('leaderboardTitleEle').innerHTML = "Global Leaderboard"
+            document.getElementById('globalLeaderBtn').style.display = "none"
+            document.getElementById('familyLeaderBtn').style.display = ""
+            document.getElementById('familyLeaderBoardTag').style.display = ""
+            document.getElementById('scoreLeaderBoardTag').style.left = "37%"
 
+
+            document.getElementById('htmxleaderboard').dispatchEvent(new Event('click'))
+        }
+        function familyLeaderboard() {
+            leaderboardType = "family"
+            document.getElementById('leaderboardTitleEle').innerHTML = "Your Family Leaderboard"
+            document.getElementById('familyLeaderBtn').style.display = "none"
+            document.getElementById('globalLeaderBtn').style.display = ""
+            document.getElementById('familyLeaderBoardTag').style.display = "none"
+            document.getElementById('scoreLeaderBoardTag').style.left = "2%"
+
+            document.getElementById('htmxleaderboard').dispatchEvent(new Event('click'))
+        }
         var getCurrentUsername = async () => {
             const token = document.cookie.split("session_id=")[1]
             const resp = await fetch("/get-username-from-session?id=" + token, {

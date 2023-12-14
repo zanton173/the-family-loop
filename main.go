@@ -13,6 +13,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -1269,7 +1270,7 @@ func main() {
 		}
 		var fcmRegToken string
 
-		sendNotificationToAllUsers(threadVal, db, *app, chatMessage, userName)
+		sendNotificationToAllUsers(threadVal, db, *app, strings.ReplaceAll(chatMessage, "\\", ""), userName)
 		if len(listOfUsersTagged) > 0 {
 			for _, val := range listOfUsersTagged {
 				fcmRegRow := db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where username='%s' and username != '%s';", val, userName))
@@ -1286,9 +1287,12 @@ func main() {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		_, ttbleerr := db.Exec(fmt.Sprintf("insert into tfldata.threads(\"thread\", \"threadauthor\", \"createdon\") values('%s', '%s', '%s');", threadVal, userName, time.Now().In(nyLoc).Format(time.DateTime)))
+		_, ttbleerr := db.Exec(fmt.Sprintf("insert into tfldata.threads(\"thread\", \"threadauthor\", \"createdon\") values(E'%s', '%s', '%s');", threadVal, userName, time.Now().In(nyLoc).Format(time.DateTime)))
 		if ttbleerr != nil {
 			fmt.Println(ttbleerr)
+		} else {
+			db.Exec("insert into tfldata.users_to_threads(\"username\") select distinct(username) from tfldata.users;")
+			db.Exec(fmt.Sprintf("update tfldata.users_to_threads set is_subscribed=true, thread='%s' where is_subscribed is null and thread is null;", threadVal))
 		}
 		w.Header().Set("HX-Trigger", "success-send")
 
@@ -1593,23 +1597,48 @@ func main() {
 
 	}
 	getStackerzLeaderboardHandler := func(w http.ResponseWriter, r *http.Request) {
-		output, outerr := db.Query("select substr(username,0,14), bonus_points, level from tfldata.stack_leaderboard order by(bonus_points+level) desc limit 20;")
-		if outerr != nil {
-			fmt.Println(outerr)
-		}
-		defer output.Close()
-		iter := 1
-		for output.Next() {
-			var username string
-			var bonus_points string
-			var level string
-			scnerr := output.Scan(&username, &bonus_points, &level)
-			if scnerr != nil {
-				fmt.Println(scnerr)
+		if r.URL.Query().Get("leaderboardType") == "family" {
+			output, outerr := db.Query("select substr(username,0,14), bonus_points, level from tfldata.stack_leaderboard order by(bonus_points+level) desc limit 20;")
+			if outerr != nil {
+				fmt.Println(outerr)
 			}
-			dataStr := "<div class='py-0 my-0' style='display: inline-flex;'><p class='px-2 m-0' style='position: absolute; left: 2%;'>" + fmt.Sprintf("%d", iter) + ".)&nbsp;&nbsp;</p><p class='px-2 m-0' style='text-align: center; position: absolute; left: 15%;'>" + username + "</p><p class='px-2 m-0' style='text-align: center; position: relative; left: 25%;'>" + bonus_points + "</p><p class='px-2 m-0' style='text-align: center; position: absolute; left: 75%;'>" + level + "</p></div><br/>"
-			iter++
-			w.Write([]byte(dataStr))
+			defer output.Close()
+			iter := 1
+			for output.Next() {
+				var username string
+				var bonus_points string
+				var level string
+				scnerr := output.Scan(&username, &bonus_points, &level)
+				if scnerr != nil {
+					fmt.Println(scnerr)
+				}
+				dataStr := "<div class='py-0 my-0' style='display: inline-flex;'><p class='px-2 m-0' style='position: absolute; left: 2%;'>" + fmt.Sprintf("%d", iter) + ".)&nbsp;&nbsp;</p><p class='px-2 m-0' style='text-align: center; position: absolute; left: 15%;'>" + username + "</p><p class='px-2 m-0' style='text-align: center; position: relative; left: 25%;'>" + bonus_points + "</p><p class='px-2 m-0' style='text-align: center; position: absolute; left: 75%;'>" + level + "</p></div><br/>"
+				iter++
+				w.Write([]byte(dataStr))
+			}
+		} else if r.URL.Query().Get("leaderboardType") == "global" {
+			//resLimit := int32(20)
+			out, err := coll.Aggregate(context.TODO(), bson.A{bson.D{{Key: "$match", Value: bson.D{{Key: "game", Value: "stackerz"}}}}, bson.D{{Key: "$set", Value: bson.D{{Key: "score", Value: bson.D{{Key: "$sum", Value: bson.A{"$bonus_points", "$level"}}}}}}}, bson.D{{Key: "$sort", Value: bson.D{{Key: "score", Value: -1}}}}, bson.D{{Key: "$limit", Value: 15}}})
+			//out, err := coll.Find(context.TODO(), &bson.D{{Key: "game", Value: "stackerz"}}, &options.FindOptions{Limit: &resLimit, Sort: bson.D{{Key: "score", Value: -1}}})
+			if err != nil {
+				fmt.Print(err)
+			}
+			defer out.Close(context.TODO())
+			iter := 1
+
+			var results []bson.M
+
+			if err = out.All(context.TODO(), &results); err != nil {
+				log.Fatal(err)
+			}
+			for _, result := range results {
+				dataStr := "<div class='py-0 my-0' style='display: inline-flex;'><p class='px-2 m-0' style='position: absolute; left: 1%;'>" + fmt.Sprintf("%d", iter) + ".)&nbsp;&nbsp;</p><p class='px-1 m-0' style='text-align: center; position: absolute; left: 13%;'>" + result["username"].(string) + "</p><p class='px-2 mx-3' style='text-align: center; position: absolute; left: 33%;'>" + fmt.Sprint(result["bonus_points"].(int32)) + "</p><p class='px-2 mx-3' style='text-align: center; position: absolute; left: 45%;'>" + fmt.Sprint(result["level"].(int32)) + "</p><p class='px-2 mx-3' style='text-align: center; position: absolute; left: 55%;'>" + fmt.Sprint(result["score"].(int32)) + "</p><p class='px-2 mx-3' style='text-align: center; position: absolute; left: 65%;'>" + strings.Split(result["org_id"].(string), "_")[0] + "</p></div><br/>"
+				iter++
+				w.Write([]byte(dataStr))
+				if iter == 20 {
+					return
+				}
+			}
 		}
 	}
 	updateStackerzScoreHandler := func(w http.ResponseWriter, r *http.Request) {
@@ -1629,26 +1658,49 @@ func main() {
 		if inserr != nil {
 			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s');", inserr, time.Now().In(nyLoc).Format(time.DateTime)))
 		}
-		coll.InsertOne(context.TODO(), bson.M{"org_id": orgId, "game": "stackerz", "bonus_points": postData.BonusPoints, "level": postData.Level, "username": postData.Username, "createdOn": time.Now().Format(time.DateOnly)})
+		coll.InsertOne(context.TODO(), bson.M{"org_id": orgId, "game": "stackerz", "bonus_points": postData.BonusPoints, "level": postData.Level, "username": postData.Username, "createdOn": time.Now()})
 	}
 	getLeaderboardHandler := func(w http.ResponseWriter, r *http.Request) {
-		output, outerr := db.Query("select username, score from tfldata.ss_leaderboard order by score desc limit 20;")
-		if outerr != nil {
-			fmt.Println(outerr)
-		}
-		defer output.Close()
-		iter := 1
-		for output.Next() {
-			var username string
-			var score string
-			scnerr := output.Scan(&username, &score)
-			if scnerr != nil {
-				fmt.Println(scnerr)
+		if r.URL.Query().Get("leaderboardType") == "family" {
+			output, outerr := db.Query("select username, score from tfldata.ss_leaderboard order by score desc limit 20;")
+			if outerr != nil {
+				fmt.Println(outerr)
 			}
-			//dataStr := "<div class='py-0 my-0' style='display: inline-flex;'><p class='px-2 m-0'>" + fmt.Sprintf("%d", iter) + "</p><p class='px-2 m-0' style='text-align: center;'>" + username + " - " + score + "</p></div><br/>"
-			dataStr := "<div class='py-0 my-0' style='display: inline-flex;'><p class='px-2 m-0' style='position: absolute; left: 2%;'>" + fmt.Sprintf("%d", iter) + ".)&nbsp;&nbsp;</p><p class='px-2 m-0' style='text-align: center; position: absolute; left: 15%;'>" + username + "</p><p class='px-2 m-0' style='text-align: center; position: relative; left: 25%;'>" + score + "</p></div><br/>"
-			iter++
-			w.Write([]byte(dataStr))
+			defer output.Close()
+			iter := 1
+			for output.Next() {
+				var username string
+				var score string
+				scnerr := output.Scan(&username, &score)
+				if scnerr != nil {
+					fmt.Println(scnerr)
+				}
+				//dataStr := "<div class='py-0 my-0' style='display: inline-flex;'><p class='px-2 m-0'>" + fmt.Sprintf("%d", iter) + "</p><p class='px-2 m-0' style='text-align: center;'>" + username + " - " + score + "</p></div><br/>"
+				dataStr := "<div class='py-0 my-0' style='display: inline-flex;'><p class='px-2 m-0' style='position: absolute; left: 2%;'>" + fmt.Sprintf("%d", iter) + ".)&nbsp;&nbsp;</p><p class='px-2 m-0' style='text-align: center; position: absolute; left: 15%;'>" + username + "</p><p class='px-2 m-0' style='text-align: center; position: relative; left: 25%;'>" + score + "</p></div><br/>"
+				iter++
+				w.Write([]byte(dataStr))
+			}
+		} else if r.URL.Query().Get("leaderboardType") == "global" {
+			eventYearConverted, _ := strconv.Atoi(r.URL.Query().Get("eventYear"))
+			//resLimit := int64(20)
+			out, err := coll.Aggregate(context.TODO(), bson.A{bson.D{{Key: "$match", Value: bson.D{{Key: "game", Value: "simple_shades"}}}}, bson.D{{Key: "$set", Value: bson.D{{Key: "year", Value: bson.D{{Key: "$abs", Value: bson.D{{Key: "$subtract", Value: bson.A{2020, bson.D{{Key: "$year", Value: "$createdOn"}}}}}}}}}}}, bson.D{{Key: "$match", Value: bson.D{{Key: "year", Value: eventYearConverted}}}}, bson.D{{Key: "$limit", Value: 15}}})
+			//out, err := coll.Find(context.TODO(), &bson.D{{Key: "game", Value: "simple_shades"}}, &options.FindOptions{Limit: &resLimit, Sort: bson.D{{Key: "score", Value: -1}}})
+			if err != nil {
+				fmt.Print(err)
+			}
+			defer out.Close(context.TODO())
+			iter := 1
+
+			var results []bson.M
+
+			if err = out.All(context.TODO(), &results); err != nil {
+				log.Fatal(err)
+			}
+			for _, result := range results {
+				dataStr := "<div class='py-0 my-0' style='display: inline-flex;'><p class='px-2 m-0' style='position: absolute; left: 1%;'>" + fmt.Sprintf("%d", iter) + ".)&nbsp;&nbsp;</p><p class='px-1 m-0' style='text-align: center; position: absolute; left: 13%;'>" + result["username"].(string) + "</p><p class='px-2 mx-5' style='text-align: center; position: absolute; left: 40%;'>" + fmt.Sprint(result["score"].(int32)) + "</p><p class='px-2 mx-5' style='text-align: center; position: absolute; left: 55%;'>" + strings.Split(result["org_id"].(string), "_")[0] + "</p></div><br/>"
+				iter++
+				w.Write([]byte(dataStr))
+			}
 		}
 	}
 	updateSimpleShadesScoreHandler := func(w http.ResponseWriter, r *http.Request) {
@@ -1668,7 +1720,7 @@ func main() {
 		if inserr != nil {
 			w.WriteHeader(http.StatusBadRequest)
 		}
-		coll.InsertOne(context.TODO(), bson.M{"org_id": orgId, "game": "simple_shades", "score": postData.Score, "username": postData.Username, "createdOn": time.Now().Format(time.DateOnly)})
+		coll.InsertOne(context.TODO(), bson.M{"org_id": orgId, "game": "simple_shades", "score": postData.Score, "username": postData.Username, "createdOn": time.Now()})
 
 	}
 	getOpenThreadsHandler := func(w http.ResponseWriter, r *http.Request) {

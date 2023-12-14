@@ -1699,7 +1699,6 @@ func main() {
 				startPeriodMonth = 9
 				endPeriodMonth = 13
 			}
-
 			out, err := coll.Aggregate(context.TODO(), bson.A{
 				bson.D{{Key: "$match", Value: bson.D{{Key: "game", Value: "simple_shades"}}}},
 				bson.D{
@@ -1720,6 +1719,7 @@ func main() {
 								},
 							},
 							{Key: "month", Value: bson.D{{Key: "$month", Value: "$createdOn"}}},
+							{Key: "day", Value: bson.D{{Key: "$dayOfMonth", Value: "$createdOn"}}},
 						},
 					},
 				},
@@ -1733,26 +1733,27 @@ func main() {
 									{Key: "$lt", Value: endPeriodMonth},
 								},
 							},
-						},
-					},
-				}, bson.D{{Key: "$and",
-					Value: bson.A{
-						bson.D{{Key: "day", Value: bson.D{{Key: "$lt", Value: 22}}}},
-						bson.D{
-							{Key: "month",
-								Value: bson.D{
-									{Key: "$ne",
-										Value: bson.A{
-											3,
-											6,
-											9,
-											12,
+							{Key: "$and",
+								Value: bson.A{
+									bson.D{{Key: "day", Value: bson.D{{Key: "$lt", Value: 22}}}},
+									bson.D{
+										{Key: "month",
+											Value: bson.D{
+												{Key: "$ne",
+													Value: bson.A{
+														3,
+														6,
+														9,
+														12,
+													},
+												},
+											},
 										},
 									},
-								},
-							},
+								}},
 						},
-					}}},
+					},
+				},
 				bson.D{{Key: "$limit", Value: 15}},
 				bson.D{{Key: "$sort", Value: bson.D{{Key: "score", Value: -1}}}},
 			})

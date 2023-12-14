@@ -1617,9 +1617,101 @@ func main() {
 				w.Write([]byte(dataStr))
 			}
 		} else if r.URL.Query().Get("leaderboardType") == "global" {
-			//resLimit := int32(20)
-			out, err := coll.Aggregate(context.TODO(), bson.A{bson.D{{Key: "$match", Value: bson.D{{Key: "game", Value: "stackerz"}}}}, bson.D{{Key: "$set", Value: bson.D{{Key: "score", Value: bson.D{{Key: "$sum", Value: bson.A{"$bonus_points", "$level"}}}}}}}, bson.D{{Key: "$sort", Value: bson.D{{Key: "score", Value: -1}}}}, bson.D{{Key: "$limit", Value: 15}}})
-			//out, err := coll.Find(context.TODO(), &bson.D{{Key: "game", Value: "stackerz"}}, &options.FindOptions{Limit: &resLimit, Sort: bson.D{{Key: "score", Value: -1}}})
+			eventYearConverted, _ := strconv.Atoi(r.URL.Query().Get("eventYear"))
+			eventPeriodConverted, _ := strconv.Atoi(r.URL.Query().Get("eventPeriod"))
+			var startPeriodMonth int
+			var endPeriodMonth int
+			switch eventPeriodConverted {
+			case 1:
+				startPeriodMonth = 0
+				endPeriodMonth = 4
+			case 2:
+				startPeriodMonth = 3
+				endPeriodMonth = 7
+			case 3:
+				startPeriodMonth = 6
+				endPeriodMonth = 10
+			case 4:
+				startPeriodMonth = 9
+				endPeriodMonth = 13
+			}
+			//out, err := coll.Aggregate(context.TODO(), bson.A{bson.D{{Key: "$match", Value: bson.D{{Key: "game", Value: "stackerz"}}}}, bson.D{{Key: "$set", Value: bson.D{{Key: "score", Value: bson.D{{Key: "$sum", Value: bson.A{"$bonus_points", "$level"}}}}}}}, bson.D{{Key: "$sort", Value: bson.D{{Key: "score", Value: -1}}}}, bson.D{{Key: "$limit", Value: 15}}})
+			out, err := coll.Aggregate(context.TODO(), bson.A{
+				bson.D{{Key: "$match", Value: bson.D{{Key: "game", Value: "stackerz"}}}},
+				bson.D{
+					{Key: "$set",
+						Value: bson.D{
+							{Key: "score",
+								Value: bson.D{
+									{Key: "$sum",
+										Value: bson.A{
+											"$bonus_points",
+											"$level",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				bson.D{
+					{Key: "$set",
+						Value: bson.D{
+							{Key: "year",
+								Value: bson.D{
+									{Key: "$abs",
+										Value: bson.D{
+											{Key: "$subtract",
+												Value: bson.A{
+													2020,
+													bson.D{{Key: "$year", Value: "$createdOn"}},
+												},
+											},
+										},
+									},
+								},
+							},
+							{Key: "month", Value: bson.D{{Key: "$month", Value: "$createdOn"}}},
+							{Key: "day", Value: bson.D{{Key: "$dayOfMonth", Value: "$createdOn"}}},
+						},
+					},
+				},
+				bson.D{
+					{Key: "$match",
+						Value: bson.D{
+							{Key: "year", Value: eventYearConverted},
+							{Key: "month",
+								Value: bson.D{
+									{Key: "$gt", Value: startPeriodMonth},
+									{Key: "$lt", Value: endPeriodMonth},
+								},
+							},
+							{Key: "$and",
+								Value: bson.A{
+									bson.D{{Key: "day", Value: bson.D{{Key: "$lt", Value: 22}}}},
+									bson.D{
+										{Key: "month",
+											Value: bson.D{
+												{Key: "$ne",
+													Value: bson.A{
+														3,
+														6,
+														9,
+														12,
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				bson.D{{Key: "$sort", Value: bson.D{{Key: "score", Value: -1}}}},
+				bson.D{{Key: "$limit", Value: 15}},
+			})
+
 			if err != nil {
 				fmt.Print(err)
 			}
@@ -1632,7 +1724,7 @@ func main() {
 				log.Fatal(err)
 			}
 			for _, result := range results {
-				dataStr := "<div class='py-0 my-0' style='display: inline-flex;'><p class='px-2 m-0' style='position: absolute; left: 1%;'>" + fmt.Sprintf("%d", iter) + ".)&nbsp;&nbsp;</p><p class='px-1 m-0' style='text-align: center; position: absolute; left: 13%;'>" + result["username"].(string) + "</p><p class='px-2 mx-3' style='text-align: center; position: absolute; left: 33%;'>" + fmt.Sprint(result["bonus_points"].(int32)) + "</p><p class='px-2 mx-3' style='text-align: center; position: absolute; left: 45%;'>" + fmt.Sprint(result["level"].(int32)) + "</p><p class='px-2 mx-3' style='text-align: center; position: absolute; left: 55%;'>" + fmt.Sprint(result["score"].(int32)) + "</p><p class='px-2 mx-3' style='text-align: center; position: absolute; left: 65%;'>" + strings.Split(result["org_id"].(string), "_")[0] + "</p></div><br/>"
+				dataStr := "<div class='py-0 my-0' style='display: inline-flex;'><p class='px-2 m-0' style='position: absolute; left: 1%;'>" + fmt.Sprintf("%d", iter) + ".)&nbsp;&nbsp;</p><p class='px-1 m-0' style='text-align: center; position: absolute; left: 13%;'>" + result["username"].(string) + "</p><p class='px-2 mx-3' style='text-align: center; position: absolute; left: 40%;'>" + fmt.Sprint(result["bonus_points"].(int32)) + "</p><p class='px-2 mx-3' style='text-align: center; position: absolute; left: 67%;'>" + fmt.Sprint(result["level"].(int32)) + "</p><p class='px-2 mx-3' style='text-align: center; position: absolute; left: 90%;'>" + strings.Split(result["org_id"].(string), "_")[0] + "</p></div><br/>"
 				iter++
 				w.Write([]byte(dataStr))
 				if iter == 20 {
@@ -1757,7 +1849,7 @@ func main() {
 				bson.D{{Key: "$limit", Value: 15}},
 				bson.D{{Key: "$sort", Value: bson.D{{Key: "score", Value: -1}}}},
 			})
-			//out, err := coll.Find(context.TODO(), &bson.D{{Key: "game", Value: "simple_shades"}}, &options.FindOptions{Limit: &resLimit, Sort: bson.D{{Key: "score", Value: -1}}})
+
 			if err != nil {
 				fmt.Print(err)
 			}

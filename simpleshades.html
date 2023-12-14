@@ -207,7 +207,7 @@
             document.getElementById('familyLeaderBoardTag').style.display = ""
             document.getElementById('scoreLeaderBoardTag').style.left = "38%"
             document.getElementById('selectEventDiv').style.display = "block"
-            if ((currentDate.getDate() > 22 || currentDate.getDate() < 32) && (currentDate.getMonth() + 1 == 3 || currentDate.getMonth() + 1 == 6 || currentDate.getMonth() + 1 == 9 || currentDate.getMonth() == 12))
+            if ((currentDate.getDate() > 22 && currentDate.getDate() < 32) && (currentDate.getMonth() + 1 == 3 || currentDate.getMonth() + 1 == 6 || currentDate.getMonth() + 1 == 9 || currentDate.getMonth() == 12))
                 if (leaderboardType == "global")
                     document.getElementById('delvingprizesbanner').innerHTML = "Currently sending prizes to winners. Current scores will not be added to the global leaderboard until the start of next month."
             document.getElementById('htmxleaderboard').dispatchEvent(new Event('click'))

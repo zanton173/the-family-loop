@@ -1,1 +1,1 @@
-INSERT INTO tfldata.gchat("id", "chat", "author", "thread", "createdon") VALUES(0, 'Welcome to TFL!', 'Admin', 'main thread', now() - interval '12 hours');
+INSERT INTO tfldata.gchat("id", "chat", "author", "thread", "createdon") VALUES(0, 'Welcome to TFL!', 'Admin', 'main thread', now() - interval '5 hours');

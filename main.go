@@ -1371,7 +1371,7 @@ func main() {
 			row := db.QueryRow(fmt.Sprintf("select pfp_name from tfldata.users where username='%s';", author))
 			pfpscnerr := row.Scan(&pfpImg)
 			if pfpscnerr != nil {
-				pfpImg = "https://" + cfdistro + "/pfp/question.png"
+				pfpImg = "assets/96x96/ZCAN2301 The Family Loop Favicon_W_96 x 96.png"
 			} else {
 				pfpImg = "https://" + cfdistro + "/pfp/" + pfpImg
 			}
@@ -1570,7 +1570,7 @@ func main() {
 		} else if postData.Label == "bug" {
 			issueLabel = []string{"bug"}
 		}
-		bodyText := fmt.Sprintf("%s on %s page - %s", postData.Descdetail[1], postData.Descdetail[0], username)
+		bodyText := fmt.Sprintf("%s on %s page - %s. Orgid: %s", postData.Descdetail[1], postData.Descdetail[0], username, orgId)
 		issueJson := github.IssueRequest{
 			Title:  &postData.Issuetitle,
 			Body:   &bodyText,
@@ -2284,8 +2284,10 @@ func sendNotificationToAllUsers(threadVal string, db *sql.DB, fbapp firebase.App
 				})
 			}
 			if sendErr != nil {
-				fmt.Print(sendErr)
-				db.Exec(fmt.Sprintf("update tfldata.users set fcm_registration_id=null where username='%s';", userToSend))
+				fmt.Print(sendErr.Error() + " for user: " + userToSend)
+				if strings.Contains(sendErr.Error(), "404") {
+					db.Exec(fmt.Sprintf("update tfldata.users set fcm_registration_id=null where username='%s';", userToSend))
+				}
 			}
 			db.Exec(fmt.Sprintf("insert into tfldata.sent_notification_log(\"notification_result\", \"createdon\") values('%s', '%s');", sendRes, time.Now().In(nyLoc).Local().Format(time.DateTime)))
 

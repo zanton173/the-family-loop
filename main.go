@@ -18,7 +18,6 @@ import (
 	"time"
 
 	firebase "firebase.google.com/go"
-	"firebase.google.com/go/auth"
 	"firebase.google.com/go/messaging"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -79,6 +78,7 @@ func main() {
 	s3Domain = os.Getenv("S3_BUCKET_NAME")
 	orgId := os.Getenv("ORG_ID")
 	mongoDBPass := os.Getenv("MONGO_PASS")
+	subLevel := os.Getenv("SUB_PACKAGE")
 
 	opts := []option.ClientOption{option.WithCredentialsFile("the-family-loop-fb0d9-firebase-adminsdk-k6sxl-14c7d4c4f7.json")}
 
@@ -198,14 +198,34 @@ func main() {
 
 	signUpHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "multipart/form-data")
-		fb_auth_client, clienterr := app.Auth(context.TODO())
+		/*fb_auth_client, clienterr := app.Auth(context.TODO())
 		if clienterr != nil {
 			fmt.Println(clienterr)
-		}
+		}*/
 
 		if r.PostFormValue("passwordsignup") != r.PostFormValue("confirmpasswordsignup") {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
+		}
+		var countOfUsers int
+		userRowCount := db.QueryRow("select count(*) from tfldata.users;")
+		userRowCount.Scan(&countOfUsers)
+		switch subLevel {
+		case "supreme":
+			if countOfUsers > 49 {
+				w.WriteHeader(http.StatusFailedDependency)
+				return
+			}
+		case "extra":
+			if countOfUsers > 19 {
+				w.WriteHeader(http.StatusFailedDependency)
+				return
+			}
+		case "standard":
+			if countOfUsers > 7 {
+				w.WriteHeader(http.StatusFailedDependency)
+				return
+			}
 		}
 
 		upload, filename, errfile := r.FormFile("pfpformfile")
@@ -221,14 +241,14 @@ func main() {
 		if err != nil {
 			fmt.Println(err)
 		}
-		record, usererr := fb_auth_client.CreateUser(context.TODO(), (&auth.UserToCreate{}).DisplayName(strings.ToLower(r.PostFormValue("usernamesignup"))).Email(strings.ToLower(r.PostFormValue("emailsignup"))).Password(r.PostFormValue("passwordsignup")).PhotoURL(fmt.Sprintf("https://%s/pfp/%s", cfdistro, filename.Filename)))
+		/*record, usererr := fb_auth_client.CreateUser(context.TODO(), (&auth.UserToCreate{}).DisplayName(strings.ToLower(r.PostFormValue("usernamesignup"))).Email(strings.ToLower(r.PostFormValue("emailsignup"))).Password(r.PostFormValue("passwordsignup")).PhotoURL(fmt.Sprintf("https://%s/pfp/%s", cfdistro, filename.Filename)))
 		if usererr != nil {
 			fmt.Println(usererr)
 			w.WriteHeader(http.StatusConflict)
 			return
-		}
+		}*/
 
-		_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.users(\"username\", \"password\", \"pfp_name\", \"email\", \"firebase_user_uid\", \"gchat_bg_theme\", \"gchat_order_option\", \"cf_domain_name\", \"orgid\", \"is_admin\") values('%s', '%s', '%s', '%s', '%s', '%s', %t, '%s', '%s', %t);", strings.ToLower(r.PostFormValue("usernamesignup")), bytesOfPass, filename.Filename, strings.ToLower(r.PostFormValue("emailsignup")), record.UID, "background: linear-gradient(142deg, #00009f, #3dc9ff 26%)", true, cfdistro, orgId, false))
+		_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.users(\"username\", \"password\", \"pfp_name\", \"email\", \"gchat_bg_theme\", \"gchat_order_option\", \"cf_domain_name\", \"orgid\", \"is_admin\") values('%s', '%s', '%s', '%s', '%s', %t, '%s', '%s', %t);", strings.ToLower(r.PostFormValue("usernamesignup")), bytesOfPass, filename.Filename, strings.ToLower(r.PostFormValue("emailsignup")), "background: linear-gradient(142deg, #00009f, #3dc9ff 26%)", true, cfdistro, orgId, false))
 
 		if errinsert != nil {
 			fmt.Println(errinsert)
@@ -266,7 +286,7 @@ func main() {
 		scnerr := passScan.Scan(&isAdmin, &password, &emailIn, &curFirebaseUid)
 
 		if isAdmin {
-			if curFirebaseUid <= "" {
+			/*if curFirebaseUid <= "" {
 				fb_auth_client, clienterr := app.Auth(context.TODO())
 				if clienterr != nil {
 					fmt.Println(clienterr)
@@ -279,7 +299,7 @@ func main() {
 				}
 
 				db.Exec(fmt.Sprintf("update tfldata.users set firebase_user_uid='%s' where username='%s' or email='%s';", record.UID, userStr, userStr))
-			}
+			}*/
 			if password == r.PostFormValue("passwordlogin") {
 
 				w.Header().Set("HX-Trigger", "changeAdminPassword")
@@ -1289,7 +1309,7 @@ func main() {
 		}
 		_, ttbleerr := db.Exec(fmt.Sprintf("insert into tfldata.threads(\"thread\", \"threadauthor\", \"createdon\") values(E'%s', '%s', '%s');", threadVal, userName, time.Now().In(nyLoc).Format(time.DateTime)))
 		if ttbleerr != nil {
-			fmt.Println(ttbleerr)
+			fmt.Println("We can ignore this error: " + ttbleerr.Error())
 		} else {
 			db.Exec("insert into tfldata.users_to_threads(\"username\") select distinct(username) from tfldata.users;")
 			db.Exec(fmt.Sprintf("update tfldata.users_to_threads set is_subscribed=true, thread='%s' where is_subscribed is null and thread is null;", threadVal))
@@ -1349,7 +1369,9 @@ func main() {
 		} else {
 			orderAscOrDesc = "desc"
 		}
-		output, err := db.Query(fmt.Sprintf("select id, chat, author, createdon from (select * from tfldata.gchat where thread='%s' order by id DESC limit 35) as tmp order by createdon %s;", r.URL.Query().Get("threadval"), orderAscOrDesc))
+		limitVal, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+		output, err := db.Query(fmt.Sprintf("select id, chat, author, createdon from (select * from tfldata.gchat where thread='%s' order by createdon DESC limit %d) as tmp order by createdon %s;", r.URL.Query().Get("threadval"), limitVal, orderAscOrDesc))
+		//output, err := db.Query(fmt.Sprintf("select id, chat, author, createdon from tfldata.gchat where thread='%s' order by createdon %s limit %d;", r.URL.Query().Get("threadval"), orderAscOrDesc, limitVal))
 
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
@@ -2287,6 +2309,7 @@ func sendNotificationToAllUsers(threadVal string, db *sql.DB, fbapp firebase.App
 				fmt.Print(sendErr.Error() + " for user: " + userToSend)
 				if strings.Contains(sendErr.Error(), "404") {
 					db.Exec(fmt.Sprintf("update tfldata.users set fcm_registration_id=null where username='%s';", userToSend))
+					fmt.Println("updated " + userToSend + "\\'s fcm token")
 				}
 			}
 			db.Exec(fmt.Sprintf("insert into tfldata.sent_notification_log(\"notification_result\", \"createdon\") values('%s', '%s');", sendRes, time.Now().In(nyLoc).Local().Format(time.DateTime)))

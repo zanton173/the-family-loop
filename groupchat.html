@@ -71,8 +71,9 @@
         <button type="button" onclick="showThemePanel()" class="btn btn-dark border-0 btn-sm"
             style="box-shadow: 3px 3px 6px;">Change Theme</button>
         <button id="changeChatOrderOptBtn" type="button" hx-ext="json-enc" hx-post="/change-gchat-order-opt"
-            hx-vals="js:{'order_option': !gchatOrderOpt, 'username': username}" hx-swap="none" hx-trigger="click"
-            class="btn btn-dark border-0 btn-sm" style="box-shadow: 3px 3px 6px;"><i
+            hx-vals="js:{'order_option': !gchatOrderOpt, 'username': username}"
+            hx-on::after-request="document.dispatchEvent(new Event('DOMContentLoaded'))" hx-swap="none"
+            hx-trigger="click" class="btn btn-dark border-0 btn-sm" style="box-shadow: 3px 3px 6px;"><i
                 class="bi bi-arrow-down-circle"></i></button>
         <button id="subscribeToThisThreadBtn" hx-post="/change-if-notified-for-thread"
             hx-vals="js:{'username': username, 'curThread': document.getElementById('threadSelector').value, 'currentlyNotifiedVal': !isCurUserSubbed}"
@@ -108,14 +109,24 @@
             hx-confirm="This will delete the thread and all chats associated forever. Are you sure you want to delete it?"
             style="border-radius: 27px / 27px; display: none;" hx-trigger="click">X</button>
     </div>
-    <div id="prependhere"></div>
+    <div id="prependhere">
+        <div style="display: inline-flex; justify-content: center; width: 100dvw"><button id="loadMoreBtnTrue"
+                onclick="{limitVal+=15; document.getElementById('loadGChathere').dispatchEvent(new Event('limitChange'))}"
+                class="btn btn-dark border-0 btn-sm w-20" style="box-shadow: 3px 3px 6px; display: none">load older
+                messages</button></div>
+    </div>
     <div id="loadGChathere" hx-get="/group-chat-messages"
-        hx-vals="js:{'threadval': document.getElementById('threadSelector').value, 'order_option': gchatOrderOpt}"
-        hx-trigger="afterThreadSelectorLoadsEvent, every 3s, success-send from:#messageform"
+        hx-vals="js:{'threadval': document.getElementById('threadSelector').value, 'order_option': gchatOrderOpt, 'limit': limitVal}"
+        hx-trigger="afterThreadSelectorLoadsEvent, every 3s, success-send from:#messageform, limitChange"
         class="border-1 d-block m-2" style="justify-content: center; text-align: center; border-radius: 1%;">
 
     </div>
-    <div id="appendhere"></div>
+    <div id="appendhere">
+        <div style="display: inline-flex; justify-content: center; width: 100dvw"><button id="loadMoreBtnFalse"
+                onclick="{limitVal+=15; document.getElementById('loadGChathere').dispatchEvent(new Event('limitChange'))}"
+                class="btn btn-dark border-0 btn-sm w-20" style="box-shadow: 3px 3px 6px; display: none">load
+                older messages</button></div>
+    </div>
     <div id="orderDependentDiv">
 
         <div class="modal customModalTrans" id="newThreadModal">
@@ -173,7 +184,7 @@
 
         var selectedChatId = null
         var gchatOrderOpt = true
-
+        var limitVal = 35
         var isCurUserSubbed = null
 
         const editOrDeleteModal = new bootstrap.Modal(document.getElementById('editOrDeleteModal'), {})
@@ -188,9 +199,9 @@
             usersSubbedThreads = []
 
             curUserData = await fetchSeshDetails(document.cookie.split("session_id=")[1])
-
             document.body.setAttribute('style', curUserData.BGtheme)
             gchatOrderOpt = curUserData.GchatOrderOpt
+
 
             leftSideVal = document.body.getAttribute("style").split("background: linear-gradient(142deg, ")[1].split(",")[0]
             rightSideVal = document.body.getAttribute("style").split("background: linear-gradient(142deg, " + leftSideVal + ",")[1].split(" ", 2)[1]
@@ -203,9 +214,13 @@
             if (gchatOrderOpt) {
                 document.getElementById('appendhere').append(document.getElementById('orderDependentDiv'))
                 document.getElementById('changeChatOrderOptBtn').innerHTML = '<i class="bi bi-arrow-down-circle"></i>'
+                document.getElementById('loadMoreBtnFalse').style.display = "none"
+                document.getElementById('loadMoreBtnTrue').style.display = "block"
             } else {
                 document.getElementById('prependhere').prepend(document.getElementById('orderDependentDiv'))
                 document.getElementById('changeChatOrderOptBtn').innerHTML = '<i class="bi bi-arrow-up-circle"></i>'
+                document.getElementById('loadMoreBtnFalse').style.display = "block"
+                document.getElementById('loadMoreBtnTrue').style.display = "none"
             }
 
             const subthreadsresp = await fetch("/get-users-subscribed-threads?username=" + username, {

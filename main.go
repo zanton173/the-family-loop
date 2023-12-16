@@ -55,6 +55,13 @@ type seshStruct struct {
 	GchatOrderOpt bool
 	CFDomain      string
 }
+type notificationOpts struct {
+	notificationPage  string
+	extraPayloadKey   string
+	extraPayloadVal   string
+	notificationTitle string
+	notificationBody  string
+}
 
 var awskey string
 var awskeysecret string
@@ -757,6 +764,14 @@ func main() {
 			return
 		}
 
+		var chatMessageNotificationOpts notificationOpts
+		chatMessageNotificationOpts.extraPayloadKey = "post"
+		chatMessageNotificationOpts.extraPayloadVal = "posts"
+		chatMessageNotificationOpts.notificationPage = "posts"
+
+		chatMessageNotificationOpts.notificationTitle = "Somebody just made a new post!"
+		chatMessageNotificationOpts.notificationBody = strings.ReplaceAll(r.PostFormValue("title"), "\\", "")
+		sendNotificationToAllUsers(db, *app, username, chatMessageNotificationOpts)
 		parseerr := r.ParseMultipartForm(10 << 20)
 		if parseerr != nil {
 			// handle error
@@ -782,7 +797,7 @@ func main() {
 			})
 
 			if geterr != nil {
-				fmt.Println("image: " + geterr.Error())
+				fmt.Println("We can ignore this image: " + geterr.Error())
 				getvidout, getviderr := client.GetObjectAttributes(context.TODO(), &s3.GetObjectAttributesInput{
 					Bucket: aws.String(s3Domain),
 					Key:    aws.String("posts/videos/" + tmpFileName),
@@ -792,7 +807,7 @@ func main() {
 				})
 
 				if getviderr != nil {
-					fmt.Println("video: " + getviderr.Error())
+					fmt.Println("We can ignore this video: " + getviderr.Error())
 				} else {
 					if *getvidout.ObjectSize > 1 {
 						tmpFileName = strings.ReplaceAll(strings.ReplaceAll(time.Now().Format(time.DateTime), " ", "_"), ":", "") + "_" + tmpFileName
@@ -922,7 +937,7 @@ func main() {
 			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", errmarsh, time.Now().In(nyLoc).Format(time.DateTime)))
 		}
 
-		_, inserterr := db.Exec(fmt.Sprintf("insert into tfldata.comments(\"comment\", \"event_id\", \"author\") values('%s', '%d', (select username from tfldata.users where session_token='%s'));", postData.Eventcomment, postData.CommentSelectedEventId, c.Value))
+		_, inserterr := db.Exec(fmt.Sprintf("insert into tfldata.comments(\"comment\", \"event_id\", \"author\") values(E'%s', '%d', (select username from tfldata.users where session_token='%s'));", replacer.Replace(postData.Eventcomment), postData.CommentSelectedEventId, c.Value))
 		if inserterr != nil {
 			fmt.Println(inserterr)
 			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", inserterr, time.Now().In(nyLoc).Format(time.DateTime)))
@@ -1287,10 +1302,18 @@ func main() {
 		threadVal := r.PostFormValue("threadval")
 		if threadVal == "" {
 			threadVal = "main thread"
+		} else if threadVal == "posts" {
+			w.WriteHeader(http.StatusConflict)
+			return
 		}
 		var fcmRegToken string
-
-		sendNotificationToAllUsers(threadVal, db, *app, strings.ReplaceAll(chatMessage, "\\", ""), userName)
+		var chatMessageNotificationOpts notificationOpts
+		chatMessageNotificationOpts.extraPayloadKey = "thread"
+		chatMessageNotificationOpts.extraPayloadVal = threadVal
+		chatMessageNotificationOpts.notificationPage = "groupchat"
+		chatMessageNotificationOpts.notificationTitle = "message in: " + threadVal
+		chatMessageNotificationOpts.notificationBody = strings.ReplaceAll(chatMessage, "\\", "")
+		sendNotificationToAllUsers(db, *app, userName, chatMessageNotificationOpts)
 		if len(listOfUsersTagged) > 0 {
 			for _, val := range listOfUsersTagged {
 				fcmRegRow := db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where username='%s' and username != '%s';", val, userName))
@@ -1303,7 +1326,7 @@ func main() {
 
 		_, inserr := db.Exec(fmt.Sprintf("insert into tfldata.gchat(\"chat\", \"author\", \"createdon\", \"thread\") values(E'%s', '%s', '%s', '%s');", chatMessage, userName, time.Now().In(nyLoc).Format(time.DateTime), threadVal))
 		if inserr != nil {
-			fmt.Println(err)
+			fmt.Println("error here: " + inserr.Error())
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
@@ -2256,17 +2279,18 @@ func sendNotificationToTaggedUser(w http.ResponseWriter, r *http.Request, fcmTok
 	db.Exec(fmt.Sprintf("insert into tfldata.sent_notification_log(\"notification_result\", \"createdon\") values('%s', '%s');", sentRes, time.Now().In(nyLoc).Format(time.DateTime)))
 }
 
-func sendNotificationToAllUsers(threadVal string, db *sql.DB, fbapp firebase.App, message string, curUser string) {
+func sendNotificationToAllUsers(db *sql.DB, fbapp firebase.App, curUser string, opts notificationOpts) {
 
-	output, outerr := db.Query(fmt.Sprintf("select username, is_subscribed from tfldata.users_to_threads where thread='%s' and username != '%s';", threadVal, curUser))
+	output, outerr := db.Query(fmt.Sprintf("select username, is_subscribed from tfldata.users_to_threads where thread='%s' and username != '%s';", opts.extraPayloadVal, curUser))
 	if outerr != nil {
 		fmt.Println(outerr)
 	}
+
 	defer output.Close()
 	fb_message_client, _ := fbapp.Messaging(context.TODO())
 	typePayload := make(map[string]string)
-	typePayload["type"] = "groupchat"
-	typePayload["thread"] = threadVal
+	typePayload["type"] = opts.notificationPage
+	typePayload[opts.extraPayloadKey] = opts.extraPayloadVal
 	for output.Next() {
 		var userToSend string
 		var isSubbed bool
@@ -2287,20 +2311,20 @@ func sendNotificationToAllUsers(threadVal string, db *sql.DB, fbapp firebase.App
 
 					Token: fcmToken,
 					Notification: &messaging.Notification{
-						Title: "message in: " + threadVal,
-						Body:  message,
+						Title: opts.notificationTitle,
+						Body:  opts.notificationBody,
 					},
 					Webpush: &messaging.WebpushConfig{
 						Notification: &messaging.WebpushNotification{
-							Title: "message in: " + threadVal,
-							Body:  message,
+							Title: opts.notificationTitle,
+							Body:  opts.notificationBody,
 							Data:  typePayload,
 						},
 					},
 					Android: &messaging.AndroidConfig{
 						Notification: &messaging.AndroidNotification{
-							Title: "message in: " + threadVal,
-							Body:  message,
+							Title: opts.notificationTitle,
+							Body:  opts.notificationBody,
 						},
 					},
 				})

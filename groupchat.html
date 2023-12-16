@@ -274,6 +274,8 @@
                 }
                 //console.log(param.get('chatMessage'))
                 //console.log(param.get('thread'))
+            } else if (event.detail.xhr.status == 409) {
+                alert("You cannot create a thread with this name")
             }
         }
         function checkIfSubbed() {

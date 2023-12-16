@@ -416,7 +416,12 @@
             document.getElementById('gchatinput').setAttribute('oninput', "checkForTagging()")
         }
         function createNewThread() {
-            if (document.getElementById('newThreadNameInput').value > ' ') {
+            if (document.getElementById('newThreadNameInput').value.length > 1) {
+                testStr = "test"
+                if (document.getElementById('newThreadNameInput').value.toLowerCase() == 'posts') {
+                    alert("cannot make a thread with this name")
+                    return
+                }
                 var newOption = document.createElement("option")
                 newOption.setAttribute("value", document.getElementById('newThreadNameInput').value)
                 newOption.innerHTML = document.getElementById('newThreadNameInput').value

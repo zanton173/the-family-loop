@@ -262,7 +262,10 @@ func main() {
 			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", errinsert, time.Now().In(nyLoc).Format(time.DateTime)))
 			w.WriteHeader(http.StatusBadRequest)
 		}
-
+		_, errutterr := db.Exec(fmt.Sprintf("insert into tfldata.users_to_threads(\"username\", \"thread\", \"is_subscribed\") values('%s', 'posts', true)", strings.ToLower(r.PostFormValue("usernamesignup"))))
+		if errutterr != nil {
+			fmt.Printf("user %s will not be subscribed to new posts as of now", strings.ToLower(r.PostFormValue("usernamesignup")))
+		}
 	}
 
 	loginHandler := func(w http.ResponseWriter, r *http.Request) {

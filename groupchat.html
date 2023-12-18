@@ -297,22 +297,10 @@
             }
         }
         function checkIfDeletable() {
-
-            //var threadOptions = document.getElementById('threadSelector').querySelectorAll('option[id]')
-            var threadOptions = document.getElementById('threadSelector').querySelectorAll('option')
-            var curSelection = document.getElementById('threadSelector').value
-
-            for (var i = 0; i < threadOptions.length; i++) {
-
-                if (threadOptions[i].id && threadOptions[i].value == curSelection) {
-                    document.getElementById('delThreadBtn').style.display = "inline"
-                    return
-                } else if (threadOptions[i].id == null) {
-
-                    document.getElementById('delThreadBtn').style.display = "none"
-                    return
-                }
-            }
+            if (document.querySelector('option[value="' + document.getElementById('threadSelector').value + '"]').id == username)
+                document.getElementById('delThreadBtn').style.display = "inline"
+            else
+                document.getElementById('delThreadBtn').style.display = "none"
         }
         function setBgLeftVal() {
             leftSideVal = document.getElementById('leftsidethemeinput').value

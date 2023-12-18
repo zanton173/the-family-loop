@@ -1309,7 +1309,7 @@ func main() {
 		threadVal := r.PostFormValue("threadval")
 		if threadVal == "" {
 			threadVal = "main thread"
-		} else if threadVal == "posts" {
+		} else if threadVal == "posts" || threadVal == "Posts" {
 			w.WriteHeader(http.StatusConflict)
 			return
 		}
@@ -1941,11 +1941,7 @@ func main() {
 
 	}
 	getOpenThreadsHandler := func(w http.ResponseWriter, r *http.Request) {
-		c, _ := r.Cookie("session_id")
 
-		row := db.QueryRow(fmt.Sprintf("select username from tfldata.users where session_token='%s';", c.Value))
-		var curUser string
-		row.Scan(&curUser)
 		distinctThreadsOutput, queryErr := db.Query("select thread,threadauthor from tfldata.threads order by createdon asc;")
 		if queryErr != nil {
 			fmt.Println(queryErr)
@@ -1958,12 +1954,8 @@ func main() {
 			if scnerr != nil {
 				fmt.Print("scan error: " + scnerr.Error())
 			}
-			var dataStr string
-			if threadAuthor == curUser {
-				dataStr = fmt.Sprintf("<option id='%s_del' value='%s'>%s</option>", thread, thread, thread)
-			} else {
-				dataStr = fmt.Sprintf("<option value='%s'>%s</option>", thread, thread)
-			}
+			dataStr := fmt.Sprintf("<option id='%s' value='%s'>%s</option>", threadAuthor, thread, thread)
+
 			w.Write([]byte(dataStr))
 		}
 	}

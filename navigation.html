@@ -169,6 +169,11 @@
                                 id="confirmpasswordsignupinput" name="confirmpasswordsignup" />
                         </div>
                         <div class="p-4">
+                            <label>Family Passcode (Ask your admin for this):</label>
+                            <input class="form-control" placeholder="familyname_123abc234" id="orgidinput"
+                                name="orgidinput" />
+                        </div>
+                        <div class="p-4">
 
                             <label>Pick a profile picture</label>
                             <input class="form-control" id="pfpimage" type="file" accept="image/*"
@@ -469,8 +474,13 @@
     }
     htmx.on("#sign-up-form", "htmx:afterRequest", function (event) {
 
-        if (event.detail.xhr.status == 401) {
+        if (event.detail.xhr.status == 400) {
             alert("Are you trying to bypass client side validation??!?!?!")
+        } else if (event.detail.xhr.status == 401) {
+            alert("You have an incorrect family passcode. Please confirm this with your plan administrator")
+            loginModal.toggle();
+            showSignUpForm()
+
         } else if (event.detail.xhr.status == 200) {
             alert('Sign up Successful! You can now login');
             loginModal.toggle();

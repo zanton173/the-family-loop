@@ -211,6 +211,10 @@ func main() {
 		}*/
 
 		if r.PostFormValue("passwordsignup") != r.PostFormValue("confirmpasswordsignup") {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		if r.PostFormValue("orgidinput") != orgId {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -1942,7 +1946,7 @@ func main() {
 		row := db.QueryRow(fmt.Sprintf("select username from tfldata.users where session_token='%s';", c.Value))
 		var curUser string
 		row.Scan(&curUser)
-		distinctThreadsOutput, queryErr := db.Query("select distinct(gct.thread), tt.threadauthor from tfldata.gchat as gct join tfldata.threads as tt on tt.thread = gct.thread;")
+		distinctThreadsOutput, queryErr := db.Query("select thread,threadauthor from tfldata.threads order by createdon asc;")
 		if queryErr != nil {
 			fmt.Println(queryErr)
 		}

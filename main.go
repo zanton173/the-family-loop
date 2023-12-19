@@ -266,7 +266,7 @@ func main() {
 			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", errinsert, time.Now().In(nyLoc).Format(time.DateTime)))
 			w.WriteHeader(http.StatusBadRequest)
 		}
-		_, errutterr := db.Exec(fmt.Sprintf("insert into tfldata.users_to_threads(\"username\", \"thread\", \"is_subscribed\") values('%s', 'posts', true)", strings.ToLower(r.PostFormValue("usernamesignup"))))
+		_, errutterr := db.Exec(fmt.Sprintf("insert into tfldata.users_to_threads(\"username\", \"thread\", \"is_subscribed\") values('%s', 'posts', true),('%s', 'calendar',true)", strings.ToLower(r.PostFormValue("usernamesignup")), strings.ToLower(r.PostFormValue("usernamesignup"))))
 		if errutterr != nil {
 			fmt.Printf("user %s will not be subscribed to new posts as of now", strings.ToLower(r.PostFormValue("usernamesignup")))
 		}
@@ -778,7 +778,7 @@ func main() {
 
 		chatMessageNotificationOpts.notificationTitle = "Somebody just made a new post!"
 		chatMessageNotificationOpts.notificationBody = strings.ReplaceAll(r.PostFormValue("title"), "\\", "")
-		sendNotificationToAllUsers(db, *app, username, chatMessageNotificationOpts)
+		go sendNotificationToAllUsers(db, *app, username, chatMessageNotificationOpts)
 		parseerr := r.ParseMultipartForm(10 << 20)
 		if parseerr != nil {
 			// handle error
@@ -1168,11 +1168,23 @@ func main() {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		_, inserterr := db.Exec(fmt.Sprintf("insert into tfldata.calendar(\"start_date\", \"event_owner\", \"event_details\", \"event_title\") values('%s', (select username from tfldata.users where session_token='%s'), E'%s', E'%s');", postData.Startdate, c.Value, replacer.Replace(postData.Eventdetails), replacer.Replace(postData.Eventtitle)))
+		var username string
+		row := db.QueryRow(fmt.Sprintf("select username from tfldata.users where session_token='%s';", c.Value))
+		row.Scan(&username)
+		_, inserterr := db.Exec(fmt.Sprintf("insert into tfldata.calendar(\"start_date\", \"event_owner\", \"event_details\", \"event_title\") values('%s', '%s', E'%s', E'%s');", postData.Startdate, username, replacer.Replace(postData.Eventdetails), replacer.Replace(postData.Eventtitle)))
 		if inserterr != nil {
 			fmt.Println(inserterr)
 			w.WriteHeader(http.StatusBadRequest)
+			return
 		}
+		var chatMessageNotificationOpts notificationOpts
+		// You can use the below key to add onclick features to the notification
+		chatMessageNotificationOpts.extraPayloadKey = "calendardata"
+		chatMessageNotificationOpts.extraPayloadVal = "calendar"
+		chatMessageNotificationOpts.notificationPage = "calendar"
+		chatMessageNotificationOpts.notificationTitle = "New event on: " + postData.Startdate
+		chatMessageNotificationOpts.notificationBody = strings.ReplaceAll(postData.Eventtitle, "\\", "")
+		go sendNotificationToAllUsers(db, *app, username, chatMessageNotificationOpts)
 
 	}
 	updateRSVPForEventHandler := func(w http.ResponseWriter, r *http.Request) {
@@ -1320,7 +1332,7 @@ func main() {
 		chatMessageNotificationOpts.notificationPage = "groupchat"
 		chatMessageNotificationOpts.notificationTitle = "message in: " + threadVal
 		chatMessageNotificationOpts.notificationBody = strings.ReplaceAll(chatMessage, "\\", "")
-		sendNotificationToAllUsers(db, *app, userName, chatMessageNotificationOpts)
+		go sendNotificationToAllUsers(db, *app, userName, chatMessageNotificationOpts)
 		if len(listOfUsersTagged) > 0 {
 			for _, val := range listOfUsersTagged {
 				fcmRegRow := db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where username='%s' and username != '%s';", val, userName))
@@ -2303,7 +2315,7 @@ func sendNotificationToAllUsers(db *sql.DB, fbapp firebase.App, curUser string, 
 			scnerr := tokenRow.Scan(&fcmToken)
 
 			if scnerr != nil {
-				fmt.Println(scnerr)
+				fmt.Println("ignore scan error for: " + userToSend)
 			} else {
 
 				sendRes, sendErr = fb_message_client.Send(context.TODO(), &messaging.Message{
@@ -2329,7 +2341,7 @@ func sendNotificationToAllUsers(db *sql.DB, fbapp firebase.App, curUser string, 
 				})
 			}
 			if sendErr != nil {
-				fmt.Print(sendErr.Error() + " for user: " + userToSend)
+				//fmt.Print(sendErr.Error() + " for user: " + userToSend)
 				if strings.Contains(sendErr.Error(), "404") {
 					db.Exec(fmt.Sprintf("update tfldata.users set fcm_registration_id=null where username='%s';", userToSend))
 					fmt.Println("updated " + userToSend + "\\'s fcm token")

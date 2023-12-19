@@ -406,7 +406,7 @@
         function createNewThread() {
             if (document.getElementById('newThreadNameInput').value.length > 1) {
                 testStr = "test"
-                if (document.getElementById('newThreadNameInput').value.toLowerCase() == 'posts') {
+                if (document.getElementById('newThreadNameInput').value.toLowerCase() == 'posts' || document.getElementById('newThreadNameInput').value.toLowerCase() == 'calendar') {
                     alert("cannot make a thread with this name")
                     return
                 }

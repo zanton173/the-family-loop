@@ -107,8 +107,9 @@
                                 class="bi bi-asterisk"></i>&nbsp;&nbsp;maybe</button>
                     </div>
 
-                    <div hx-get='/get-event-comments' hx-vals='js:{"commentSelectedEventID": commentSelectedEventId}'
-                        hx-ext='json-enc' hx-trigger="loadCommentEvent" hx-swap='beforeend' id="eventappendcomments">
+                    <div hx-get='/get-event-comments' hx-on::after-request="checkIfEventIsInPast()"
+                        hx-vals='js:{"commentSelectedEventID": commentSelectedEventId}' hx-ext='json-enc'
+                        hx-trigger="loadCommentEvent" hx-swap='beforeend' id="eventappendcomments">
                     </div>
                 </div>
 
@@ -161,7 +162,29 @@
         setDatesThatHaveEvents()
 
     })
+    function checkIfEventIsInPast() {
 
+        document.getElementById('commentnoteevent').value = ""
+        var selectedEvent = allEvents.filter((data) => data.Eventid == commentSelectedEventId)
+        var eventDate = new Date(selectedEvent[0].Startdate[0], selectedEvent[0].Startdate[1] - 1, selectedEvent[0].Startdate[2])
+        var currentDate = new Date()
+        if (eventDate < currentDate) {
+            document.getElementById('commentnoteevent').style.display = "none"
+            if (document.getElementById('submitEventCommentBtn'))
+                document.getElementById('submitEventCommentBtn').style.display = "none"
+            document.getElementById('yesbtn').style.display = "none"
+            document.getElementById('nobtn').style.display = "none"
+            document.getElementById('maybebtn').style.display = "none"
+        } else {
+            document.getElementById('commentnoteevent').style.display = ""
+            if (document.getElementById('submitEventCommentBtn'))
+                document.getElementById('submitEventCommentBtn').style.display = ""
+            document.getElementById('yesbtn').style.display = ""
+            document.getElementById('nobtn').style.display = ""
+            document.getElementById('maybebtn').style.display = ""
+
+        }
+    }
     function setDatesThatHaveEvents() {
 
         //listOfActive = document.querySelectorAll("[style='background: #fff']")

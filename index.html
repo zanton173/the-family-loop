@@ -194,8 +194,10 @@
             })
 
         }
-        window.addEventListener("load", () => {
 
+        window.addEventListener("load", () => {
+            if (document.cookie.includes("session_id="))
+                document.getElementById('divofposts').dispatchEvent(new Event('afterLogin'))
             Notification.permission !== 'granted' ?
                 document.getElementById('notifydiv').setAttribute("style", "display: inline")
                 : document.getElementById('notifydiv').setAttribute("style", "display: none")
@@ -284,7 +286,7 @@
 
 
     <div style="text-align: center;" class="px-5" id="posts-div">
-        <div hx-get="/get-posts" hx-trigger="load, loadNewVars, anotherCustomEvent" hx-target="#post-items"
+        <div hx-get="/get-posts" hx-trigger="afterLogin, loadNewVars, anotherCustomEvent" hx-target="#post-items"
             id="divofposts" hx-indicator="#loadingspinner"
             hx-vals="js:{'page': pageLoadPaginator, 'limit': limit, 'token': document.cookie.split('session_id=')[1]}"
             hx-swap="beforeend">

@@ -145,13 +145,13 @@
                         hx-indicator="#loadingspinner">
                         <div class="p-4">
                             <h5>Sign Up</h5>
-                            <label>Username:</label>
+                            <label for="usernamesignup">Username:</label>
                             <input class="form-control" autocomplete="username" type="text" name="usernamesignup"
                                 placeholder="Username" oninput="checkForValidSignUpSubmission()" required
                                 id="usernamesignupinput" />
                         </div>
                         <div class="p-4">
-                            <label>Email:</label>
+                            <label for="emailsignup">Email:</label>
                             <input class="form-control" type="email" name="emailsignup" autocomplete="email"
                                 placeholder="email@example.com" oninput="checkForValidSignUpSubmission()" required
                                 id="emailsignupinput" maxlength="64" />
@@ -167,11 +167,12 @@
                             <input class="form-control" type="password" autocomplete="new-password"
                                 placeholder="Password" oninput="checkForValidSignUpSubmission()" required
                                 id="confirmpasswordsignupinput" name="confirmpasswordsignup" />
+                            <p id="passworddonotmatch" style="color: red;"></p>
                         </div>
                         <div class="p-4">
                             <label>Family Passcode (Ask your admin for this):</label>
-                            <input class="form-control" placeholder="familyname_123abc234" id="orgidinput"
-                                name="orgidinput" />
+                            <input class="form-control" type="text" placeholder="familyname_123abc234"
+                                oninput="checkForValidSignUpSubmission()" required id="orgidinput" name="orgidinput" />
                         </div>
                         <div class="p-4">
 
@@ -447,20 +448,28 @@
         }
     }
     function checkForValidSignUpSubmission() {
-        if (usernamesignupinput.value > '' && emailsignupinput.value > '' && passwordsignupinput.value > '' && passwordsignupinput.value === confirmpasswordsignupinput.value && passwordsignupinput.value.length > 7) {
-
+        if (usernamesignupinput.value > '' && passwordsignupinput.value > '' && passwordsignupinput.value === confirmpasswordsignupinput.value && document.getElementById('orgidinput').value.length > 1 && passwordsignupinput.value.length > 7 && emailsignupinput.value.includes('@') && (emailsignupinput.value.includes('.com') || emailsignupinput.value.includes('.net') || emailsignupinput.value.includes('.org') || emailsignupinput.value.includes('.io') || emailsignupinput.value.includes('.gov'))) {
             gosignup.setAttribute("type", "submit")
             gosignup.setAttribute("id", 'signupgobutton')
             gosignup.setAttribute("class", "btn btn-outline-success")
             gosignup.setAttribute("data-bs-dismiss", "modal")
 
             gosignup.innerHTML = "Go!"
+            if (passwordsignupinput.value !== confirmpasswordsignupinput.value)
+                document.getElementById('passworddonotmatch').innerHTML = "Passwords do not match!"
+            else
+                document.getElementById('passworddonotmatch').innerHTML = ""
 
             signup.append(gosignup)
 
-        } else if ((usernamesignupinput.value == '' || emailsignupinput.value == '' || passwordsignupinput.value == '' || confirmpasswordsignupinput.value == '' || passwordsignupinput.value !== confirmpasswordsignupinput.value) && signup.contains(gosignup)) {
+        } else if (usernamesignupinput.value == '' || emailsignupinput.value == '' || passwordsignupinput.value == '' || confirmpasswordsignupinput.value == '' || !emailsignupinput.value.includes('@') || document.getElementById('orgidinput').value.length < 1) {
 
-            signup.removeChild(gosignup)
+            if (passwordsignupinput.value !== confirmpasswordsignupinput.value)
+                document.getElementById('passworddonotmatch').innerHTML = "Passwords do not match!"
+            else
+                document.getElementById('passworddonotmatch').innerHTML = ""
+            if (signup.contains(gosignup))
+                signup.removeChild(gosignup)
 
         }
     }

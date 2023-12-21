@@ -247,7 +247,6 @@ func main() {
 
 				setLoginCookie(w, db, userStr, r)
 				generateLoginJWT(userStr, w, r, jwtSignKey)
-				//w.Header().Set("HX-Refresh", "true")
 			} else {
 				err := bcrypt.CompareHashAndPassword([]byte(password), []byte(r.PostFormValue("passwordlogin")))
 

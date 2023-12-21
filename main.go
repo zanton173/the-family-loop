@@ -25,6 +25,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
+
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/go-github/github"
 	"github.com/google/uuid"
 	"github.com/joho/godotenv"
@@ -86,6 +88,7 @@ func main() {
 	orgId := os.Getenv("ORG_ID")
 	mongoDBPass := os.Getenv("MONGO_PASS")
 	subLevel := os.Getenv("SUB_PACKAGE")
+	jwtSignKey := os.Getenv("JWT_SIGNING_KEY")
 
 	opts := []option.ClientOption{option.WithCredentialsFile("the-family-loop-fb0d9-firebase-adminsdk-k6sxl-14c7d4c4f7.json")}
 
@@ -134,6 +137,19 @@ func main() {
 	subscriptionHandler := func(w http.ResponseWriter, r *http.Request) {
 
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		jwtCookie, cookieerr := r.Cookie("backendauth")
+		if cookieerr != nil {
+			fmt.Println(cookieerr)
+
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Header().Set("HX-Refresh", "true")
+			return
+		}
+		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
+		if !validBool {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
 		bs, _ := io.ReadAll(r.Body)
 
 		type postBody struct {
@@ -153,62 +169,8 @@ func main() {
 
 	}
 
-	/* Not currently being used
-	newPostsHandlerPushNotify := func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		bs, _ := io.ReadAll(r.Body)
-
-		type postBody struct {
-			Id string `json:"id"`
-		}
-		var postData postBody
-		marshErr := json.Unmarshal(bs, &postData)
-		if marshErr != nil {
-			fmt.Print(marshErr)
-		}
-
-		var fcmToken string
-		tokenRow := db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where session_token='%s';", postData.Id))
-		scnerr := tokenRow.Scan(&fcmToken)
-
-		if scnerr != nil {
-			fmt.Println(scnerr)
-		}
-
-		fb_message_client, _ := app.Messaging(context.TODO())
-
-		sentRes, sendErr := fb_message_client.Send(context.TODO(), &messaging.Message{
-			Token: fcmToken,
-			Notification: &messaging.Notification{
-				Title: "There's a new post!",
-				Body:  "Somebody just made a new post!",
-			},
-
-			Webpush: &messaging.WebpushConfig{
-				Notification: &messaging.WebpushNotification{
-					Title: "There's a new post!",
-					Body:  "Somebody just made a new post!",
-				},
-			},
-			Android: &messaging.AndroidConfig{
-				Notification: &messaging.AndroidNotification{
-					Title: "There's a new post!",
-					Body:  "Somebody just made a new post!",
-				},
-			},
-		})
-		if sendErr != nil {
-			fmt.Print(sendErr)
-		}
-		db.Exec(fmt.Sprintf("insert into tfldata.sent_notification_log(\"notification_result\", \"createdon\") values('%s', '%s');", sentRes, time.Now().In(nyLoc).Local().Format(time.DateTime)))
-	}*/
-
 	signUpHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "multipart/form-data")
-		/*fb_auth_client, clienterr := app.Auth(context.TODO())
-		if clienterr != nil {
-			fmt.Println(clienterr)
-		}*/
 
 		if r.PostFormValue("passwordsignup") != r.PostFormValue("confirmpasswordsignup") {
 			w.WriteHeader(http.StatusBadRequest)
@@ -252,12 +214,6 @@ func main() {
 		if err != nil {
 			fmt.Println(err)
 		}
-		/*record, usererr := fb_auth_client.CreateUser(context.TODO(), (&auth.UserToCreate{}).DisplayName(strings.ToLower(r.PostFormValue("usernamesignup"))).Email(strings.ToLower(r.PostFormValue("emailsignup"))).Password(r.PostFormValue("passwordsignup")).PhotoURL(fmt.Sprintf("https://%s/pfp/%s", cfdistro, filename.Filename)))
-		if usererr != nil {
-			fmt.Println(usererr)
-			w.WriteHeader(http.StatusConflict)
-			return
-		}*/
 
 		_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.users(\"username\", \"password\", \"pfp_name\", \"email\", \"gchat_bg_theme\", \"gchat_order_option\", \"cf_domain_name\", \"orgid\", \"is_admin\") values('%s', '%s', '%s', '%s', '%s', %t, '%s', '%s', %t);", strings.ToLower(r.PostFormValue("usernamesignup")), bytesOfPass, filename.Filename, strings.ToLower(r.PostFormValue("emailsignup")), "background: linear-gradient(142deg, #00009f, #3dc9ff 26%)", true, cfdistro, orgId, false))
 
@@ -273,24 +229,8 @@ func main() {
 	}
 
 	loginHandler := func(w http.ResponseWriter, r *http.Request) {
-		/*var userUid string
-		fb_auth_client, clienterr := app.Auth(context.TODO())
-		if clienterr != nil {
-			fmt.Println(clienterr)
-		}*/
 
 		userStr := strings.ToLower(r.PostFormValue("usernamelogin"))
-		/*userIdRow := db.QueryRow(fmt.Sprintf("select firebase_user_uid from tfldata.users where username='%s';", userStr))
-		userScnErr := userIdRow.Scan(&userUid)
-		if userScnErr != nil {
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", userScnErr))
-		}
-		_, loginerr := fb_auth_client.GetUser(context.Background(), userUid)
-
-		if loginerr != nil {
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", loginerr))
-
-		}*/
 
 		var password string
 		var isAdmin bool
@@ -300,28 +240,14 @@ func main() {
 		scnerr := passScan.Scan(&isAdmin, &password, &emailIn, &curFirebaseUid)
 
 		if isAdmin {
-			/*if curFirebaseUid <= "" {
-				fb_auth_client, clienterr := app.Auth(context.TODO())
-				if clienterr != nil {
-					fmt.Println(clienterr)
-				}
-				record, usererr := fb_auth_client.CreateUser(context.TODO(), (&auth.UserToCreate{}).DisplayName(strings.ToLower(userStr)).Email(strings.ToLower(emailIn)).Password(password))
-				if usererr != nil {
-					fmt.Println(usererr)
-					w.WriteHeader(http.StatusConflict)
-					return
-				}
 
-				db.Exec(fmt.Sprintf("update tfldata.users set firebase_user_uid='%s' where username='%s' or email='%s';", record.UID, userStr, userStr))
-			}*/
 			if password == r.PostFormValue("passwordlogin") {
 
 				w.Header().Set("HX-Trigger", "changeAdminPassword")
+
 				setLoginCookie(w, db, userStr, r)
-				_, uperr := db.Exec(fmt.Sprintf("update tfldata.users set last_sign_on='%s' where username='%s';", time.Now().In(nyLoc).Format(time.DateTime), userStr))
-				if uperr != nil {
-					fmt.Println(uperr)
-				}
+				generateLoginJWT(userStr, w, r, jwtSignKey)
+				w.Header().Set("HX-Refresh", "true")
 			} else {
 				err := bcrypt.CompareHashAndPassword([]byte(password), []byte(r.PostFormValue("passwordlogin")))
 
@@ -329,17 +255,22 @@ func main() {
 					db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", err, time.Now().In(nyLoc).Format(time.DateTime)))
 					w.Header().Set("HX-Trigger", "loginevent")
 				} else if err == nil {
+
+					generateLoginJWT(userStr, w, r, jwtSignKey)
+
 					setLoginCookie(w, db, userStr, r)
 					_, uperr := db.Exec(fmt.Sprintf("update tfldata.users set last_sign_on='%s' where username='%s';", time.Now().In(nyLoc).Format(time.DateTime), userStr))
 					if uperr != nil {
 						fmt.Println(uperr)
 					}
+					//w.WriteHeader(http.StatusOK)
 					w.Header().Set("HX-Refresh", "true")
+
 				}
 			}
 		} else {
 			if scnerr != nil {
-				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('this was the scan error %s with dbpassword %s and form user is %s');", scnerr, password, userStr))
+				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('this was the scan error %s with dbpassword *** and form user is %s');", scnerr, userStr))
 				fmt.Print(scnerr)
 			}
 			err := bcrypt.CompareHashAndPassword([]byte(password), []byte(r.PostFormValue("passwordlogin")))
@@ -348,12 +279,17 @@ func main() {
 				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", err, time.Now().In(nyLoc).Format(time.DateTime)))
 				w.Header().Set("HX-Trigger", "loginevent")
 			} else if err == nil {
+
+				generateLoginJWT(userStr, w, r, jwtSignKey)
+
 				setLoginCookie(w, db, userStr, r)
 				_, uperr := db.Exec(fmt.Sprintf("update tfldata.users set last_sign_on='%s' where username='%s';", time.Now().In(nyLoc).Format(time.DateTime), userStr))
 				if uperr != nil {
 					fmt.Println(uperr)
 				}
+
 				w.Header().Set("HX-Refresh", "true")
+
 			}
 		}
 	}
@@ -383,10 +319,24 @@ func main() {
 		if uperr != nil {
 			fmt.Println(uperr)
 		}
+
 		w.Header().Set("HX-Refresh", "true")
 	}
 	getResetPasswordCodeHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		jwtCookie, cookieerr := r.Cookie("backendauth")
+		if cookieerr != nil {
+			fmt.Println(cookieerr)
+
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Header().Set("HX-Refresh", "true")
+			return
+		}
+		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
+		if !validBool {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
 		emailInput := r.Header.Get("HX-Prompt")
 
 		var userEmail string
@@ -423,6 +373,19 @@ func main() {
 		w.Write([]byte(fmt.Sprintf("{\"user\":\"%s\", \"code\": \"%s\", \"email\": \"%s\"}", userName, string(b), userEmail)))
 	}
 	resetPasswordHandler := func(w http.ResponseWriter, r *http.Request) {
+		jwtCookie, cookieerr := r.Cookie("backendauth")
+		if cookieerr != nil {
+			fmt.Println(cookieerr)
+
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Header().Set("HX-Refresh", "true")
+			return
+		}
+		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
+		if !validBool {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
 		newPass := r.PostFormValue("resetnewpassinput")
 		verifyCode := r.PostFormValue("resetCodeInput")
 		emailInput := r.PostFormValue("email")
@@ -550,7 +513,19 @@ func main() {
 
 	}
 	getPostsHandler := func(w http.ResponseWriter, r *http.Request) {
+		jwtCookie, cookieerr := r.Cookie("backendauth")
+		if cookieerr != nil {
+			fmt.Println(cookieerr)
 
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Header().Set("HX-Refresh", "true")
+			return
+		}
+		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
+		if !validBool {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
 		var reactionBtn string
 		//curUser := r.URL.Query().Get("username")
 		curToken := r.URL.Query().Get("token")
@@ -649,6 +624,19 @@ func main() {
 	}
 	deleteThisPostHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		jwtCookie, cookieerr := r.Cookie("backendauth")
+		if cookieerr != nil {
+			fmt.Println(cookieerr)
+
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Header().Set("HX-Refresh", "true")
+			return
+		}
+		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
+		if !validBool {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
 		cfg, err := config.LoadDefaultConfig(context.TODO(),
 			config.WithDefaultRegion("us-east-1"),
 			config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(awskey, awskeysecret, "")),
@@ -720,21 +708,20 @@ func main() {
 		}
 	}
 
-	getPostCountHandler := func(w http.ResponseWriter, r *http.Request) {
-
-		var count string
-		db.QueryRow("select count(*) from tfldata.posts;").Scan(&count)
-
-		dataStr := "<script>dbCount = " + count + "</script>"
-		tmp, err := template.New("but").Parse(dataStr)
-		if err != nil {
-			fmt.Println("here: " + err.Error())
-		}
-		tmp.Execute(w, nil)
-
-	}
-
 	createPostHandler := func(w http.ResponseWriter, r *http.Request) {
+		jwtCookie, cookieerr := r.Cookie("backendauth")
+		if cookieerr != nil {
+			fmt.Println(cookieerr)
+
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Header().Set("HX-Refresh", "true")
+			return
+		}
+		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
+		if !validBool {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
 		c, err := r.Cookie("session_id")
 		if err != nil {
 			if err == http.ErrNoCookie {
@@ -862,6 +849,19 @@ func main() {
 	}
 	createPostReactionHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		jwtCookie, cookieerr := r.Cookie("backendauth")
+		if cookieerr != nil {
+			fmt.Println(cookieerr)
+
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Header().Set("HX-Refresh", "true")
+			return
+		}
+		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
+		if !validBool {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
 		type postBody struct {
 			Username       string `json:"username"`
 			ReactionToPost string `json:"emoji"`
@@ -882,6 +882,19 @@ func main() {
 	}
 
 	getSelectedPostsComments := func(w http.ResponseWriter, r *http.Request) {
+		jwtCookie, cookieerr := r.Cookie("backendauth")
+		if cookieerr != nil {
+			fmt.Println(cookieerr)
+
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Header().Set("HX-Refresh", "true")
+			return
+		}
+		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
+		if !validBool {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
 		type postComment struct {
 			Comment string
 			Author  string
@@ -913,6 +926,19 @@ func main() {
 
 	}
 	createEventCommentHandler := func(w http.ResponseWriter, r *http.Request) {
+		jwtCookie, cookieerr := r.Cookie("backendauth")
+		if cookieerr != nil {
+			fmt.Println(cookieerr)
+
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Header().Set("HX-Refresh", "true")
+			return
+		}
+		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
+		if !validBool {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
 		c, err := r.Cookie("session_id")
 
 		if err != nil {
@@ -963,7 +989,19 @@ func main() {
 
 	}
 	getSelectedEventsComments := func(w http.ResponseWriter, r *http.Request) {
+		jwtCookie, cookieerr := r.Cookie("backendauth")
+		if cookieerr != nil {
+			fmt.Println(cookieerr)
 
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Header().Set("HX-Refresh", "true")
+			return
+		}
+		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
+		if !validBool {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
 		var commentTmpl *template.Template
 
 		output, err := db.Query(fmt.Sprintf("select comment, author from tfldata.comments where event_id='%s'::integer order by event_id desc;", r.URL.Query().Get("commentSelectedEventID")))
@@ -996,6 +1034,19 @@ func main() {
 
 	}
 	createCommentHandler := func(w http.ResponseWriter, r *http.Request) {
+		jwtCookie, cookieerr := r.Cookie("backendauth")
+		if cookieerr != nil {
+			fmt.Println(cookieerr)
+
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Header().Set("HX-Refresh", "true")
+			return
+		}
+		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
+		if !validBool {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
 		c, err := r.Cookie("session_id")
 
 		if err != nil {
@@ -1082,7 +1133,19 @@ func main() {
 	getEventsHandler := func(w http.ResponseWriter, r *http.Request) {
 
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		jwtCookie, cookieerr := r.Cookie("backendauth")
+		if cookieerr != nil {
+			fmt.Println(cookieerr)
 
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Header().Set("HX-Refresh", "true")
+			return
+		}
+		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
+		if !validBool {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
 		type EventData struct {
 			Eventid      int
 			Startdate    string
@@ -1116,6 +1179,19 @@ func main() {
 	}
 	getPostsReactionsHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		jwtCookie, cookieerr := r.Cookie("backendauth")
+		if cookieerr != nil {
+			fmt.Println(cookieerr)
+
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Header().Set("HX-Refresh", "true")
+			return
+		}
+		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
+		if !validBool {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
 
 		output, rowerr := db.Query(fmt.Sprintf("select author, reaction from tfldata.reactions where post_id='%s' and author != '%s';", r.URL.Query().Get("selectedPostId"), r.URL.Query().Get("username")))
 		if rowerr != nil {
@@ -1133,6 +1209,19 @@ func main() {
 		}
 	}
 	createEventHandler := func(w http.ResponseWriter, r *http.Request) {
+		jwtCookie, cookieerr := r.Cookie("backendauth")
+		if cookieerr != nil {
+			fmt.Println(cookieerr)
+
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Header().Set("HX-Refresh", "true")
+			return
+		}
+		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
+		if !validBool {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
 		c, err := r.Cookie("session_id")
 
 		if err != nil {
@@ -1189,6 +1278,19 @@ func main() {
 	}
 	updateRSVPForEventHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		jwtCookie, cookieerr := r.Cookie("backendauth")
+		if cookieerr != nil {
+			fmt.Println(cookieerr)
+
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Header().Set("HX-Refresh", "true")
+			return
+		}
+		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
+		if !validBool {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
 		bs, _ := io.ReadAll(r.Body)
 		type postBody struct {
 			Username string `json:"username"`
@@ -1246,7 +1348,21 @@ func main() {
 
 	}
 	getEventRSVPHandler := func(w http.ResponseWriter, r *http.Request) {
+
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		jwtCookie, cookieerr := r.Cookie("backendauth")
+		if cookieerr != nil {
+			fmt.Println(cookieerr)
+
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Header().Set("HX-Refresh", "true")
+			return
+		}
+		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
+		if !validBool {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
 		var status string
 		row := db.QueryRow(fmt.Sprintf("select status from tfldata.calendar_rsvp where username='%s' and event_id='%s';", r.URL.Query().Get("username"), r.URL.Query().Get("event_id")))
 		scnerr := row.Scan(&status)
@@ -1261,6 +1377,19 @@ func main() {
 	}
 	getRSVPNotesHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		jwtCookie, cookieerr := r.Cookie("backendauth")
+		if cookieerr != nil {
+			fmt.Println(cookieerr)
+
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Header().Set("HX-Refresh", "true")
+			return
+		}
+		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
+		if !validBool {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
 
 		var status string
 		var username string
@@ -1294,7 +1423,19 @@ func main() {
 
 	}
 	createGroupChatMessageHandler := func(w http.ResponseWriter, r *http.Request) {
+		jwtCookie, cookieerr := r.Cookie("backendauth")
+		if cookieerr != nil {
+			fmt.Println(cookieerr)
 
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Header().Set("HX-Refresh", "true")
+			return
+		}
+		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
+		if !validBool {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
 		c, err := r.Cookie("session_id")
 
 		if err != nil {
@@ -1360,6 +1501,19 @@ func main() {
 
 	}
 	delThreadHandler := func(w http.ResponseWriter, r *http.Request) {
+		jwtCookie, cookieerr := r.Cookie("backendauth")
+		if cookieerr != nil {
+			fmt.Println(cookieerr)
+
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Header().Set("HX-Refresh", "true")
+			return
+		}
+		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
+		if !validBool {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		bs, _ := io.ReadAll(r.Body)
 		type postBody struct {
@@ -1391,6 +1545,19 @@ func main() {
 
 	}
 	getGroupChatMessagesHandler := func(w http.ResponseWriter, r *http.Request) {
+		jwtCookie, cookieerr := r.Cookie("backendauth")
+		if cookieerr != nil {
+			fmt.Println(cookieerr)
+
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Header().Set("HX-Refresh", "true")
+			return
+		}
+		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
+		if !validBool {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
 		c, err := r.Cookie("session_id")
 		var curUser string
 		//var orderAscOrDesc string
@@ -1462,7 +1629,19 @@ func main() {
 		}
 	}
 	getUsernamesToTagHandler := func(w http.ResponseWriter, r *http.Request) {
+		jwtCookie, cookieerr := r.Cookie("backendauth")
+		if cookieerr != nil {
+			fmt.Println(cookieerr)
 
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Header().Set("HX-Refresh", "true")
+			return
+		}
+		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
+		if !validBool {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
 		searchOutput, searchErr := db.Query("select username from tfldata.users where username like '%" + r.URL.Query().Get("user") + "%';")
 		if searchErr != nil {
 			w.Write([]byte("no results found"))
@@ -1484,6 +1663,19 @@ func main() {
 	getPostImagesHandler := func(w http.ResponseWriter, r *http.Request) {
 
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		jwtCookie, cookieerr := r.Cookie("backendauth")
+		if cookieerr != nil {
+			fmt.Println(cookieerr)
+
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Header().Set("HX-Refresh", "true")
+			return
+		}
+		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
+		if !validBool {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
 		var imgList []string
 		rows, err := db.Query(fmt.Sprintf("select file_name from tfldata.postfiles where post_files_key='%s';", r.URL.Query().Get("id")))
 		if err != nil {
@@ -1506,6 +1698,19 @@ func main() {
 	}
 	getSubscribedHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-type", "application/json; charset=utf-8")
+		jwtCookie, cookieerr := r.Cookie("backendauth")
+		if cookieerr != nil {
+			fmt.Println(cookieerr)
+
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Header().Set("HX-Refresh", "true")
+			return
+		}
+		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
+		if !validBool {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
 		var fcmRegToken string
 		fcmRegRow := db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where session_token='%s';", r.URL.Query().Get("session_id")))
 		scnerr := fcmRegRow.Scan(&fcmRegToken)
@@ -1517,7 +1722,19 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 	}
 	getSessionDataHandler := func(w http.ResponseWriter, r *http.Request) {
+		jwtCookie, cookieerr := r.Cookie("backendauth")
+		if cookieerr != nil {
+			fmt.Println(cookieerr)
 
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Header().Set("HX-Refresh", "true")
+			return
+		}
+		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
+		if !validBool {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
 		var ourSeshStruct seshStruct
 
 		row := db.QueryRow(fmt.Sprintf("select username, pfp_name, gchat_bg_theme, gchat_order_option, cf_domain_name from tfldata.users where session_token='%s';", r.URL.Query().Get("id")))
@@ -1537,6 +1754,19 @@ func main() {
 
 	updatePfpHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "multipart/form-data")
+		jwtCookie, cookieerr := r.Cookie("backendauth")
+		if cookieerr != nil {
+			fmt.Println(cookieerr)
+
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Header().Set("HX-Refresh", "true")
+			return
+		}
+		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
+		if !validBool {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
 		upload, filename, _ := r.FormFile("changepfp")
 
 		username := r.PostFormValue("usernameinput")
@@ -1551,6 +1781,19 @@ func main() {
 	}
 	updateChatThemeHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		jwtCookie, cookieerr := r.Cookie("backendauth")
+		if cookieerr != nil {
+			fmt.Println(cookieerr)
+
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Header().Set("HX-Refresh", "true")
+			return
+		}
+		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
+		if !validBool {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
 		type postBody struct {
 			Theme    string `json:"theme"`
 			Username string `json:"username"`
@@ -1568,6 +1811,19 @@ func main() {
 	}
 	deleteSelectedChatHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		jwtCookie, cookieerr := r.Cookie("backendauth")
+		if cookieerr != nil {
+			fmt.Println(cookieerr)
+
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Header().Set("HX-Refresh", "true")
+			return
+		}
+		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
+		if !validBool {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
 		type postBody struct {
 			SelectedChatId string `json:"selectedChatId"`
 		}
@@ -1584,6 +1840,19 @@ func main() {
 	}
 	updateSelectedChatHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		jwtCookie, cookieerr := r.Cookie("backendauth")
+		if cookieerr != nil {
+			fmt.Println(cookieerr)
+
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Header().Set("HX-Refresh", "true")
+			return
+		}
+		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
+		if !validBool {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
 		type postBody struct {
 			ChatMessage    string `json:"newMessage"`
 			SelectedChatId string `json:"selectedChatId"`
@@ -1600,6 +1869,19 @@ func main() {
 		}
 	}
 	getSelectedChatHandler := func(w http.ResponseWriter, r *http.Request) {
+		jwtCookie, cookieerr := r.Cookie("backendauth")
+		if cookieerr != nil {
+			fmt.Println(cookieerr)
+
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Header().Set("HX-Refresh", "true")
+			return
+		}
+		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
+		if !validBool {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
 		var ChatVal string
 		row := db.QueryRow(fmt.Sprintf("select chat from tfldata.gchat where id='%s';", r.URL.Query().Get("chatid")))
 		row.Scan(&ChatVal)
@@ -1610,6 +1892,19 @@ func main() {
 		w.Write(marshbs)
 	}
 	createIssueHandler := func(w http.ResponseWriter, r *http.Request) {
+		jwtCookie, cookieerr := r.Cookie("backendauth")
+		if cookieerr != nil {
+			fmt.Println(cookieerr)
+
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Header().Set("HX-Refresh", "true")
+			return
+		}
+		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
+		if !validBool {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
 		c, _ := r.Cookie("session_id")
 		var username string
 		row := db.QueryRow(fmt.Sprintf("select username from tfldata.users where session_token='%s';", c.Value))
@@ -1661,6 +1956,19 @@ func main() {
 
 	}
 	getStackerzLeaderboardHandler := func(w http.ResponseWriter, r *http.Request) {
+		jwtCookie, cookieerr := r.Cookie("backendauth")
+		if cookieerr != nil {
+			fmt.Println(cookieerr)
+
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Header().Set("HX-Refresh", "true")
+			return
+		}
+		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
+		if !validBool {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
 		if r.URL.Query().Get("leaderboardType") == "family" {
 			output, outerr := db.Query("select substr(username,0,14), bonus_points, level from tfldata.stack_leaderboard order by(bonus_points+level) desc limit 20;")
 			if outerr != nil {
@@ -1799,6 +2107,19 @@ func main() {
 	}
 	updateStackerzScoreHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		jwtCookie, cookieerr := r.Cookie("backendauth")
+		if cookieerr != nil {
+			fmt.Println(cookieerr)
+
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Header().Set("HX-Refresh", "true")
+			return
+		}
+		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
+		if !validBool {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
 		bs, _ := io.ReadAll(r.Body)
 		type postBody struct {
 			Username    string `json:"username"`
@@ -1817,6 +2138,19 @@ func main() {
 		coll.InsertOne(context.TODO(), bson.M{"org_id": orgId, "game": "stackerz", "bonus_points": postData.BonusPoints, "level": postData.Level, "username": postData.Username, "createdOn": time.Now()})
 	}
 	getLeaderboardHandler := func(w http.ResponseWriter, r *http.Request) {
+		jwtCookie, cookieerr := r.Cookie("backendauth")
+		if cookieerr != nil {
+			fmt.Println(cookieerr)
+
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Header().Set("HX-Refresh", "true")
+			return
+		}
+		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
+		if !validBool {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
 		if r.URL.Query().Get("leaderboardType") == "family" {
 			output, outerr := db.Query("select username, score from tfldata.ss_leaderboard order by score desc limit 20;")
 			if outerr != nil {
@@ -1934,6 +2268,7 @@ func main() {
 	}
 	updateSimpleShadesScoreHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+
 		bs, _ := io.ReadAll(r.Body)
 		type postBody struct {
 			Username string `json:"username"`
@@ -1953,7 +2288,19 @@ func main() {
 
 	}
 	getOpenThreadsHandler := func(w http.ResponseWriter, r *http.Request) {
+		jwtCookie, cookieerr := r.Cookie("backendauth")
+		if cookieerr != nil {
+			fmt.Println(cookieerr)
 
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Header().Set("HX-Refresh", "true")
+			return
+		}
+		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
+		if !validBool {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
 		distinctThreadsOutput, queryErr := db.Query("select thread,threadauthor from tfldata.threads order by createdon asc;")
 		if queryErr != nil {
 			fmt.Println(queryErr)
@@ -1973,6 +2320,19 @@ func main() {
 	}
 	getUsersSubscribedThreadsHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		jwtCookie, cookieerr := r.Cookie("backendauth")
+		if cookieerr != nil {
+			fmt.Println(cookieerr)
+
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Header().Set("HX-Refresh", "true")
+			return
+		}
+		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
+		if !validBool {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
 		output, outerr := db.Query(fmt.Sprintf("select thread, is_subscribed::text from tfldata.users_to_threads where username='%s';", r.URL.Query().Get("username")))
 		if outerr != nil {
 			fmt.Println(outerr)
@@ -1990,6 +2350,19 @@ func main() {
 
 	changeUserSubscriptionToThreadHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		jwtCookie, cookieerr := r.Cookie("backendauth")
+		if cookieerr != nil {
+			fmt.Println(cookieerr)
+
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Header().Set("HX-Refresh", "true")
+			return
+		}
+		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
+		if !validBool {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
 		bs, _ := io.ReadAll(r.Body)
 		type postBody struct {
 			User            string `json:"username"`
@@ -2007,16 +2380,54 @@ func main() {
 		}
 
 	}
+	validateJWTHandler := func(w http.ResponseWriter, r *http.Request) {
+		jwtCookie, cookieerr := r.Cookie("backendauth")
+		if cookieerr != nil {
+			fmt.Println(cookieerr)
+			w.Header().Set("HX-Refresh", "true")
+			return
+		}
+		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
+		if validBool {
+			w.WriteHeader(http.StatusOK)
+			return
+		} else {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+	}
 
-	/*h3 := func(w http.ResponseWriter, r *http.Request) {
-		upload, filename, err := r.FormFile("file_name")
-		if err != nil {
-			log.Fatal(err)
+	refreshTokenHandler := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		jwtCookie, cookieerr := r.Cookie("backendauth")
+		if cookieerr != nil {
+			fmt.Println(cookieerr)
 		}
 
-		//uploadPostPhotoTos3(upload, filename.Filename, s3_client)
+		jwt.Parse(jwtCookie.Value, func(jwtToken *jwt.Token) (interface{}, error) {
+			timeTilExp, _ := jwtToken.Claims.GetExpirationTime()
+			if time.Until(timeTilExp.Time) < 24*time.Hour {
+				generateLoginJWT(r.URL.Query().Get("usersession"), w, r, jwtCookie.Value)
 
-	}*/
+			}
+			return []byte(jwtSignKey), nil
+		}, jwt.WithValidMethods([]string{"HS256"}))
+
+	}
+
+	deleteJWTHandler := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+
+		http.SetCookie(w, &http.Cookie{
+			Name:     "backendauth",
+			Value:    "",
+			MaxAge:   0,
+			HttpOnly: true,
+			SameSite: http.SameSiteStrictMode,
+			Path:     "/",
+		})
+	}
+
 	http.HandleFunc("/", pagesHandler)
 	http.HandleFunc("/create-post", createPostHandler)
 
@@ -2024,7 +2435,6 @@ func main() {
 
 	http.HandleFunc("/get-posts", getPostsHandler)
 	http.HandleFunc("/delete-this-post", deleteThisPostHandler)
-	http.HandleFunc("/new-posts", getPostCountHandler)
 
 	http.HandleFunc("/get-selected-post", getSelectedPostsComments)
 
@@ -2083,6 +2493,10 @@ func main() {
 	http.HandleFunc("/reset-password", getResetPasswordCodeHandler)
 	http.HandleFunc("/reset-password-with-code", resetPasswordHandler)
 	http.HandleFunc("/update-admin-pass", updateAdminPassHandler)
+
+	http.HandleFunc("/jwt-validation-endpoint", validateJWTHandler)
+	http.HandleFunc("/refresh-token", refreshTokenHandler)
+	http.HandleFunc("/delete-jwt", deleteJWTHandler)
 
 	//http.HandleFunc("/upload-file", h3)
 	http.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("css"))))
@@ -2353,7 +2767,36 @@ func sendNotificationToAllUsers(db *sql.DB, fbapp firebase.App, curUser string, 
 	}
 
 }
+func generateLoginJWT(username string, w http.ResponseWriter, r *http.Request, jwtKey string) *jwt.Token {
+	daysToExp := int64(7)
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"iss":  "backend-auth",
+		"user": username,
+		"exp":  time.Now().Unix() + (24 * 60 * 60 * daysToExp),
+	})
+	expiresAt := time.Now().Add(24 * time.Duration(daysToExp) * time.Hour)
 
-/*func uploadPostPhotoTos3(f multipart.File, fn string, client *s3.Client) {
+	signKey, _ := token.SignedString([]byte(jwtKey))
+	http.SetCookie(w, &http.Cookie{
+		Name:     "backendauth",
+		MaxAge:   int(time.Until(expiresAt).Seconds()),
+		Value:    signKey,
+		HttpOnly: true,
+		SameSite: http.SameSiteStrictMode,
+		Path:     "/",
+	})
+	return token
+}
+func validateJWTToken(tokenStr string, tokenKey string, w http.ResponseWriter) bool {
+	jwtToken, jwtValidateErr := jwt.Parse(tokenStr, func(jwtToken *jwt.Token) (interface{}, error) {
 
-}*/
+		return []byte(tokenKey), nil
+	}, jwt.WithValidMethods([]string{"HS256"}))
+
+	if jwtValidateErr != nil {
+		fmt.Println(jwtValidateErr)
+		w.WriteHeader(http.StatusUnauthorized)
+		return false
+	}
+	return jwtToken.Valid
+}

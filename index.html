@@ -196,8 +196,19 @@
         }
 
         window.addEventListener("load", () => {
+
             if (document.cookie.includes("session_id="))
                 document.getElementById('divofposts').dispatchEvent(new Event('afterLogin'))
+            if (username) {
+                fetch("/refresh-token?usersession=" + username, {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json",
+
+                    }
+                })
+            }
+
             Notification.permission !== 'granted' ?
                 document.getElementById('notifydiv').setAttribute("style", "display: inline")
                 : document.getElementById('notifydiv').setAttribute("style", "display: none")

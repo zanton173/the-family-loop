@@ -270,7 +270,7 @@ func main() {
 				generateLoginJWT(userStr, w, r, jwtSignKey)
 
 				setLoginCookie(w, db, userStr, r)
-				_, uperr := db.Exec(fmt.Sprintf("update tfldata.users set last_sign_on='%s' where username='%s';", time.Now().In(nyLoc).Format(time.DateTime), userStr))
+				_, uperr := db.Exec(fmt.Sprintf("update tfldata.users set last_sign_on='%s' where username='%s' or email='%s';", time.Now().In(nyLoc).Format(time.DateTime), userStr, userStr))
 				if uperr != nil {
 					fmt.Println(uperr)
 				}
@@ -501,6 +501,7 @@ func main() {
 	}
 	getPostsHandler := func(w http.ResponseWriter, r *http.Request) {
 		jwtCookie, cookieerr := r.Cookie("backendauth")
+		fmt.Println(jwtCookie)
 		if cookieerr != nil {
 			fmt.Println(cookieerr)
 
@@ -1697,7 +1698,7 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 	}
 	getSessionDataHandler := func(w http.ResponseWriter, r *http.Request) {
-		jwtCookie, cookieerr := r.Cookie("backendauth")
+		/*jwtCookie, cookieerr := r.Cookie("backendauth")
 		if cookieerr != nil {
 			fmt.Println(cookieerr)
 
@@ -1709,7 +1710,7 @@ func main() {
 		if !validBool {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
-		}
+		}*/
 		var ourSeshStruct seshStruct
 
 		row := db.QueryRow(fmt.Sprintf("select username, pfp_name, gchat_bg_theme, gchat_order_option, cf_domain_name from tfldata.users where session_token='%s';", r.URL.Query().Get("id")))

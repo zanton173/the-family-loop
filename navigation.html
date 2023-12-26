@@ -265,7 +265,7 @@
 
     p.append(c)
     async function fetchSeshDetails(token) {
-
+        console.log(token)
         const resp = await fetch("/get-username-from-session?id=" + token /*+ "&notify=" + notify,*/, {
             method: "GET",
             headers: {
@@ -583,6 +583,8 @@
                                             username: session_token,
                                             fcm_token: currentToken
                                         }
+
+
                                         fetch("/create-subscription", {
                                             method: "POST",
                                             headers: {

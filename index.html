@@ -199,6 +199,7 @@
 
             if (document.cookie.includes("session_id="))
                 document.getElementById('divofposts').dispatchEvent(new Event('afterLogin'))
+
             if (username) {
                 fetch("/refresh-token?usersession=" + username, {
                     method: "GET",
@@ -298,8 +299,7 @@
 
     <div style="text-align: center;" class="px-5" id="posts-div">
         <div hx-get="/get-posts" hx-trigger="afterLogin, loadNewVars, anotherCustomEvent" hx-target="#post-items"
-            id="divofposts" hx-indicator="#loadingspinner"
-            hx-vals="js:{'page': pageLoadPaginator, 'limit': limit, 'token': document.cookie.split('session_id=')[1]}"
+            id="divofposts" hx-indicator="#loadingspinner" hx-vals="js:{'page': pageLoadPaginator, 'limit': limit}"
             hx-swap="beforeend">
             <div id="post-items" name="item-count">
 

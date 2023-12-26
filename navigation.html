@@ -232,8 +232,6 @@
     var updatePfpForm = document.getElementById('updatepfpform')
     var invisibleInputForUsername = document.getElementById('invisibleusernameinput')
 
-
-
     var navbarItems = document.getElementById('navbarText')
 
     var navItemToReplace = document.getElementById('navitemforwelcome')
@@ -264,9 +262,9 @@
     var username = ''
 
     p.append(c)
-    async function fetchSeshDetails(token) {
-        console.log(token)
-        const resp = await fetch("/get-username-from-session?id=" + token /*+ "&notify=" + notify,*/, {
+    async function fetchSeshDetails() {
+        //console.log(token)
+        const resp = await fetch("/get-username-from-session", {
             method: "GET",
             headers: {
                 "Content-Type": "application/json"
@@ -381,7 +379,8 @@
 
     }
     if (document.cookie.includes("session_id=")) {
-        fetchSeshDetails(document.cookie.split("session_id=")[1])
+
+        fetchSeshDetails()
         divToStickNav.append(navItemWelcomeAvatar)
         divToStickNav.append(logoutButton)
 
@@ -544,7 +543,7 @@
 
     var notificationBody = {}
 
-    let name = "session_id=";
+    /*let name = "session_id=";
     let decodedCookie = decodeURIComponent(document.cookie);
     let ca = decodedCookie.split(';');
 
@@ -558,59 +557,59 @@
 
         if (c.indexOf(name) == 0) {
 
-            let session_token = c.substring(name.length, c.length)
-            const checkSubResp = await fetch(`/get-check-if-subscribed?session_id=${session_token}`, {
-                method: "GET",
-                headers: {
-                    "Content-Type": "application/json"
-                }
-            }).then((data) => {
-
-                if (data.status == 202) {
-                    if (!("Notification" in window)) {
-                        // Check if the browser supports notifications
-                        alert("This browser does not support desktop notification");
-                    } else {
-
-                        Notification.requestPermission().then((res) => {
-
-                            if (Notification.permission == 'granted') {
-
-                                getToken(messaging, { vapidKey: "BJmKY269Mkqw_zRnXy0n1ncFOBsamgi7hSpli4hKGlAJ-OKTae7qj8scasqrO9dpdmntNXXgbsMK3okY0bpOBVQ" })
-                                    .then((currentToken) => {
-
-                                        notificationBody = {
-                                            username: session_token,
-                                            fcm_token: currentToken
-                                        }
-
-
-                                        fetch("/create-subscription", {
-                                            method: "POST",
-                                            headers: {
-                                                "Content-Type": "application/json"
-                                            },
-                                            body: JSON.stringify(notificationBody)
-                                        })
-                                            .then(() => {
-                                                return window.navigator.serviceWorker
-                                                    .getRegistration('/firebase-cloud-messaging-push-scope')
-                                                    .then((serviceWorker) => {
-                                                        if (serviceWorker) return serviceWorker;
-                                                        return window.navigator.serviceWorker.register('/firebase-messaging-sw.js', {
-                                                            scope: '/firebase-cloud-messaging-push-scope',
-                                                        });
-                                                    });
-                                            })
-                                    })
-                            }
-
-                        })
-                    }
-                }
-            })
+            let session_token = c.substring(name.length, c.length)*/
+    const checkSubResp = await fetch(`/get-check-if-subscribed`, {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json"
         }
-    }
+    }).then((data) => {
+
+        if (data.status == 202) {
+            if (!("Notification" in window)) {
+                // Check if the browser supports notifications
+                alert("This browser does not support desktop notification");
+            } else {
+
+                Notification.requestPermission().then((res) => {
+
+                    if (Notification.permission == 'granted') {
+
+                        getToken(messaging, { vapidKey: "BJmKY269Mkqw_zRnXy0n1ncFOBsamgi7hSpli4hKGlAJ-OKTae7qj8scasqrO9dpdmntNXXgbsMK3okY0bpOBVQ" })
+                            .then((currentToken) => {
+
+                                notificationBody = {
+                                    username: session_token,
+                                    fcm_token: currentToken
+                                }
+
+
+                                fetch("/create-subscription", {
+                                    method: "POST",
+                                    headers: {
+                                        "Content-Type": "application/json"
+                                    },
+                                    body: JSON.stringify(notificationBody)
+                                })
+                                    .then(() => {
+                                        return window.navigator.serviceWorker
+                                            .getRegistration('/firebase-cloud-messaging-push-scope')
+                                            .then((serviceWorker) => {
+                                                if (serviceWorker) return serviceWorker;
+                                                return window.navigator.serviceWorker.register('/firebase-messaging-sw.js', {
+                                                    scope: '/firebase-cloud-messaging-push-scope',
+                                                });
+                                            });
+                                    })
+                            })
+                    }
+
+                })
+            }
+        }
+    })
+    //}
+    //}
 
 
 

@@ -198,7 +198,7 @@
         document.addEventListener("DOMContentLoaded", async () => {
             usersSubbedThreads = []
 
-            curUserData = await fetchSeshDetails(document.cookie.split("session_id=")[1])
+            curUserData = await fetchSeshDetails()
             document.body.setAttribute('style', curUserData.BGtheme)
             gchatOrderOpt = curUserData.GchatOrderOpt
 

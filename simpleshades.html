@@ -234,8 +234,8 @@
         }
         var getCurrentUsername = async () => {
 
-            const token = document.cookie.split("session_id=")[1]
-            const resp = await fetch("/get-username-from-session?id=" + token, {
+
+            const resp = await fetch("/get-username-from-session", {
                 method: "GET",
                 headers: {
                     "Content-Type": "application/json"

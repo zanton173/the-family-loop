@@ -501,7 +501,7 @@ func main() {
 	}
 	getPostsHandler := func(w http.ResponseWriter, r *http.Request) {
 		jwtCookie, cookieerr := r.Cookie("backendauth")
-		fmt.Println(jwtCookie)
+
 		if cookieerr != nil {
 			fmt.Println(cookieerr)
 
@@ -512,13 +512,16 @@ func main() {
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
 		if !validBool {
 			w.WriteHeader(http.StatusUnauthorized)
+
 			return
 		}
+		seshToken, _ := r.Cookie("session_id")
+		seshVal := strings.Split(seshToken.Value, "session_id=")[0]
 		var reactionBtn string
 		//curUser := r.URL.Query().Get("username")
-		curToken := r.URL.Query().Get("token")
+
 		var curUser string
-		row := db.QueryRow(fmt.Sprintf("select username from tfldata.users where session_token='%s';", curToken))
+		row := db.QueryRow(fmt.Sprintf("select username from tfldata.users where session_token='%s';", seshVal))
 		row.Scan(&curUser)
 		if curUser < " " {
 			curUser = "Guest"
@@ -1686,9 +1689,11 @@ func main() {
 	}
 	getSubscribedHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-type", "application/json; charset=utf-8")
+		seshToken, _ := r.Cookie("session_id")
+		seshVal := strings.Split(seshToken.Value, "session_id=")[0]
 
 		var fcmRegToken string
-		fcmRegRow := db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where session_token='%s';", r.URL.Query().Get("session_id")))
+		fcmRegRow := db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where session_token='%s';", seshVal))
 		scnerr := fcmRegRow.Scan(&fcmRegToken)
 		if scnerr != nil {
 			w.WriteHeader(http.StatusAccepted)
@@ -1698,7 +1703,7 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 	}
 	getSessionDataHandler := func(w http.ResponseWriter, r *http.Request) {
-		/*jwtCookie, cookieerr := r.Cookie("backendauth")
+		jwtCookie, cookieerr := r.Cookie("backendauth")
 		if cookieerr != nil {
 			fmt.Println(cookieerr)
 
@@ -1710,10 +1715,12 @@ func main() {
 		if !validBool {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
-		}*/
+		}
+		seshToken, _ := r.Cookie("session_id")
+		seshVal := strings.Split(seshToken.Value, "session_id=")[0]
 		var ourSeshStruct seshStruct
 
-		row := db.QueryRow(fmt.Sprintf("select username, pfp_name, gchat_bg_theme, gchat_order_option, cf_domain_name from tfldata.users where session_token='%s';", r.URL.Query().Get("id")))
+		row := db.QueryRow(fmt.Sprintf("select username, pfp_name, gchat_bg_theme, gchat_order_option, cf_domain_name from tfldata.users where session_token='%s';", seshVal))
 		scnerr := row.Scan(&ourSeshStruct.Username, &ourSeshStruct.Pfpname, &ourSeshStruct.BGtheme, &ourSeshStruct.GchatOrderOpt, &ourSeshStruct.CFDomain)
 		if scnerr != nil {
 			fmt.Println(scnerr)

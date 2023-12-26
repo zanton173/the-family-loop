@@ -137,19 +137,7 @@ func main() {
 	subscriptionHandler := func(w http.ResponseWriter, r *http.Request) {
 
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		jwtCookie, cookieerr := r.Cookie("backendauth")
-		if cookieerr != nil {
-			fmt.Println(cookieerr)
 
-			w.WriteHeader(http.StatusUnauthorized)
-			w.Header().Set("HX-Refresh", "true")
-			return
-		}
-		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
-		if !validBool {
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
 		bs, _ := io.ReadAll(r.Body)
 
 		type postBody struct {
@@ -1697,19 +1685,7 @@ func main() {
 	}
 	getSubscribedHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-type", "application/json; charset=utf-8")
-		jwtCookie, cookieerr := r.Cookie("backendauth")
-		if cookieerr != nil {
-			fmt.Println(cookieerr)
 
-			w.WriteHeader(http.StatusUnauthorized)
-			w.Header().Set("HX-Refresh", "true")
-			return
-		}
-		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
-		if !validBool {
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
 		var fcmRegToken string
 		fcmRegRow := db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where session_token='%s';", r.URL.Query().Get("session_id")))
 		scnerr := fcmRegRow.Scan(&fcmRegToken)
@@ -2095,7 +2071,7 @@ func main() {
 				log.Fatal(err)
 			}
 			for _, result := range results {
-				dataStr := "<div class='py-0 my-0' style='display: inline-flex;'><p class='px-2 m-0' style='position: absolute; left: 1%;'>" + fmt.Sprintf("%d", iter) + ".)&nbsp;&nbsp;</p><p class='px-1 m-0' style='text-align: center; position: absolute; left: 13%;'>" + result["username"].(string) + "</p><p class='px-2 mx-3' style='text-align: center; position: absolute; left: 40%;'>" + fmt.Sprint(result["bonus_points"].(int32)) + "</p><p class='px-2 mx-3' style='text-align: center; position: absolute; left: 67%;'>" + fmt.Sprint(result["level"].(int32)) + "</p><p class='px-2 mx-3' style='text-align: center; position: absolute; left: 90%;'>" + strings.Split(result["org_id"].(string), "_")[0] + "</p></div><br/>"
+				dataStr := "<div class='py-0 my-0' style='display: inline-flex;'><p class='px-2 m-0' style='position: absolute; left: 1%;'>" + fmt.Sprintf("%d", iter) + ".)&nbsp;&nbsp;</p><p class='px-1 m-0' style='text-align: center; position: absolute; left: 11%;'>" + result["username"].(string) + "</p><p class='px-2 mx-3' style='text-align: center; position: absolute; left: 41%;'>" + fmt.Sprint(result["bonus_points"].(int32)) + "</p><p class='px-2 mx-3' style='text-align: center; position: absolute; left: 56%;'>" + fmt.Sprint(result["level"].(int32)) + "</p><p class='px-2 mx-3' style='text-align: center; position: absolute; left: 76%;'>" + strings.Split(result["org_id"].(string), "_")[0] + "</p></div><br/>"
 				iter++
 				w.Write([]byte(dataStr))
 				if iter == 20 {

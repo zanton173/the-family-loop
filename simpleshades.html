@@ -56,7 +56,7 @@
                 <b id="scoreLeaderBoardTag" class="px-2 mx-3"
                     style="position: absolute; left: 60%; font-size: larger; text-align: center">Score</b>
                 <b id="familyLeaderBoardTag" class="px-2 mx-3"
-                    style="display: none; position: absolute; left: 55%; font-size: larger; text-align: center">Family</b>
+                    style="display: none; position: absolute; left: 63%; font-size: larger; text-align: center">Family</b>
             </div>
             <div id="htmxleaderboard" hx-get="/get-leaderboard"
                 hx-vals="js:{leaderboardType, 'eventYear': document.getElementById('eventYearSelect').value, 'eventPeriod': document.getElementById('eventPeriodSelect').value}"
@@ -205,9 +205,9 @@
             document.getElementById('globalLeaderBtn').style.display = "none"
             document.getElementById('familyLeaderBtn').style.display = ""
             document.getElementById('familyLeaderBoardTag').style.display = ""
-            document.getElementById('scoreLeaderBoardTag').style.left = "38%"
+            document.getElementById('scoreLeaderBoardTag').style.left = "45%"
             document.getElementById('selectEventDiv').style.display = "block"
-            if ((currentDate.getDate() > 22 && currentDate.getDate() < 32) && (currentDate.getMonth() + 1 == 3 || currentDate.getMonth() + 1 == 6 || currentDate.getMonth() + 1 == 9 || currentDate.getMonth() == 12))
+            if ((currentDate.getDate() > 22 && currentDate.getDate() < 32) && (currentDate.getMonth() + 1 == 3 || currentDate.getMonth() + 1 == 6 || currentDate.getMonth() + 1 == 9 || currentDate.getMonth() + 1 == 12))
                 if (leaderboardType == "global")
                     document.getElementById('delvingprizesbanner').innerHTML = "Currently sending prizes to winners. Current scores will not be added to the global leaderboard until the start of next month."
             document.getElementById('htmxleaderboard').dispatchEvent(new Event('click'))

@@ -579,11 +579,8 @@
                             .then((currentToken) => {
 
                                 notificationBody = {
-                                    username: session_token,
                                     fcm_token: currentToken
                                 }
-
-
                                 fetch("/create-subscription", {
                                     method: "POST",
                                     headers: {

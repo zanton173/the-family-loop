@@ -142,15 +142,20 @@ func main() {
 
 		type postBody struct {
 			Fcmtoken string `json:"fcm_token"`
-			Username string `json:"username"`
 		}
 		var postData postBody
 		psdmae := json.Unmarshal(bs, &postData)
 		if psdmae != nil {
 			fmt.Print(psdmae)
 		}
+		seshToken, seshErr := r.Cookie("session_id")
+		if seshErr != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
 
-		_, inserr := db.Exec(fmt.Sprintf("update tfldata.users set fcm_registration_id='%s' where session_token='%s';", postData.Fcmtoken, postData.Username))
+		seshVal := strings.Split(seshToken.Value, "session_id=")[0]
+		_, inserr := db.Exec(fmt.Sprintf("update tfldata.users set fcm_registration_id='%s' where session_token='%s';", postData.Fcmtoken, seshVal))
 		if inserr != nil {
 			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", inserr, time.Now().In(nyLoc).Format(time.DateTime)))
 		}
@@ -515,7 +520,11 @@ func main() {
 
 			return
 		}
-		seshToken, _ := r.Cookie("session_id")
+		seshToken, seshErr := r.Cookie("session_id")
+		if seshErr != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
 		seshVal := strings.Split(seshToken.Value, "session_id=")[0]
 		var reactionBtn string
 		//curUser := r.URL.Query().Get("username")
@@ -1689,7 +1698,11 @@ func main() {
 	}
 	getSubscribedHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-type", "application/json; charset=utf-8")
-		seshToken, _ := r.Cookie("session_id")
+		seshToken, seshErr := r.Cookie("session_id")
+		if seshErr != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
 		seshVal := strings.Split(seshToken.Value, "session_id=")[0]
 
 		var fcmRegToken string
@@ -1716,7 +1729,11 @@ func main() {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
-		seshToken, _ := r.Cookie("session_id")
+		seshToken, seshErr := r.Cookie("session_id")
+		if seshErr != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
 		seshVal := strings.Split(seshToken.Value, "session_id=")[0]
 		var ourSeshStruct seshStruct
 

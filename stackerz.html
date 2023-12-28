@@ -12,6 +12,7 @@
     <script src="/js/bootstrap.bundle.min.js"></script>
     <script src="/js/htmx.min.js"></script>
     <script src="/js/htmx_json-enc.js"></script>
+    <script src="/js/globalFunctions.js"></script>
 </head>
 
 
@@ -322,7 +323,11 @@
             })
 
         }
+        document.addEventListener("onUnauthorizedEvent", () => {
+            logoutFunction()
+            location.href = "../"
 
+        })
     </script>
 </body>
 

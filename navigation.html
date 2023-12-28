@@ -69,8 +69,8 @@
             <div class="modal-header" id="login-modal-header" style="display: block;">
                 <h4 id="loginModalHeader" class="modal-title" style="text-align: center;">Login or Sign Up</h4>
 
-                <button id="modalclose" type="button" class="btn-close" data-bs-dismiss="modal"
-                    aria-label="Close"></button>
+                <!--<button id="modalclose" type="button" class="btn-close" data-bs-dismiss="modal"
+                    aria-label="Close"></button>-->
             </div>
             <div class="modal-body">
 
@@ -269,6 +269,9 @@
             headers: {
                 "Content-Type": "application/json"
             }
+        }).catch((er) => {
+            console.log(JSON.stringify(er))
+            return
         })
 
         const text = await resp.json()
@@ -366,18 +369,7 @@
         }
 
     }
-    function logoutFunction() {
-        location.href = "/"
-        document.cookie = "session_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-        fetch("/delete-jwt", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            }
-        })
-        //window.location.reload()
 
-    }
     if (document.cookie.includes("session_id=")) {
 
         fetchSeshDetails()
@@ -398,6 +390,13 @@
         document.getElementById('login-modal-header').contains(document.getElementById('modalclose')) &&
             document.getElementById('login-modal-header').removeChild(document.getElementById('modalclose'))
     }
+
+    document.addEventListener("onUnauthorizedEvent", () => {
+
+        logoutFunction()
+        //window.location.reload()
+    })
+
     function checkForValidAdminPassChange() {
 
 
@@ -558,7 +557,7 @@
         if (c.indexOf(name) == 0) {
 
             let session_token = c.substring(name.length, c.length)*/
-    const checkSubResp = await fetch(`/get-check-if-subscribed`, {
+    const checkSubResp = await fetch('/get-check-if-subscribed', {
         method: "GET",
         headers: {
             "Content-Type": "application/json"
@@ -604,7 +603,7 @@
                 })
             }
         }
-    })
+    }).catch((err) => console.log(JSON.stringify(err)))
     //}
     //}
 

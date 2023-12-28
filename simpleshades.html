@@ -13,6 +13,7 @@
     <script src="/js/bootstrap.bundle.min.js"></script>
     <script src="/js/htmx.min.js"></script>
     <script src="/js/htmx_json-enc.js"></script>
+    <script src="/js/globalFunctions.js"></script>
 </head>
 
 <body style="overflow: hidden; position: absolute; top: 0; bottom: 0; width: 100%; touch-action: manipulation;">
@@ -453,7 +454,11 @@
                 document.getElementById('menubody').setAttribute("style", "display: block;")
             }
         }
+        document.addEventListener("onUnauthorizedEvent", () => {
 
+            logoutFunction()
+            location.href = "../"
+        })
     </script>
 
 </body>

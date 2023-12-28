@@ -316,16 +316,19 @@ func main() {
 	}
 	getResetPasswordCodeHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		jwtCookie, cookieerr := r.Cookie("backendauth")
-		if cookieerr != nil {
-			fmt.Println(cookieerr)
-
+		jwtCookie, cookieErr := r.Cookie("backendauth")
+		if cookieErr != nil {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
-			w.Header().Set("HX-Refresh", "true")
 			return
 		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
 		if !validBool {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -365,16 +368,19 @@ func main() {
 		w.Write([]byte(fmt.Sprintf("{\"user\":\"%s\", \"code\": \"%s\", \"email\": \"%s\"}", userName, string(b), userEmail)))
 	}
 	resetPasswordHandler := func(w http.ResponseWriter, r *http.Request) {
-		jwtCookie, cookieerr := r.Cookie("backendauth")
-		if cookieerr != nil {
-			fmt.Println(cookieerr)
-
+		jwtCookie, cookieErr := r.Cookie("backendauth")
+		if cookieErr != nil {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
-			w.Header().Set("HX-Refresh", "true")
 			return
 		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
 		if !validBool {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -505,21 +511,23 @@ func main() {
 
 	}
 	getPostsHandler := func(w http.ResponseWriter, r *http.Request) {
-		jwtCookie, cookieerr := r.Cookie("backendauth")
-
-		if cookieerr != nil {
-			fmt.Println(cookieerr)
-
+		jwtCookie, cookieErr := r.Cookie("backendauth")
+		if cookieErr != nil {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
-			w.Header().Set("HX-Refresh", "true")
 			return
 		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
 		if !validBool {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
-
 			return
 		}
+
 		seshToken, seshErr := r.Cookie("session_id")
 		if seshErr != nil {
 			w.WriteHeader(http.StatusBadRequest)
@@ -624,16 +632,19 @@ func main() {
 	}
 	deleteThisPostHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		jwtCookie, cookieerr := r.Cookie("backendauth")
-		if cookieerr != nil {
-			fmt.Println(cookieerr)
-
+		jwtCookie, cookieErr := r.Cookie("backendauth")
+		if cookieErr != nil {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
-			w.Header().Set("HX-Refresh", "true")
 			return
 		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
 		if !validBool {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -709,16 +720,19 @@ func main() {
 	}
 
 	createPostHandler := func(w http.ResponseWriter, r *http.Request) {
-		jwtCookie, cookieerr := r.Cookie("backendauth")
-		if cookieerr != nil {
-			fmt.Println(cookieerr)
-
+		jwtCookie, cookieErr := r.Cookie("backendauth")
+		if cookieErr != nil {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
-			w.Header().Set("HX-Refresh", "true")
 			return
 		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
 		if !validBool {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -849,16 +863,19 @@ func main() {
 	}
 	createPostReactionHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		jwtCookie, cookieerr := r.Cookie("backendauth")
-		if cookieerr != nil {
-			fmt.Println(cookieerr)
-
+		jwtCookie, cookieErr := r.Cookie("backendauth")
+		if cookieErr != nil {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
-			w.Header().Set("HX-Refresh", "true")
 			return
 		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
 		if !validBool {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -882,16 +899,19 @@ func main() {
 	}
 
 	getSelectedPostsComments := func(w http.ResponseWriter, r *http.Request) {
-		jwtCookie, cookieerr := r.Cookie("backendauth")
-		if cookieerr != nil {
-			fmt.Println(cookieerr)
-
+		jwtCookie, cookieErr := r.Cookie("backendauth")
+		if cookieErr != nil {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
-			w.Header().Set("HX-Refresh", "true")
 			return
 		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
 		if !validBool {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -926,16 +946,19 @@ func main() {
 
 	}
 	createEventCommentHandler := func(w http.ResponseWriter, r *http.Request) {
-		jwtCookie, cookieerr := r.Cookie("backendauth")
-		if cookieerr != nil {
-			fmt.Println(cookieerr)
-
+		jwtCookie, cookieErr := r.Cookie("backendauth")
+		if cookieErr != nil {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
-			w.Header().Set("HX-Refresh", "true")
 			return
 		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
 		if !validBool {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -989,16 +1012,19 @@ func main() {
 
 	}
 	getSelectedEventsComments := func(w http.ResponseWriter, r *http.Request) {
-		jwtCookie, cookieerr := r.Cookie("backendauth")
-		if cookieerr != nil {
-			fmt.Println(cookieerr)
-
+		jwtCookie, cookieErr := r.Cookie("backendauth")
+		if cookieErr != nil {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
-			w.Header().Set("HX-Refresh", "true")
 			return
 		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
 		if !validBool {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -1034,16 +1060,19 @@ func main() {
 
 	}
 	createCommentHandler := func(w http.ResponseWriter, r *http.Request) {
-		jwtCookie, cookieerr := r.Cookie("backendauth")
-		if cookieerr != nil {
-			fmt.Println(cookieerr)
-
+		jwtCookie, cookieErr := r.Cookie("backendauth")
+		if cookieErr != nil {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
-			w.Header().Set("HX-Refresh", "true")
 			return
 		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
 		if !validBool {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -1133,16 +1162,19 @@ func main() {
 	getEventsHandler := func(w http.ResponseWriter, r *http.Request) {
 
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		jwtCookie, cookieerr := r.Cookie("backendauth")
-		if cookieerr != nil {
-			fmt.Println(cookieerr)
-
+		jwtCookie, cookieErr := r.Cookie("backendauth")
+		if cookieErr != nil {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
-			w.Header().Set("HX-Refresh", "true")
 			return
 		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
 		if !validBool {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -1179,16 +1211,19 @@ func main() {
 	}
 	getPostsReactionsHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		jwtCookie, cookieerr := r.Cookie("backendauth")
-		if cookieerr != nil {
-			fmt.Println(cookieerr)
-
+		jwtCookie, cookieErr := r.Cookie("backendauth")
+		if cookieErr != nil {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
-			w.Header().Set("HX-Refresh", "true")
 			return
 		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
 		if !validBool {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -1209,16 +1244,19 @@ func main() {
 		}
 	}
 	createEventHandler := func(w http.ResponseWriter, r *http.Request) {
-		jwtCookie, cookieerr := r.Cookie("backendauth")
-		if cookieerr != nil {
-			fmt.Println(cookieerr)
-
+		jwtCookie, cookieErr := r.Cookie("backendauth")
+		if cookieErr != nil {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
-			w.Header().Set("HX-Refresh", "true")
 			return
 		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
 		if !validBool {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -1278,16 +1316,19 @@ func main() {
 	}
 	updateRSVPForEventHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		jwtCookie, cookieerr := r.Cookie("backendauth")
-		if cookieerr != nil {
-			fmt.Println(cookieerr)
-
+		jwtCookie, cookieErr := r.Cookie("backendauth")
+		if cookieErr != nil {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
-			w.Header().Set("HX-Refresh", "true")
 			return
 		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
 		if !validBool {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -1350,16 +1391,19 @@ func main() {
 	getEventRSVPHandler := func(w http.ResponseWriter, r *http.Request) {
 
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		jwtCookie, cookieerr := r.Cookie("backendauth")
-		if cookieerr != nil {
-			fmt.Println(cookieerr)
-
+		jwtCookie, cookieErr := r.Cookie("backendauth")
+		if cookieErr != nil {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
-			w.Header().Set("HX-Refresh", "true")
 			return
 		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
 		if !validBool {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -1377,20 +1421,22 @@ func main() {
 	}
 	getRSVPNotesHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		jwtCookie, cookieerr := r.Cookie("backendauth")
-		if cookieerr != nil {
-			fmt.Println(cookieerr)
-
+		jwtCookie, cookieErr := r.Cookie("backendauth")
+		if cookieErr != nil {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
-			w.Header().Set("HX-Refresh", "true")
 			return
 		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
 		if !validBool {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
-
 		var status string
 		var username string
 		output, outerr := db.Query(fmt.Sprintf("select username, status from tfldata.calendar_rsvp where event_id='%s';", r.URL.Query().Get("event_id")))
@@ -1423,16 +1469,19 @@ func main() {
 
 	}
 	createGroupChatMessageHandler := func(w http.ResponseWriter, r *http.Request) {
-		jwtCookie, cookieerr := r.Cookie("backendauth")
-		if cookieerr != nil {
-			fmt.Println(cookieerr)
-
+		jwtCookie, cookieErr := r.Cookie("backendauth")
+		if cookieErr != nil {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
-			w.Header().Set("HX-Refresh", "true")
 			return
 		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
 		if !validBool {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -1501,16 +1550,19 @@ func main() {
 
 	}
 	delThreadHandler := func(w http.ResponseWriter, r *http.Request) {
-		jwtCookie, cookieerr := r.Cookie("backendauth")
-		if cookieerr != nil {
-			fmt.Println(cookieerr)
-
+		jwtCookie, cookieErr := r.Cookie("backendauth")
+		if cookieErr != nil {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
-			w.Header().Set("HX-Refresh", "true")
 			return
 		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
 		if !validBool {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -1545,16 +1597,19 @@ func main() {
 
 	}
 	getGroupChatMessagesHandler := func(w http.ResponseWriter, r *http.Request) {
-		jwtCookie, cookieerr := r.Cookie("backendauth")
-		if cookieerr != nil {
-			fmt.Println(cookieerr)
-
+		jwtCookie, cookieErr := r.Cookie("backendauth")
+		if cookieErr != nil {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
-			w.Header().Set("HX-Refresh", "true")
 			return
 		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
 		if !validBool {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -1629,16 +1684,19 @@ func main() {
 		}
 	}
 	getUsernamesToTagHandler := func(w http.ResponseWriter, r *http.Request) {
-		jwtCookie, cookieerr := r.Cookie("backendauth")
-		if cookieerr != nil {
-			fmt.Println(cookieerr)
-
+		jwtCookie, cookieErr := r.Cookie("backendauth")
+		if cookieErr != nil {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
-			w.Header().Set("HX-Refresh", "true")
 			return
 		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
 		if !validBool {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -1663,16 +1721,19 @@ func main() {
 	getPostImagesHandler := func(w http.ResponseWriter, r *http.Request) {
 
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		jwtCookie, cookieerr := r.Cookie("backendauth")
-		if cookieerr != nil {
-			fmt.Println(cookieerr)
-
+		jwtCookie, cookieErr := r.Cookie("backendauth")
+		if cookieErr != nil {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
-			w.Header().Set("HX-Refresh", "true")
 			return
 		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
 		if !validBool {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -1716,16 +1777,20 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 	}
 	getSessionDataHandler := func(w http.ResponseWriter, r *http.Request) {
-		jwtCookie, cookieerr := r.Cookie("backendauth")
-		if cookieerr != nil {
-			fmt.Println(cookieerr)
-
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		jwtCookie, cookieErr := r.Cookie("backendauth")
+		if cookieErr != nil {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
-			w.Header().Set("HX-Refresh", "true")
 			return
 		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
 		if !validBool {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -1742,7 +1807,6 @@ func main() {
 		if scnerr != nil {
 			fmt.Println(scnerr)
 		}
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 
 		data, err := json.Marshal(&ourSeshStruct)
 		if err != nil {
@@ -1754,16 +1818,19 @@ func main() {
 
 	updatePfpHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "multipart/form-data")
-		jwtCookie, cookieerr := r.Cookie("backendauth")
-		if cookieerr != nil {
-			fmt.Println(cookieerr)
-
+		jwtCookie, cookieErr := r.Cookie("backendauth")
+		if cookieErr != nil {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
-			w.Header().Set("HX-Refresh", "true")
 			return
 		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
 		if !validBool {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -1781,16 +1848,19 @@ func main() {
 	}
 	updateChatThemeHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		jwtCookie, cookieerr := r.Cookie("backendauth")
-		if cookieerr != nil {
-			fmt.Println(cookieerr)
-
+		jwtCookie, cookieErr := r.Cookie("backendauth")
+		if cookieErr != nil {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
-			w.Header().Set("HX-Refresh", "true")
 			return
 		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
 		if !validBool {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -1811,16 +1881,19 @@ func main() {
 	}
 	deleteSelectedChatHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		jwtCookie, cookieerr := r.Cookie("backendauth")
-		if cookieerr != nil {
-			fmt.Println(cookieerr)
-
+		jwtCookie, cookieErr := r.Cookie("backendauth")
+		if cookieErr != nil {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
-			w.Header().Set("HX-Refresh", "true")
 			return
 		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
 		if !validBool {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -1840,16 +1913,19 @@ func main() {
 	}
 	updateSelectedChatHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		jwtCookie, cookieerr := r.Cookie("backendauth")
-		if cookieerr != nil {
-			fmt.Println(cookieerr)
-
+		jwtCookie, cookieErr := r.Cookie("backendauth")
+		if cookieErr != nil {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
-			w.Header().Set("HX-Refresh", "true")
 			return
 		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
 		if !validBool {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -1869,16 +1945,19 @@ func main() {
 		}
 	}
 	getSelectedChatHandler := func(w http.ResponseWriter, r *http.Request) {
-		jwtCookie, cookieerr := r.Cookie("backendauth")
-		if cookieerr != nil {
-			fmt.Println(cookieerr)
-
+		jwtCookie, cookieErr := r.Cookie("backendauth")
+		if cookieErr != nil {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
-			w.Header().Set("HX-Refresh", "true")
 			return
 		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
 		if !validBool {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -1892,16 +1971,19 @@ func main() {
 		w.Write(marshbs)
 	}
 	createIssueHandler := func(w http.ResponseWriter, r *http.Request) {
-		jwtCookie, cookieerr := r.Cookie("backendauth")
-		if cookieerr != nil {
-			fmt.Println(cookieerr)
-
+		jwtCookie, cookieErr := r.Cookie("backendauth")
+		if cookieErr != nil {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
-			w.Header().Set("HX-Refresh", "true")
 			return
 		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
 		if !validBool {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -1956,16 +2038,19 @@ func main() {
 
 	}
 	getStackerzLeaderboardHandler := func(w http.ResponseWriter, r *http.Request) {
-		jwtCookie, cookieerr := r.Cookie("backendauth")
-		if cookieerr != nil {
-			fmt.Println(cookieerr)
-
+		jwtCookie, cookieErr := r.Cookie("backendauth")
+		if cookieErr != nil {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
-			w.Header().Set("HX-Refresh", "true")
 			return
 		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
 		if !validBool {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -2107,16 +2192,19 @@ func main() {
 	}
 	updateStackerzScoreHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		jwtCookie, cookieerr := r.Cookie("backendauth")
-		if cookieerr != nil {
-			fmt.Println(cookieerr)
-
+		jwtCookie, cookieErr := r.Cookie("backendauth")
+		if cookieErr != nil {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
-			w.Header().Set("HX-Refresh", "true")
 			return
 		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
 		if !validBool {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -2138,16 +2226,19 @@ func main() {
 		coll.InsertOne(context.TODO(), bson.M{"org_id": orgId, "game": "stackerz", "bonus_points": postData.BonusPoints, "level": postData.Level, "username": postData.Username, "createdOn": time.Now()})
 	}
 	getLeaderboardHandler := func(w http.ResponseWriter, r *http.Request) {
-		jwtCookie, cookieerr := r.Cookie("backendauth")
-		if cookieerr != nil {
-			fmt.Println(cookieerr)
-
+		jwtCookie, cookieErr := r.Cookie("backendauth")
+		if cookieErr != nil {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
-			w.Header().Set("HX-Refresh", "true")
 			return
 		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
 		if !validBool {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -2288,16 +2379,19 @@ func main() {
 
 	}
 	getOpenThreadsHandler := func(w http.ResponseWriter, r *http.Request) {
-		jwtCookie, cookieerr := r.Cookie("backendauth")
-		if cookieerr != nil {
-			fmt.Println(cookieerr)
-
+		jwtCookie, cookieErr := r.Cookie("backendauth")
+		if cookieErr != nil {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
-			w.Header().Set("HX-Refresh", "true")
 			return
 		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
 		if !validBool {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -2320,16 +2414,19 @@ func main() {
 	}
 	getUsersSubscribedThreadsHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		jwtCookie, cookieerr := r.Cookie("backendauth")
-		if cookieerr != nil {
-			fmt.Println(cookieerr)
-
+		jwtCookie, cookieErr := r.Cookie("backendauth")
+		if cookieErr != nil {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
-			w.Header().Set("HX-Refresh", "true")
 			return
 		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
 		if !validBool {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -2350,16 +2447,19 @@ func main() {
 
 	changeUserSubscriptionToThreadHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		jwtCookie, cookieerr := r.Cookie("backendauth")
-		if cookieerr != nil {
-			fmt.Println(cookieerr)
-
+		jwtCookie, cookieErr := r.Cookie("backendauth")
+		if cookieErr != nil {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
-			w.Header().Set("HX-Refresh", "true")
 			return
 		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
 		if !validBool {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -2381,17 +2481,19 @@ func main() {
 
 	}
 	validateJWTHandler := func(w http.ResponseWriter, r *http.Request) {
-		jwtCookie, cookieerr := r.Cookie("backendauth")
-		if cookieerr != nil {
-			fmt.Println(cookieerr)
-			w.Header().Set("HX-Refresh", "true")
+		jwtCookie, cookieErr := r.Cookie("backendauth")
+		if cookieErr != nil {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
+			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
-		if validBool {
-			w.WriteHeader(http.StatusOK)
-			return
-		} else {
+		if !validBool {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -2399,9 +2501,21 @@ func main() {
 
 	refreshTokenHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		jwtCookie, cookieerr := r.Cookie("backendauth")
-		if cookieerr != nil {
-			fmt.Println(cookieerr)
+		jwtCookie, cookieErr := r.Cookie("backendauth")
+		if cookieErr != nil {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
+		if !validBool {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
+			w.WriteHeader(http.StatusUnauthorized)
+			return
 		}
 
 		jwt.Parse(jwtCookie.Value, func(jwtToken *jwt.Token) (interface{}, error) {
@@ -2794,8 +2908,6 @@ func validateJWTToken(tokenStr string, tokenKey string, w http.ResponseWriter) b
 	}, jwt.WithValidMethods([]string{"HS256"}))
 
 	if jwtValidateErr != nil {
-		fmt.Println(jwtValidateErr)
-		w.WriteHeader(http.StatusUnauthorized)
 		return false
 	}
 	return jwtToken.Valid

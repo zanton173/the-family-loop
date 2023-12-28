@@ -22,6 +22,7 @@
             <script src="https://unpkg.com/htmx.org/dist/ext/json-enc.js"></script>-->
     <script src="js/htmx.min.js"></script>
     <script src="js/htmx_json-enc.js"></script>
+    <script src="js/globalFunctions.js"></script>
 
 
     <title>The Family Loop - Group Chat</title>
@@ -278,6 +279,7 @@
                 alert("You cannot create a thread with this name")
             }
         }
+
         function checkIfSubbed() {
 
             selectedThread = usersSubbedThreads.filter((data) => data.thread == document.getElementById('threadSelector').value)

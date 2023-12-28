@@ -24,6 +24,7 @@
         <script src="https://unpkg.com/htmx.org/dist/ext/json-enc.js"></script>-->
     <script src="js/htmx.min.js"></script>
     <script src="js/htmx_json-enc.js"></script>
+    <script src="js/globalFunctions.js"></script>
 
     <script type="javascript" src="firebase-messaging-sw.js"></script>
     <title>The Family Loop</title>
@@ -200,7 +201,7 @@
             if (document.cookie.includes("session_id="))
                 document.getElementById('divofposts').dispatchEvent(new Event('afterLogin'))
 
-            if (username) {
+            /*if (username) {
                 fetch("/refresh-token?usersession=" + username, {
                     method: "GET",
                     headers: {
@@ -208,7 +209,7 @@
 
                     }
                 })
-            }
+            }*/
 
             Notification.permission !== 'granted' ?
                 document.getElementById('notifydiv').setAttribute("style", "display: inline")

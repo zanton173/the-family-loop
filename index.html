@@ -216,13 +216,6 @@
                 : document.getElementById('notifydiv').setAttribute("style", "display: none")
         })
 
-        async function getNotified() {
-            !("Notification" in window)
-                ? alert("This browser does not support desktop notification")
-                : await Notification.requestPermission().then((data) => alert("alert permission: " + data)).catch((err) => alert(err))
-
-        }
-
         var createPostModalObj = new bootstrap.Modal(document.getElementById('createPostModal'), {});
 
         var openPostModalObj = new bootstrap.Modal(document.getElementById('openPostModal'), {});

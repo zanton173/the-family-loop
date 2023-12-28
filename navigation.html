@@ -85,6 +85,7 @@
                         hx-post="/reset-password-with-code"
                         hx-vals="js:{'user': usernameToResetPass, 'email': emailToResetPass}"
                         hx-on::after-request="afterResetRequest(event)" hx-indicator="#loadingspinner">
+                        <input style="display: none;" type="text" autocomplete="username" placeholder="username" />
                         <div class="p-4">
                             <label>New Password:</label>
                             <input class="form-control" type="password" name="resetnewpassinput"
@@ -107,6 +108,7 @@
                         id="changeAdminPassForm" hx-post="/update-admin-pass"
                         hx-vals="js:{'username': document.getElementById('usernamelogininput').value}" hx-ext="json-enc"
                         hx-trigger="submit" hx-swap="none" hx-indicator="#loadingspinner">
+                        <input style="display: none;" type="text" autocomplete="username" placeholder="username" />
                         <div class="p-4">
                             <label>New Password:</label>
                             <input class="form-control" type="password" name="newadminpassinput"
@@ -263,15 +265,12 @@
 
     p.append(c)
     async function fetchSeshDetails() {
-        //console.log(token)
+
         const resp = await fetch("/get-username-from-session", {
             method: "GET",
             headers: {
                 "Content-Type": "application/json"
             }
-        }).catch((er) => {
-            console.log(JSON.stringify(er))
-            return
         })
 
         const text = await resp.json()
@@ -285,7 +284,7 @@
             navItemWelcomeAvatar.setAttribute("src", "")
         }
 
-        text.Username <= ""
+        text.Username.length < 1
             ? logoutFunction()
             : navItemWelcomeAvatar.setAttribute("src", "https://" + cfDomain + "/pfp/" + text.Pfpname)
         return text

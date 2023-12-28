@@ -197,6 +197,7 @@
         var usersSubbedThreads = []
 
         document.addEventListener("DOMContentLoaded", async () => {
+
             usersSubbedThreads = []
 
             curUserData = await fetchSeshDetails()
@@ -240,7 +241,8 @@
 
             }
 
-            checkIfDeletable()
+            document.querySelector('option[value="' + document.getElementById('threadSelector').value + '"]').id &&
+                checkIfDeletable()
             checkIfSubbed()
 
             document.getElementById("loadGChathere").dispatchEvent(new Event("afterThreadSelectorLoadsEvent"))
@@ -299,6 +301,7 @@
             }
         }
         function checkIfDeletable() {
+
             if (document.querySelector('option[value="' + document.getElementById('threadSelector').value + '"]').id == username)
                 document.getElementById('delThreadBtn').style.display = "inline"
             else

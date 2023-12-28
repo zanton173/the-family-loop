@@ -275,7 +275,8 @@ func main() {
 				generateLoginJWT(userStr, w, r, jwtSignKey)
 
 				setLoginCookie(w, db, userStr, r)
-				_, uperr := db.Exec(fmt.Sprintf("update tfldata.users set last_sign_on='%s' where username='%s' or email='%s';", time.Now().In(nyLoc).Format(time.DateTime), userStr, userStr))
+
+				_, uperr := db.Exec(fmt.Sprintf("update tfldata.users set last_sign_on='%s' where username='%s';", time.Now().In(nyLoc).Format(time.DateTime), userStr))
 				if uperr != nil {
 					fmt.Println(uperr)
 				}
@@ -584,7 +585,7 @@ func main() {
 				}
 			} else {
 				reactionBtn = ""
-				editElement = fmt.Sprintf("<i style='position: absolute; background-color: gray; border-radius: 13px / 13px; left: 87%s; z-index: 3' class='bi bi-three-dots m-1 px-1' hx-post='/delete-this-post' hx-swap='none' hx-vals=\"js:{'deletionID': %d}\" hx-params='not page, limit, token' hx-ext='json-enc' hx-confirm='Delete this post forever. This cannot be undone'></i>", "%", postrows.Id)
+				editElement = fmt.Sprintf("<i style='position: absolute; background-color: gray; border-radius: 13px / 13px; left: 87%s; z-index: 3' class='bi bi-three-dots m-1 px-1' hx-post='/delete-this-post' hx-swap='none' hx-vals=\"js:{'deletionID': %d}\" hx-params='not page, limit, token' hx-ext='json-enc' hx-confirm='Delete this post forever? This cannot be undone'></i>", "%", postrows.Id)
 			}
 			comment := db.QueryRow(fmt.Sprintf("select count(*) from tfldata.comments where post_id='%d';", postrows.Id))
 			var commentCount string
@@ -615,9 +616,9 @@ func main() {
 			} else {
 
 				if countOfImg > 1 {
-					dataStr = fmt.Sprintf("<div class='card my-4' style='background-color: rgb(22 30 255 / .42); border-radius: 72px 72px / 67px 67px; box-shadow: 6px 6px 3px 3px rgb(54 141 150 / 42&percnt;);'>%s<video style='border-radius: 18px 18px;' controls id='%s'><source src='https://%s/posts/videos/%s'></video><div class='p-2' style='display: flex; justify-content: space-around;'><i onclick='nextLeftImage(`%s`)' class='bi bi-arrow-90deg-left'></i><i onclick='nextRightImage(`%s`)' class='bi bi-arrow-90deg-right'></i></div><div id='%d' class='card-body'><b>%s</b><br/><p>%s</p><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' hx-swap='innerHTML' class='btn btn-primary'>Comments (%s)</button>%s</div></div>", editElement, postrows.Postfileskey, cfdistro, firstImg.filename, postrows.Postfileskey, postrows.Postfileskey, postrows.Id, postrows.Author, postrows.Title, postrows.Description, postrows.Id, postrows.Id, commentCount, reactionBtn)
+					dataStr = fmt.Sprintf("<div class='card my-4' style='background-color: rgb(22 30 255 / .42); border-radius: 72px 72px / 67px 67px; box-shadow: 6px 6px 3px 3px rgb(54 141 150 / 42&percnt;);'>%s<video style='border-radius: 18px 18px; z-index: 6;' muted playsinline controls id='%s'><source src='https://%s/posts/videos/%s'></video><div class='p-2' style='display: flex; justify-content: space-around;'><i onclick='nextLeftImage(`%s`)' class='bi bi-arrow-90deg-left'></i><i onclick='nextRightImage(`%s`)' class='bi bi-arrow-90deg-right'></i></div><div id='%d' class='card-body'><b>%s</b><br/><p>%s</p><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' hx-swap='innerHTML' class='btn btn-primary'>Comments (%s)</button>%s</div></div>", editElement, postrows.Postfileskey, cfdistro, firstImg.filename, postrows.Postfileskey, postrows.Postfileskey, postrows.Id, postrows.Author, postrows.Title, postrows.Description, postrows.Id, postrows.Id, commentCount, reactionBtn)
 				} else if countOfImg == 1 {
-					dataStr = fmt.Sprintf("<div class='card my-4' style='background-color: rgb(22 30 255 / .42); border-radius: 72px 72px / 67px 67px; box-shadow: 6px 6px 3px 3px rgb(54 141 150 / 42&percnt;);'>%s<video style='border-radius: 18px 18px;' controls id='%s'><source src='https://%s/posts/videos/%s'></video><div class='p-2' style='display: flex; justify-content: space-around;'></div><div id='%d' class='card-body'><b>%s</b><br/><p>%s</p><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' hx-swap='innerHTML' class='btn btn-primary'>Comments (%s)</button>%s</div></div>", editElement, postrows.Postfileskey, cfdistro, firstImg.filename, postrows.Id, postrows.Author, postrows.Title, postrows.Description, postrows.Id, postrows.Id, commentCount, reactionBtn)
+					dataStr = fmt.Sprintf("<div class='card my-4' style='background-color: rgb(22 30 255 / .42); border-radius: 72px 72px / 67px 67px; box-shadow: 6px 6px 3px 3px rgb(54 141 150 / 42&percnt;);'>%s<video style='border-radius: 18px 18px; z-index: 6;' muted playsinline controls id='%s'><source src='https://%s/posts/videos/%s'></video><div class='p-2' style='display: flex; justify-content: space-around;'></div><div id='%d' class='card-body'><b>%s</b><br/><p>%s</p><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' hx-swap='innerHTML' class='btn btn-primary'>Comments (%s)</button>%s</div></div>", editElement, postrows.Postfileskey, cfdistro, firstImg.filename, postrows.Id, postrows.Author, postrows.Title, postrows.Description, postrows.Id, postrows.Id, commentCount, reactionBtn)
 				}
 			}
 
@@ -1511,7 +1512,7 @@ func main() {
 		threadVal := r.PostFormValue("threadval")
 		if threadVal == "" {
 			threadVal = "main thread"
-		} else if threadVal == "posts" || threadVal == "Posts" {
+		} else if strings.ToLower(threadVal) == "posts" || strings.ToLower(threadVal) == "calendar" {
 			w.WriteHeader(http.StatusConflict)
 			return
 		}

@@ -2581,8 +2581,6 @@ func main() {
 	http.HandleFunc("/change-gchat-order-opt", changeGchatOrderOptHandler)
 
 	http.HandleFunc("/create-subscription", subscriptionHandler)
-	// Not currently in use
-	//http.HandleFunc("/send-new-posts-push", newPostsHandlerPushNotify)
 
 	http.HandleFunc("/update-pfp", updatePfpHandler)
 	http.HandleFunc("/update-gchat-bg-theme", updateChatThemeHandler)

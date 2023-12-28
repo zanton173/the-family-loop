@@ -24,7 +24,7 @@
         <script src="https://unpkg.com/htmx.org/dist/ext/json-enc.js"></script>-->
     <script src="js/htmx.min.js"></script>
     <script src="js/htmx_json-enc.js"></script>
-    <script src="js/globalFunctions.js"></script>
+
 
     <script type="javascript" src="firebase-messaging-sw.js"></script>
     <title>The Family Loop</title>
@@ -72,8 +72,8 @@
         <!--<button hx-ext='json-enc' hx-post="/send-new-posts-push"
             hx-vals='js:{"id": document.cookie.split("session_id=")[1]}' hx-swap="none">Do
             it</button>-->
-        <div id="notifydiv" style="display: none;">&nbsp;&nbsp;<button class="btn btn-outline-primary"
-                onclick="getNotified()">Allow
+        <div id="notifydiv" style="display: none;">&nbsp;&nbsp;<button id="notifydivbtn"
+                class="btn btn-outline-primary">Allow
                 notifications &nbsp; <i class="bi bi-bell-fill"></i></button></div>
 
         <!--<button hx-post="/send-new-posts-push" hx-vals='js:{"id": document.cookie.split("session_id=")[1]}'
@@ -481,6 +481,13 @@
                 console.log('User dismissed the install prompt');
             }
         });*/
+    </script>
+    <script type="module">
+        import { getNotified } from "/js/globalFunctions.js"
+
+        document.getElementById("notifydivbtn") &&
+            document.getElementById("notifydivbtn").addEventListener("click", getNotified)
+
     </script>
 </body>
 

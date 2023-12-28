@@ -1770,6 +1770,7 @@ func main() {
 		var fcmRegToken string
 		fcmRegRow := db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where session_token='%s';", seshVal))
 		scnerr := fcmRegRow.Scan(&fcmRegToken)
+		fmt.Println(fcmRegToken)
 		if scnerr != nil {
 			w.WriteHeader(http.StatusAccepted)
 			return

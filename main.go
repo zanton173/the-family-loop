@@ -97,7 +97,7 @@ func main() {
 	if err != nil {
 		fmt.Printf("Error in initializing firebase app: %s", err)
 	}
-
+	fb_message_client, _ := app.Messaging(context.TODO())
 	// favicon
 	faviconHandler := func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "assets/favicon.ico")
@@ -779,7 +779,7 @@ func main() {
 
 		chatMessageNotificationOpts.notificationTitle = "Somebody just made a new post!"
 		chatMessageNotificationOpts.notificationBody = strings.ReplaceAll(r.PostFormValue("title"), "\\", "")
-		go sendNotificationToAllUsers(db, *app, username, chatMessageNotificationOpts)
+		go sendNotificationToAllUsers(db, username, fb_message_client, chatMessageNotificationOpts)
 		parseerr := r.ParseMultipartForm(10 << 20)
 		if parseerr != nil {
 			// handle error
@@ -1311,7 +1311,7 @@ func main() {
 		chatMessageNotificationOpts.notificationPage = "calendar"
 		chatMessageNotificationOpts.notificationTitle = "New event on: " + postData.Startdate
 		chatMessageNotificationOpts.notificationBody = strings.ReplaceAll(postData.Eventtitle, "\\", "")
-		go sendNotificationToAllUsers(db, *app, username, chatMessageNotificationOpts)
+		go sendNotificationToAllUsers(db, username, fb_message_client, chatMessageNotificationOpts)
 
 	}
 	updateRSVPForEventHandler := func(w http.ResponseWriter, r *http.Request) {
@@ -1522,7 +1522,7 @@ func main() {
 		chatMessageNotificationOpts.notificationPage = "groupchat"
 		chatMessageNotificationOpts.notificationTitle = "message in: " + threadVal
 		chatMessageNotificationOpts.notificationBody = strings.ReplaceAll(chatMessage, "\\", "")
-		go sendNotificationToAllUsers(db, *app, userName, chatMessageNotificationOpts)
+		go sendNotificationToAllUsers(db, userName, fb_message_client, chatMessageNotificationOpts)
 		if len(listOfUsersTagged) > 0 {
 			for _, val := range listOfUsersTagged {
 				fcmRegRow := db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where username='%s' and username != '%s';", val, userName))
@@ -2817,69 +2817,64 @@ func sendNotificationToTaggedUser(w http.ResponseWriter, r *http.Request, fcmTok
 	db.Exec(fmt.Sprintf("insert into tfldata.sent_notification_log(\"notification_result\", \"createdon\") values('%s', '%s');", sentRes, time.Now().In(nyLoc).Format(time.DateTime)))
 }
 
-func sendNotificationToAllUsers(db *sql.DB, fbapp firebase.App, curUser string, opts notificationOpts) {
+func sendNotificationToAllUsers(db *sql.DB, curUser string, fb_message_client *messaging.Client, opts notificationOpts) {
 
-	output, outerr := db.Query(fmt.Sprintf("select username, is_subscribed from tfldata.users_to_threads where thread='%s' and username != '%s';", opts.extraPayloadVal, curUser))
+	output, outerr := db.Query(fmt.Sprintf("select username from tfldata.users_to_threads where thread='%s' and username != '%s' and is_subscribed=true;", opts.extraPayloadVal, curUser))
 	if outerr != nil {
 		fmt.Println(outerr)
 	}
 
 	defer output.Close()
-	fb_message_client, _ := fbapp.Messaging(context.TODO())
+
 	typePayload := make(map[string]string)
 	typePayload["type"] = opts.notificationPage
 	typePayload[opts.extraPayloadKey] = opts.extraPayloadVal
 	for output.Next() {
 		var userToSend string
-		var isSubbed bool
-		output.Scan(&userToSend, &isSubbed)
-		if isSubbed {
-			var fcmToken string
-			var sendRes string
-			var sendErr error
 
-			tokenRow := db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where username='%s';", userToSend))
-			scnerr := tokenRow.Scan(&fcmToken)
+		output.Scan(&userToSend)
 
-			if scnerr != nil {
-				fmt.Println("ignore scan error for: " + userToSend)
-			} else {
+		var fcmToken string
+		var sendErr error
+		tokenRow := db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where username='%s';", userToSend))
+		scnerr := tokenRow.Scan(&fcmToken)
 
-				sendRes, sendErr = fb_message_client.Send(context.TODO(), &messaging.Message{
+		if scnerr == nil {
 
-					Token: fcmToken,
-					Notification: &messaging.Notification{
+			_, sendErr = fb_message_client.Send(context.TODO(), &messaging.Message{
+
+				Token: fcmToken,
+				Notification: &messaging.Notification{
+					Title: opts.notificationTitle,
+					Body:  opts.notificationBody,
+				},
+				Webpush: &messaging.WebpushConfig{
+					Notification: &messaging.WebpushNotification{
+						Title: opts.notificationTitle,
+						Body:  opts.notificationBody,
+						Data:  typePayload,
+					},
+				},
+				Android: &messaging.AndroidConfig{
+					Notification: &messaging.AndroidNotification{
 						Title: opts.notificationTitle,
 						Body:  opts.notificationBody,
 					},
-					Webpush: &messaging.WebpushConfig{
-						Notification: &messaging.WebpushNotification{
-							Title: opts.notificationTitle,
-							Body:  opts.notificationBody,
-							Data:  typePayload,
-						},
-					},
-					Android: &messaging.AndroidConfig{
-						Notification: &messaging.AndroidNotification{
-							Title: opts.notificationTitle,
-							Body:  opts.notificationBody,
-						},
-					},
-				})
-			}
-			if sendErr != nil {
-				//fmt.Print(sendErr.Error() + " for user: " + userToSend)
-				if strings.Contains(sendErr.Error(), "404") {
-					db.Exec(fmt.Sprintf("update tfldata.users set fcm_registration_id=null where username='%s';", userToSend))
-					fmt.Println("updated " + userToSend + "\\'s fcm token")
-				}
-			}
-			db.Exec(fmt.Sprintf("insert into tfldata.sent_notification_log(\"notification_result\", \"createdon\") values('%s', '%s');", sendRes, time.Now().In(nyLoc).Local().Format(time.DateTime)))
-
+				},
+			})
 		}
-	}
+		if sendErr != nil {
+			//fmt.Print(sendErr.Error() + " for user: " + userToSend)
+			if strings.Contains(sendErr.Error(), "404") {
+				db.Exec(fmt.Sprintf("update tfldata.users set fcm_registration_id=null where username='%s';", userToSend))
+				fmt.Println("updated " + userToSend + "\\'s fcm token")
+			}
+		}
+		//db.Exec(fmt.Sprintf("insert into tfldata.sent_notification_log(\"notification_result\", \"createdon\") values('%s', '%s');", sendRes, time.Now().In(nyLoc).Local().Format(time.DateTime)))
 
+	}
 }
+
 func generateLoginJWT(username string, w http.ResponseWriter, r *http.Request, jwtKey string) *jwt.Token {
 	daysToExp := int64(7)
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{

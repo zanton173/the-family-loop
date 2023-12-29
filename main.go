@@ -227,10 +227,9 @@ func main() {
 
 		var password string
 		var isAdmin bool
-		var curFirebaseUid string
 		var emailIn string
-		passScan := db.QueryRow(fmt.Sprintf("select is_admin, password, email, firebase_user_uid from tfldata.users where username='%s' or email='%s';", userStr, userStr))
-		scnerr := passScan.Scan(&isAdmin, &password, &emailIn, &curFirebaseUid)
+		passScan := db.QueryRow(fmt.Sprintf("select is_admin, password, email from tfldata.users where username='%s' or email='%s';", userStr, userStr))
+		scnerr := passScan.Scan(&isAdmin, &password, &emailIn)
 
 		if isAdmin {
 
@@ -1770,7 +1769,7 @@ func main() {
 		var fcmRegToken string
 		fcmRegRow := db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where session_token='%s';", seshVal))
 		scnerr := fcmRegRow.Scan(&fcmRegToken)
-		fmt.Println(fcmRegToken)
+
 		if scnerr != nil {
 			w.WriteHeader(http.StatusAccepted)
 			return

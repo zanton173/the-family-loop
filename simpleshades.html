@@ -454,13 +454,18 @@
                 document.getElementById('menubody').setAttribute("style", "display: block;")
             }
         }
+
+    </script>
+    <script type="module">
+
+        import { logoutFunction } from "/js/globalFunctions.js"
+
         document.addEventListener("onUnauthorizedEvent", () => {
 
             logoutFunction()
             location.href = "../"
         })
     </script>
-
 </body>
 
 </html>

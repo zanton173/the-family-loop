@@ -187,7 +187,7 @@
             username = await text.Username
 
             if (username < ' ')
-                logoutFunction()
+                document.dispatchEvent(new Event('onUnauthorizedEvent'))
 
             return username
         }
@@ -323,10 +323,16 @@
             })
 
         }
+
+    </script>
+    <script type="module">
+
+        import { logoutFunction } from "/js/globalFunctions.js"
+
         document.addEventListener("onUnauthorizedEvent", () => {
+
             logoutFunction()
             location.href = "../"
-
         })
     </script>
 </body>

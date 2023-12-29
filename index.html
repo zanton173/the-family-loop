@@ -72,8 +72,7 @@
         <!--<button hx-ext='json-enc' hx-post="/send-new-posts-push"
             hx-vals='js:{"id": document.cookie.split("session_id=")[1]}' hx-swap="none">Do
             it</button>-->
-        <div id="notifydiv" style="display: none;">&nbsp;&nbsp;<button id="notifydivbtn"
-                class="btn btn-outline-primary">Allow
+        <div id="notifydiv" style="display: none;">&nbsp;&nbsp;<button class="btn btn-outline-primary">Allow
                 notifications &nbsp; <i class="bi bi-bell-fill"></i></button></div>
 
         <!--<button hx-post="/send-new-posts-push" hx-vals='js:{"id": document.cookie.split("session_id=")[1]}'
@@ -211,9 +210,9 @@
                 })
             }*/
 
-            Notification.permission !== 'granted' ?
+            /*Notification.permission !== 'granted' ?
                 document.getElementById('notifydiv').setAttribute("style", "display: inline")
-                : document.getElementById('notifydiv').setAttribute("style", "display: none")
+                : document.getElementById('notifydiv').setAttribute("style", "display: none")*/
         })
 
         var createPostModalObj = new bootstrap.Modal(document.getElementById('createPostModal'), {});
@@ -485,8 +484,8 @@
     <script type="module">
         import { getNotified } from "/js/globalFunctions.js"
 
-        document.getElementById("notifydivbtn") &&
-            document.getElementById("notifydivbtn").addEventListener("click", getNotified)
+        document.getElementById("notifydiv") &&
+            document.getElementById("notifydiv").addEventListener("click", getNotified)
 
     </script>
 </body>

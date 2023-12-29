@@ -1,8 +1,9 @@
 import app from "./init-firebase.js";
 import { getMessaging, getToken } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-messaging.js";
 const messaging = getMessaging(app);
-console.log(messaging)
+
 function logoutFunction() {
+
     location.href = "/"
     document.cookie = "session_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     fetch("/delete-jwt", {
@@ -25,15 +26,15 @@ async function getNotified() {
             headers: {
                 "Content-Type": "application/json"
             }
-        }).then(async (data) => {
+        }).then((data) => {
 
             if (data.status == 202) {
-                await Notification.requestPermission().then(() => {
-                    if (Notification.permission == 'granted') {
+                Notification.requestPermission().then((perm) => {
+                    if (perm == 'granted') {
 
                         getToken(messaging, { vapidKey: "BJmKY269Mkqw_zRnXy0n1ncFOBsamgi7hSpli4hKGlAJ-OKTae7qj8scasqrO9dpdmntNXXgbsMK3okY0bpOBVQ" })
                             .then((currentToken) => {
-                                alert(currentToken)
+
                                 notificationBody = {
                                     fcm_token: currentToken
                                 }
@@ -49,14 +50,14 @@ async function getNotified() {
                                             .getRegistration('/firebase-cloud-messaging-push-scope')
                                             .then((serviceWorker) => {
                                                 if (serviceWorker) return serviceWorker;
-                                                return window.navigator.serviceWorker.register('firebase-messaging-sw.js', {
+                                                return window.navigator.serviceWorker.register('/firebase-messaging-sw.js', {
                                                     scope: '/firebase-cloud-messaging-push-scope',
-                                                });
+                                                }).catch((regerr) => console.log("reg err: " + regerr));
                                             });
-                                    }).catch((e) => alert(e))
-                            })
+                                    }).catch((efg) => console.log(efg))
+                            }).catch((geterr) => console.log("gettoken err: " + geterr))
                     }
-                }).catch((err) => alert(err))
+                }).catch((err) => console.log(err))
             } else if (data.status == 200) {
                 document.getElementById('notifydiv').remove()
             }

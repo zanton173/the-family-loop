@@ -503,6 +503,9 @@ func main() {
 		case "/games/stackerz":
 			tmpl := template.Must(template.ParseFiles("stackerz.html"))
 			tmpl.Execute(w, nil)
+		case "/games/catchit":
+			tmpl := template.Must(template.ParseFiles("catchit.html"))
+			tmpl.Execute(w, nil)
 		default:
 			tmpl := template.Must(template.ParseFiles("index.html"))
 			tmpl.Execute(w, nil)
@@ -2226,6 +2229,30 @@ func main() {
 		}
 		coll.InsertOne(context.TODO(), bson.M{"org_id": orgId, "game": "stackerz", "bonus_points": postData.BonusPoints, "level": postData.Level, "username": postData.Username, "createdOn": time.Now()})
 	}
+	getCatchitLeaderboardHandler := func(w http.ResponseWriter, r *http.Request) {
+		jwtCookie, cookieErr := r.Cookie("backendauth")
+		if cookieErr != nil {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
+		if !validBool {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		if r.URL.Query().Get("leaderboardType") == "family" {
+			w.Write([]byte("hello family"))
+		} else if r.URL.Query().Get("leaderboardType") == "global" {
+			w.Write([]byte("hello global"))
+
+		}
+	}
 	getLeaderboardHandler := func(w http.ResponseWriter, r *http.Request) {
 		jwtCookie, cookieErr := r.Cookie("backendauth")
 		if cookieErr != nil {
@@ -2596,6 +2623,8 @@ func main() {
 	http.HandleFunc("/get-stackerz-leaderboard", getStackerzLeaderboardHandler)
 	http.HandleFunc("/update-stackerz-score", updateStackerzScoreHandler)
 
+	http.HandleFunc("/get-catchit-leaderboard", getCatchitLeaderboardHandler)
+
 	http.HandleFunc("/get-open-threads", getOpenThreadsHandler)
 
 	http.HandleFunc("/get-users-subscribed-threads", getUsersSubscribedThreadsHandler)
@@ -2621,45 +2650,6 @@ func main() {
 	//log.Fatal(http.ListenAndServeTLS(":443", "../tflserver.crt", "../tflserver.key", nil))
 }
 
-/*
-	func cookieExpirationCheck(w http.ResponseWriter, r *http.Request, db *sql.DB) {
-		c, err := r.Cookie("session_id")
-
-		if err != nil {
-			if err == http.ErrNoCookie {
-				w.WriteHeader(http.StatusUnauthorized)
-				return
-			}
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-
-		if c.Valid() != nil {
-			fmt.Println("Cook is no longer valid")
-		}
-
-		var sessionUser string
-		var expiryTemp time.Time
-		//var ipAddr string
-		row := db.QueryRow(fmt.Sprintf("select username, expiry from tfldata.sessions where session_token='%s';", c.Value))
-		row.Scan(&sessionUser, &expiryTemp)
-
-		if time.Until(expiryTemp) < (time.Minute * 5) {
-			setLoginCookie(w, db, sessionUser, r)
-		} else if time.Until(expiryTemp) <= (time.Minute * 1) {
-
-			_, seshClearErr := db.Exec(fmt.Sprintf("delete from tfldata.sessions where session_token='%s';", c.Value))
-			if seshClearErr != nil {
-				fmt.Println(seshClearErr)
-			}
-			_, usersEditErr := db.Exec(fmt.Sprintf("update tfldata.users set session_token=null where session_token='%s';", c.Value))
-			if usersEditErr != nil {
-				fmt.Println(usersEditErr)
-			}
-		}
-
-}
-*/
 func setLoginCookie(w http.ResponseWriter, db *sql.DB, userStr string, r *http.Request) {
 
 	sessionToken := uuid.NewString()

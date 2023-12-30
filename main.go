@@ -2832,42 +2832,43 @@ func sendNotificationToAllUsers(db *sql.DB, curUser string, fb_message_client *m
 	for output.Next() {
 		var userToSend string
 
-		output.Scan(&userToSend)
+		usrToSendScnErr := output.Scan(&userToSend)
+		if usrToSendScnErr == nil {
+			var fcmToken string
+			var sendErr error
+			tokenRow := db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where username='%s';", userToSend))
+			scnerr := tokenRow.Scan(&fcmToken)
 
-		var fcmToken string
-		var sendErr error
-		tokenRow := db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where username='%s';", userToSend))
-		scnerr := tokenRow.Scan(&fcmToken)
+			if scnerr == nil {
 
-		if scnerr == nil {
+				_, sendErr = fb_message_client.Send(context.TODO(), &messaging.Message{
 
-			_, sendErr = fb_message_client.Send(context.TODO(), &messaging.Message{
-
-				Token: fcmToken,
-				Notification: &messaging.Notification{
-					Title: opts.notificationTitle,
-					Body:  opts.notificationBody,
-				},
-				Webpush: &messaging.WebpushConfig{
-					Notification: &messaging.WebpushNotification{
-						Title: opts.notificationTitle,
-						Body:  opts.notificationBody,
-						Data:  typePayload,
-					},
-				},
-				Android: &messaging.AndroidConfig{
-					Notification: &messaging.AndroidNotification{
+					Token: fcmToken,
+					Notification: &messaging.Notification{
 						Title: opts.notificationTitle,
 						Body:  opts.notificationBody,
 					},
-				},
-			})
-		}
-		if sendErr != nil {
-			//fmt.Print(sendErr.Error() + " for user: " + userToSend)
-			if strings.Contains(sendErr.Error(), "404") {
-				db.Exec(fmt.Sprintf("update tfldata.users set fcm_registration_id=null where username='%s';", userToSend))
-				fmt.Println("updated " + userToSend + "\\'s fcm token")
+					Webpush: &messaging.WebpushConfig{
+						Notification: &messaging.WebpushNotification{
+							Title: opts.notificationTitle,
+							Body:  opts.notificationBody,
+							Data:  typePayload,
+						},
+					},
+					Android: &messaging.AndroidConfig{
+						Notification: &messaging.AndroidNotification{
+							Title: opts.notificationTitle,
+							Body:  opts.notificationBody,
+						},
+					},
+				})
+			}
+			if sendErr != nil {
+				//fmt.Print(sendErr.Error() + " for user: " + userToSend)
+				if strings.Contains(sendErr.Error(), "404") {
+					db.Exec(fmt.Sprintf("update tfldata.users set fcm_registration_id=null where username='%s';", userToSend))
+					fmt.Println("updated " + userToSend + "\\'s fcm token")
+				}
 			}
 		}
 		//db.Exec(fmt.Sprintf("insert into tfldata.sent_notification_log(\"notification_result\", \"createdon\") values('%s', '%s');", sendRes, time.Now().In(nyLoc).Local().Format(time.DateTime)))

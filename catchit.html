@@ -49,8 +49,9 @@
     </div>
     <div id="gameWindow" style="width: 100dvw; height: 100dvh; overflow: hidden; --game-lvl-width: 200px; text-align: center; background-image: linear-gradient(to bottom,
             hsl(82, 70%, 87%),
-            hsl(0, 100%, 64%))">
-
+            hsl(0, 100%, 64%)); display: none">
+        <button class="btn btn-primary m-1" onclick="showMenuWindow()"
+            style="position: absolute; top: 0; left: 0; z-index: 11;">home</button>
 
 
 
@@ -165,7 +166,8 @@
         }
         getCurrentUsername()
         function showGameWindow() {
-            restartGame()
+
+            generateBlock()
             menuWindow.style.display = "none"
             leaderboardWindow.style.display = "none"
             if (gameWindow.style.display.includes('none'))
@@ -189,6 +191,29 @@
                 leaderboardWindow.style.display = ""
             else
                 leaderboardWindow.style.display = "none"
+        }
+
+        function generateBlock() {
+            var gameObj = document.createElement('div')
+            gameObj.id = "catchitGameObj"
+            gameObj.style.width = '30px'
+            gameObj.style.height = '50px'
+            gameObj.style.position = "absolute"
+            gameObj.style.top = "-10%"
+            gameObj.style.border = "solid"
+            gameObj.style.borderColor = "white"
+            gameObj.style.boxShadow = "2px 2px 2px"
+            gameObj.style.borderWidth = "thin"
+            gameObj.style.left = Math.floor(Math.random() * 90) + "%"
+            gameObj.style.zIndex = "12"
+            gameObj.style.backgroundColor = "rgb(" + Math.floor(Math.random() * 256) + " " + Math.floor(Math.random() * 256) + " " + Math.floor(Math.random() * 256) + ")"
+            gameWindow.append(gameObj)
+            gameObj.addEventListener("animationend", () => {
+                console.log("dropped")
+            })
+            gameObj.addEventListener("onclick", () => {
+                console.log("add to score")
+            })
         }
 
     </script>

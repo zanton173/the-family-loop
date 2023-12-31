@@ -14,6 +14,10 @@ img.spinner-indicator {
 
 }
 
+#catchitGameObj {
+    animation: fall 5s linear
+}
+
 #pwafooter {
     bottom: 0%;
     height: 85px;
@@ -74,6 +78,10 @@ button.btn.btn-primary {
     #stackerzbody {
         display: block;
     }
+
+    #catchitbody {
+        display: block;
+    }
 }
 
 
@@ -82,7 +90,21 @@ button.btn.btn-primary {
         display: none;
     }
 
+    #catchitbody {
+        display: none;
+    }
 
+}
+
+
+@keyframes fall {
+    0% {
+        top: -10%
+    }
+
+    100% {
+        top: 115%
+    }
 }
 
 @keyframes movein {

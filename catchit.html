@@ -54,7 +54,7 @@
         <button class="btn btn-primary m-1" onclick="showMenuWindow()"
             style="position: absolute; top: 0; left: 0; z-index: 11;">home</button>
 
-        <div style="position: absolute; display: inline; top: 1%; right: 3%">
+        <div id="gameLifeBlock" style="position: absolute; display: inline; top: 1%; right: 3%">
             <i id="gamelifeone" style="display: inline" class="bi bi-heart-fill"></i>
             <i id="gamelifetwo" style="display: inline" class="bi bi-heart-fill"></i>
             <i id="gamelifethree" style="display: inline" class="bi bi-heart-fill"></i>
@@ -110,9 +110,9 @@
         const gameWindow = document.getElementById('gameWindow')
         const menuWindow = document.getElementById('homeScreen')
         const leaderboardWindow = document.getElementById('leaderboardWindow')
-        var gameLifeOne = document.getElementById('gamelifeone')
-        var gameLifeTwo = document.getElementById('gamelifetwo')
-        var gameLifeThree = document.getElementById('gamelifethree')
+        const gameLifeOne = document.getElementById('gamelifeone')
+        const gameLifeTwo = document.getElementById('gamelifetwo')
+        const gameLifeThree = document.getElementById('gamelifethree')
         for (var i = 0; i < 100; i++) {
             var eventYearOption = document.createElement('option')
             eventYearOption.value = i
@@ -218,7 +218,9 @@
                 gameObj.style.animation = "fallTwo " + (700 + Math.floor(Math.random() * 2500)) + "ms" + " cubic-bezier(0.77, 0.1, 0.99, 0.44) 750ms"
                 :
                 gameObj.style.animation = "fallOne " + (700 + Math.floor(Math.random() * 2500)) + "ms" + " cubic-bezier(0.77, 0.1, 0.99, 0.44) 750ms"
-            console.log(document.querySelectorAll("[id='gamelifethree']"))
+            console.log(gameLifeOne.style.display)
+            console.log(gameLifeTwo.style.display)
+            console.log(gameLifeThree.style.display)
         }
         function generateBlock() {
             var gameObj = document.createElement('div')
@@ -238,7 +240,7 @@
             gameObj.style.backgroundColor = "rgb(" + Math.floor(Math.random() * 256) + " " + Math.floor(Math.random() * 256) + " " + Math.floor(Math.random() * 256) + ")"
             gameWindow.append(gameObj)
 
-            gameObj.addEventListener("animationend", () => {
+            gameObj.addEventListener("animationend", async () => {
 
                 if (gameLifeOne.style.display.includes("inline") && gameLifeTwo.style.display.includes("inline") && gameLifeThree.style.display.includes("inline")) {
                     gameLifeOne.style.display = "none"
@@ -249,8 +251,10 @@
                 } else if (!gameLifeOne.style.display.includes("inline") && !gameLifeTwo.style.display.includes("inline") && gameLifeThree.style.display.includes("inline")) {
 
                     gameLifeThree.style.display = "none"
+
                     if ((!gameLifeOne.style.display.includes("inline") && !gameLifeTwo.style.display.includes("inline") && !gameLifeThree.style.display.includes("inline"))) {
 
+                        await new Promise(r => setTimeout(r, 1000));
                         alert("game over")
                         showLeaderboardWindow()
                         resetFullGame()

@@ -14,10 +14,6 @@ img.spinner-indicator {
 
 }
 
-#catchitGameObj {
-    animation: fall 5s linear
-}
-
 #pwafooter {
     bottom: 0%;
     height: 85px;
@@ -97,13 +93,43 @@ button.btn.btn-primary {
 }
 
 
-@keyframes fall {
+@keyframes fallOne {
     0% {
         top: -10%
     }
 
     100% {
-        top: 115%
+        top: 120%
+    }
+}
+
+@-webkit-keyframes fallOne {
+    0% {
+        top: -10%
+    }
+
+    100% {
+        top: 120%
+    }
+}
+
+@keyframes fallTwo {
+    0% {
+        top: -10%
+    }
+
+    100% {
+        top: 120%
+    }
+}
+
+@-webkit-keyframes fallTwo {
+    0% {
+        top: -10%
+    }
+
+    100% {
+        top: 120%
     }
 }
 

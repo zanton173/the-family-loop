@@ -1572,7 +1572,7 @@ func main() {
 			return
 		}
 		var imgList []string
-		rows, err := db.Query(fmt.Sprintf("select file_name from tfldata.postfiles where post_files_key='%s';", r.URL.Query().Get("id")))
+		rows, err := db.Query(fmt.Sprintf("select file_name from tfldata.postfiles where post_files_key='%s' order by id desc;", r.URL.Query().Get("id")))
 		if err != nil {
 			fmt.Println(err)
 			return

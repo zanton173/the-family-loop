@@ -150,7 +150,9 @@ func main() {
 		}
 		seshToken, seshErr := r.Cookie("session_id")
 		if seshErr != nil {
-			w.WriteHeader(http.StatusBadRequest)
+			w.Header().Set("HX-Retarget", "window")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
+			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
 
@@ -254,7 +256,7 @@ func main() {
 					if uperr != nil {
 						fmt.Println(uperr)
 					}
-					//w.WriteHeader(http.StatusOK)
+					// w.WriteHeader(http.StatusOK)
 					w.Header().Set("HX-Refresh", "true")
 
 				}
@@ -316,18 +318,11 @@ func main() {
 	}
 	getResetPasswordCodeHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
 		jwtCookie, cookieErr := r.Cookie("backendauth")
-		if cookieErr != nil {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
-			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
-		if !validBool {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
+		if !validBool || !allowOrDeny || cookieErr != nil {
+			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -368,18 +363,11 @@ func main() {
 		w.Write([]byte(fmt.Sprintf("{\"user\":\"%s\", \"code\": \"%s\", \"email\": \"%s\"}", userName, string(b), userEmail)))
 	}
 	resetPasswordHandler := func(w http.ResponseWriter, r *http.Request) {
+		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
 		jwtCookie, cookieErr := r.Cookie("backendauth")
-		if cookieErr != nil {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
-			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
-		if !validBool {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
+		if !validBool || !allowOrDeny || cookieErr != nil {
+			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -418,7 +406,7 @@ func main() {
 				fmt.Print(marsherr)
 			}
 			deleteReceipt = *val.ReceiptHandle
-			//fmt.Println(val.MessageAttributes)
+			// fmt.Println(val.MessageAttributes)
 		}
 
 		for emailInput != messageData.Useremail || userInput != messageData.Username {
@@ -474,7 +462,7 @@ func main() {
 
 		//tmpl := template.Must(template.ParseFiles("index.html"))
 
-		//tmpl.Execute(w, nil)
+		// tmpl.Execute(w, nil)
 		bs, _ := os.ReadFile("navigation.html")
 		navtmple := template.New("Navt")
 		tm, _ := navtmple.Parse(string(bs))
@@ -485,7 +473,7 @@ func main() {
 			tmpl.Execute(w, nil)
 			tm.Execute(w, nil)
 		case "/home":
-			//go cookieExpirationCheck(w, r, db)
+			// go cookieExpirationCheck(w, r, db)
 			tmpl := template.Must(template.ParseFiles("index.html"))
 			tmpl.Execute(w, nil)
 			tm.Execute(w, nil)
@@ -514,37 +502,19 @@ func main() {
 
 	}
 	getPostsHandler := func(w http.ResponseWriter, r *http.Request) {
+		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, w, r)
 		jwtCookie, cookieErr := r.Cookie("backendauth")
-		if cookieErr != nil {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
-			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
-		if !validBool {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
+		if !validBool || !allowOrDeny || cookieErr != nil {
+			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
 
-		seshToken, seshErr := r.Cookie("session_id")
-		if seshErr != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-		seshVal := strings.Split(seshToken.Value, "session_id=")[0]
 		var reactionBtn string
-		//curUser := r.URL.Query().Get("username")
-
-		var curUser string
-		row := db.QueryRow(fmt.Sprintf("select username from tfldata.users where session_token='%s';", seshVal))
-		row.Scan(&curUser)
-		if curUser < " " {
-			curUser = "Guest"
+		if usernameFromSession < " " {
+			usernameFromSession = "Guest"
 		}
 
 		var output *sql.Rows
@@ -559,7 +529,7 @@ func main() {
 
 		var dataStr string
 		if err != nil {
-			//log.Fatal(err)
+			// log.Fatal(err)
 			fmt.Print(err)
 		}
 
@@ -568,18 +538,18 @@ func main() {
 
 			var postrows Postsrow
 			var reaction string
-			//if err := output.Scan(&postrows.Id, &postrows.Title, &postrows.Description, &postrows.File_name, &postrows.File_type, &postrows.Author); err != nil {
+			// if err := output.Scan(&postrows.Id, &postrows.Title, &postrows.Description, &postrows.File_name, &postrows.File_type, &postrows.Author); err != nil {
 			if err := output.Scan(&postrows.Id, &postrows.Title, &postrows.Description, &postrows.Author, &postrows.Postfileskey); err != nil {
 
 				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", err, time.Now().In(nyLoc).Format(time.DateTime)))
 
 			}
 
-			reactionRow := db.QueryRow(fmt.Sprintf("select reaction from tfldata.reactions where post_id=%d and author='%s';", postrows.Id, curUser))
+			reactionRow := db.QueryRow(fmt.Sprintf("select reaction from tfldata.reactions where post_id=%d and author='%s';", postrows.Id, usernameFromSession))
 			reactionRow.Scan(&reaction)
 
 			editElement := ""
-			if postrows.Author != curUser {
+			if postrows.Author != usernameFromSession {
 				if reaction > " " {
 					reactionBtn = fmt.Sprintf("&nbsp;&nbsp;"+reaction+"<div onclick='addAReaction(%d)'><i class='bi bi-three-dots'></i></div>", postrows.Id)
 				} else {
@@ -603,9 +573,9 @@ func main() {
 			firstRow.Scan(&firstImg.filename, &firstImg.filetype)
 
 			/*if strings.Contains(postrows.Title, "'") {
-				postrows.Title = strings.ReplaceAll(postrows.Title, "'", "")
-				fmt.Println(postrows.Title)
-			}*/
+			  postrows.Title = strings.ReplaceAll(postrows.Title, "'", "")
+			  fmt.Println(postrows.Title)
+			  }*/
 
 			if strings.Contains(firstImg.filetype, "image") {
 
@@ -635,18 +605,11 @@ func main() {
 	}
 	deleteThisPostHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
 		jwtCookie, cookieErr := r.Cookie("backendauth")
-		if cookieErr != nil {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
-			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
-		if !validBool {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
+		if !validBool || !allowOrDeny || cookieErr != nil {
+			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -723,18 +686,11 @@ func main() {
 	}
 
 	createPostHandler := func(w http.ResponseWriter, r *http.Request) {
+		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
 		jwtCookie, cookieErr := r.Cookie("backendauth")
-		if cookieErr != nil {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
-			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
-		if !validBool {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
+		if !validBool || !allowOrDeny || cookieErr != nil {
+			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -788,7 +744,7 @@ func main() {
 			// handle error
 			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('memory error multi file upload %s');", err))
 		}
-		//upload, filename, errfile := r.FormFile("file_name")
+		// upload, filename, errfile := r.FormFile("file_name")
 		for _, fh := range r.MultipartForm.File["file_name"] {
 
 			f, err := fh.Open()
@@ -848,36 +804,29 @@ func main() {
 			defer f.Close()
 		}
 		/*if errfile != nil {
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", err))
-			w.WriteHeader(http.StatusBadRequest)
-		}*/
+		  db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", err))
+		  w.WriteHeader(http.StatusBadRequest)
+		  }*/
 		/*
-			// Returning a filetype from the createandupload function
-			// somehow gets the right filetype
-			filetype := uploadFileToS3(awskey, awskeysecret, false, upload, filename.Filename, r)
+		   // Returning a filetype from the createandupload function
+		   // somehow gets the right filetype
+		   filetype := uploadFileToS3(awskey, awskeysecret, false, upload, filename.Filename, r)
 
-			_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.posts(\"title\", \"description\", \"file_name\", \"file_type\", \"author\") values('%s', '%s', '%s', '%s', '%s');", r.PostFormValue("title"), r.PostFormValue("description"), filename.Filename, filetype, username))
+		   _, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.posts(\"title\", \"description\", \"file_name\", \"file_type\", \"author\") values('%s', '%s', '%s', '%s', '%s');", r.PostFormValue("title"), r.PostFormValue("description"), filename.Filename, filetype, username))
 
-			if errinsert != nil {
-				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", errinsert))
-			}*/
+		   if errinsert != nil {
+		   db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", errinsert))
+		   }*/
 		//defer upload.Close()
 
 	}
 	createPostReactionHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
 		jwtCookie, cookieErr := r.Cookie("backendauth")
-		if cookieErr != nil {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
-			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
-		if !validBool {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
+		if !validBool || !allowOrDeny || cookieErr != nil {
+			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -902,18 +851,11 @@ func main() {
 	}
 
 	getSelectedPostsComments := func(w http.ResponseWriter, r *http.Request) {
+		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
 		jwtCookie, cookieErr := r.Cookie("backendauth")
-		if cookieErr != nil {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
-			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
-		if !validBool {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
+		if !validBool || !allowOrDeny || cookieErr != nil {
+			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -949,18 +891,11 @@ func main() {
 
 	}
 	createEventCommentHandler := func(w http.ResponseWriter, r *http.Request) {
+		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
 		jwtCookie, cookieErr := r.Cookie("backendauth")
-		if cookieErr != nil {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
-			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
-		if !validBool {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
+		if !validBool || !allowOrDeny || cookieErr != nil {
+			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -1015,18 +950,11 @@ func main() {
 
 	}
 	getSelectedEventsComments := func(w http.ResponseWriter, r *http.Request) {
+		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
 		jwtCookie, cookieErr := r.Cookie("backendauth")
-		if cookieErr != nil {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
-			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
-		if !validBool {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
+		if !validBool || !allowOrDeny || cookieErr != nil {
+			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -1063,18 +991,11 @@ func main() {
 
 	}
 	createCommentHandler := func(w http.ResponseWriter, r *http.Request) {
+		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
 		jwtCookie, cookieErr := r.Cookie("backendauth")
-		if cookieErr != nil {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
-			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
-		if !validBool {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
+		if !validBool || !allowOrDeny || cookieErr != nil {
+			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -1165,18 +1086,11 @@ func main() {
 	getEventsHandler := func(w http.ResponseWriter, r *http.Request) {
 
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
 		jwtCookie, cookieErr := r.Cookie("backendauth")
-		if cookieErr != nil {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
-			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
-		if !validBool {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
+		if !validBool || !allowOrDeny || cookieErr != nil {
+			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -1214,18 +1128,11 @@ func main() {
 	}
 	getPostsReactionsHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
 		jwtCookie, cookieErr := r.Cookie("backendauth")
-		if cookieErr != nil {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
-			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
-		if !validBool {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
+		if !validBool || !allowOrDeny || cookieErr != nil {
+			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -1247,18 +1154,11 @@ func main() {
 		}
 	}
 	createEventHandler := func(w http.ResponseWriter, r *http.Request) {
+		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
 		jwtCookie, cookieErr := r.Cookie("backendauth")
-		if cookieErr != nil {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
-			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
-		if !validBool {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
+		if !validBool || !allowOrDeny || cookieErr != nil {
+			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -1319,18 +1219,11 @@ func main() {
 	}
 	updateRSVPForEventHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
 		jwtCookie, cookieErr := r.Cookie("backendauth")
-		if cookieErr != nil {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
-			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
-		if !validBool {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
+		if !validBool || !allowOrDeny || cookieErr != nil {
+			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -1394,18 +1287,11 @@ func main() {
 	getEventRSVPHandler := func(w http.ResponseWriter, r *http.Request) {
 
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
 		jwtCookie, cookieErr := r.Cookie("backendauth")
-		if cookieErr != nil {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
-			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
-		if !validBool {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
+		if !validBool || !allowOrDeny || cookieErr != nil {
+			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -1424,18 +1310,11 @@ func main() {
 	}
 	getRSVPNotesHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
 		jwtCookie, cookieErr := r.Cookie("backendauth")
-		if cookieErr != nil {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
-			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
-		if !validBool {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
+		if !validBool || !allowOrDeny || cookieErr != nil {
+			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -1472,18 +1351,11 @@ func main() {
 
 	}
 	createGroupChatMessageHandler := func(w http.ResponseWriter, r *http.Request) {
+		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
 		jwtCookie, cookieErr := r.Cookie("backendauth")
-		if cookieErr != nil {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
-			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
-		if !validBool {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
+		if !validBool || !allowOrDeny || cookieErr != nil {
+			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -1553,18 +1425,11 @@ func main() {
 
 	}
 	delThreadHandler := func(w http.ResponseWriter, r *http.Request) {
+		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
 		jwtCookie, cookieErr := r.Cookie("backendauth")
-		if cookieErr != nil {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
-			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
-		if !validBool {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
+		if !validBool || !allowOrDeny || cookieErr != nil {
+			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -1600,35 +1465,17 @@ func main() {
 
 	}
 	getGroupChatMessagesHandler := func(w http.ResponseWriter, r *http.Request) {
+		allowOrDeny, currentUserFromSession := validateCurrentSessionId(db, w, r)
 		jwtCookie, cookieErr := r.Cookie("backendauth")
-		if cookieErr != nil {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
-			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
-		if !validBool {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
+		if !validBool || !allowOrDeny || cookieErr != nil {
+			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
-		c, err := r.Cookie("session_id")
-		var curUser string
-		//var orderAscOrDesc string
-		if err != nil {
-			if err == http.ErrNoCookie {
-				w.WriteHeader(http.StatusUnauthorized)
-				return
-			}
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-		if err != nil {
-			curUser = "Guest"
+		if currentUserFromSession < " " {
+			currentUserFromSession = "Guest"
 		}
 		orderAscOrDesc := "asc"
 		if r.URL.Query().Get("order_option") == "true" {
@@ -1645,8 +1492,6 @@ func main() {
 			return
 		}
 
-		row := db.QueryRow(fmt.Sprintf("select username from tfldata.users where session_token='%s';", c.Value))
-		row.Scan(&curUser)
 		defer output.Close()
 		for output.Next() {
 			var gchatid string
@@ -1674,7 +1519,7 @@ func main() {
 				formatCreatedatTime = time.Kitchen
 			}
 			editDelBtn := ""
-			if author == curUser {
+			if author == currentUserFromSession {
 				editDelBtn = "<i class='bi bi-three-dots-vertical px-1' onclick='editOrDeleteChat(`" + gchatid + "`)'></i>"
 			}
 			dataStr := "<div style='max-width: 100%; background-color: rgb(22 53 255 / 13%); border-width: thin; border-style: solid; box-shadow: 4px 4px 5px; border-radius: 16px 5px 23px 3px; padding-bottom: 3%' class='container my-2'><div class='row'><b class='col-2 px-1'>" + author + "</b><div class='row'><img style='width: 15%; position: sticky;' class='col-2 px-2 my-1' src='" + pfpImg + "' alt='tfl pfp' /></div><p class='col-10' style='position: relative; left: 10%; margin-bottom: 1%; margin-top: -15%;'>" + message + "</p></div><div class='row'><p class='col' style='margin-left: 60%; font-size: smaller; margin-bottom: 0%'>" + createdat.Format(formatCreatedatTime) + editDelBtn + "</p></div></div>"
@@ -1687,18 +1532,11 @@ func main() {
 		}
 	}
 	getUsernamesToTagHandler := func(w http.ResponseWriter, r *http.Request) {
+		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
 		jwtCookie, cookieErr := r.Cookie("backendauth")
-		if cookieErr != nil {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
-			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
-		if !validBool {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
+		if !validBool || !allowOrDeny || cookieErr != nil {
+			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -1724,18 +1562,11 @@ func main() {
 	getPostImagesHandler := func(w http.ResponseWriter, r *http.Request) {
 
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
 		jwtCookie, cookieErr := r.Cookie("backendauth")
-		if cookieErr != nil {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
-			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
-		if !validBool {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
+		if !validBool || !allowOrDeny || cookieErr != nil {
+			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -1764,7 +1595,9 @@ func main() {
 		w.Header().Set("Content-type", "application/json; charset=utf-8")
 		seshToken, seshErr := r.Cookie("session_id")
 		if seshErr != nil {
-			w.WriteHeader(http.StatusBadRequest)
+			w.Header().Set("HX-Retarget", "window")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
+			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
 		seshVal := strings.Split(seshToken.Value, "session_id=")[0]
@@ -1776,37 +1609,25 @@ func main() {
 		if scnerr != nil {
 			w.WriteHeader(http.StatusAccepted)
 			return
-			//db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", scnerr, time.Now().In(nyLoc).Local().Format(time.DateTime)))
+			// db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", scnerr, time.Now().In(nyLoc).Local().Format(time.DateTime)))
 		}
 		w.WriteHeader(http.StatusOK)
 	}
 	getSessionDataHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, w, r)
 		jwtCookie, cookieErr := r.Cookie("backendauth")
-		if cookieErr != nil {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
-			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
-		if !validBool {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
+		if !validBool || !allowOrDeny || cookieErr != nil {
+			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
-		seshToken, seshErr := r.Cookie("session_id")
-		if seshErr != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-		seshVal := strings.Split(seshToken.Value, "session_id=")[0]
+
 		var ourSeshStruct seshStruct
 
-		row := db.QueryRow(fmt.Sprintf("select username, pfp_name, gchat_bg_theme, gchat_order_option, cf_domain_name from tfldata.users where session_token='%s';", seshVal))
+		row := db.QueryRow(fmt.Sprintf("select username, pfp_name, gchat_bg_theme, gchat_order_option, cf_domain_name from tfldata.users where username='%s';", usernameFromSession))
 		scnerr := row.Scan(&ourSeshStruct.Username, &ourSeshStruct.Pfpname, &ourSeshStruct.BGtheme, &ourSeshStruct.GchatOrderOpt, &ourSeshStruct.CFDomain)
 		if scnerr != nil {
 			fmt.Println(scnerr)
@@ -1822,18 +1643,11 @@ func main() {
 
 	updatePfpHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "multipart/form-data")
+		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
 		jwtCookie, cookieErr := r.Cookie("backendauth")
-		if cookieErr != nil {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
-			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
-		if !validBool {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
+		if !validBool || !allowOrDeny || cookieErr != nil {
+			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -1852,18 +1666,11 @@ func main() {
 	}
 	updateChatThemeHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
 		jwtCookie, cookieErr := r.Cookie("backendauth")
-		if cookieErr != nil {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
-			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
-		if !validBool {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
+		if !validBool || !allowOrDeny || cookieErr != nil {
+			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -1885,18 +1692,11 @@ func main() {
 	}
 	deleteSelectedChatHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
 		jwtCookie, cookieErr := r.Cookie("backendauth")
-		if cookieErr != nil {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
-			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
-		if !validBool {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
+		if !validBool || !allowOrDeny || cookieErr != nil {
+			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -1917,18 +1717,11 @@ func main() {
 	}
 	updateSelectedChatHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
 		jwtCookie, cookieErr := r.Cookie("backendauth")
-		if cookieErr != nil {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
-			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
-		if !validBool {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
+		if !validBool || !allowOrDeny || cookieErr != nil {
+			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -1949,18 +1742,11 @@ func main() {
 		}
 	}
 	getSelectedChatHandler := func(w http.ResponseWriter, r *http.Request) {
+		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
 		jwtCookie, cookieErr := r.Cookie("backendauth")
-		if cookieErr != nil {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
-			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
-		if !validBool {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
+		if !validBool || !allowOrDeny || cookieErr != nil {
+			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -1975,18 +1761,11 @@ func main() {
 		w.Write(marshbs)
 	}
 	createIssueHandler := func(w http.ResponseWriter, r *http.Request) {
+		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
 		jwtCookie, cookieErr := r.Cookie("backendauth")
-		if cookieErr != nil {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
-			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
-		if !validBool {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
+		if !validBool || !allowOrDeny || cookieErr != nil {
+			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -2042,18 +1821,11 @@ func main() {
 
 	}
 	getStackerzLeaderboardHandler := func(w http.ResponseWriter, r *http.Request) {
+		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
 		jwtCookie, cookieErr := r.Cookie("backendauth")
-		if cookieErr != nil {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
-			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
-		if !validBool {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
+		if !validBool || !allowOrDeny || cookieErr != nil {
+			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -2096,7 +1868,7 @@ func main() {
 				startPeriodMonth = 9
 				endPeriodMonth = 13
 			}
-			//out, err := coll.Aggregate(context.TODO(), bson.A{bson.D{{Key: "$match", Value: bson.D{{Key: "game", Value: "stackerz"}}}}, bson.D{{Key: "$set", Value: bson.D{{Key: "score", Value: bson.D{{Key: "$sum", Value: bson.A{"$bonus_points", "$level"}}}}}}}, bson.D{{Key: "$sort", Value: bson.D{{Key: "score", Value: -1}}}}, bson.D{{Key: "$limit", Value: 15}}})
+			// out, err := coll.Aggregate(context.TODO(), bson.A{bson.D{{Key: "$match", Value: bson.D{{Key: "game", Value: "stackerz"}}}}, bson.D{{Key: "$set", Value: bson.D{{Key: "score", Value: bson.D{{Key: "$sum", Value: bson.A{"$bonus_points", "$level"}}}}}}}, bson.D{{Key: "$sort", Value: bson.D{{Key: "score", Value: -1}}}}, bson.D{{Key: "$limit", Value: 15}}})
 			out, err := coll.Aggregate(context.TODO(), bson.A{
 				bson.D{{Key: "$match", Value: bson.D{{Key: "game", Value: "stackerz"}}}},
 				bson.D{
@@ -2196,18 +1968,11 @@ func main() {
 	}
 	updateStackerzScoreHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
 		jwtCookie, cookieErr := r.Cookie("backendauth")
-		if cookieErr != nil {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
-			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
-		if !validBool {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
+		if !validBool || !allowOrDeny || cookieErr != nil {
+			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -2230,18 +1995,11 @@ func main() {
 		coll.InsertOne(context.TODO(), bson.M{"org_id": orgId, "game": "stackerz", "bonus_points": postData.BonusPoints, "level": postData.Level, "username": postData.Username, "createdOn": time.Now()})
 	}
 	getCatchitLeaderboardHandler := func(w http.ResponseWriter, r *http.Request) {
+		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
 		jwtCookie, cookieErr := r.Cookie("backendauth")
-		if cookieErr != nil {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
-			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
-		if !validBool {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
+		if !validBool || !allowOrDeny || cookieErr != nil {
+			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -2363,18 +2121,11 @@ func main() {
 	}
 	updateCatchitScoreHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
 		jwtCookie, cookieErr := r.Cookie("backendauth")
-		if cookieErr != nil {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
-			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
-		if !validBool {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
+		if !validBool || !allowOrDeny || cookieErr != nil {
+			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -2398,18 +2149,11 @@ func main() {
 
 	}
 	getLeaderboardHandler := func(w http.ResponseWriter, r *http.Request) {
+		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
 		jwtCookie, cookieErr := r.Cookie("backendauth")
-		if cookieErr != nil {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
-			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
-		if !validBool {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
+		if !validBool || !allowOrDeny || cookieErr != nil {
+			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -2428,7 +2172,7 @@ func main() {
 				if scnerr != nil {
 					fmt.Println(scnerr)
 				}
-				//dataStr := "<div class='py-0 my-0' style='display: inline-flex;'><p class='px-2 m-0'>" + fmt.Sprintf("%d", iter) + "</p><p class='px-2 m-0' style='text-align: center;'>" + username + " - " + score + "</p></div><br/>"
+				// dataStr := "<div class='py-0 my-0' style='display: inline-flex;'><p class='px-2 m-0'>" + fmt.Sprintf("%d", iter) + "</p><p class='px-2 m-0' style='text-align: center;'>" + username + " - " + score + "</p></div><br/>"
 				dataStr := "<div class='py-0 my-0' style='display: inline-flex;'><p class='px-2 m-0' style='position: absolute; left: 2%;'>" + fmt.Sprintf("%d", iter) + ".)&nbsp;&nbsp;</p><p class='px-2 m-0' style='text-align: center; position: absolute; left: 15%;'>" + username + "</p><p class='px-2 m-0' style='text-align: center; position: absolute; left: 65%;'>" + score + "</p></div><br/>"
 				iter++
 				w.Write([]byte(dataStr))
@@ -2551,18 +2295,11 @@ func main() {
 
 	}
 	getOpenThreadsHandler := func(w http.ResponseWriter, r *http.Request) {
+		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
 		jwtCookie, cookieErr := r.Cookie("backendauth")
-		if cookieErr != nil {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
-			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
-		if !validBool {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
+		if !validBool || !allowOrDeny || cookieErr != nil {
+			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -2586,18 +2323,11 @@ func main() {
 	}
 	getUsersSubscribedThreadsHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
 		jwtCookie, cookieErr := r.Cookie("backendauth")
-		if cookieErr != nil {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
-			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
-		if !validBool {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
+		if !validBool || !allowOrDeny || cookieErr != nil {
+			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -2619,18 +2349,11 @@ func main() {
 
 	changeUserSubscriptionToThreadHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
 		jwtCookie, cookieErr := r.Cookie("backendauth")
-		if cookieErr != nil {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
-			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
-		if !validBool {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
+		if !validBool || !allowOrDeny || cookieErr != nil {
+			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -2653,18 +2376,11 @@ func main() {
 
 	}
 	validateJWTHandler := func(w http.ResponseWriter, r *http.Request) {
+		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
 		jwtCookie, cookieErr := r.Cookie("backendauth")
-		if cookieErr != nil {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
-			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
-		if !validBool {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
+		if !validBool || !allowOrDeny || cookieErr != nil {
+			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -2673,18 +2389,11 @@ func main() {
 
 	refreshTokenHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
 		jwtCookie, cookieErr := r.Cookie("backendauth")
-		if cookieErr != nil {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
-			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
-		if !validBool {
-			w.Header().Set("HX-Location", "/")
-			w.Header().Set("HX-Retarget", "document")
+		if !validBool || !allowOrDeny || cookieErr != nil {
+			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -2785,14 +2494,14 @@ func main() {
 	http.HandleFunc("/refresh-token", refreshTokenHandler)
 	http.HandleFunc("/delete-jwt", deleteJWTHandler)
 
-	//http.HandleFunc("/upload-file", h3)
+	// http.HandleFunc("/upload-file", h3)
 	http.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("css"))))
 	http.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir("js"))))
 	http.Handle("/assets/", http.StripPrefix("/assets/", http.FileServer(http.Dir("assets"))))
 
 	log.Fatal(http.ListenAndServe(":80", nil))
 	// For production
-	//log.Fatal(http.ListenAndServeTLS(":443", "../tflserver.crt", "../tflserver.key", nil))
+	// log.Fatal(http.ListenAndServeTLS(":443", "../tflserver.crt", "../tflserver.key", nil))
 }
 
 func setLoginCookie(w http.ResponseWriter, db *sql.DB, userStr string, r *http.Request) {
@@ -2802,10 +2511,10 @@ func setLoginCookie(w http.ResponseWriter, db *sql.DB, userStr string, r *http.R
 	//fmt.Println(expiresAt.Local().Format(time.DateTime))
 	//fmt.Println(userStr)
 	/*_, inserterr := db.Exec(fmt.Sprintf("insert into tfldata.sessions(\"username\", \"session_token\", \"expiry\", \"ip_addr\") values('%s', '%s', '%s', '%s') on conflict(ip_addr) do update set session_token='%s', expiry='%s';", userStr, sessionToken, expiresAt.Format(time.DateTime), strings.Split(r.RemoteAddr, ":")[0], sessionToken, expiresAt.Format(time.DateTime)))
-	if inserterr != nil {
-		db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", inserterr))
-		fmt.Println(inserterr)
-	}*/
+	  if inserterr != nil {
+	  db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", inserterr))
+	  fmt.Println(inserterr)
+	  }*/
 	_, updateerr := db.Exec(fmt.Sprintf("update tfldata.users set session_token='%s' where username='%s' or email='%s';", sessionToken, userStr, userStr))
 	if updateerr != nil {
 		db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s');", updateerr, time.Now().In(nyLoc).Format(time.DateTime)))
@@ -2827,7 +2536,7 @@ func uploadPfpToS3(k string, s string, f multipart.File, fn string, r *http.Requ
 		config.WithDefaultRegion("us-east-1"),
 		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(k, s, "")),
 	)
-	//conf, err := config.NewEnvConfig(config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(k, s, "")))
+	// conf, err := config.NewEnvConfig(config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(k, s, "")))
 	if err != nil {
 		log.Fatal(err)
 		os.Exit(9)
@@ -2881,7 +2590,7 @@ func uploadFileToS3(k string, s string, bucketexists bool, f multipart.File, fn 
 	ourfile, fileHeader, errfile := r.FormFile("file_name")
 
 	if errfile != nil {
-		//log.Fatal(errfile)
+		// log.Fatal(errfile)
 		fmt.Println(errfile)
 	}
 
@@ -2936,13 +2645,15 @@ func sendNotificationToTaggedUser(w http.ResponseWriter, r *http.Request, fcmTok
 				Title: "Someone tagged you",
 				Body:  message,
 				Data:  typePayload,
-				/*Actions: []*messaging.WebpushNotificationAction{
-					{
-						Action: "Open",
-						Title:  "Open message",
-						Icon:   "assets/android-chrome-512x512.png",
-					},
-				},*/
+				/*
+				   Actions: []*messaging.WebpushNotificationAction{
+				   {
+				   Action: "Open",
+				   Title:  "Open message",
+				   Icon:   "assets/android-chrome-512x512.png",
+				   },
+				   },
+				*/
 			},
 		},
 	})
@@ -2999,7 +2710,7 @@ func sendNotificationToAllUsers(db *sql.DB, curUser string, fb_message_client *m
 				})
 			}
 			if sendErr != nil {
-				//fmt.Print(sendErr.Error() + " for user: " + userToSend)
+				// fmt.Print(sendErr.Error() + " for user: " + userToSend)
 				if strings.Contains(sendErr.Error(), "404") {
 					db.Exec(fmt.Sprintf("update tfldata.users set fcm_registration_id=null where username='%s';", userToSend))
 					fmt.Println("updated " + userToSend + "\\'s fcm token")
@@ -3041,4 +2752,15 @@ func validateJWTToken(tokenStr string, tokenKey string, w http.ResponseWriter) b
 		return false
 	}
 	return jwtToken.Valid
+}
+func validateCurrentSessionId(db *sql.DB, w http.ResponseWriter, r *http.Request) (bool, string) {
+	session_token, seshErr := r.Cookie("session_id")
+	if seshErr != nil {
+		return false, "Please login"
+	}
+	var username string
+	row := db.QueryRow(fmt.Sprintf("select username from tfldata.users where session_token='%s';", strings.Split(session_token.Value, "session_id=")[0]))
+	scnerr := row.Scan(&username)
+	return scnerr == nil, username
+
 }

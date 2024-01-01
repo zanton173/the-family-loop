@@ -267,13 +267,20 @@
 
     p.append(c)
     async function fetchSeshDetails() {
-
         const resp = await fetch("/get-username-from-session", {
             method: "GET",
             headers: {
                 "Content-Type": "application/json"
             }
         })
+
+        if (resp.status == 401) {
+            //document.dispatchEvent(new Event("onUnauthorizedEvent"))
+            window.history.pushState("", "", "/")
+            loginModal.show()
+            showLoginForm()
+            return
+        }
 
         const text = await resp.json()
 
@@ -287,7 +294,7 @@
         }
 
         text.Username.length < 1
-            ? logoutFunction()
+            ? window.dispatchEvent(new Event("onUnauthorizedEvent"))
             : navItemWelcomeAvatar.setAttribute("src", "https://" + cfDomain + "/pfp/" + text.Pfpname)
         return text
     }
@@ -534,15 +541,18 @@
 </script>
 <script type="module">
     //import app from "/js/init-firebase.js"
-    import { logoutFunction } from "/js/globalFunctions.js"
+
+    console.log("loaded")
+    import { logoutFunction, getNotified } from "/js/globalFunctions.js"
 
     //import { getMessaging, getToken } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-messaging.js";
     //const messaging = getMessaging(app);
     document.getElementById("logoutButtonOnNav") &&
         document.getElementById("logoutButtonOnNav").addEventListener("click", logoutFunction)
+    document.getElementById("notifydiv") &&
+        document.getElementById("notifydiv").addEventListener("click", getNotified)
 
-    document.addEventListener("onUnauthorizedEvent", () => {
-
+    window.addEventListener("onUnauthorizedEvent", () => {
         logoutFunction()
         //window.location.reload()
     })

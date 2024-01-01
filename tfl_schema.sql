@@ -103,6 +103,42 @@ ALTER SEQUENCE tfldata.calendar_rsvp_id_seq OWNED BY tfldata.calendar_rsvp.id;
 
 
 --
+-- Name: catchitleaderboard; Type: TABLE; Schema: tfldata; Owner: tfldbrole
+--
+
+CREATE TABLE tfldata.catchitleaderboard (
+    id integer NOT NULL,
+    username character varying(128),
+    score integer,
+    createdon timestamp without time zone
+);
+
+
+ALTER TABLE tfldata.catchitleaderboard OWNER TO tfldbrole;
+
+--
+-- Name: catchitleaderboard_id_seq; Type: SEQUENCE; Schema: tfldata; Owner: tfldbrole
+--
+
+CREATE SEQUENCE tfldata.catchitleaderboard_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE tfldata.catchitleaderboard_id_seq OWNER TO tfldbrole;
+
+--
+-- Name: catchitleaderboard_id_seq; Type: SEQUENCE OWNED BY; Schema: tfldata; Owner: tfldbrole
+--
+
+ALTER SEQUENCE tfldata.catchitleaderboard_id_seq OWNED BY tfldata.catchitleaderboard.id;
+
+
+--
 -- Name: comments; Type: TABLE; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -587,6 +623,13 @@ ALTER TABLE ONLY tfldata.calendar_rsvp ALTER COLUMN id SET DEFAULT nextval('tfld
 
 
 --
+-- Name: catchitleaderboard id; Type: DEFAULT; Schema: tfldata; Owner: tfldbrole
+--
+
+ALTER TABLE ONLY tfldata.catchitleaderboard ALTER COLUMN id SET DEFAULT nextval('tfldata.catchitleaderboard_id_seq'::regclass);
+
+
+--
 -- Name: comments id; Type: DEFAULT; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -685,6 +728,14 @@ ALTER TABLE ONLY tfldata.calendar_rsvp
 
 ALTER TABLE ONLY tfldata.calendar_rsvp
     ADD CONSTRAINT calendar_rsvp_username_event_id_key UNIQUE (username, event_id);
+
+
+--
+-- Name: catchitleaderboard catchitleaderboard_pkey; Type: CONSTRAINT; Schema: tfldata; Owner: tfldbrole
+--
+
+ALTER TABLE ONLY tfldata.catchitleaderboard
+    ADD CONSTRAINT catchitleaderboard_pkey PRIMARY KEY (id);
 
 
 --

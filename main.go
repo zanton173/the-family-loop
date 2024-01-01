@@ -2247,9 +2247,117 @@ func main() {
 			return
 		}
 		if r.URL.Query().Get("leaderboardType") == "family" {
-			w.Write([]byte("hello family"))
+			output, outerr := db.Query("select username, score from tfldata.catchitleaderboard order by score desc limit 20;")
+			if outerr != nil {
+				fmt.Println(outerr)
+			}
+			defer output.Close()
+			iter := 1
+			for output.Next() {
+				var username string
+				var score string
+				scnerr := output.Scan(&username, &score)
+				if scnerr != nil {
+					fmt.Println(scnerr)
+				}
+				dataStr := "<div class='py-0 my-0' style='display: inline-flex;'><p class='px-2 m-0' style='position: absolute; left: 2%;'>" + fmt.Sprintf("%d", iter) + ".)&nbsp;&nbsp;</p><p class='px-2 m-0' style='text-align: center; position: absolute; left: 15%;'>" + username + "</p><p class='px-2 m-0' style='text-align: center; position: absolute; left: 65%;'>" + score + "</p></div><br/>"
+				iter++
+				w.Write([]byte(dataStr))
+			}
 		} else if r.URL.Query().Get("leaderboardType") == "global" {
-			w.Write([]byte("hello global"))
+			eventYearConverted, _ := strconv.Atoi(r.URL.Query().Get("eventYear"))
+			eventPeriodConverted, _ := strconv.Atoi(r.URL.Query().Get("eventPeriod"))
+			var startPeriodMonth int
+			var endPeriodMonth int
+			switch eventPeriodConverted {
+			case 1:
+				startPeriodMonth = 0
+				endPeriodMonth = 4
+			case 2:
+				startPeriodMonth = 3
+				endPeriodMonth = 7
+			case 3:
+				startPeriodMonth = 6
+				endPeriodMonth = 10
+			case 4:
+				startPeriodMonth = 9
+				endPeriodMonth = 13
+			}
+			out, err := coll.Aggregate(context.TODO(), bson.A{
+				bson.D{{Key: "$match", Value: bson.D{{Key: "game", Value: "catchit"}}}},
+				bson.D{
+					{Key: "$set",
+						Value: bson.D{
+							{Key: "year",
+								Value: bson.D{
+									{Key: "$abs",
+										Value: bson.D{
+											{Key: "$subtract",
+												Value: bson.A{
+													2020,
+													bson.D{{Key: "$year", Value: "$createdOn"}},
+												},
+											},
+										},
+									},
+								},
+							},
+							{Key: "month", Value: bson.D{{Key: "$month", Value: "$createdOn"}}},
+							{Key: "day", Value: bson.D{{Key: "$dayOfMonth", Value: "$createdOn"}}},
+						},
+					},
+				},
+				bson.D{
+					{Key: "$match",
+						Value: bson.D{
+							{Key: "year", Value: eventYearConverted},
+							{Key: "month",
+								Value: bson.D{
+									{Key: "$gt", Value: startPeriodMonth},
+									{Key: "$lt", Value: endPeriodMonth},
+								},
+							},
+							{Key: "$and",
+								Value: bson.A{
+									bson.D{{Key: "day", Value: bson.D{{Key: "$lt", Value: 22}}}},
+									bson.D{
+										{Key: "month",
+											Value: bson.D{
+												{Key: "$ne",
+													Value: bson.A{
+														3,
+														6,
+														9,
+														12,
+													},
+												},
+											},
+										},
+									},
+								}},
+						},
+					},
+				},
+				bson.D{{Key: "$limit", Value: 15}},
+				bson.D{{Key: "$sort", Value: bson.D{{Key: "score", Value: -1}}}},
+			})
+
+			if err != nil {
+				fmt.Print(err)
+			}
+			defer out.Close(context.TODO())
+			iter := 1
+
+			var results []bson.M
+
+			if err = out.All(context.TODO(), &results); err != nil {
+				log.Fatal(err)
+			}
+			for _, result := range results {
+				dataStr := "<div class='py-0 my-0' style='display: inline-flex;'><p class='px-2 m-0' style='position: absolute; left: 1%;'>" + fmt.Sprintf("%d", iter) + ".)&nbsp;&nbsp;</p><p class='px-1 m-0' style='text-align: center; position: absolute; left: 13%;'>" + result["username"].(string) + "</p><p class='px-2 mx-5' style='text-align: center; position: absolute; left: 40%;'>" + fmt.Sprint(result["score"].(int32)) + "</p><p class='px-2 mx-5' style='text-align: center; position: absolute; left: 65%;'>" + strings.Split(result["org_id"].(string), "_")[0] + "</p></div><br/>"
+				iter++
+				w.Write([]byte(dataStr))
+			}
 
 		}
 	}

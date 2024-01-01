@@ -172,6 +172,7 @@
                                 placeholder="Password" oninput="checkForValidSignUpSubmission()" required
                                 id="confirmpasswordsignupinput" name="confirmpasswordsignup" />
                             <p id="passworddonotmatch" style="color: red;"></p>
+                            <p id="passwordnotstrong" style="color: red;"></p>
                         </div>
                         <div class="p-4">
                             <label>Family Passcode (Ask your admin for this):</label>
@@ -215,7 +216,12 @@
 
     let gologin = document.createElement('button')
     let gosignup = document.createElement('button')
+    gosignup.setAttribute("type", "submit")
+    gosignup.setAttribute("id", 'signupgobutton')
+    gosignup.setAttribute("class", "btn btn-outline-success")
+    gosignup.setAttribute("data-bs-dismiss", "modal")
 
+    gosignup.innerHTML = "Go!"
     let usernamelogininput = document.getElementById('usernamelogininput')
     let passwordlogininput = document.getElementById('passwordlogininput')
 
@@ -450,28 +456,25 @@
         }
     }
     function checkForValidSignUpSubmission() {
+        if (passwordsignupinput.value !== confirmpasswordsignupinput.value) {
+            document.getElementById('passworddonotmatch').innerHTML = "Passwords do not match!"
+            if (signup.contains(gosignup))
+                signup.removeChild(gosignup)
+        } else
+            document.getElementById('passworddonotmatch').innerHTML = ""
+
+        if (passwordsignupinput.value.length < 7 || passwordsignupinput.value.match(/[!$@#%^&*()_+|~=`{}\[\]:";'<>?,.]/) == null) {
+            document.getElementById('passwordnotstrong').innerHTML = "Password needs at least 8 characters and a special character (!@#$^&*)"
+            if (signup.contains(gosignup))
+                signup.removeChild(gosignup)
+        } else
+            document.getElementById('passwordnotstrong').innerHTML = ""
+
         if (usernamesignupinput.value > '' && passwordsignupinput.value > '' && passwordsignupinput.value === confirmpasswordsignupinput.value && document.getElementById('orgidinput').value.length > 1 && passwordsignupinput.value.length > 7 && confirmpasswordsignupinput.value.length > 7 && emailsignupinput.value.match(/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/)) {
-            gosignup.setAttribute("type", "submit")
-            gosignup.setAttribute("id", 'signupgobutton')
-            gosignup.setAttribute("class", "btn btn-outline-success")
-            gosignup.setAttribute("data-bs-dismiss", "modal")
-
-            gosignup.innerHTML = "Go!"
-            if (passwordsignupinput.value !== confirmpasswordsignupinput.value) {
-                document.getElementById('passworddonotmatch').innerHTML = "Passwords do not match!"
-                if (signup.contains(gosignup))
-                    signup.removeChild(gosignup)
-            } else
-                document.getElementById('passworddonotmatch').innerHTML = ""
-
             signup.append(gosignup)
 
         } else if (passwordsignupinput.value !== confirmpasswordsignupinput.value && usernamesignupinput.value == '' || emailsignupinput.value == '' || passwordsignupinput.value == '' || confirmpasswordsignupinput.value == '' || !emailsignupinput.value.match(/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/)) {
 
-            if (passwordsignupinput.value !== confirmpasswordsignupinput.value)
-                document.getElementById('passworddonotmatch').innerHTML = "Passwords do not match!"
-            else
-                document.getElementById('passworddonotmatch').innerHTML = ""
             if (signup.contains(gosignup))
                 signup.removeChild(gosignup)
 
@@ -540,13 +543,8 @@
 
 </script>
 <script type="module">
-    //import app from "/js/init-firebase.js"
-
-    console.log("loaded")
     import { logoutFunction, getNotified } from "/js/globalFunctions.js"
 
-    //import { getMessaging, getToken } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-messaging.js";
-    //const messaging = getMessaging(app);
     document.getElementById("logoutButtonOnNav") &&
         document.getElementById("logoutButtonOnNav").addEventListener("click", logoutFunction)
     document.getElementById("notifydiv") &&
@@ -554,55 +552,7 @@
 
     window.addEventListener("onUnauthorizedEvent", () => {
         logoutFunction()
-        //window.location.reload()
     })
-    /*var notificationBody = {}
-    const checkSubResp = await fetch('/get-check-if-subscribed', {
-        method: "GET",
-        headers: {
-            "Content-Type": "application/json"
-        }
-    }).then((data) => {
 
-        if (data.status == 202) {
-            if (!("Notification" in window)) {
-                // Check if the browser supports notifications
-                alert("This browser does not support desktop notification");
-            } else {
-
-                Notification.requestPermission().then((res) => {
-
-                    if (Notification.permission == 'granted') {
-
-                        getToken(messaging, { vapidKey: "BJmKY269Mkqw_zRnXy0n1ncFOBsamgi7hSpli4hKGlAJ-OKTae7qj8scasqrO9dpdmntNXXgbsMK3okY0bpOBVQ" })
-                            .then((currentToken) => {
-
-                                notificationBody = {
-                                    fcm_token: currentToken
-                                }
-                                fetch("/create-subscription", {
-                                    method: "POST",
-                                    headers: {
-                                        "Content-Type": "application/json"
-                                    },
-                                    body: JSON.stringify(notificationBody)
-                                })
-                                    .then(() => {
-                                        return window.navigator.serviceWorker
-                                            .getRegistration('/firebase-cloud-messaging-push-scope')
-                                            .then((serviceWorker) => {
-                                                if (serviceWorker) return serviceWorker;
-                                                return window.navigator.serviceWorker.register('/firebase-messaging-sw.js', {
-                                                    scope: '/firebase-cloud-messaging-push-scope',
-                                                });
-                                            });
-                                    })
-                            }).catch((e) => console.log(e))
-                    }
-
-                })
-            }
-        }
-    }).catch((err) => console.log(JSON.stringify(err)))*/
 
 </script>

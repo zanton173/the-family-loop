@@ -85,8 +85,8 @@
                 </svg>
             </div>
         </div>
-        <div
-            style="width: 80px; height: 35px; position: absolute; bottom: 0%; background-color: black; border-width: 1px; border-style: solid; border-color: white; border-top: none; left: calc(50% - 40px)">
+        <div id="gameNet"
+            style="width: 100px; height: 35px; position: absolute; bottom: 0%; background-color: black; border-width: 1px; border-style: solid; border-color: white; border-top: none; left: calc(50% - 50px)">
         </div>
     </div>
     <div id="leaderboardWindow" style="display: none; position: absolute; height: 100dvh; width: 100dvw; background-image: linear-gradient(to bottom,
@@ -140,6 +140,8 @@
         const gameLifeOne = document.getElementById('gamelifeone')
         const gameLifeTwo = document.getElementById('gamelifetwo')
         const gameLifeThree = document.getElementById('gamelifethree')
+        const gameNet = document.getElementById('gameNet')
+        var currentGameNetPos = 50
         var score = document.getElementById('score')
         for (var i = 0; i < 100; i++) {
             var eventYearOption = document.createElement('option')
@@ -231,9 +233,19 @@
         }
         function moveNetLeft() {
 
+            currentGameNetPos <= 10 ?
+                currentGameNetPos
+                :
+                currentGameNetPos -= 5
+            gameNet.style.left = "calc(" + currentGameNetPos + "% - 50px)"
         }
         function moveNetRight() {
 
+            currentGameNetPos >= 90 ?
+                currentGameNetPos
+                :
+                currentGameNetPos += 5
+            gameNet.style.left = "calc(" + currentGameNetPos + "% - 50px)"
         }
         function resetFullGame() {
             gameLifeOne.style.display = "inline"

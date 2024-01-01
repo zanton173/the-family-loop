@@ -95,41 +95,41 @@ button.btn.btn-primary {
 
 @keyframes fallOne {
     0% {
-        top: -10%
+        top: -15%
     }
 
     100% {
-        top: 120%
+        top: 100%
     }
 }
 
 @-webkit-keyframes fallOne {
     0% {
-        top: -10%
+        top: -15%
     }
 
     100% {
-        top: 120%
+        top: 100%
     }
 }
 
 @keyframes fallTwo {
     0% {
-        top: -10%
+        top: -15%
     }
 
     100% {
-        top: 120%
+        top: 100%
     }
 }
 
 @-webkit-keyframes fallTwo {
     0% {
-        top: -10%
+        top: -15%
     }
 
     100% {
-        top: 120%
+        top: 100%
     }
 }
 

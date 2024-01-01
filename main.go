@@ -2253,6 +2253,42 @@ func main() {
 
 		}
 	}
+	updateCatchitScoreHandler := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		jwtCookie, cookieErr := r.Cookie("backendauth")
+		if cookieErr != nil {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
+		if !validBool {
+			w.Header().Set("HX-Location", "/")
+			w.Header().Set("HX-Retarget", "document")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		bs, _ := io.ReadAll(r.Body)
+		type postBody struct {
+			Username string `json:"username"`
+			Score    int    `json:"score"`
+		}
+		var postData postBody
+		marsherr := json.Unmarshal(bs, &postData)
+		if marsherr != nil {
+			fmt.Println(marsherr)
+		}
+
+		_, inserr := db.Exec(fmt.Sprintf("insert into tfldata.catchitleaderboard(\"username\", \"score\", \"createdon\") values('%s', '%d', now());", postData.Username, postData.Score))
+		if inserr != nil {
+			w.WriteHeader(http.StatusBadRequest)
+		}
+		coll.InsertOne(context.TODO(), bson.M{"org_id": orgId, "game": "catchit", "score": postData.Score, "username": postData.Username, "createdOn": time.Now()})
+
+	}
 	getLeaderboardHandler := func(w http.ResponseWriter, r *http.Request) {
 		jwtCookie, cookieErr := r.Cookie("backendauth")
 		if cookieErr != nil {
@@ -2624,6 +2660,7 @@ func main() {
 	http.HandleFunc("/update-stackerz-score", updateStackerzScoreHandler)
 
 	http.HandleFunc("/get-catchit-leaderboard", getCatchitLeaderboardHandler)
+	http.HandleFunc("/update-catchit-score", updateCatchitScoreHandler)
 
 	http.HandleFunc("/get-open-threads", getOpenThreadsHandler)
 

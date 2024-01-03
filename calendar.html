@@ -27,7 +27,7 @@
     <title>The Family Loop - Calendar</title>
 </head>
 
-<body style="background: linear-gradient(180deg, #00106e, #00ecff 75%); height: 100dvh">
+<body style="background: linear-gradient(180deg, #00106e, #00ecff 75%);">
     <div class="spinner-indicator" id="loadingspinner"
         style="width: 100%; height: 100%; background-color: rgb(197, 197, 197);">
 
@@ -74,6 +74,36 @@
             </ul>
             <ul class="calendar-dates" id="listOfActiveDates"></ul>
         </div>
+        <h2>Create an event:</h2>
+        <div style="display: flex; justify-content: space-evenly; width: 60dvw; margin-left: calc(60dvw / 2)">
+            <p style="position: absolute; left: 6%; margin-right: 5%;">Start:</p>
+            <select name="startDateMonth" id="startDateMonth" onchange="{updateStartDayPicker(); validateBothDates()}">
+
+            </select>
+            <select name="startDateDay" id="startDateDay" onchange="validateBothDates()">
+
+            </select>
+            <select name="startDateYear" id="startDateYear" onchange="validateBothDates()">
+
+            </select>
+        </div><br />
+        <p id='warning_text' style="color: red;"></p>
+        <div style="display: flex; justify-content: space-evenly;  width: 60dvw; margin-left: calc(60dvw / 2)">
+            <p style="position: absolute; left: 6%; margin-right: 5%;">End:</p>
+            <select name="endDateMonth" id="endDateMonth" onchange="{updateEndDayPicker(); validateBothDates()}">
+
+            </select>
+            <select name="endDateDay" id="endDateDay" onchange="validateBothDates()">
+
+            </select>
+            <select name="endDateYear" id="endDateYear" onchange="validateBothDates()">
+
+            </select>
+        </div>
+        <div id="selectedDateHeaders" style="display: inline;">
+            <p id="selectedDateStart"></p>
+            <p id="selectedDateEnd"></p>
+        </div>
         <div style="text-align: center; display: grid;" class="px-5" id="add-button-to-submit">
 
         </div>
@@ -84,9 +114,13 @@
         <div class="modal-dialog">
             <div id="event-comments" class="modal-content p-2"
                 style="border-radius: 2%;background-color: rgb(99 81 255 / 65%);">
-
+                <div id="multipleEventArrows"
+                    style="display: none; background-color: white; justify-content: space-around; border-radius: 5px / 5px; padding: 3px; margin: 1%;">
+                    <i class='bi bi-arrow-90deg-left p-1' onclick="getLeftEvent()"></i>
+                    <i class='bi bi-arrow-90deg-right p-1' onclick="getRightEvent()"></i>
+                </div>
                 <div class="modal-content" id="modal-event-content">
-                    <h3 id="eventtitleele"></h3>
+                    <h3 id="eventtitleele" style="text-align: center;"></h3>
                     <h7 id="eventdateele"></h7>
 
                     <p id="eventdetailsele"></p>
@@ -136,8 +170,23 @@
     iconno.setAttribute("class", "bi bi-x-lg")
     const iconmaybe = document.createElement('i')
     iconmaybe.setAttribute("class", "bi bi-asterisk")
+    var startDateMonthPicker = document.getElementById('startDateMonth')
+    var startDateDayPicker = document.getElementById('startDateDay')
+    var startDateYearPicker = document.getElementById('startDateYear')
+    var endDateMonthPicker = document.getElementById('endDateMonth')
+    var endDateDayPicker = document.getElementById('endDateDay')
+    var endDateYearPicker = document.getElementById('endDateYear')
+    var finalStartDate = undefined
+    var finalEndDate = undefined
     var allEvents = []
     var eventDetailModal = new bootstrap.Modal(document.getElementById('openEventDetail'), {});
+    var clickedDate = undefined
+
+    var eventCarouselIter = 0
+
+    var calendarItems = []
+
+    var selectedArrayOfDates = []
 
     var commentSelectedEventId = 0
 
@@ -156,13 +205,14 @@
             return jsondata
         })
         allEvents = allEvents.map((ele) =>
-            /*({ ...ele, Startdate: ele.Startdate.split("T", 1)[0].split("-", 3), Enddate: ele.Enddate.split("T", 1)[0].split("-", 3) })*/
-            ({ ...ele, Startdate: ele.Startdate.split("T", 1)[0].split("-", 3) })
+
+            ({ ...ele, Startdate: ele.Startdate.split("T", 1)[0].split("-", 3), Enddate: ele.Enddate.split("T", 1)[0].split("-", 3) })
         )
 
         setDatesThatHaveEvents()
 
     })
+
     function checkIfEventIsInPast() {
 
         document.getElementById('commentnoteevent').value = ""
@@ -188,24 +238,53 @@
     }
     function setDatesThatHaveEvents() {
 
-        //listOfActive = document.querySelectorAll("[style='background: #fff']")
         listOfActive = document.querySelectorAll("[style='background-color: rgba(255, 255, 255, .5); border-radius: 15%;']")
-        for (var i = 1; i <= listOfActive.length; i++) {
+        tmpAllEvents = allEvents.filter((event) => Number(event.Startdate[1]) == month + 1 || (Number(event.Enddate[1]) == month + 1))
+        tmpMultiAllEvents = tmpAllEvents.filter((event) => event.Enddate.length > 1)
+        tmpSingleEvents = tmpAllEvents.filter((event) => event.Enddate.length === 1)
 
-            for (var j = 0; j < allEvents.length; j++) {
-                //console.log(i)
-                if (new Date(year.toString(), (month).toString(), (i).toString()).toDateString()
-                    ===
-                    new Date(allEvents[j].Startdate[0], Number(allEvents[j].Startdate[1]) - 1, allEvents[j].Startdate[2]).toDateString()
-                ) {
-
-                    document.getElementById(`${i}`).setAttribute("style", "background-color: #837dff; border-radius: 25%;")
-                    document.getElementById(`${i}`).setAttribute("onclick", `openEventModal(${JSON.stringify(allEvents[j])})`)
-
-
+        for (var j = 0; j < tmpSingleEvents.length; j++) {
+            calendarItems.forEach((item) => {
+                if (new Date(item.id).toDateString() == new Date(tmpSingleEvents[j].Startdate[0], tmpSingleEvents[j].Startdate[1] - 1, tmpSingleEvents[j].Startdate[2]).toDateString()) {
+                    item.setAttribute("style", "background-color: #837dff; border-radius: 25%;")
+                    item.setAttribute("onclick", `{setSelectedDate('${item.id}'); openEventModal(${JSON.stringify(tmpSingleEvents)}); }`)
+                    return
                 }
-            }
+            })
         }
+        for (var j = 0; j < tmpMultiAllEvents.length; j++) {
+            var rangeOfDates = []
+            var getDateIter = 0
+            var tmpIter = 0
+            while (new Date(tmpMultiAllEvents[j].Startdate[0], tmpMultiAllEvents[j].Startdate[1] - 1, Number(tmpMultiAllEvents[j].Startdate[2]) + getDateIter) <= new Date(tmpMultiAllEvents[j].Enddate[0], Number(tmpMultiAllEvents[j].Enddate[1]) - 1, tmpMultiAllEvents[j].Enddate[2])) {
+                if (new Date(tmpMultiAllEvents[j].Startdate[0] + "/" + tmpMultiAllEvents[j].Startdate[1] + "/" + (Number(tmpMultiAllEvents[j].Startdate[2]) + getDateIter).toString()) == "Invalid Date") {
+                    if ((Number(tmpMultiAllEvents[j].Startdate[1]) + 1) == 13)
+                        rangeOfDates.push((Number(tmpMultiAllEvents[j].Startdate[0]) + 1).toString() + "/" + (Number(1)).toString() + "/" + (Number(1) + tmpIter).toString())
+                    rangeOfDates.push(tmpMultiAllEvents[j].Startdate[0] + "/" + (Number(tmpMultiAllEvents[j].Startdate[1]) + 1).toString() + "/" + (Number(1) + tmpIter).toString())
+                    tmpIter++
+                    getDateIter++
+                } else {
+                    rangeOfDates.push(tmpMultiAllEvents[j].Startdate[0] + "/" + Number(tmpMultiAllEvents[j].Startdate[1]) + "/" + (Number(tmpMultiAllEvents[j].Startdate[2]) + getDateIter).toString())
+                    getDateIter++
+                }
+
+            }
+            rangeOfDates.forEach((date) => {
+
+                calendarItems.forEach((data) => {
+
+                    if (data.id == date) {
+
+                        data.setAttribute("style", "background-color: #5ef4b9; border-radius: 25%;")
+                        data.setAttribute("onclick", `{setSelectedDate('${data.id}'); openEventModal(${JSON.stringify(tmpMultiAllEvents)}); }`)
+                        return
+                    }
+                })
+            })
+            rangeOfDates = []
+            getDateIter = 0
+        }
+
     }
 
     async function updateStatus(event) {
@@ -284,17 +363,52 @@
         document.getElementById('maybebtn').append(iconmaybe)
         document.getElementById('maybebtn').innerHTML += "&nbsp;&nbsp;maybe"
     }
-    function openEventModal(data) {
-        eventDetailModal.toggle()
-        document.getElementById('eventtitleele').innerHTML = data.Eventtitle + " - " + data.Eventowner
-        document.getElementById('eventdateele').innerHTML = new Date(data.Startdate[0], data.Startdate[1] - 1, data.Startdate[2]).toDateString()
-        document.getElementById('eventdetailsele').innerHTML = data.Eventdetails
-        commentSelectedEventId = data.Eventid
-        document.getElementById('eventappendcomments').dispatchEvent(new Event('loadCommentEvent'))
-        //document.getElementById('rsvpnotes').dispatchEvent(new Event('click'))
-        document.getElementById('rsvpnotes').dispatchEvent(new Event('click'))
-        checkForRSVP(data.Eventid)
-        document.getElementById('eventappendcomments').innerHTML = ''
+    function setSelectedDate(date) {
+        clickedDate = new Date(date)
+    }
+    function openEventModal(dataSingle) {
+        selectedArrayOfDates = []
+        var thisDate = dataSingle.filter((data) => new Date(data.Startdate[0], data.Startdate[1] - 1, data.Startdate[2]).toDateString() == clickedDate.toDateString()
+            || (clickedDate.getTime() <= new Date(data.Enddate[0], data.Enddate[1] - 1, data.Enddate[2]).getTime() && clickedDate.getTime() >= new Date(data.Startdate[0], data.Startdate[1] - 1, data.Startdate[2]).getTime()))
+
+
+        if (thisDate.length > 1) {
+            document.getElementById('multipleEventArrows').style.display = "flex"
+            thisDate.forEach((event) => selectedArrayOfDates.push(event.Eventid))
+        } else {
+            document.getElementById('multipleEventArrows').style.display = "none"
+            selectedArrayOfDates.push(thisDate[0].Eventid)
+        }
+
+        if (!eventDetailModal._isShown)
+            eventDetailModal.show()
+
+        refreshEventData = () => {
+            if (thisDate[eventCarouselIter].Enddate.length > 1)
+                document.getElementById('eventdateele').innerHTML = new Date(thisDate[eventCarouselIter].Startdate[0], thisDate[eventCarouselIter].Startdate[1] - 1, thisDate[eventCarouselIter].Startdate[2]).toDateString() + ' - ' + new Date(thisDate[eventCarouselIter].Enddate[0], thisDate[eventCarouselIter].Enddate[1] - 1, thisDate[eventCarouselIter].Enddate[2]).toDateString()
+            else
+                document.getElementById('eventdateele').innerHTML = new Date(thisDate[eventCarouselIter].Startdate[0], thisDate[eventCarouselIter].Startdate[1] - 1, thisDate[eventCarouselIter].Startdate[2]).toDateString()
+
+            document.getElementById('eventtitleele').innerHTML = thisDate[eventCarouselIter].Eventtitle + " - " + thisDate[eventCarouselIter].Eventowner
+            document.getElementById('eventdetailsele').innerHTML = thisDate[eventCarouselIter].Eventdetails
+            commentSelectedEventId = thisDate[eventCarouselIter].Eventid
+            document.getElementById('eventappendcomments').dispatchEvent(new Event('loadCommentEvent'))
+            //document.getElementById('rsvpnotes').dispatchEvent(new Event('click'))
+            document.getElementById('rsvpnotes').dispatchEvent(new Event('click'))
+            checkForRSVP(thisDate[eventCarouselIter].Eventid)
+            document.getElementById('eventappendcomments').innerHTML = ''
+        }
+        eventCarouselIter = 0
+        refreshEventData()
+
+    }
+    function getLeftEvent() {
+        eventCarouselIter == 0 ? eventCarouselIter = selectedArrayOfDates.length - 1 : eventCarouselIter--
+        refreshEventData()
+    }
+    function getRightEvent() {
+        eventCarouselIter == selectedArrayOfDates.length - 1 ? eventCarouselIter = 0 : eventCarouselIter++
+        refreshEventData()
     }
     document.getElementById("openEventDetail").addEventListener("hidden.bs.modal", () => {
         document.getElementById('rsvpnotes').innerHTML = ""
@@ -345,7 +459,7 @@
 
     btnToAddEvent.setAttribute("class", "btn btn-secondary w-75 text-center justify-center")
     btnToAddEvent.setAttribute("style", "margin-top: 2%; margin-bottom: 2%; position: relative; justify-self: center")
-    btnToAddEvent.setAttribute("onclick", 'currentSelectedDate()')
+    //btnToAddEvent.setAttribute("onclick", 'currentSelectedDate()')
 
     btnToAddEvent.addEventListener("click", async function (event) {
         if (txtAreaToAddEvent.value === '' || titleInputToAddEvent.value === '') {
@@ -354,10 +468,20 @@
             alert("Please fill out title & description")
             return
         }
-        const postBody = {
-            "start_date": arrayOfDates[0],
-            "event_details": txtAreaToAddEvent.value,
-            "event_title": titleInputToAddEvent.value
+        var postBody = {}
+        if (finalEndDate === undefined) {
+            postBody = {
+                "start_date": finalStartDate.toDateString(),
+                "event_details": txtAreaToAddEvent.value,
+                "event_title": titleInputToAddEvent.value
+            }
+        } else {
+            postBody = {
+                "start_date": finalStartDate.toDateString(),
+                "event_details": txtAreaToAddEvent.value,
+                "event_title": titleInputToAddEvent.value,
+                "end_date": finalEndDate.toDateString()
+            }
         }
         const resp = await fetch("/create-event", {
             method: "POST",
@@ -367,6 +491,7 @@
             },
             body: JSON.stringify(postBody)
         })
+
         if (resp.status == 200) {
             /*
             divToAddSubmitTo.removeChild(btnToAddEvent)
@@ -400,6 +525,8 @@
     let year = date.getFullYear();
     let month = date.getMonth();
 
+    let todayDay = date.getDay()
+
     const day = document.querySelector(".calendar-dates");
 
     const currdate = document.querySelector(".calendar-current-date");
@@ -421,6 +548,87 @@
         "November",
         "December"
     ];
+    for (var i = 0; i < months.length; i++) {
+
+        var curOption = document.createElement("option")
+
+        curOption.id = months[i] + "_" + i
+        curOption.value = months[i] + "_" + i
+        curOption.innerHTML = months[i]
+        startDateMonthPicker.appendChild(curOption)
+        if (month === i)
+            curOption.selected = true
+    }
+    for (var i = 0; i < months.length; i++) {
+
+        var curOption = document.createElement("option")
+
+        curOption.id = months[i] + "_" + i
+        curOption.value = months[i] + "_" + i
+        curOption.innerHTML = months[i]
+        endDateMonthPicker.appendChild(curOption)
+        if (month === i)
+            curOption.selected = true
+    }
+    for (var i = year; i < 2080; i++) {
+        var curOptionYear = document.createElement("option")
+        curOptionYear.id = "year_" + i
+        curOptionYear.value = "year_" + i
+        curOptionYear.innerHTML = i
+        startDateYearPicker.appendChild(curOptionYear)
+    }
+    for (var i = year; i < 2080; i++) {
+        var curOptionYear = document.createElement("option")
+        curOptionYear.id = "year_" + i
+        curOptionYear.value = "year_" + i
+        curOptionYear.innerHTML = i
+        endDateYearPicker.appendChild(curOptionYear)
+    }
+    function updateStartDayPicker() {
+        var i, L = startDateDayPicker.options.length - 1;
+        for (i = L; i >= 0; i--) {
+            startDateDayPicker.remove(i);
+        }
+        for (var i = 1; i <= new Date(year, Number(startDateMonthPicker.value.split("_")[1]) + 1, 0).getDate(); i++) {
+            var curOption = document.createElement("option")
+
+            curOption.id = "day_" + i
+            curOption.value = "day_" + i
+            curOption.innerHTML = i
+            startDateDayPicker.appendChild(curOption)
+        }
+    }
+    function updateEndDayPicker() {
+        var i, L = endDateDayPicker.options.length - 1;
+        for (i = L; i >= 0; i--) {
+            endDateDayPicker.remove(i);
+        }
+        for (var i = 1; i <= new Date(year, Number(endDateMonthPicker.value.split("_")[1]) + 1, 0).getDate(); i++) {
+            var curOption = document.createElement("option")
+
+            curOption.id = "day_" + i
+            curOption.value = "day_" + i
+            curOption.innerHTML = i
+            endDateDayPicker.appendChild(curOption)
+        }
+    }
+    updateStartDayPicker()
+    updateEndDayPicker()
+    function validateBothDates() {
+        var selectedStartDate = new Date(Number(startDateYearPicker.value.split("_")[1]), Number(startDateMonthPicker.value.split("_")[1]), Number(startDateDayPicker.value.split("_")[1]))
+        var selectedEndDate = new Date(Number(endDateYearPicker.value.split("_")[1]), Number(endDateMonthPicker.value.split("_")[1]), Number(endDateDayPicker.value.split("_")[1]))
+        if (selectedStartDate <= new Date(year, month, todayDay - 1))
+            document.getElementById('warning_text').innerHTML = "You cannot pick a date in the past"
+        else
+            document.getElementById('warning_text').innerHTML = ""
+        if (selectedEndDate < selectedStartDate) {
+            endDateDayPicker.value = startDateDayPicker.value
+            endDateMonthPicker.value = startDateMonthPicker.value
+            endDateYearPicker.value = startDateYearPicker.value
+            finalEndDate = undefined
+        }
+        eventDatePicker()
+    }
     // Control item which is selected
     var listOfSelected = []
 
@@ -446,8 +654,15 @@
 
         // Loop to add the last dates of the previous month
         for (let i = dayone; i > 0; i--) {
+            if (month - 1 == -1) {
+                tmpMonth = 12
+                tmpYear = year - 1
+            } else {
+                tmpMonth = month
+                tmpYear = year
+            }
             lit +=
-                `<li class="inactive" >${monthlastdate - i + 1}</li>`;
+                `<li class="inactive" id="inactive_${tmpYear}/${tmpMonth}/${monthlastdate - i + 1}"> ${monthlastdate - i + 1}</li>`;
         }
 
         // Loop to add the dates of the current month
@@ -459,24 +674,35 @@
                 && year === new Date().getFullYear()
                 ? "active"
                 : "";*/
-
-            lit += `<li id='${i}' style='background-color: rgba(255, 255, 255, .5); border-radius: 15%;' onclick='toggleActiveElement(${i})'>${i}</li>`;
+            /* if (selectedArrayOfDates.length >= 2)
+                 selectedArrayOfDates = []*/
+            //var id = i + (month * 2) + year
+            //console.log(month)
+            //lit += `<li id='${i}' style='background-color: rgba(255, 255, 255, .5); border-radius: 15%;' onclick = 'toggleActiveElement(${i}, ${month}, ${year})'>${i}</li>`
+            lit += `<li id='${year}/${month + 1}/${i}' style='background-color: rgba(255, 255, 255, .5); border-radius: 15%;' >${i}</li>`
 
         }
 
         // Loop to add the first dates of the next month
         for (let i = dayend; i < 6; i++) {
-            lit += `<li class="inactive">${i - dayend + 1}</li>`
+            if (month + 2 == 13) {
+                tmpMonth = 1
+                tmpYear = year + 1
+            } else {
+                tmpMonth = month + 2
+                tmpYear = year
+            }
+            lit += `<li class="inactive" id="inactive_${tmpYear}/${tmpMonth}/${i - dayend + 1}">${i - dayend + 1}</li>`
         }
 
         // Update the text of the current date element 
         // with the formatted current month and year
-        currdate.innerText = `${months[month]} ${year}`;
+        currdate.innerText = `${months[month]} ${year} `;
 
         // update the HTML of the dates element 
         // with the generated calendar
         day.innerHTML = lit;
-
+        calendarItems = document.querySelectorAll('.calendar-dates>li')
 
         setDatesThatHaveEvents()
     }
@@ -488,36 +714,54 @@
         }
     }
 
-    function toggleActiveElement(data) {
-
-        if (document.querySelector('.active')) {
-            document.querySelector('.active').setAttribute("class", "")
+    /*function toggleActiveElement(day, month, year) {
+        var selectedDate = new Date(year, month, day)
+        if (document.getElementById(day).classList.contains("active")) {
+            document.getElementById(day).classList.remove("active")
+            document.getElementById(day).style = "background-color: rgba(255, 255, 255, .5); border-radius: 15%;"
+            if (selectedArrayOfDates.length == 1)
+                selectedArrayOfDates.pop()
+            else if (selectedArrayOfDates.length > 1)
+                selectedArrayOfDates = selectedArrayOfDates.filter((data) => data.id !== selectedDate)
         }
-        if (document.getElementById(data).getAttribute("class") <= "") {
-            document.getElementById(data).setAttribute("class", "active")
-            listOfSelected.push(data)
-        } else if (document.getElementById(data).getAttribute("class") >= "") {
-            document.getElementById(data).setAttribute("class", "")
-            listOfSelected = listOfSelected.filter((filterout) => filterout !== data)
+        else if (document.getElementById(day).classList.length == 0) {
+            if (selectedArrayOfDates.length == 0)
+                selectedArrayOfDates.push({ "id": selectedDate })
+            else if (selectedArrayOfDates.length == 1)
+                selectedArrayOfDates.push({ "id": selectedDate })
+            else if (selectedArrayOfDates.length > 1)
+                return
+            document.getElementById(day).classList.add("active")
+        } else if (document.getElementById(day).getAttribute("class").contains("active")) {
+            //document.getElementById(day+month+year).setAttribute("class", "")
+            //listOfSelected = listOfSelected.filter((filterout) => filterout !== day)
             arrayOfDates = []
-        } else if (document.getElementById(data).getAttribute("class") >= "has-an-event") {
-            document.getElementById(data).setAttribute("class", "has-an-event")
+        } else if (document.getElementById(day).getAttribute("class") >= "has-an-event") {
+            document.getElementById(day).setAttribute("class", "has-an-event")
         }
-        if (listOfSelected.length > 0 && !divToAddSubmitTo.contains(btnToAddEvent)
+        if (selectedArrayOfDates.length > 0 && !divToAddSubmitTo.contains(btnToAddEvent)
             && !divToAddSubmitTo.contains(txtAreaToAddEvent)
             && !divToAddSubmitTo.contains(titleInputToAddEvent)) {
             divToAddSubmitTo.append(titleInputToAddEvent)
             divToAddSubmitTo.append(txtAreaToAddEvent)
             divToAddSubmitTo.append(btnToAddEvent)
-        } else if (listOfSelected.length == 0 && divToAddSubmitTo.contains(btnToAddEvent)
+        } else if (selectedArrayOfDates.length === 0 && divToAddSubmitTo.contains(btnToAddEvent)
             && divToAddSubmitTo.contains(txtAreaToAddEvent)
             && divToAddSubmitTo.contains(titleInputToAddEvent)) {
             divToAddSubmitTo.removeChild(titleInputToAddEvent)
             divToAddSubmitTo.removeChild(btnToAddEvent)
             divToAddSubmitTo.removeChild(txtAreaToAddEvent)
-        }
-
-    }
+        }*/
+    /*selectedArrayOfDates = selectedArrayOfDates.sort((a, b) => a.id - b.id)
+    selectedArrayOfDates[0] ?
+        document.getElementById("selectedDateStart").innerHTML = "Start day: " + selectedArrayOfDates[0].id
+        :
+        document.getElementById("selectedDateStart").innerHTML = ""
+    selectedArrayOfDates[1] ?
+        document.getElementById("selectedDateEnd").innerHTML = "End day: " + selectedArrayOfDates[1].id
+        :
+        document.getElementById("selectedDateEnd").innerHTML = ""*/
+    //}
 
     function currentSelectedDate() {
         var monthYear = currdate.innerHTML.split(" ")
@@ -529,7 +773,28 @@
 
 
     }
+    function eventDatePicker() {
+        var selectedStartDate = new Date(Number(startDateYearPicker.value.split("_")[1]), Number(startDateMonthPicker.value.split("_")[1]), Number(startDateDayPicker.value.split("_")[1]))
+        var selectedEndDate = new Date(Number(endDateYearPicker.value.split("_")[1]), Number(endDateMonthPicker.value.split("_")[1]), Number(endDateDayPicker.value.split("_")[1]))
+        finalStartDate = selectedStartDate
 
+        if (selectedStartDate.toDateString() !== selectedEndDate.toDateString())
+            finalEndDate = selectedEndDate
+        if (document.getElementById('warning_text').innerHTML.length < 1 && !divToAddSubmitTo.contains(btnToAddEvent)
+            && !divToAddSubmitTo.contains(txtAreaToAddEvent)
+            && !divToAddSubmitTo.contains(titleInputToAddEvent)) {
+
+            divToAddSubmitTo.append(titleInputToAddEvent)
+            divToAddSubmitTo.append(txtAreaToAddEvent)
+            divToAddSubmitTo.append(btnToAddEvent)
+        } else if (document.getElementById('warning_text').innerHTML.length > 0 && divToAddSubmitTo.contains(btnToAddEvent)
+            && divToAddSubmitTo.contains(txtAreaToAddEvent)
+            && divToAddSubmitTo.contains(titleInputToAddEvent)) {
+            divToAddSubmitTo.removeChild(titleInputToAddEvent)
+            divToAddSubmitTo.removeChild(btnToAddEvent)
+            divToAddSubmitTo.removeChild(txtAreaToAddEvent)
+        }
+    }
 
     manipulate();
 
@@ -538,11 +803,9 @@
 
         // When an icon is clicked
         icon.addEventListener("click", () => {
-            listOfSelected = []
             // Check if the icon is "calendar-prev"
             // or "calendar-next"
             month = icon.id === "calendar-prev" ? month - 1 : month + 1;
-
             // Check if the month is out of range
             if (month < 0 || month > 11) {
 
@@ -561,7 +824,8 @@
                 // Set the date to the current date
                 date = new Date();
             }
-
+            calendarItems = document.querySelectorAll('.calendar-dates>li')
+            setDatesThatHaveEvents()
             // Call the manipulate function to 
             // update the calendar display
             manipulate();

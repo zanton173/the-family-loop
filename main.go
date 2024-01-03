@@ -1098,21 +1098,22 @@ func main() {
 		type EventData struct {
 			Eventid      int
 			Startdate    string
+			Enddate      string
 			Eventowner   string
 			Eventdetails string
 			Eventtitle   string
 		}
 
 		ourEvents := []EventData{}
-		output, err := db.Query("select start_date, event_owner, event_details, event_title, id from tfldata.calendar;")
+		output, err := db.Query("select start_date, event_owner, event_details, event_title, id, end_date from tfldata.calendar;")
 		if err != nil {
 			fmt.Println(err)
 		}
 		defer output.Close()
 		for output.Next() {
 			var tempData EventData
-			scnerr := output.Scan(&tempData.Startdate, &tempData.Eventowner, &tempData.Eventdetails, &tempData.Eventtitle, &tempData.Eventid)
-			if scnerr != nil {
+			scnerr := output.Scan(&tempData.Startdate, &tempData.Eventowner, &tempData.Eventdetails, &tempData.Eventtitle, &tempData.Eventid, &tempData.Enddate)
+			if scnerr != nil && tempData.Enddate != "" {
 				fmt.Println(scnerr)
 				w.WriteHeader(http.StatusBadRequest)
 			}
@@ -1154,7 +1155,7 @@ func main() {
 		}
 	}
 	createEventHandler := func(w http.ResponseWriter, r *http.Request) {
-		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
+		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, w, r)
 		jwtCookie, cookieErr := r.Cookie("backendauth")
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
 		if !validBool || !allowOrDeny || cookieErr != nil {
@@ -1163,22 +1164,7 @@ func main() {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
-		c, err := r.Cookie("session_id")
 
-		if err != nil {
-			if err == http.ErrNoCookie {
-				w.WriteHeader(http.StatusUnauthorized)
-				return
-			}
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
-
-		if c.Valid() != nil {
-			fmt.Println("Cook is no longer valid")
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 
 		bs, _ := io.ReadAll(r.Body)
@@ -1186,10 +1172,10 @@ func main() {
 			Startdate    string `json:"start_date"`
 			Eventdetails string `json:"event_details"`
 			Eventtitle   string `json:"event_title"`
+			Enddate      string `json:"end_date"`
 		}
 
 		var postData PostBody
-
 		errmarsh := json.Unmarshal(bs, &postData)
 		if errmarsh != nil {
 			fmt.Println(errmarsh)
@@ -1198,14 +1184,22 @@ func main() {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		var username string
-		row := db.QueryRow(fmt.Sprintf("select username from tfldata.users where session_token='%s';", c.Value))
-		row.Scan(&username)
-		_, inserterr := db.Exec(fmt.Sprintf("insert into tfldata.calendar(\"start_date\", \"event_owner\", \"event_details\", \"event_title\") values('%s', '%s', E'%s', E'%s');", postData.Startdate, username, replacer.Replace(postData.Eventdetails), replacer.Replace(postData.Eventtitle)))
-		if inserterr != nil {
-			fmt.Println(inserterr)
-			w.WriteHeader(http.StatusBadRequest)
-			return
+
+		if len(postData.Enddate) < 1 {
+			_, inserterr := db.Exec(fmt.Sprintf("insert into tfldata.calendar(\"start_date\", \"event_owner\", \"event_details\", \"event_title\") values('%s', '%s', E'%s', E'%s');", postData.Startdate, usernameFromSession, replacer.Replace(postData.Eventdetails), replacer.Replace(postData.Eventtitle)))
+			if inserterr != nil {
+				fmt.Println(inserterr)
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+		} else {
+
+			_, inserterr := db.Exec(fmt.Sprintf("insert into tfldata.calendar(\"start_date\", \"event_owner\", \"event_details\", \"event_title\", \"end_date\") values('%s', '%s', E'%s', E'%s', '%s');", postData.Startdate, usernameFromSession, replacer.Replace(postData.Eventdetails), replacer.Replace(postData.Eventtitle), postData.Enddate))
+			if inserterr != nil {
+				fmt.Println(inserterr)
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
 		}
 		var chatMessageNotificationOpts notificationOpts
 		// You can use the below key to add onclick features to the notification
@@ -1214,7 +1208,7 @@ func main() {
 		chatMessageNotificationOpts.notificationPage = "calendar"
 		chatMessageNotificationOpts.notificationTitle = "New event on: " + postData.Startdate
 		chatMessageNotificationOpts.notificationBody = strings.ReplaceAll(postData.Eventtitle, "\\", "")
-		go sendNotificationToAllUsers(db, username, fb_message_client, chatMessageNotificationOpts)
+		go sendNotificationToAllUsers(db, usernameFromSession, fb_message_client, chatMessageNotificationOpts)
 
 	}
 	updateRSVPForEventHandler := func(w http.ResponseWriter, r *http.Request) {

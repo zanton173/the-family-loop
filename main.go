@@ -159,7 +159,8 @@ func main() {
 		seshVal := strings.Split(seshToken.Value, "session_id=")[0]
 		_, inserr := db.Exec(fmt.Sprintf("update tfldata.users set fcm_registration_id='%s' where session_token='%s';", postData.Fcmtoken, seshVal))
 		if inserr != nil {
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", inserr, time.Now().In(nyLoc).Format(time.DateTime)))
+			activityStr := "attempt update fcm token where seshtoken is value subHandler"
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", inserr, time.Now().In(nyLoc).Format(time.DateTime), activityStr))
 		}
 
 	}
@@ -199,8 +200,10 @@ func main() {
 		upload, filename, errfile := r.FormFile("pfpformfile")
 		if errfile != nil {
 			fmt.Println(errfile)
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", errfile, time.Now().In(nyLoc).Format(time.DateTime)))
+			activityStr := "uploading pfp during sign up"
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", errfile, time.Now().In(nyLoc).Format(time.DateTime), activityStr))
 			w.WriteHeader(http.StatusBadRequest)
+			return
 		}
 		uploadPfpToS3(awskey, awskeysecret, upload, filename.Filename, r, "pfpformfile")
 		bs := []byte(r.PostFormValue("passwordsignup"))
@@ -213,9 +216,10 @@ func main() {
 		_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.users(\"username\", \"password\", \"pfp_name\", \"email\", \"gchat_bg_theme\", \"gchat_order_option\", \"cf_domain_name\", \"orgid\", \"is_admin\") values('%s', '%s', '%s', '%s', '%s', %t, '%s', '%s', %t);", strings.ToLower(r.PostFormValue("usernamesignup")), bytesOfPass, filename.Filename, strings.ToLower(r.PostFormValue("emailsignup")), "background: linear-gradient(142deg, #00009f, #3dc9ff 26%)", true, cfdistro, orgId, false))
 
 		if errinsert != nil {
-			fmt.Println(errinsert)
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", errinsert, time.Now().In(nyLoc).Format(time.DateTime)))
+			activityStr := "err inserting into users table on sign up"
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", errinsert, time.Now().In(nyLoc).Format(time.DateTime), activityStr))
 			w.WriteHeader(http.StatusBadRequest)
+			return
 		}
 		_, errutterr := db.Exec(fmt.Sprintf("insert into tfldata.users_to_threads(\"username\", \"thread\", \"is_subscribed\") values('%s', 'posts', true),('%s', 'calendar',true), ('%s', 'main', true);", strings.ToLower(r.PostFormValue("usernamesignup")), strings.ToLower(r.PostFormValue("usernamesignup")), strings.ToLower(r.PostFormValue("usernamesignup"))))
 		if errutterr != nil {
@@ -245,20 +249,17 @@ func main() {
 				err := bcrypt.CompareHashAndPassword([]byte(password), []byte(r.PostFormValue("passwordlogin")))
 
 				if err != nil {
-					db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", err, time.Now().In(nyLoc).Format(time.DateTime)))
+
+					db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values(substr('%s',0,105), '%s');", err, time.Now().In(nyLoc).Format(time.DateTime)))
 					w.Header().Set("HX-Trigger", "loginevent")
 				} else if err == nil {
 
 					generateLoginJWT(userStr, w, r, jwtSignKey)
 
 					setLoginCookie(w, db, userStr, r)
-					_, uperr := db.Exec(fmt.Sprintf("update tfldata.users set last_sign_on='%s' where username='%s';", time.Now().In(nyLoc).Format(time.DateTime), userStr))
-					if uperr != nil {
-						fmt.Println(uperr)
-					}
-					// w.WriteHeader(http.StatusOK)
-					w.Header().Set("HX-Refresh", "true")
+					db.Exec(fmt.Sprintf("update tfldata.users set last_sign_on='%s' where username='%s';", time.Now().In(nyLoc).Format(time.DateTime), userStr))
 
+					w.Header().Set("HX-Refresh", "true")
 				}
 			}
 		} else {
@@ -269,7 +270,7 @@ func main() {
 			err := bcrypt.CompareHashAndPassword([]byte(password), []byte(r.PostFormValue("passwordlogin")))
 
 			if err != nil {
-				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", err, time.Now().In(nyLoc).Format(time.DateTime)))
+				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values(substr('%s',0,105), '%s');", err, time.Now().In(nyLoc).Format(time.DateTime)))
 				w.Header().Set("HX-Trigger", "loginevent")
 			} else if err == nil {
 
@@ -277,13 +278,9 @@ func main() {
 
 				setLoginCookie(w, db, userStr, r)
 
-				_, uperr := db.Exec(fmt.Sprintf("update tfldata.users set last_sign_on='%s' where username='%s';", time.Now().In(nyLoc).Format(time.DateTime), userStr))
-				if uperr != nil {
-					fmt.Println(uperr)
-				}
+				db.Exec(fmt.Sprintf("update tfldata.users set last_sign_on='%s' where username='%s';", time.Now().In(nyLoc).Format(time.DateTime), userStr))
 
 				w.Header().Set("HX-Refresh", "true")
-
 			}
 		}
 	}
@@ -540,8 +537,8 @@ func main() {
 			var reaction string
 			// if err := output.Scan(&postrows.Id, &postrows.Title, &postrows.Description, &postrows.File_name, &postrows.File_type, &postrows.Author); err != nil {
 			if err := output.Scan(&postrows.Id, &postrows.Title, &postrows.Description, &postrows.Author, &postrows.Postfileskey); err != nil {
-
-				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", err, time.Now().In(nyLoc).Format(time.DateTime)))
+				activityStr := "get posts handler scanning posts query"
+				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", err, time.Now().In(nyLoc).Format(time.DateTime), activityStr))
 
 			}
 
@@ -596,7 +593,8 @@ func main() {
 
 			postTmpl, tmerr = template.New("tem").Parse(dataStr)
 			if tmerr != nil {
-				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", tmerr, time.Now().In(nyLoc).Format(time.DateTime)))
+				activityStr := "posts handler postTmpl err"
+				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", tmerr, time.Now().In(nyLoc).Format(time.DateTime), activityStr))
 			}
 			postTmpl.Execute(w, nil)
 
@@ -686,7 +684,7 @@ func main() {
 	}
 
 	createPostHandler := func(w http.ResponseWriter, r *http.Request) {
-		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
+		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, w, r)
 		jwtCookie, cookieErr := r.Cookie("backendauth")
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
 		if !validBool || !allowOrDeny || cookieErr != nil {
@@ -695,17 +693,7 @@ func main() {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
-		c, err := r.Cookie("session_id")
-		if err != nil {
-			if err == http.ErrNoCookie {
-				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", err, time.Now().In(nyLoc).Format(time.DateTime)))
-				w.WriteHeader(http.StatusUnauthorized)
-				return
-			}
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", err, time.Now().In(nyLoc).Format(time.DateTime)))
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
+
 		cfg, err := config.LoadDefaultConfig(context.TODO(),
 			config.WithDefaultRegion("us-east-1"),
 			config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(awskey, awskeysecret, "")),
@@ -717,16 +705,14 @@ func main() {
 		}
 
 		client := s3.NewFromConfig(cfg)
-		var username string
-		row := db.QueryRow(fmt.Sprintf("select username from tfldata.users where session_token='%s';", c.Value))
-		row.Scan(&username)
 
 		postFilesKey := uuid.NewString()
 
-		_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.posts(\"title\", \"description\", \"author\", \"post_files_key\", \"createdon\") values(E'%s', E'%s', '%s', '%s', now());", replacer.Replace(r.PostFormValue("title")), replacer.Replace(r.PostFormValue("description")), username, postFilesKey))
+		_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.posts(\"title\", \"description\", \"author\", \"post_files_key\", \"createdon\") values(E'%s', E'%s', '%s', '%s', now());", replacer.Replace(r.PostFormValue("title")), replacer.Replace(r.PostFormValue("description")), usernameFromSession, postFilesKey))
 
 		if errinsert != nil {
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", errinsert, time.Now().In(nyLoc).Format(time.DateTime)))
+			activityStr := "insert into posts table createPostHandler"
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", errinsert, time.Now().In(nyLoc).Format(time.DateTime), activityStr))
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
@@ -738,7 +724,7 @@ func main() {
 
 		chatMessageNotificationOpts.notificationTitle = "Somebody just made a new post!"
 		chatMessageNotificationOpts.notificationBody = strings.ReplaceAll(r.PostFormValue("title"), "\\", "")
-		go sendNotificationToAllUsers(db, username, fb_message_client, chatMessageNotificationOpts)
+		go sendNotificationToAllUsers(db, usernameFromSession, fb_message_client, chatMessageNotificationOpts)
 		parseerr := r.ParseMultipartForm(10 << 20)
 		if parseerr != nil {
 			// handle error
@@ -749,7 +735,8 @@ func main() {
 
 			f, err := fh.Open()
 			if err != nil {
-				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", err, time.Now().In(nyLoc).Format(time.DateTime)))
+				activityStr := fmt.Sprintf("Open multipart file in createPostHandler - %s", usernameFromSession)
+				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", err, time.Now().In(nyLoc).Format(time.DateTime), activityStr))
 				w.WriteHeader(http.StatusBadRequest)
 			}
 
@@ -798,13 +785,14 @@ func main() {
 			_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.postfiles(\"file_name\", \"file_type\", \"post_files_key\") values('%s', '%s', '%s');", fh.Filename, filetype, postFilesKey))
 
 			if errinsert != nil {
-				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", errinsert, time.Now().In(nyLoc).Format(time.DateTime)))
+				activityStr := fmt.Sprintf("insert into postfiles table createPostHander - %s", usernameFromSession)
+				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", errinsert, time.Now().In(nyLoc).Format(time.DateTime), activityStr))
 			}
 
 			defer f.Close()
 		}
 		/*if errfile != nil {
-		  db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", err))
+		  db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", err))
 		  w.WriteHeader(http.StatusBadRequest)
 		  }*/
 		/*
@@ -815,14 +803,14 @@ func main() {
 		   _, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.posts(\"title\", \"description\", \"file_name\", \"file_type\", \"author\") values('%s', '%s', '%s', '%s', '%s');", r.PostFormValue("title"), r.PostFormValue("description"), filename.Filename, filetype, username))
 
 		   if errinsert != nil {
-		   db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", errinsert))
+		   db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", errinsert))
 		   }*/
 		//defer upload.Close()
 
 	}
 	createPostReactionHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
+		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, w, r)
 		jwtCookie, cookieErr := r.Cookie("backendauth")
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
 		if !validBool || !allowOrDeny || cookieErr != nil {
@@ -840,18 +828,19 @@ func main() {
 		bs, _ := io.ReadAll(r.Body)
 		marsherr := json.Unmarshal(bs, &postData)
 		if marsherr != nil {
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", marsherr, time.Now().In(nyLoc).Format(time.DateTime)))
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s');", marsherr, time.Now().In(nyLoc).Format(time.DateTime)))
 		}
 		_, inserr := db.Exec(fmt.Sprintf("insert into tfldata.reactions(\"post_id\", \"author\", \"reaction\") values(%d, '%s', '%s') on conflict(post_id,author) do update set reaction='%s';", postData.Postid, postData.Username, postData.ReactionToPost, postData.ReactionToPost))
 		if inserr != nil {
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", inserr, time.Now().In(nyLoc).Format(time.DateTime)))
+			activityStr := fmt.Sprintf("insert into reactions createPostReactionHandler - %s", usernameFromSession)
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", inserr, time.Now().In(nyLoc).Format(time.DateTime), activityStr))
 			w.WriteHeader(http.StatusBadRequest)
 		}
 
 	}
 
 	getSelectedPostsComments := func(w http.ResponseWriter, r *http.Request) {
-		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
+		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, w, r)
 		jwtCookie, cookieErr := r.Cookie("backendauth")
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
 		if !validBool || !allowOrDeny || cookieErr != nil {
@@ -872,7 +861,8 @@ func main() {
 
 		var dataStr string
 		if err != nil {
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", err, time.Now().In(nyLoc).Format(time.DateTime)))
+			activityStr := fmt.Sprintf("getSelectedPostsCommentsHandler select query - %s", usernameFromSession)
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", err, time.Now().In(nyLoc).Format(time.DateTime), activityStr))
 		}
 
 		defer output.Close()
@@ -881,7 +871,8 @@ func main() {
 			var posts postComment
 
 			if err := output.Scan(&posts.Comment, &posts.Author, &posts.Pfpname); err != nil {
-				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", err, time.Now().In(nyLoc).Format(time.DateTime)))
+				activityStr := fmt.Sprintf("getSelectedPostsCommentsHandler scan err - %s", usernameFromSession)
+				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", err, time.Now().In(nyLoc).Format(time.DateTime), activityStr))
 
 			}
 			dataStr = "<div class='row'><p style='display: flex; align-items: center; padding-right: 0%;' class='m-1 col-7'>" + posts.Comment + "</p><div style='align-items: center; position: relative; display: flex; padding-left: 0%; left: 1%;' class='col my-5'><b style='position: absolute; bottom: 5%'>" + posts.Author + "</b><img width='30px' class='my-1' style='margin-left: 1%; position: absolute; right: 20%; border-style: solid; border-radius: 13px / 13px; box-shadow: 3px 3px 5px; border-width: thin; top: 5%;' src='https://" + cfdistro + "/pfp/" + posts.Pfpname + "' alt='tfl pfp' /></div></div>"
@@ -891,28 +882,12 @@ func main() {
 
 	}
 	createEventCommentHandler := func(w http.ResponseWriter, r *http.Request) {
-		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
+		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, w, r)
 		jwtCookie, cookieErr := r.Cookie("backendauth")
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
 		if !validBool || !allowOrDeny || cookieErr != nil {
 			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
-		c, err := r.Cookie("session_id")
-
-		if err != nil {
-			if err == http.ErrNoCookie {
-				w.WriteHeader(http.StatusUnauthorized)
-				return
-			}
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-
-		if c.Valid() != nil {
-			fmt.Println("Cook is no longer valid")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -928,24 +903,19 @@ func main() {
 		errmarsh := json.Unmarshal(bs, &postData)
 		if errmarsh != nil {
 			fmt.Println(errmarsh)
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", errmarsh, time.Now().In(nyLoc).Format(time.DateTime)))
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s');", errmarsh, time.Now().In(nyLoc).Format(time.DateTime)))
 		}
 
-		_, inserterr := db.Exec(fmt.Sprintf("insert into tfldata.comments(\"comment\", \"event_id\", \"author\") values(E'%s', '%d', (select username from tfldata.users where session_token='%s'));", replacer.Replace(postData.Eventcomment), postData.CommentSelectedEventId, c.Value))
+		_, inserterr := db.Exec(fmt.Sprintf("insert into tfldata.comments(\"comment\", \"event_id\", \"author\") values(E'%s', '%d', '%s');", replacer.Replace(postData.Eventcomment), postData.CommentSelectedEventId, usernameFromSession))
 		if inserterr != nil {
-			fmt.Println(inserterr)
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", inserterr, time.Now().In(nyLoc).Format(time.DateTime)))
+			activityStr := fmt.Sprintf("insert into comments table createEventComment - %s", usernameFromSession)
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", inserterr, time.Now().In(nyLoc).Format(time.DateTime), activityStr))
 		}
-		var author string
-		row := db.QueryRow(fmt.Sprintf("select username from tfldata.users where session_token='%s';", c.Value))
-		row.Scan(&author)
 
-		dataStr := "<p class='p-2'>" + postData.Eventcomment + " - " + author + "</p>"
+		dataStr := "<p class='p-2'>" + postData.Eventcomment + " - " + usernameFromSession + "</p>"
 
-		commentTmpl, err := template.New("com").Parse(dataStr)
-		if err != nil {
-			fmt.Println(err)
-		}
+		commentTmpl, _ := template.New("com").Parse(dataStr)
+
 		commentTmpl.Execute(w, nil)
 
 	}
@@ -1054,7 +1024,7 @@ func main() {
 				w.WriteHeader(http.StatusAccepted)
 				return
 			}
-			db.Exec("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", scnerr, time.Now().In(nyLoc).Local().Format(time.DateTime))
+			db.Exec("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", scnerr, time.Now().In(nyLoc).Local().Format(time.DateTime))
 
 			return
 		} else {
@@ -1141,7 +1111,7 @@ func main() {
 
 		output, rowerr := db.Query(fmt.Sprintf("select author, reaction from tfldata.reactions where post_id='%s' and author != '%s';", r.URL.Query().Get("selectedPostId"), r.URL.Query().Get("username")))
 		if rowerr != nil {
-			db.Exec("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", rowerr, time.Now().In(nyLoc).Local().Format(time.DateTime))
+			db.Exec("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", rowerr, time.Now().In(nyLoc).Local().Format(time.DateTime))
 		}
 		var outReaction string
 		var outAuthor string
@@ -1235,7 +1205,7 @@ func main() {
 		}
 		_, inserr := db.Exec(fmt.Sprintf("insert into tfldata.calendar_rsvp(\"username\",\"event_id\",\"status\") values('%s',%d,'%s') on conflict(username,event_id) do update set status='%s';", postData.Username, postData.Eventid, postData.Status, postData.Status))
 		if inserr != nil {
-			db.Exec("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", inserr, time.Now().In(nyLoc).Local().Format(time.DateTime))
+			db.Exec("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", inserr, time.Now().In(nyLoc).Local().Format(time.DateTime))
 			w.WriteHeader(http.StatusBadRequest)
 		}
 
@@ -1248,7 +1218,7 @@ func main() {
 				w.WriteHeader(http.StatusAccepted)
 				return
 			}
-			db.Exec("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", scnerr, time.Now().In(nyLoc).Local().Format(time.DateTime))
+			db.Exec("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", scnerr, time.Now().In(nyLoc).Local().Format(time.DateTime))
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		} else {
@@ -1345,7 +1315,7 @@ func main() {
 
 	}
 	createGroupChatMessageHandler := func(w http.ResponseWriter, r *http.Request) {
-		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
+		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, w, r)
 		jwtCookie, cookieErr := r.Cookie("backendauth")
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
 		if !validBool || !allowOrDeny || cookieErr != nil {
@@ -1354,29 +1324,11 @@ func main() {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
-		c, err := r.Cookie("session_id")
-
-		if err != nil {
-			if err == http.ErrNoCookie {
-				w.WriteHeader(http.StatusUnauthorized)
-				return
-			}
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-
-		if c.Valid() != nil {
-			fmt.Println("Cook is no longer valid")
-			return
-		}
 
 		chatMessage := replacer.Replace(r.PostFormValue("gchatmessage"))
 
 		listOfUsersTagged := strings.Split(r.PostFormValue("taggedUser"), ",")
 
-		var userName string
-		userNameRow := db.QueryRow(fmt.Sprintf("select username from tfldata.users where session_token='%s';", c.Value))
-		userNameRow.Scan(&userName)
 		threadVal := r.PostFormValue("threadval")
 		if threadVal == "" {
 			threadVal = "main thread"
@@ -1391,10 +1343,10 @@ func main() {
 		chatMessageNotificationOpts.notificationPage = "groupchat"
 		chatMessageNotificationOpts.notificationTitle = "message in: " + threadVal
 		chatMessageNotificationOpts.notificationBody = strings.ReplaceAll(chatMessage, "\\", "")
-		go sendNotificationToAllUsers(db, userName, fb_message_client, chatMessageNotificationOpts)
+		go sendNotificationToAllUsers(db, usernameFromSession, fb_message_client, chatMessageNotificationOpts)
 		if len(listOfUsersTagged) > 0 {
 			for _, val := range listOfUsersTagged {
-				fcmRegRow := db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where username='%s' and username != '%s';", val, userName))
+				fcmRegRow := db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where username='%s' and username != '%s';", val, usernameFromSession))
 				scner := fcmRegRow.Scan(&fcmRegToken)
 				if scner == nil {
 					sendNotificationToTaggedUser(w, r, fcmRegToken, db, strings.ReplaceAll(chatMessage, "\\", ""), app)
@@ -1402,13 +1354,13 @@ func main() {
 			}
 		}
 
-		_, inserr := db.Exec(fmt.Sprintf("insert into tfldata.gchat(\"chat\", \"author\", \"createdon\", \"thread\") values(E'%s', '%s', '%s', '%s');", chatMessage, userName, time.Now().In(nyLoc).Format(time.DateTime), threadVal))
+		_, inserr := db.Exec(fmt.Sprintf("insert into tfldata.gchat(\"chat\", \"author\", \"createdon\", \"thread\") values(E'%s', '%s', '%s', '%s');", chatMessage, usernameFromSession, time.Now().In(nyLoc).Format(time.DateTime), threadVal))
 		if inserr != nil {
 			fmt.Println("error here: " + inserr.Error())
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		_, ttbleerr := db.Exec(fmt.Sprintf("insert into tfldata.threads(\"thread\", \"threadauthor\", \"createdon\") values(E'%s', '%s', '%s');", threadVal, userName, time.Now().In(nyLoc).Format(time.DateTime)))
+		_, ttbleerr := db.Exec(fmt.Sprintf("insert into tfldata.threads(\"thread\", \"threadauthor\", \"createdon\") values(E'%s', '%s', '%s');", threadVal, usernameFromSession, time.Now().In(nyLoc).Format(time.DateTime)))
 		if ttbleerr != nil {
 			fmt.Println("We can ignore this error: " + ttbleerr.Error())
 		} else {
@@ -1454,7 +1406,8 @@ func main() {
 		}
 		_, uperr := db.Exec(fmt.Sprintf("update tfldata.users set gchat_order_option='%t' where username='%s';", postData.Option, postData.Username))
 		if uperr != nil {
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s');", uperr, time.Now().In(nyLoc).Format(time.DateTime)))
+			activityStr := fmt.Sprintf("%s tried to update gchat_order_option", postData.Username)
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", uperr, time.Now().In(nyLoc).Format(time.DateTime), activityStr))
 		}
 
 	}
@@ -1603,7 +1556,7 @@ func main() {
 		if scnerr != nil {
 			w.WriteHeader(http.StatusAccepted)
 			return
-			// db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", scnerr, time.Now().In(nyLoc).Local().Format(time.DateTime)))
+			// db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", scnerr, time.Now().In(nyLoc).Local().Format(time.DateTime)))
 		}
 		w.WriteHeader(http.StatusOK)
 	}
@@ -1637,7 +1590,7 @@ func main() {
 
 	updatePfpHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "multipart/form-data")
-		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
+		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, w, r)
 		jwtCookie, cookieErr := r.Cookie("backendauth")
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
 		if !validBool || !allowOrDeny || cookieErr != nil {
@@ -1652,15 +1605,16 @@ func main() {
 
 		_, uperr := db.Exec(fmt.Sprintf("update tfldata.users set pfp_name='%s' where username='%s';", filename.Filename, username))
 		if uperr != nil {
-			fmt.Println(uperr)
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s');", uperr, time.Now().In(nyLoc).Format(time.DateTime)))
+			activityStr := fmt.Sprintf("update table users set pfp_name failed for user %s", usernameFromSession)
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", uperr, time.Now().In(nyLoc).Format(time.DateTime), activityStr))
 			w.WriteHeader(http.StatusBadRequest)
+			return
 		}
 		uploadPfpToS3(awskey, awskeysecret, upload, filename.Filename, r, "changepfp")
 	}
 	updateChatThemeHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
+		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, w, r)
 		jwtCookie, cookieErr := r.Cookie("backendauth")
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
 		if !validBool || !allowOrDeny || cookieErr != nil {
@@ -1681,12 +1635,13 @@ func main() {
 		}
 		_, uperr := db.Exec(fmt.Sprintf("update tfldata.users set gchat_bg_theme='%s' where username='%s';", postData.Theme, postData.Username))
 		if uperr != nil {
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s');", uperr, time.Now().In(nyLoc).Format(time.DateTime)))
+			activityStr := fmt.Sprintf("updateChatTheme failed for user %s", usernameFromSession)
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", uperr, time.Now().In(nyLoc).Format(time.DateTime), activityStr))
 		}
 	}
 	deleteSelectedChatHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
+		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, w, r)
 		jwtCookie, cookieErr := r.Cookie("backendauth")
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
 		if !validBool || !allowOrDeny || cookieErr != nil {
@@ -1706,12 +1661,13 @@ func main() {
 		}
 		_, delerr := db.Exec(fmt.Sprintf("delete from tfldata.gchat where id='%s';", postData.SelectedChatId))
 		if delerr != nil {
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s');", delerr, time.Now().In(nyLoc).Format(time.DateTime)))
+			activityStr := fmt.Sprintf("%s could not deleteSelectedChat", usernameFromSession)
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", delerr, time.Now().In(nyLoc).Format(time.DateTime), activityStr))
 		}
 	}
 	updateSelectedChatHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
+		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, w, r)
 		jwtCookie, cookieErr := r.Cookie("backendauth")
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
 		if !validBool || !allowOrDeny || cookieErr != nil {
@@ -1732,7 +1688,8 @@ func main() {
 		}
 		_, uperr := db.Exec(fmt.Sprintf("update tfldata.gchat set chat='%s' where id='%s';", postData.ChatMessage, postData.SelectedChatId))
 		if uperr != nil {
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s');", uperr, time.Now().In(nyLoc).Format(time.DateTime)))
+			activityStr := fmt.Sprintf("%s could not edit the chat message %s", usernameFromSession, postData.SelectedChatId)
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", uperr, time.Now().In(nyLoc).Format(time.DateTime), activityStr))
 		}
 	}
 	getSelectedChatHandler := func(w http.ResponseWriter, r *http.Request) {
@@ -1962,7 +1919,7 @@ func main() {
 	}
 	updateStackerzScoreHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
+		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, w, r)
 		jwtCookie, cookieErr := r.Cookie("backendauth")
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
 		if !validBool || !allowOrDeny || cookieErr != nil {
@@ -1984,7 +1941,8 @@ func main() {
 		}
 		inserr, _ := db.Exec(fmt.Sprintf("insert into tfldata.stack_leaderboard(\"username\", \"bonus_points\", \"level\") values('%s', %d, %d)", postData.Username, postData.BonusPoints, postData.Level))
 		if inserr != nil {
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s');", inserr, time.Now().In(nyLoc).Format(time.DateTime)))
+			activityStr := fmt.Sprintf("could not update stackerz leaderboard for %s", usernameFromSession)
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", inserr, time.Now().In(nyLoc).Format(time.DateTime), activityStr))
 		}
 		coll.InsertOne(context.TODO(), bson.M{"org_id": orgId, "game": "stackerz", "bonus_points": postData.BonusPoints, "level": postData.Level, "username": postData.Username, "createdOn": time.Now()})
 	}
@@ -2343,7 +2301,7 @@ func main() {
 
 	changeUserSubscriptionToThreadHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
+		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, w, r)
 		jwtCookie, cookieErr := r.Cookie("backendauth")
 		validBool := validateJWTToken(jwtCookie.Value, jwtSignKey, w)
 		if !validBool || !allowOrDeny || cookieErr != nil {
@@ -2365,7 +2323,8 @@ func main() {
 		}
 		_, inserr := db.Exec(fmt.Sprintf("insert into tfldata.users_to_threads(\"username\",\"thread\",\"is_subscribed\") values('%s','%s',%t) on conflict(username,thread) do update set is_subscribed=%t;", postData.User, postData.Thread, postData.CurrentlySubbed, postData.CurrentlySubbed))
 		if inserr != nil {
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s');", inserr, time.Now().In(nyLoc).Format(time.DateTime)))
+			activityStr := fmt.Sprintf("%s could not update sub settings for thread %s", usernameFromSession, postData.Thread)
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", inserr, time.Now().In(nyLoc).Format(time.DateTime), activityStr))
 		}
 
 	}
@@ -2506,12 +2465,12 @@ func setLoginCookie(w http.ResponseWriter, db *sql.DB, userStr string, r *http.R
 	//fmt.Println(userStr)
 	/*_, inserterr := db.Exec(fmt.Sprintf("insert into tfldata.sessions(\"username\", \"session_token\", \"expiry\", \"ip_addr\") values('%s', '%s', '%s', '%s') on conflict(ip_addr) do update set session_token='%s', expiry='%s';", userStr, sessionToken, expiresAt.Format(time.DateTime), strings.Split(r.RemoteAddr, ":")[0], sessionToken, expiresAt.Format(time.DateTime)))
 	  if inserterr != nil {
-	  db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s')", inserterr))
+	  db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", inserterr))
 	  fmt.Println(inserterr)
 	  }*/
 	_, updateerr := db.Exec(fmt.Sprintf("update tfldata.users set session_token='%s' where username='%s' or email='%s';", sessionToken, userStr, userStr))
 	if updateerr != nil {
-		db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('%s', '%s');", updateerr, time.Now().In(nyLoc).Format(time.DateTime)))
+		db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s');", updateerr, time.Now().In(nyLoc).Format(time.DateTime)))
 		fmt.Printf("err: '%s'", updateerr)
 	}
 	maxAge := time.Until(expiresAt)

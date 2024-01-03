@@ -38,7 +38,8 @@ CREATE TABLE tfldata.calendar (
     start_date date,
     event_owner character varying(32),
     event_details character varying(220),
-    event_title character varying(42)
+    event_title character varying(42),
+    end_date date
 );
 
 
@@ -182,7 +183,8 @@ ALTER SEQUENCE tfldata.comments_id_seq OWNED BY tfldata.comments.id;
 CREATE TABLE tfldata.errlog (
     id integer NOT NULL,
     errmessage character varying(420),
-    createdon timestamp without time zone
+    createdon timestamp without time zone,
+    activity character varying(106)
 );
 
 

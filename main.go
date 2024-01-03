@@ -2697,8 +2697,7 @@ func generateLoginJWT(username string, w http.ResponseWriter, r *http.Request, j
 }
 func validateJWTToken(tokenStr string, tokenKey string, w http.ResponseWriter) bool {
 	jwtToken, jwtValidateErr := jwt.Parse(tokenStr, func(jwtToken *jwt.Token) (interface{}, error) {
-
-		return []byte(tokenKey), nil
+		return []byte(tokenKey), jwt.ErrInvalidKey
 	}, jwt.WithValidMethods([]string{"HS256"}))
 
 	if jwtValidateErr != nil {

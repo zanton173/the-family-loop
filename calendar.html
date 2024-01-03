@@ -27,7 +27,7 @@
     <title>The Family Loop - Calendar</title>
 </head>
 
-<body style="background: linear-gradient(180deg, #00106e, #00ecff 75%);">
+<body style="background: linear-gradient(180deg, #00106e, #00ecff 75%); height: 120dvh">
     <div class="spinner-indicator" id="loadingspinner"
         style="width: 100%; height: 100%; background-color: rgb(197, 197, 197);">
 
@@ -247,7 +247,7 @@
             calendarItems.forEach((item) => {
                 if (new Date(item.id).toDateString() == new Date(tmpSingleEvents[j].Startdate[0], tmpSingleEvents[j].Startdate[1] - 1, tmpSingleEvents[j].Startdate[2]).toDateString()) {
                     item.setAttribute("style", "background-color: #837dff; border-radius: 25%;")
-                    item.setAttribute("onclick", `{setSelectedDate('${item.id}'); openEventModal(${JSON.stringify(tmpSingleEvents)}); }`)
+                    item.setAttribute("onclick", `{setSelectedDate('${item.id}'); openEventModal(${JSON.stringify(tmpSingleEvents)}, ${JSON.stringify(tmpMultiAllEvents)});}`)
                     return
                 }
             })
@@ -276,7 +276,7 @@
                     if (data.id == date) {
 
                         data.setAttribute("style", "background-color: #5ef4b9; border-radius: 25%;")
-                        data.setAttribute("onclick", `{setSelectedDate('${data.id}'); openEventModal(${JSON.stringify(tmpMultiAllEvents)}); }`)
+                        data.setAttribute("onclick", `{setSelectedDate('${data.id}'); openEventModal(${JSON.stringify(tmpSingleEvents)}, ${JSON.stringify(tmpMultiAllEvents)}); }`)
                         return
                     }
                 })
@@ -366,37 +366,46 @@
     function setSelectedDate(date) {
         clickedDate = new Date(date)
     }
-    function openEventModal(dataSingle) {
+    function openEventModal(dataSingle, dateMultiple) {
         selectedArrayOfDates = []
-        var thisDate = dataSingle.filter((data) => new Date(data.Startdate[0], data.Startdate[1] - 1, data.Startdate[2]).toDateString() == clickedDate.toDateString()
+
+        var thisDate = dataSingle.filter((data) => new Date(data.Startdate[0], data.Startdate[1] - 1, data.Startdate[2]).toDateString() == clickedDate.toDateString())
+        var thisDateMultiple = tmpAllEvents.filter((data) => new Date(data.Startdate[0], data.Startdate[1] - 1, data.Startdate[2]).toDateString() == clickedDate.toDateString()
             || (clickedDate.getTime() <= new Date(data.Enddate[0], data.Enddate[1] - 1, data.Enddate[2]).getTime() && clickedDate.getTime() >= new Date(data.Startdate[0], data.Startdate[1] - 1, data.Startdate[2]).getTime()))
 
-
-        if (thisDate.length > 1) {
+        if (thisDate.length > 1 || thisDateMultiple.length > 1) {
             document.getElementById('multipleEventArrows').style.display = "flex"
-            thisDate.forEach((event) => selectedArrayOfDates.push(event.Eventid))
-        } else {
+            thisDateMultiple.forEach((event) => selectedArrayOfDates.push({ "single": false, "eventid": event.Eventid }))
+        } else
             document.getElementById('multipleEventArrows').style.display = "none"
-            selectedArrayOfDates.push(thisDate[0].Eventid)
-        }
 
         if (!eventDetailModal._isShown)
             eventDetailModal.show()
 
         refreshEventData = () => {
-            if (thisDate[eventCarouselIter].Enddate.length > 1)
-                document.getElementById('eventdateele').innerHTML = new Date(thisDate[eventCarouselIter].Startdate[0], thisDate[eventCarouselIter].Startdate[1] - 1, thisDate[eventCarouselIter].Startdate[2]).toDateString() + ' - ' + new Date(thisDate[eventCarouselIter].Enddate[0], thisDate[eventCarouselIter].Enddate[1] - 1, thisDate[eventCarouselIter].Enddate[2]).toDateString()
-            else
-                document.getElementById('eventdateele').innerHTML = new Date(thisDate[eventCarouselIter].Startdate[0], thisDate[eventCarouselIter].Startdate[1] - 1, thisDate[eventCarouselIter].Startdate[2]).toDateString()
+            if (thisDateMultiple[eventCarouselIter].Enddate.length > 1) {
+                document.getElementById('eventdateele').innerHTML = new Date(thisDateMultiple[eventCarouselIter].Startdate[0], thisDateMultiple[eventCarouselIter].Startdate[1] - 1, thisDateMultiple[eventCarouselIter].Startdate[2]).toDateString() + ' - ' + new Date(thisDateMultiple[eventCarouselIter].Enddate[0], thisDateMultiple[eventCarouselIter].Enddate[1] - 1, thisDateMultiple[eventCarouselIter].Enddate[2]).toDateString()
+                document.getElementById('eventtitleele').innerHTML = thisDateMultiple[eventCarouselIter].Eventtitle + " - " + thisDateMultiple[eventCarouselIter].Eventowner
+                document.getElementById('eventdetailsele').innerHTML = thisDateMultiple[eventCarouselIter].Eventdetails
+                commentSelectedEventId = thisDateMultiple[eventCarouselIter].Eventid
+                document.getElementById('eventappendcomments').dispatchEvent(new Event('loadCommentEvent'))
+                //document.getElementById('rsvpnotes').dispatchEvent(new Event('click'))
+                document.getElementById('rsvpnotes').dispatchEvent(new Event('click'))
+                checkForRSVP(thisDateMultiple[eventCarouselIter].Eventid)
+                document.getElementById('eventappendcomments').innerHTML = ''
+            } else {
+                document.getElementById('eventdateele').innerHTML = new Date(thisDateMultiple[eventCarouselIter].Startdate[0], thisDateMultiple[eventCarouselIter].Startdate[1] - 1, thisDateMultiple[eventCarouselIter].Startdate[2]).toDateString()
+                document.getElementById('eventtitleele').innerHTML = thisDateMultiple[eventCarouselIter].Eventtitle + " - " + thisDateMultiple[eventCarouselIter].Eventowner
+                document.getElementById('eventdetailsele').innerHTML = thisDateMultiple[eventCarouselIter].Eventdetails
+                commentSelectedEventId = thisDateMultiple[eventCarouselIter].Eventid
+                document.getElementById('eventappendcomments').dispatchEvent(new Event('loadCommentEvent'))
+                //document.getElementById('rsvpnotes').dispatchEvent(new Event('click'))
+                document.getElementById('rsvpnotes').dispatchEvent(new Event('click'))
+                checkForRSVP(thisDateMultiple[eventCarouselIter].Eventid)
+                document.getElementById('eventappendcomments').innerHTML = ''
+            }
 
-            document.getElementById('eventtitleele').innerHTML = thisDate[eventCarouselIter].Eventtitle + " - " + thisDate[eventCarouselIter].Eventowner
-            document.getElementById('eventdetailsele').innerHTML = thisDate[eventCarouselIter].Eventdetails
-            commentSelectedEventId = thisDate[eventCarouselIter].Eventid
-            document.getElementById('eventappendcomments').dispatchEvent(new Event('loadCommentEvent'))
-            //document.getElementById('rsvpnotes').dispatchEvent(new Event('click'))
-            document.getElementById('rsvpnotes').dispatchEvent(new Event('click'))
-            checkForRSVP(thisDate[eventCarouselIter].Eventid)
-            document.getElementById('eventappendcomments').innerHTML = ''
+
         }
         eventCarouselIter = 0
         refreshEventData()

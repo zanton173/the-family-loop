@@ -121,6 +121,12 @@
                 </div>
                 <div class="modal-content" id="modal-event-content">
                     <h3 id="eventtitleele" style="text-align: center;"></h3>
+                    <button id="delEventBtn" class="btn btn-danger" hx-post="/delete-event" hx-ext="json-enc"
+                        hx-vals="js:{'commentSelectedEventId': commentSelectedEventId}"
+                        hx-on::after-request="window.location.reload()" hx-indicator="#loadingspinner" hx-swap="none"
+                        hx-confirm="This will delete the event and all comments / RSVPs associated forever. Are you sure you want to delete it?"
+                        style="border-radius: 27px;display: none;box-shadow: 6px 2px 12px black; width: 10%; position: absolute; top: 2%; right: 2%"
+                        hx-trigger="click">X</button>
                     <h7 id="eventdateele"></h7>
 
                     <p id="eventdetailsele"></p>
@@ -383,6 +389,12 @@
             eventDetailModal.show()
 
         refreshEventData = () => {
+
+            if (thisDateMultiple[eventCarouselIter].Eventowner == username)
+                document.getElementById('delEventBtn').style.display = "inline"
+            else
+                document.getElementById('delEventBtn').style.display = "none"
+
             if (thisDateMultiple[eventCarouselIter].Enddate.length > 1) {
                 document.getElementById('eventdateele').innerHTML = new Date(thisDateMultiple[eventCarouselIter].Startdate[0], thisDateMultiple[eventCarouselIter].Startdate[1] - 1, thisDateMultiple[eventCarouselIter].Startdate[2]).toDateString() + ' - ' + new Date(thisDateMultiple[eventCarouselIter].Enddate[0], thisDateMultiple[eventCarouselIter].Enddate[1] - 1, thisDateMultiple[eventCarouselIter].Enddate[2]).toDateString()
                 document.getElementById('eventtitleele').innerHTML = thisDateMultiple[eventCarouselIter].Eventtitle + " - " + thisDateMultiple[eventCarouselIter].Eventowner

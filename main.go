@@ -1178,6 +1178,30 @@ func main() {
 		go sendNotificationToAllUsers(db, usernameFromSession, fb_message_client, chatMessageNotificationOpts)
 
 	}
+	deleteEventHandler := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
+
+		validBool := validateJWTToken(jwtSignKey, w, r)
+		if !validBool || !allowOrDeny {
+			w.Header().Set("HX-Retarget", "window")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		bs, _ := io.ReadAll(r.Body)
+		type postBody struct {
+			Eventid int `json:"commentSelectedEventId"`
+		}
+		var postData postBody
+		marsherr := json.Unmarshal(bs, &postData)
+		if marsherr != nil {
+			fmt.Println(marsherr)
+		}
+		db.Exec(fmt.Sprintf("delete from tfldata.calendar where id=%d;", postData.Eventid))
+		db.Exec(fmt.Sprintf("delete from tfldata.calendar_rsvp where event_id=%d;", postData.Eventid))
+		db.Exec(fmt.Sprintf("delete from tfldata.comments where event_id=%d;", postData.Eventid))
+	}
 	updateRSVPForEventHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
@@ -2403,6 +2427,7 @@ func main() {
 	http.HandleFunc("/update-rsvp-for-event", updateRSVPForEventHandler)
 	http.HandleFunc("/get-rsvp-data", getEventRSVPHandler)
 	http.HandleFunc("/get-rsvp", getRSVPNotesHandler)
+	http.HandleFunc("/delete-event", deleteEventHandler)
 
 	http.HandleFunc("/group-chat-messages", getGroupChatMessagesHandler)
 	http.HandleFunc("/create-a-group-chat-message", createGroupChatMessageHandler)

@@ -100,6 +100,8 @@
                                 placeholder="Password" oninput="checkForValidResetPassChange()" required
                                 id="resetconfirmnewpassin" name="resetconfirmnewpassinput" />
                         </div>
+                        <p id="passworddonotmatchreset" style="color: red;"></p>
+                        <p id="passwordnotstrongreset" style="color: red"></p>
                         <div class="p-4">
                             <label>Reset Code:</label>
                             <input class="form-control" type="text" maxlength="6" placeholder="000000" required
@@ -123,6 +125,8 @@
                                 placeholder="Password" oninput="checkForValidAdminPassChange()" required
                                 id="confirmnewadminpassin" name="confirmnewadminpassinput" />
                         </div>
+                        <p id="passworddonotmatchresetadmin" style="color: red;"></p>
+                        <p id="passwordnotstrongresetadmin" style="color: red">
                     </form>
                     <form class="form" id="login-form" name="loginform" hx-post="/login" hx-trigger="submit"
                         hx-on="loginevent: loginFunction()" hx-swap="none" hx-indicator="#loadingspinner">
@@ -248,7 +252,13 @@
     var navInnerToReplace = document.getElementById('loginlogoutnav')
 
     const adminPassSubmitBtn = document.createElement('button')
+    adminPassSubmitBtn.setAttribute("class", "btn btn-success")
+    adminPassSubmitBtn.setAttribute("type", "submit")
+    adminPassSubmitBtn.innerHTML = "Change"
     const resetPassSubmitBtn = document.createElement('button')
+    resetPassSubmitBtn.setAttribute("class", "btn btn-success")
+    resetPassSubmitBtn.setAttribute("type", "submit")
+    resetPassSubmitBtn.innerHTML = "Change"
 
     const logoutButton = document.createElement('button')
     logoutButton.setAttribute("class", "btn btn-secondary")
@@ -410,10 +420,19 @@
 
     function checkForValidAdminPassChange() {
 
+        if (changeAdminPassIn.value !== confirmChangeAdminPassIn.value) {
+            document.getElementById('passworddonotmatchresetadmin').innerHTML = "Passwords do not match!"
+            if (changeAdminPassForm.contains(adminPassSubmitBtn))
+                changeAdminPassForm.removeChild(adminPassSubmitBtn)
+        } else
+            document.getElementById('passworddonotmatchresetadmin').innerHTML = ""
 
-        adminPassSubmitBtn.setAttribute("class", "btn btn-success")
-        adminPassSubmitBtn.setAttribute("type", "submit")
-        adminPassSubmitBtn.innerHTML = "Change"
+        if (changeAdminPassIn.value.length < 7 || changeAdminPassIn.value.match(/[!$@#%^&*()_+|~=`{}\[\]:";'<>?,.]/) == null) {
+            document.getElementById('passwordnotstrongresetadmin').innerHTML = "Password needs at least 8 characters and a special character (!@#$^&*)"
+            if (changeAdminPassForm.contains(adminPassSubmitBtn))
+                changeAdminPassForm.removeChild(adminPassSubmitBtn)
+        } else
+            document.getElementById('passwordnotstrongresetadmin').innerHTML = ""
 
         if (changeAdminPassIn.value == confirmChangeAdminPassIn.value && changeAdminPassIn.value.length > 7) {
             changeAdminPassForm.append(adminPassSubmitBtn)
@@ -425,10 +444,19 @@
     }
     function checkForValidResetPassChange() {
 
+        if (changeResetPassIn.value !== confirmChangeResetPassIn.value) {
+            document.getElementById('passworddonotmatchreset').innerHTML = "Passwords do not match!"
+            if (changePassForm.contains(resetPassSubmitBtn))
+                changePassForm.removeChild(resetPassSubmitBtn)
+        } else
+            document.getElementById('passworddonotmatchreset').innerHTML = ""
 
-        resetPassSubmitBtn.setAttribute("class", "btn btn-success")
-        resetPassSubmitBtn.setAttribute("type", "submit")
-        resetPassSubmitBtn.innerHTML = "Change"
+        if (changeResetPassIn.value.length < 7 || changeResetPassIn.value.match(/[!$@#%^&*()_+|~=`{}\[\]:";'<>?,.]/) == null) {
+            document.getElementById('passwordnotstrongreset').innerHTML = "Password needs at least 8 characters and a special character (!@#$^&*)"
+            if (changePassForm.contains(resetPassSubmitBtn))
+                changePassForm.removeChild(resetPassSubmitBtn)
+        } else
+            document.getElementById('passwordnotstrongreset').innerHTML = ""
 
         if (changeResetPassIn.value == confirmChangeResetPassIn.value && changeResetPassIn.value.length > 7) {
             changePassForm.append(resetPassSubmitBtn)

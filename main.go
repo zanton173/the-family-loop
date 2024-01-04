@@ -315,14 +315,7 @@ func main() {
 	}
 	getResetPasswordCodeHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
-		validBool := validateJWTToken(jwtSignKey, w, r)
-		if !validBool || !allowOrDeny {
-			w.Header().Set("HX-Retarget", "window")
-			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
+
 		emailInput := r.Header.Get("HX-Prompt")
 
 		var userEmail string
@@ -359,14 +352,7 @@ func main() {
 		w.Write([]byte(fmt.Sprintf("{\"user\":\"%s\", \"code\": \"%s\", \"email\": \"%s\"}", userName, string(b), userEmail)))
 	}
 	resetPasswordHandler := func(w http.ResponseWriter, r *http.Request) {
-		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
-		validBool := validateJWTToken(jwtSignKey, w, r)
-		if !validBool || !allowOrDeny {
-			w.Header().Set("HX-Retarget", "window")
-			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
+
 		newPass := r.PostFormValue("resetnewpassinput")
 		verifyCode := r.PostFormValue("resetCodeInput")
 		emailInput := r.PostFormValue("email")

@@ -86,7 +86,7 @@
             </div>
         </div>
         <div id="gameNet"
-            style="width: 100px; height: 35px; position: absolute; bottom: 0%; background-color: black; border-width: 1px; border-style: solid; border-color: white; border-top: none; left: calc(50% - 50px); z-index: 17;">
+            style="width: 100px; height: 45px; position: absolute; bottom: 0%; background-color: black; border-width: 2px; border-style: solid; border-color: white; border-top: none; left: calc(50% - 50px); z-index: 17;">
         </div>
     </div>
     <div id="leaderboardWindow" style="display: none; position: absolute; height: 100dvh; width: 100dvw; background-image: linear-gradient(to bottom,
@@ -263,6 +263,7 @@
             gameLifeOne.style.display = "inline"
             gameLifeTwo.style.display = "inline"
             gameLifeThree.style.display = "inline"
+            gameNet.style.left = "calc(50% - 50px)"
             score.innerHTML = 0
             document.getElementById('catchitGameObj').remove()
 

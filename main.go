@@ -1827,7 +1827,7 @@ func main() {
 				startPeriodMonth = 9
 				endPeriodMonth = 13
 			}
-			// out, err := coll.Aggregate(context.TODO(), bson.A{bson.D{{Key: "$match", Value: bson.D{{Key: "game", Value: "stackerz"}}}}, bson.D{{Key: "$set", Value: bson.D{{Key: "score", Value: bson.D{{Key: "$sum", Value: bson.A{"$bonus_points", "$level"}}}}}}}, bson.D{{Key: "$sort", Value: bson.D{{Key: "score", Value: -1}}}}, bson.D{{Key: "$limit", Value: 15}}})
+
 			out, err := coll.Aggregate(context.TODO(), bson.A{
 				bson.D{{Key: "$match", Value: bson.D{{Key: "game", Value: "stackerz"}}}},
 				bson.D{
@@ -1864,7 +1864,15 @@ func main() {
 								},
 							},
 							{Key: "month", Value: bson.D{{Key: "$month", Value: "$createdOn"}}},
-							{Key: "day", Value: bson.D{{Key: "$dayOfMonth", Value: "$createdOn"}}},
+							{Key: "day", Value: bson.D{
+								{Key: "$subtract",
+									Value: bson.A{
+										bson.D{{Key: "$dayOfWeek", Value: "$createdOn"}},
+										1,
+									},
+								},
+							},
+							},
 						},
 					},
 				},
@@ -2021,7 +2029,15 @@ func main() {
 								},
 							},
 							{Key: "month", Value: bson.D{{Key: "$month", Value: "$createdOn"}}},
-							{Key: "day", Value: bson.D{{Key: "$dayOfMonth", Value: "$createdOn"}}},
+							{Key: "day", Value: bson.D{
+								{Key: "$subtract",
+									Value: bson.A{
+										bson.D{{Key: "$dayOfMonth", Value: "$createdOn"}},
+										1,
+									},
+								},
+							},
+							},
 						},
 					},
 				},
@@ -2056,8 +2072,8 @@ func main() {
 						},
 					},
 				},
-				bson.D{{Key: "$limit", Value: 15}},
 				bson.D{{Key: "$sort", Value: bson.D{{Key: "score", Value: -1}}}},
+				bson.D{{Key: "$limit", Value: 15}},
 			})
 
 			if err != nil {
@@ -2176,7 +2192,15 @@ func main() {
 								},
 							},
 							{Key: "month", Value: bson.D{{Key: "$month", Value: "$createdOn"}}},
-							{Key: "day", Value: bson.D{{Key: "$dayOfMonth", Value: "$createdOn"}}},
+							{Key: "day", Value: bson.D{
+								{Key: "$subtract",
+									Value: bson.A{
+										bson.D{{Key: "$dayOfWeek", Value: "$createdOn"}},
+										1,
+									},
+								},
+							},
+							},
 						},
 					},
 				},
@@ -2211,8 +2235,8 @@ func main() {
 						},
 					},
 				},
-				bson.D{{Key: "$limit", Value: 15}},
 				bson.D{{Key: "$sort", Value: bson.D{{Key: "score", Value: -1}}}},
+				bson.D{{Key: "$limit", Value: 15}},
 			})
 
 			if err != nil {

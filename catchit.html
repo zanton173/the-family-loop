@@ -274,9 +274,9 @@
             gameObj.style.top = "-15%"
             gameObj.style.backgroundColor = "rgb(" + Math.floor(Math.random() * 256) + " " + Math.floor(Math.random() * 256) + " " + Math.floor(Math.random() * 256) + ")"
             gameObj.style.animationName == "fallOne" ?
-                gameObj.style.animation = "fallTwo " + (700 + Math.floor(Math.random() * 2500)) + "ms" + " cubic-bezier(0.77, 0.1, 0.99, 0.44) 750ms"
+                gameObj.style.animation = "fallTwo " + (500 + Math.floor(Math.random() * 2100)) + "ms" + " cubic-bezier(0.77, 0.1, 0.99, 0.44) 150ms"
                 :
-                gameObj.style.animation = "fallOne " + (700 + Math.floor(Math.random() * 2500)) + "ms" + " cubic-bezier(0.77, 0.1, 0.99, 0.44) 750ms"
+                gameObj.style.animation = "fallOne " + (500 + Math.floor(Math.random() * 2100)) + "ms" + " cubic-bezier(0.77, 0.1, 0.99, 0.44) 150ms"
 
         }
         function generateBlock() {
@@ -291,7 +291,7 @@
             gameObj.style.boxShadow = "2px 2px 2px"
             gameObj.style.borderWidth = "thin"
             gameObj.style.left = Math.floor(Math.random() * 90) + "%"
-            gameObj.style.animation = "fallOne " + (700 + Math.floor(Math.random() * 2500)) + "ms" + " cubic-bezier(0.77, 0.1, 0.99, 0.44) 750ms"
+            gameObj.style.animation = "fallOne " + (500 + Math.floor(Math.random() * 2100)) + "ms" + " cubic-bezier(0.77, 0.1, 0.99, 0.44) 150ms"
 
             gameObj.style.zIndex = "12"
             gameObj.style.backgroundColor = "rgb(" + Math.floor(Math.random() * 256) + " " + Math.floor(Math.random() * 256) + " " + Math.floor(Math.random() * 256) + ")"
@@ -325,7 +325,47 @@
             })
 
         }
+        dragElement(document.getElementById("gameNet"));
 
+        function dragElement(elmnt) {
+
+            var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+
+            elmnt.onmousedown = dragMouseDown;
+            elmnt.ontouchstart = dragMouseDown;
+
+            function dragMouseDown(e) {
+
+                e = e || window.event;
+                e.preventDefault();
+                // get the mouse cursor position at startup:
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                document.onmousemove = elementDrag;
+                document.ontouchmove = elementDrag;
+
+                document.onmouseup = closeDragElement;
+                document.ontouchend = closeDragElement;
+            }
+
+            function elementDrag(e) {
+
+                e = e || window.event;
+                e.preventDefault() || null;
+                pos1 = pos3 - (e.clientX || e.targetTouches[0].clientX);
+                pos3 = e.clientX || e.targetTouches[0].clientX;
+                pos4 = e.clientY || e.targetTouches[0].clientY;
+                elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
+                elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+            }
+
+            function closeDragElement() {
+                document.onmouseup = null;
+                document.ontouchend = null;
+                document.onmousemove = null;
+                document.ontouchmove = null;
+            }
+        }
     </script>
     <script type="module">
 

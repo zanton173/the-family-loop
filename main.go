@@ -1753,7 +1753,7 @@ func main() {
 		} else if postData.Label == "bug" {
 			issueLabel = []string{"bug"}
 		}
-		bodyText := fmt.Sprintf("%s on %s page - %s. Orgid: %s", postData.Descdetail[1], postData.Descdetail[0], username, orgId)
+		bodyText := fmt.Sprintf("%s on %s page - %s. Orgid: %s", postData.Descdetail[1], postData.Descdetail[0], username, strings.Split(orgId, "_")[0]+strings.Split(orgId, "_")[1][:3])
 		issueJson := github.IssueRequest{
 			Title:  &postData.Issuetitle,
 			Body:   &bodyText,

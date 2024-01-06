@@ -196,6 +196,15 @@
                                 oninput="checkForValidSignUpSubmission()" name="pfpformfile" required />
 
                         </div>
+                        <div class="p-4">
+                            <label>You must accept the term's and conditions:</label>
+                            <button class="btn btn-primary" type="button"
+                                onclick="{tandcModal.toggle(); document.getElementById('accepttandcinput').style.display = ''; document.getElementById('labelforaccept').style.display = ''}">Open
+                            </button><br />
+                            <label id="labelforaccept" style="display: none" for="accepttandcinput">Accept:</label>
+                            <input onchange="checkForValidSignUpSubmission()" type="checkbox" name="acceptedtandc"
+                                id="accepttandcinput" placeholder="accept" style="display: none;" />
+                        </div>
 
                     </form>
                 </div>
@@ -206,7 +215,84 @@
     </div>
 
 </div>
+<div class="modal customModalTrans" tabindex="-1" id="tcmodal">
+    <div class="modal-dialog">
+        <div class="modal-content border-2"
+            style="background-color: rgb(146 255 231 / 89%); border-radius: 15px / 15px; box-shadow: 2px 2px 6px 0px;">
+            <div class="modal-header" id="login-modal-header" style="display: block;">
+                <h4 class="modal-title" style="text-align: center;">Terms & Conditions</h4>
 
+                <button id="modalclosebtn" type="button" class="btn-close" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                **Terms and Conditions for The Family Loop Subscription Service** <br /><br />
+
+                **1. Subscription Agreement** <br /><br />
+
+                By subscribing to The Family Loop, you agree to abide by the terms and conditions outlined herein. This
+                agreement is entered into between you (the "Subscriber") and zantonwebsolutions, the administrator of
+                The Family Loop. <br /><br />
+
+                **2. Subscription Billing**<br /><br />
+
+                a. **Monthly Billing:** Subscribers will be billed on a monthly basis for the use of The Family Loop.
+                The billing cycle will commence upon subscription activation.<br /><br />
+
+                b. **Cancellation:** Subscribers can cancel their subscription at any time. Cancellation requests can be
+                made through The Family Loop admin portal or by contacting the owner directly. Once canceled, no further
+                charges will be applied.<br /><br />
+
+                **3. Data Privacy**<br /><br />
+
+                a. **User Credentials:** zantonwebsolutions will not share, sell, or disclose Subscriber emails,
+                passwords, or any other account credentials.<br /><br />
+
+                b. **Social Media Data:** zantonwebsolutions will not access or log into any Subscriber's social media
+                personal apps unless required for diagnosing or troubleshooting issues related to the functionality of
+                The Family Loop.<br /><br />
+
+                **4. Data Security**<br /><br />
+
+                a. **Privacy:** zantonwebsolutions is committed to protecting the privacy of Subscriber data. All
+                personal and social media-related information is securely stored and will only be used in accordance
+                with our Privacy Policy.<br /><br />
+
+                b. **Security Measures:** zantonwebsolutions employs industry-standard security measures to safeguard
+                Subscriber data against unauthorized access, disclosure, alteration, and destruction.<br /><br />
+
+                **5. Subscriber Responsibilities**<br /><br />
+
+                a. **Accurate Information:** Subscribers are responsible for providing accurate and up-to-date
+                information during the registration process.<br /><br />
+
+                b. **Security Awareness:** Subscribers are encouraged to maintain the confidentiality of their account
+                credentials and report any unauthorized access immediately.<br /><br />
+
+                **6. Limitation of Liability**<br /><br />
+
+                zantonwebsolutions shall not be held liable for any direct, indirect, incidental, special,
+                consequential, or punitive damages arising out of the use or inability to use The Family
+                Loop.<br /><br />
+
+                **7. Modifications to Terms and Conditions**<br /><br />
+
+                zantonwebsolutions reserves the right to modify these terms and conditions at any time. Subscribers will
+                be notified of any changes through email or through the The Family Loop platform.<br /><br />
+
+                **8. Governing Law**<br /><br />
+
+                This agreement is governed by the laws of the United States of America. Any disputes arising from this
+                agreement shall be resolved in the courts of the United States of America.<br /><br />
+
+                By subscribing to The Family Loop, you acknowledge that you have read, understood, and agreed to these
+                terms and conditions. If you do not agree with any part of this agreement, you should not proceed with
+                the subscription.<br /><br />
+                <button class="btn btn-primary" type="button" onclick="tandcModal.hide()">close</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script>
     var changePfpModal = new bootstrap.Modal(document.getElementById('changepfpmodal'), {});
@@ -254,6 +340,7 @@
     let confirmpasswordsignupinput = document.getElementById('confirmpasswordsignupinput')
 
     var loginModal = new bootstrap.Modal(document.getElementById('login-modal'), {});
+    var tandcModal = new bootstrap.Modal(document.getElementById('tcmodal'), {});
 
     var pfpChangeInput = document.getElementById('pfpchangeinput')
     var pfpChangeBtn = document.getElementById('changePfpSubmitBtn')
@@ -519,10 +606,10 @@
                 signup.removeChild(gosignup)
         } else
             document.getElementById('invalidBirthday').innerHTML = ""
-        if (usernamesignupinput.value > '' && passwordsignupinput.value > '' && passwordsignupinput.value === confirmpasswordsignupinput.value && document.getElementById('orgidinput').value.length > 1 && passwordsignupinput.value.length > 7 && confirmpasswordsignupinput.value.length > 7 && emailsignupinput.value.match(/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/) && (birthdayInputSignup.value.length >= 0 && ((new Date() - new Date(birthdayInputSignup.value)) / 1000 / 24 / 60 / 60) >= (365 * 13))) {
+        if (document.getElementById('pfpimage').value.length > 1 && document.getElementById('accepttandcinput').checked && usernamesignupinput.value > '' && passwordsignupinput.value > '' && passwordsignupinput.value === confirmpasswordsignupinput.value && document.getElementById('orgidinput').value.length > 1 && passwordsignupinput.value.length > 7 && confirmpasswordsignupinput.value.length > 7 && emailsignupinput.value.match(/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/) && (birthdayInputSignup.value.length >= 0 && ((new Date() - new Date(birthdayInputSignup.value)) / 1000 / 24 / 60 / 60) >= (365 * 13))) {
             signup.append(gosignup)
 
-        } else if (passwordsignupinput.value !== confirmpasswordsignupinput.value && usernamesignupinput.value == '' || emailsignupinput.value == '' || passwordsignupinput.value == '' || confirmpasswordsignupinput.value == '' || !emailsignupinput.value.match(/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/) || (birthdayInputSignup.value.length == 0 && ((new Date() - new Date(birthdayInputSignup.value)) / 1000 / 24 / 60 / 60) <= (365 * 13))) {
+        } else if (passwordsignupinput.value !== confirmpasswordsignupinput.value && usernamesignupinput.value == '' || document.getElementById('pfpimage').value.length == 0 || !document.getElementById('accepttandcinput').checked || emailsignupinput.value == '' || passwordsignupinput.value == '' || confirmpasswordsignupinput.value == '' || !emailsignupinput.value.match(/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/) || (birthdayInputSignup.value.length == 0 && ((new Date() - new Date(birthdayInputSignup.value)) / 1000 / 24 / 60 / 60) <= (365 * 13))) {
             if (signup.contains(gosignup))
                 signup.removeChild(gosignup)
         }

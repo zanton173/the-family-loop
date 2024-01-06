@@ -1955,7 +1955,7 @@ func main() {
 		if marsherr != nil {
 			fmt.Println(marsherr)
 		}
-		inserr, _ := db.Exec(fmt.Sprintf("insert into tfldata.stack_leaderboard(\"username\", \"bonus_points\", \"level\") values('%s', %d, %d)", postData.Username, postData.BonusPoints, postData.Level))
+		_, inserr := db.Exec(fmt.Sprintf("insert into tfldata.stack_leaderboard(\"username\", \"bonus_points\", \"level\") values('%s', %d, %d)", postData.Username, postData.BonusPoints, postData.Level))
 		if inserr != nil {
 			activityStr := fmt.Sprintf("could not update stackerz leaderboard for %s", usernameFromSession)
 			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", inserr, time.Now().In(nyLoc).Format(time.DateTime), activityStr))

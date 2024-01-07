@@ -2697,6 +2697,8 @@ func sendNotificationToAllUsers(db *sql.DB, curUser string, fb_message_client *m
 				})
 			}
 			if sendErr != nil {
+				activityStr := "Error sending notificationtoallusers"
+				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", sendErr, time.Now().In(nyLoc).Format(time.DateTime), activityStr))
 				// fmt.Print(sendErr.Error() + " for user: " + userToSend)
 				if strings.Contains(sendErr.Error(), "404") {
 					db.Exec(fmt.Sprintf("update tfldata.users set fcm_registration_id=null where username='%s';", userToSend))

@@ -638,10 +638,11 @@
     function validateBothDates() {
         var selectedStartDate = new Date(Number(startDateYearPicker.value.split("_")[1]), Number(startDateMonthPicker.value.split("_")[1]), Number(startDateDayPicker.value.split("_")[1]))
         var selectedEndDate = new Date(Number(endDateYearPicker.value.split("_")[1]), Number(endDateMonthPicker.value.split("_")[1]), Number(endDateDayPicker.value.split("_")[1]))
-        if (selectedStartDate <= new Date(year, month, todayDay - 1))
+        if (selectedStartDate.setUTCHours(0, 0, 0, 0) < new Date().setUTCHours(0, 0, 0, 0))
             document.getElementById('warning_text').innerHTML = "You cannot pick a date in the past"
         else
             document.getElementById('warning_text').innerHTML = ""
+
         if (selectedEndDate < selectedStartDate) {
             endDateDayPicker.value = startDateDayPicker.value
             endDateMonthPicker.value = startDateMonthPicker.value

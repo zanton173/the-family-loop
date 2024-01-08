@@ -1161,6 +1161,7 @@ func main() {
 		chatMessageNotificationOpts.notificationPage = "calendar"
 		chatMessageNotificationOpts.notificationTitle = "New event on: " + postData.Startdate
 		chatMessageNotificationOpts.notificationBody = strings.ReplaceAll(postData.Eventtitle, "\\", "")
+
 		go sendNotificationToAllUsers(db, usernameFromSession, fb_message_client, chatMessageNotificationOpts)
 
 	}
@@ -2655,6 +2656,8 @@ func sendNotificationToAllUsers(db *sql.DB, curUser string, fb_message_client *m
 	output, outerr := db.Query(fmt.Sprintf("select username from tfldata.users_to_threads where thread='%s' and username != '%s' and is_subscribed=true;", opts.extraPayloadVal, curUser))
 	if outerr != nil {
 		fmt.Println(outerr)
+		activityStr := "Panic on sendnotificationtoallusers first db output"
+		db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"activity\", \"createdon\") values ('%s', '%s', now());", outerr, activityStr))
 	}
 
 	defer output.Close()

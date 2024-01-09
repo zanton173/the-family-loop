@@ -1,0 +1,1 @@
+ALTER TABLE tfldata.users DROP COLUMN firebase_user_uid;

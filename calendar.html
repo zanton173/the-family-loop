@@ -223,8 +223,8 @@
 
         document.getElementById('commentnoteevent').value = ""
         var selectedEvent = allEvents.filter((data) => data.Eventid == commentSelectedEventId)
-        var eventDate = new Date(selectedEvent[0].Startdate[0], selectedEvent[0].Startdate[1] - 1, selectedEvent[0].Startdate[2])
-        var currentDate = new Date()
+        var eventDate = new Date(selectedEvent[0].Startdate[0], selectedEvent[0].Startdate[1] - 1, selectedEvent[0].Startdate[2]).setHours(0, 0, 0, 0)
+        var currentDate = new Date().setHours(0, 0, 0, 0)
         if (eventDate < currentDate) {
             document.getElementById('commentnoteevent').style.display = "none"
             if (document.getElementById('submitEventCommentBtn'))

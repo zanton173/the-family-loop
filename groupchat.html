@@ -68,20 +68,34 @@
             </div>
         </div>
     </div>
-    <div id="showthemebtn" style="display: block; text-align: center;">
+    <div id="showthemebtn"
+        style="display: inline-flex; text-align: center; width: 60dvw; margin-left: 20dvw; justify-content: space-between;">
         <button type="button" onclick="showThemePanel()" class="btn btn-dark border-0 btn-sm"
             style="box-shadow: 3px 3px 6px;">Change Theme</button>
+
+        <!-- <button id="subscribeToThisThreadBtn" hx-post="/change-if-notified-for-thread"
+            hx-vals="js:{'username': username, 'curThread': document.getElementById('threadSelector').value, 'currentlyNotifiedVal': !isCurUserSubbed}"
+            hx-swap="none" hx-ext="json-enc"
+            hx-on::after-request="document.dispatchEvent(new Event('DOMContentLoaded'))" type="button"
+            class="btn btn-dark border-0 my-1 btn-sm" style="box-shadow: 3px 3px 6px;">Get
+            thread's notifications&nbsp;<i class="bi bi-bell-fill"></i></button>-->
+
         <button id="changeChatOrderOptBtn" type="button" hx-ext="json-enc" hx-post="/change-gchat-order-opt"
             hx-vals="js:{'order_option': !gchatOrderOpt, 'username': username}"
             hx-on::after-request="document.dispatchEvent(new Event('DOMContentLoaded'))" hx-swap="none"
             hx-trigger="click" class="btn btn-dark border-0 btn-sm" style="box-shadow: 3px 3px 6px;"><i
                 class="bi bi-arrow-down-circle"></i></button>
-        <button id="subscribeToThisThreadBtn" hx-post="/change-if-notified-for-thread"
+        <form hx-post="/change-if-notified-for-thread"
             hx-vals="js:{'username': username, 'curThread': document.getElementById('threadSelector').value, 'currentlyNotifiedVal': !isCurUserSubbed}"
-            hx-swap="none" hx-ext="json-enc"
-            hx-on::after-request="document.dispatchEvent(new Event('DOMContentLoaded'))" type="button"
-            class="btn btn-dark border-0 my-1 btn-sm" style="box-shadow: 3px 3px 6px;">Get
-            thread's notifications&nbsp;<i class="bi bi-bell-fill"></i></button>
+            hx-swap="none" hx-ext="json-enc" hx-trigger="click from:#notifycheckbox"
+            hx-on::after-request="document.dispatchEvent(new Event('DOMContentLoaded'))">
+            <p type="button" class="btn btn-dark border-0 my-1 btn-sm"
+                style="box-shadow: 3px 3px 6px; display: inline-flex; align-items: center;"><i
+                    class="bi bi-bell-fill mx-1"></i><input class="mx-1" type="checkbox" name="threadCheckbox"
+                    id="notifycheckbox"
+                    onclick="!isCurUserSubbed ? nowReceivingMessageBubble.style.animationName = 'animateInFromTop' ? nowReceivingMessageBubble.style.animation = 'animateInFromTop 4s ease-in-out' : nowReceivingMessageBubble.style.animation = 'animateInFromTopAgain 4s ease-in-out' : nowReceivingMessageBubble.style.animation = ''" />
+            </p>
+        </form>
     </div>
 
     <div id="themepanel" style="display: none; text-align: center;">
@@ -196,6 +210,29 @@
 
         var usersSubbedThreads = []
 
+        var nowReceivingMessage = document.createElement('p')
+        var nowReceivingMessageBubble = document.createElement('div')
+        nowReceivingMessageBubble.style.position = "absolute"
+        nowReceivingMessageBubble.style.display = "block"
+        nowReceivingMessageBubble.id = "nowReceivingBubble"
+        nowReceivingMessageBubble.style.backgroundColor = "rgb(255 255 255 / 74%)"
+        nowReceivingMessageBubble.style.borderRadius = "15px / 15px"
+        nowReceivingMessageBubble.style.boxShadow = "3px 3px 5px black"
+        nowReceivingMessageBubble.style.padding = "2%"
+        nowReceivingMessageBubble.style.top = "-12%"
+        nowReceivingMessageBubble.style.width = "80%"
+        nowReceivingMessageBubble.style.zIndex = "15"
+        nowReceivingMessageBubble.style.marginLeft = "10%"
+        nowReceivingMessageBubble.style.textAlign = "center"
+
+
+        nowReceivingMessage.style.color = "green"
+        nowReceivingMessage.style.margin = "0%"
+        nowReceivingMessage.style.fontSize = "smaller"
+        nowReceivingMessage.innerHTML = "Now receiving notifications for this thread!"
+        nowReceivingMessageBubble.append(nowReceivingMessage)
+        document.body.append(nowReceivingMessageBubble)
+
         document.addEventListener("DOMContentLoaded", async () => {
 
             usersSubbedThreads = []
@@ -288,15 +325,18 @@
             if (selectedThread.length === 1) {
 
                 if (selectedThread[0].is_subbed == 'true') {
-                    document.getElementById('subscribeToThisThreadBtn').innerHTML = "disable thread\'s notifications" + "&nbsp;<i class='bi bi-bell-fill' ></i>"
+                    //document.getElementById('subscribeToThisThreadBtn').innerHTML = "disable thread\'s notifications" + "&nbsp;<i class='bi bi-bell-fill' ></i>"
+
+                    document.getElementById('notifycheckbox').checked = true
                     isCurUserSubbed = true
                 } else if (selectedThread[0].is_subbed == 'false') {
-
-                    document.getElementById('subscribeToThisThreadBtn').innerHTML = "Get thread\'s notifications" + "&nbsp;<i class='bi bi-bell-fill' ></i>"
+                    document.getElementById('notifycheckbox').checked = false
+                    //document.getElementById('subscribeToThisThreadBtn').innerHTML = "Get thread\'s notifications" + "&nbsp;<i class='bi bi-bell-fill' ></i>"
                     isCurUserSubbed = false
                 }
             } else {
-                document.getElementById('subscribeToThisThreadBtn').innerHTML = "Get thread\'s notifications" + "&nbsp;<i class='bi bi-bell-fill' ></i>"
+                document.getElementById('notifycheckbox').checked = false
+                //document.getElementById('subscribeToThisThreadBtn').innerHTML = "Get thread\'s notifications" + "&nbsp;<i class='bi bi-bell-fill' ></i>"
                 isCurUserSubbed = false
             }
         }
@@ -335,11 +375,11 @@
         }
 
         function showThemePanel() {
-            if (document.getElementById('showthemebtn').style.display.includes("block") && document.getElementById('themepanel').style.display.includes("none")) {
+            if (document.getElementById('showthemebtn').style.display.includes("inline-flex") && document.getElementById('themepanel').style.display.includes("none")) {
                 document.getElementById('showthemebtn').style.display = "none"
                 document.getElementById('themepanel').style.display = "block"
             } else {
-                document.getElementById('showthemebtn').style.display = "block"
+                document.getElementById('showthemebtn').style.display = "inline-flex"
                 document.getElementById('themepanel').style.display = "none"
             }
         }

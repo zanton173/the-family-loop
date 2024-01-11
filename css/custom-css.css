@@ -92,6 +92,89 @@ button.btn.btn-primary {
 
 }
 
+@-webkit-keyframes animateInFromTop {
+    0% {
+        top: -12%
+    }
+
+    50% {
+        top: 1%;
+        opacity: 100%
+    }
+
+    85% {
+        top: 1%;
+        opacity: 100%
+    }
+
+    100% {
+        top: 1%;
+        opacity: 0%;
+    }
+}
+
+@-webkit-keyframes animateInFromTopAgain {
+    0% {
+        top: -15%
+    }
+
+    50% {
+        top: 1%;
+        opacity: 100%
+    }
+
+    85% {
+        top: 1%;
+        opacity: 100%
+    }
+
+    100% {
+        top: 1%;
+        opacity: 0%;
+    }
+}
+
+@keyframes animateInFromTop {
+    0% {
+        top: -15%
+    }
+
+    50% {
+        top: 1%;
+        opacity: 100%
+    }
+
+    85% {
+        top: 1%;
+        opacity: 100%
+    }
+
+    100% {
+        top: 1%;
+        opacity: 0%;
+    }
+}
+
+@keyframes animateInFromTopAgain {
+    0% {
+        top: -15%
+    }
+
+    50% {
+        top: 1%;
+        opacity: 100%
+    }
+
+    85% {
+        top: 1%;
+        opacity: 100%
+    }
+
+    100% {
+        top: 1%;
+        opacity: 0%;
+    }
+}
 
 @keyframes fallOne {
     0% {

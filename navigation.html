@@ -407,13 +407,13 @@
         gchatOrderOpt = text.GchatOrderOpt
         cfDomain = text.CFDomain
 
-        if (cfDomain <= "") {
-            navItemWelcomeAvatar.setAttribute("src", "")
-        }
-
         text.Username.length < 1
             ? window.dispatchEvent(new Event("onUnauthorizedEvent"))
-            : navItemWelcomeAvatar.setAttribute("src", "https://" + cfDomain + "/pfp/" + text.Pfpname)
+            :
+            cfDomain <= "" || text.Pfpname <= "" ?
+                navItemWelcomeAvatar.setAttribute("src", "assets/apple-touch-icon.jpg")
+                : navItemWelcomeAvatar.setAttribute("src", "https://" + cfDomain + "/pfp/" + text.Pfpname)
+
         return text
     }
 

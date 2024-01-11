@@ -233,25 +233,23 @@
         errorMessage.setAttribute("style", "color: red;")
         errorMessage.innerHTML = "You cannot post a video and pictures together"
         const createPostEle = document.getElementById('createpostele')
-        var fileList = []
+        var fileTypeList = []
 
         function checkValidityOfFiles() {
-            fileList = []
+            fileTypeList = []
             for (var i = 0; i < document.getElementById('postinput').files.length; i++) {
-                fileList.push(document.getElementById('postinput').files[i].name.split(".", 2)[1])
+                fileTypeList.push(document.getElementById('postinput').files[i].type.split("/")[0])
             }
-
-            if (fileList.includes("mov", "jpg", "png", "mp4", "jpeg", "mkv", "mpeg", "avi", "webm", "flv", "wmv", "3gpp", "tiff") && fileList.length > 1) {
-                if (createPostEle.contains(createPostSubmitBtn)) {
+            if (fileTypeList.includes('video' && 'image') && fileTypeList.length > 1) {
+                if (createPostEle.contains(createPostSubmitBtn))
                     createPostEle.removeChild(createPostSubmitBtn)
-                }
 
                 createPostEle.append(errorMessage)
             } else {
                 // append form button again
-                if (createPostEle.contains(errorMessage)) {
+                if (createPostEle.contains(errorMessage))
                     createPostEle.removeChild(errorMessage)
-                }
+
                 createPostEle.append(createPostSubmitBtn)
             }
         }

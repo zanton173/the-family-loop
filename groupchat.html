@@ -171,10 +171,17 @@
 
                     </div>
                     <div class="row" style="justify-content: center; margin-top: 1%;">
-                        <input class="col-8 my-0 border-0 text-center"
+                        <!--<input class="col-8 my-0 border-0 text-center"
                             style="border-radius: 18px / 18px; width: 75%; box-shadow: 3px 3px 5px" name="gchatmessage"
                             id="gchatinput" type="text" oninput="checkForTagging()" placeholder="Enter message" required
                             maxlength="420" />
+                        ** TESTING GROWING TEXTAREA **
+                        -->
+                        <textarea class="col-8 my-0 border-0 text-center"
+                            style="border-radius: 18px / 18px; width: 75%; box-shadow: 3px 3px 5px" name="gchatmessage"
+                            id="gchatinput" role="text" rows="1"
+                            oninput="{checkForTagging(); this.style.height = Math.min(this.scrollHeight, 75) + 'px';}"
+                            placeholder="Enter message" required maxlength="420"></textarea>
                         <button type="submit" class="col-2 mx-2 border-0 btn btn-success"
                             style="border-radius: 18px / 18px; box-shadow: 3px 3px 5px black;"><i
                                 class="bi bi-send"></i></button>
@@ -445,8 +452,10 @@
         }
         function clearFormGetMessages() {
             document.getElementById('gchatinput').value = ""
+            document.getElementById('gchatinput').style.height = ""
+
             taggedUser = []
-            document.getElementById('gchatinput').setAttribute('oninput', "checkForTagging()")
+            document.getElementById('gchatinput').setAttribute('oninput', "{checkForTagging(); this.style.height = Math.min(this.scrollHeight, 75) + 'px';}")
         }
         function createNewThread() {
             if (document.getElementById('newThreadNameInput').value.length > 1) {

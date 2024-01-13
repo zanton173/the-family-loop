@@ -205,16 +205,18 @@
         }
         var username = getCurrentUsername()
         async function enterUserScore() {
-            await fetch("/update-catchit-score", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({ "username": username, "score": Number(score.innerHTML) })
-            }).then((data) => {
-                if (data.status == 200)
-                    alert("score added to leaderboard")
-            })
+            if (Number(score.innerHTML > 0)) {
+                await fetch("/update-catchit-score", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ "username": username, "score": Number(score.innerHTML) })
+                }).then((data) => {
+                    if (data.status == 200)
+                        alert("score added to leaderboard")
+                })
+            }
         }
         function showGameWindow() {
 
@@ -264,6 +266,8 @@
             gameLifeTwo.style.display = "inline"
             gameLifeThree.style.display = "inline"
             gameNet.style.left = "calc(50% - 50px)"
+            gameNet.style.bottom = '0%'
+            gameNet.style.top = ''
             score.innerHTML = 0
             document.getElementById('catchitGameObj').remove()
 
@@ -317,8 +321,8 @@
 
                     if ((!gameLifeOne.style.display.includes("inline") && !gameLifeTwo.style.display.includes("inline") && !gameLifeThree.style.display.includes("inline"))) {
                         enterUserScore()
-                        await new Promise(r => setTimeout(r, 1000));
-                        alert("game over")
+                        await new Promise(r => setTimeout(r, 500));
+
                         showLeaderboardWindow()
                         resetFullGame()
                     }
@@ -365,6 +369,7 @@
                 document.ontouchend = null;
                 document.onmousemove = null;
                 document.ontouchmove = null;
+                gameNet.style.top = ''
             }
         }
     </script>

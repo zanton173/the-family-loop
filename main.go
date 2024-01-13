@@ -853,12 +853,17 @@ func main() {
 		for output.Next() {
 			var posts postComment
 
-			if err := output.Scan(&posts.Comment, &posts.Author, &posts.Pfpname); err != nil {
+			if err := output.Scan(&posts.Comment, &posts.Author, &posts.Pfpname); err != nil || len(posts.Pfpname) == 0 {
+
+				posts.Pfpname = "assets/32x32/ZCAN2301 The Family Loop Favicon_B_32 x 32.jpg"
 				activityStr := fmt.Sprintf("getSelectedPostsCommentsHandler scan err - %s", usernameFromSession)
 				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", err, time.Now().In(nyLoc).Format(time.DateTime), activityStr))
 
+			} else {
+				posts.Pfpname = "https://" + cfdistro + "/pfp/" + posts.Pfpname
 			}
-			dataStr = "<div class='row'><p style='display: flex; align-items: center; padding-right: 0%;' class='m-1 col-7'>" + posts.Comment + "</p><div style='align-items: center; position: relative; display: flex; padding-left: 0%; left: 1%;' class='col my-5'><b style='position: absolute; bottom: 5%'>" + posts.Author + "</b><img width='30px' class='my-1' style='margin-left: 1%; position: absolute; right: 20%; border-style: solid; border-radius: 13px / 13px; box-shadow: 3px 3px 5px; border-width: thin; top: 5%;' src='https://" + cfdistro + "/pfp/" + posts.Pfpname + "' alt='tfl pfp' /></div></div>"
+
+			dataStr = "<div class='row'><p style='display: flex; align-items: center; padding-right: 0%;' class='m-1 col-7'>" + posts.Comment + "</p><div style='align-items: center; position: relative; display: flex; padding-left: 0%; left: 1%;' class='col my-5'><b style='position: absolute; bottom: 5%'>" + posts.Author + "</b><img width='30px' class='my-1' style='margin-left: 1%; position: absolute; right: 20%; border-style: solid; border-radius: 13px / 13px; box-shadow: 3px 3px 5px; border-width: thin; top: 5%;' src='" + posts.Pfpname + "' alt='tfl pfp' /></div></div>"
 
 			w.Write([]byte(dataStr))
 		}
@@ -986,11 +991,16 @@ func main() {
 			fmt.Println(inserterr)
 		}
 		var author string
-		row := db.QueryRow(fmt.Sprintf("select username from tfldata.users where session_token='%s';", c.Value))
-		row.Scan(&author)
-		// https://stackoverflow.com/questions/2944297/postgresql-function-for-last-inserted-id
-		// For adding like / dislike button
-		dataStr := "<p class='p-2'>" + postData.Comment + " - " + author + "</p>"
+		var pfpname string
+		row := db.QueryRow(fmt.Sprintf("select username, pfp_name from tfldata.users where session_token='%s';", c.Value))
+		userscnerr := row.Scan(&author, &pfpname)
+
+		if userscnerr != nil || len(pfpname) == 0 {
+			pfpname = "assets/32x32/ZCAN2301 The Family Loop Favicon_B_32 x 32.jpg"
+		} else {
+			pfpname = "https://" + cfdistro + "/pfp/" + pfpname
+		}
+		dataStr := "<div class='row'><p style='display: flex; align-items: center; padding-right: 0%;' class='m-1 col-7'>" + replacer.Replace(postData.Comment) + "</p><div style='align-items: center; position: relative; display: flex; padding-left: 0%; left: 1%;' class='col my-5'><b style='position: absolute; bottom: 5%'>" + author + "</b><img width='30px' class='my-1' style='margin-left: 1%; position: absolute; right: 20%; border-style: solid; border-radius: 13px / 13px; box-shadow: 3px 3px 5px; border-width: thin; top: 5%;' src='" + pfpname + "' alt='tfl pfp' /></div></div>"
 
 		commentTmpl, err := template.New("com").Parse(dataStr)
 		if err != nil {

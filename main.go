@@ -2663,12 +2663,14 @@ func sendNotificationToTaggedUser(w http.ResponseWriter, r *http.Request, fcmTok
 }
 
 func sendNotificationToAllUsers(db *sql.DB, curUser string, fb_message_client *messaging.Client, opts *notificationOpts) {
-
+	fmt.Println(curUser)
+	fmt.Println(opts)
 	output, outerr := db.Query(fmt.Sprintf("select username from tfldata.users_to_threads where thread='%s' and username != '%s' and is_subscribed=true;", opts.extraPayloadVal, curUser))
 	if outerr != nil {
 		fmt.Println(outerr)
 		activityStr := "Panic on sendnotificationtoallusers first db output"
 		db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"activity\", \"createdon\") values ('%s', '%s', now());", outerr, activityStr))
+		return
 	}
 
 	defer output.Close()

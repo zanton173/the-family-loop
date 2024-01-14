@@ -97,7 +97,11 @@ func main() {
 	if err != nil {
 		fmt.Printf("Error in initializing firebase app: %s", err)
 	}
-	fb_message_client, _ := app.Messaging(context.TODO())
+	fb_message_client, fbInitErr := app.Messaging(context.TODO())
+	if fbInitErr != nil {
+		fmt.Println("err intializing fb messaging client")
+		os.Exit(3)
+	}
 	// favicon
 	faviconHandler := func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "assets/favicon.ico")
@@ -2666,7 +2670,6 @@ func sendNotificationToAllUsers(db *sql.DB, curUser string, fb_message_client *m
 
 	output, outerr := db.Query(fmt.Sprintf("select username from tfldata.users_to_threads where thread='%s' and username != '%s' and is_subscribed=true;", opts.extraPayloadVal, curUser))
 	if outerr != nil {
-		fmt.Println(outerr)
 		activityStr := "Panic on sendnotificationtoallusers first db output"
 		db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"activity\", \"createdon\") values ('%s', '%s', now());", outerr, activityStr))
 	}

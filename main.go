@@ -97,7 +97,10 @@ func main() {
 	if err != nil {
 		fmt.Printf("Error in initializing firebase app: %s", err)
 	}
-	fb_message_client, _ := app.Messaging(context.TODO())
+	fb_message_client, errInit := app.Messaging(context.TODO())
+	if errInit != nil {
+		fmt.Println(errInit)
+	}
 	// favicon
 	faviconHandler := func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "assets/favicon.ico")

@@ -47,11 +47,11 @@ async function getNotified() {
                                 })
                                     .then(() => {
                                         return window.navigator.serviceWorker
-                                            .getRegistration('/firebase-cloud-messaging-push-scope')
+                                            .getRegistration('../firebase-cloud-messaging-push-scope')
                                             .then((serviceWorker) => {
                                                 if (serviceWorker) return serviceWorker;
-                                                return window.navigator.serviceWorker.register('/firebase-messaging-sw.js', {
-                                                    scope: '/firebase-cloud-messaging-push-scope',
+                                                return window.navigator.serviceWorker.register('../firebase-messaging-sw.js', {
+                                                    scope: '../firebase-cloud-messaging-push-scope',
                                                 }).catch((regerr) => console.log("reg err: " + regerr));
                                             });
                                     }).catch((efg) => console.log(efg))

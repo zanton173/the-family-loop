@@ -4,6 +4,7 @@ var notificationthread = ""
 this.addEventListener("push", (event) => {
 
     const notification = event.data.json().notification
+    console.log(notification)
     //console.log(notification)
     event.waitUntil(this.registration.showNotification(notification.title, {
         actions: notification.actions,
@@ -15,8 +16,9 @@ this.addEventListener("push", (event) => {
 
 });
 this.addEventListener("notificationclick", (event) => {
+    console.log(event)
     event.notification.close()
-
+    console.log(event.notification)
     if (notificationtype == "event")
         clients.openWindow("/calendar")
     else if (notificationtype == "posts")

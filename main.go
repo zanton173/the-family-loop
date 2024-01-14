@@ -707,7 +707,7 @@ func main() {
 
 		chatMessageNotificationOpts.notificationTitle = "Somebody just made a new post!"
 		chatMessageNotificationOpts.notificationBody = strings.ReplaceAll(r.PostFormValue("title"), "\\", "")
-		go sendNotificationToAllUsers(db, usernameFromSession, fb_message_client, chatMessageNotificationOpts)
+		go sendNotificationToAllUsers(db, usernameFromSession, fb_message_client, &chatMessageNotificationOpts)
 		parseerr := r.ParseMultipartForm(10 << 20)
 		if parseerr != nil {
 			// handle error
@@ -1172,7 +1172,7 @@ func main() {
 		chatMessageNotificationOpts.notificationTitle = "New event on: " + postData.Startdate
 		chatMessageNotificationOpts.notificationBody = strings.ReplaceAll(postData.Eventtitle, "\\", "")
 
-		go sendNotificationToAllUsers(db, usernameFromSession, fb_message_client, chatMessageNotificationOpts)
+		go sendNotificationToAllUsers(db, usernameFromSession, fb_message_client, &chatMessageNotificationOpts)
 
 	}
 	deleteEventHandler := func(w http.ResponseWriter, r *http.Request) {
@@ -1361,7 +1361,8 @@ func main() {
 		chatMessageNotificationOpts.notificationPage = "groupchat"
 		chatMessageNotificationOpts.notificationTitle = "message in: " + threadVal
 		chatMessageNotificationOpts.notificationBody = strings.ReplaceAll(chatMessage, "\\", "")
-		go sendNotificationToAllUsers(db, usernameFromSession, fb_message_client, chatMessageNotificationOpts)
+
+		go sendNotificationToAllUsers(db, usernameFromSession, fb_message_client, &chatMessageNotificationOpts)
 		if len(listOfUsersTagged) > 0 {
 			for _, val := range listOfUsersTagged {
 				fcmRegRow := db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where username='%s' and username != '%s';", val, usernameFromSession))
@@ -2661,7 +2662,7 @@ func sendNotificationToTaggedUser(w http.ResponseWriter, r *http.Request, fcmTok
 	db.Exec(fmt.Sprintf("insert into tfldata.sent_notification_log(\"notification_result\", \"createdon\") values('%s', '%s');", sentRes, time.Now().In(nyLoc).Format(time.DateTime)))
 }
 
-func sendNotificationToAllUsers(db *sql.DB, curUser string, fb_message_client *messaging.Client, opts notificationOpts) {
+func sendNotificationToAllUsers(db *sql.DB, curUser string, fb_message_client *messaging.Client, opts *notificationOpts) {
 
 	output, outerr := db.Query(fmt.Sprintf("select username from tfldata.users_to_threads where thread='%s' and username != '%s' and is_subscribed=true;", opts.extraPayloadVal, curUser))
 	if outerr != nil {
@@ -2679,6 +2680,7 @@ func sendNotificationToAllUsers(db *sql.DB, curUser string, fb_message_client *m
 		var userToSend string
 
 		usrToSendScnErr := output.Scan(&userToSend)
+
 		if usrToSendScnErr == nil {
 			var fcmToken string
 			var sendErr error

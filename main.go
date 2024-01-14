@@ -2664,7 +2664,7 @@ func sendNotificationToTaggedUser(w http.ResponseWriter, r *http.Request, fcmTok
 
 func sendNotificationToAllUsers(db *sql.DB, curUser string, fb_message_client *messaging.Client, opts *notificationOpts) {
 	fmt.Println(curUser)
-	fmt.Println(opts)
+	fmt.Println(opts.extraPayloadVal)
 	output, outerr := db.Query(fmt.Sprintf("select username from tfldata.users_to_threads where thread='%s' and username != '%s' and is_subscribed=true;", opts.extraPayloadVal, curUser))
 	if outerr != nil {
 		fmt.Println(outerr)
@@ -2678,11 +2678,12 @@ func sendNotificationToAllUsers(db *sql.DB, curUser string, fb_message_client *m
 	typePayload := make(map[string]string)
 	typePayload["type"] = opts.notificationPage
 	typePayload[opts.extraPayloadKey] = opts.extraPayloadVal
+	fmt.Println(typePayload)
 	for output.Next() {
 		var userToSend string
 
 		usrToSendScnErr := output.Scan(&userToSend)
-
+		fmt.Println(usrToSendScnErr)
 		if usrToSendScnErr == nil {
 			var fcmToken string
 			var sendErr error

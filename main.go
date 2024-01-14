@@ -2683,13 +2683,13 @@ func sendNotificationToAllUsers(db *sql.DB, curUser string, fb_message_client *m
 		var userToSend string
 
 		usrToSendScnErr := output.Scan(&userToSend)
-		fmt.Println(usrToSendScnErr)
+		fmt.Println(userToSend)
 		if usrToSendScnErr == nil {
 			var fcmToken string
 			var sendErr error
 			tokenRow := db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where username='%s';", userToSend))
 			scnerr := tokenRow.Scan(&fcmToken)
-
+			fmt.Println(fcmToken)
 			if scnerr == nil {
 
 				_, sendErr = fb_message_client.Send(context.TODO(), &messaging.Message{

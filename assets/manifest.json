@@ -5,32 +5,32 @@
     "icons": [
         {
             "src": "tfl_pwa_icon_svg.svg",
-            "type": "image/png",
+            "type": "image/svg+xml",
             "sizes": "180x180"
         },
         {
             "src": "tfl_pwa_icon_svg.svg",
-            "type": "image/png",
+            "type": "image/svg+xml",
             "sizes": "16x16"
         },
         {
             "src": "tfl_pwa_icon_svg.svg",
-            "type": "image/png",
+            "type": "image/svg+xml",
             "sizes": "32x32"
         },
         {
             "src": "tfl_pwa_icon_svg.svg",
-            "type": "image/png",
+            "type": "image/svg+xml",
             "sizes": "96x96"
         },
         {
             "src": "tfl_pwa_icon_svg.svg",
-            "type": "image/png",
+            "type": "image/svg+xml",
             "sizes": "300x300"
         },
         {
             "src": "tfl_pwa_icon_svg.svg",
-            "type": "image/png",
+            "type": "image/svg+xml",
             "sizes": "512x512"
         }
     ],

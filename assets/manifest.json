@@ -4,33 +4,28 @@
     "start_url": "/",
     "icons": [
         {
-            "src": "tfl_pwa_icon_svg.svg",
-            "type": "image/svg+xml",
+            "src": "icon-180x180.jpg",
+            "type": "image/jpg",
             "sizes": "180x180"
         },
         {
-            "src": "tfl_pwa_icon_svg.svg",
-            "type": "image/svg+xml",
-            "sizes": "16x16"
+            "src": "icon-192x192.png",
+            "type": "image/png",
+            "sizes": "192x192"
         },
         {
-            "src": "tfl_pwa_icon_svg.svg",
-            "type": "image/svg+xml",
-            "sizes": "32x32"
+            "src": "icon-256x256.png",
+            "type": "image/png",
+            "sizes": "256x256"
         },
         {
-            "src": "tfl_pwa_icon_svg.svg",
-            "type": "image/svg+xml",
-            "sizes": "96x96"
+            "src": "icon-384x384.png",
+            "type": "image/png",
+            "sizes": "384x384"
         },
         {
-            "src": "tfl_pwa_icon_svg.svg",
-            "type": "image/svg+xml",
-            "sizes": "300x300"
-        },
-        {
-            "src": "tfl_pwa_icon_svg.svg",
-            "type": "image/svg+xml",
+            "src": "icon-512x512.png",
+            "type": "image/png",
             "sizes": "512x512"
         }
     ],

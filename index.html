@@ -65,7 +65,7 @@
         <p onclick="postEmoji(event)" class="p-2 my-0 mx-2">&#128517;</p>
         <p onclick="postEmoji(event)" class="p-2 my-0 mx-2">&#128545;</p>
     </div>
-    <div style="text-align: center; padding-top: 1%; padding-bottom: 1%;">
+    <div style="text-align: center; padding-top: 1%;">
         <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createPostModal">
             Create a Post!
         </button>
@@ -75,6 +75,22 @@
         <div id="notifydiv" style="display: none;">&nbsp;&nbsp;<button class="btn btn-outline-primary">Allow
                 notifications &nbsp; <i class="bi bi-bell-fill"></i></button></div>
 
+        <div id="searchBarDiv" class="mx-3"
+            style='background-color: rgb(18 160 255 / 44%); height: 17px; margin-top: 3%; display: flex; align-items: center; padding-bottom: 0%; margin-bottom: -3%; justify-content: space-around;'>
+            <i id="searchCollapsedCarrot" class="bi bi-caret-right-fill" style="margin-left: 3%; margin-right: auto;"
+                onclick="openAndShutSearchDiv()"></i>
+            <div style="display: inline;">
+                <!--<select id="searchBySelector" style="display: none" class="mx-2" onchange="onChangeSearchByMethod()">
+                    <option value="bydate">date</option>
+                    <option selected value="bykeyword">keyword</option>
+                </select>-->
+                <input type="date" id="searchByDateInput" style="display: none;" class="mx-1" />
+                <input type="search" id="searchByKeywordInput" style="display: none" class="mx-1" placeholder="Search"
+                    hx-trigger="input" hx-get="/get-posts" hx-target="#post-items"
+                    hx-vals="js:{'page': null, 'limit': limit, 'search': document.getElementById('searchByKeywordInput').value}" />
+
+            </div>
+        </div>
         <!--<button hx-post="/send-new-posts-push" hx-vals='js:{"id": document.cookie.split("session_id=")[1]}'
             hx-ext="json-enc" hx-swap="none">Test</button>-->
     </div>
@@ -144,9 +160,7 @@
 
                 </form>
                 <div id="progressdiv" style="display: none; text-align: center;">
-                    <p>Image upload progress: </p><progress style="text-align: center;" id='progress' value='0'
-                        max='100'>
-
+                    <p>Upload progress: </p><progress style="text-align: center;" id='progress' value='0' max='100'>
                     </progress>
                 </div>
 
@@ -262,6 +276,33 @@
             }
         });
 
+        function openAndShutSearchDiv() {
+            if (document.getElementById('searchCollapsedCarrot').classList.contains('bi-caret-right-fill')) {
+                document.getElementById('searchCollapsedCarrot').setAttribute('class', 'bi bi-caret-down-fill')
+                document.getElementById('searchBarDiv').style.height = "45px"
+                document.getElementById('searchByKeywordInput').style.display = ""
+                //document.getElementById('searchBySelector').style.display = ""
+                //onChangeSearchByMethod()
+
+            } else {
+                document.getElementById('searchCollapsedCarrot').setAttribute('class', 'bi bi-caret-right-fill')
+                document.getElementById('searchBarDiv').style.height = "17px"
+                //document.getElementById('searchBySelector').style.display = "none"
+                //document.getElementById('searchByDateInput').style.display = "none"
+                document.getElementById('searchByKeywordInput').style.display = "none"
+            }
+        }
+
+        /* function onChangeSearchByMethod() {
+             document.getElementById('searchByKeywordInput').style.display = "none"
+             document.getElementById('searchByDateInput').style.display = "none"
+             document.getElementById('searchBySelector').value == "bydate" ?
+                 document.getElementById('searchByDateInput').style.display = ""
+                 :
+                 document.getElementById('searchByKeywordInput').style.display = ""
+ 
+         }*/
+
         function checkCommentValidity() {
 
 
@@ -290,7 +331,8 @@
 
     <div style="text-align: center;" class="px-5" id="posts-div">
         <div hx-get="/get-posts" hx-trigger="afterLogin, loadNewVars, anotherCustomEvent" hx-target="#post-items"
-            id="divofposts" hx-indicator="#loadingspinner" hx-vals="js:{'page': pageLoadPaginator, 'limit': limit}"
+            id="divofposts" hx-indicator="#loadingspinner"
+            hx-vals="js:{'page': pageLoadPaginator, 'limit': limit, 'search': document.getElementById('searchByKeywordInput').value}"
             hx-swap="beforeend">
             <div id="post-items" name="item-count">
 
@@ -329,8 +371,10 @@
         const listOfImageObj = []
         htmx.on("#divofposts", "htmx:load", async function getImgs(event) {
             limit = 10
-
-            var imgListUUID = event.detail.elt.querySelector('img, video').getAttribute('id')
+            if (event.detail.elt.querySelector('img, video') !== null)
+                var imgListUUID = event.detail.elt.querySelector('img, video').getAttribute('id')
+            else
+                return
 
             //if (imgListUUID != 'video') {
             listOfImageObj.push({ id: imgListUUID, imgs: await getListOfImgs(imgListUUID) })
@@ -338,6 +382,7 @@
 
         })
         async function getListOfImgs(imgListUUID) {
+
             const resp = await fetch("/get-post-images?id=" + imgListUUID, {
                 method: "GET",
                 headers: {

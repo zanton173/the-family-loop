@@ -44,6 +44,7 @@ type Postsrow struct {
 	Description  string
 	Author       string
 	Postfileskey string
+	Createdon    time.Time
 }
 type Postjoin struct {
 	Filename     string
@@ -503,12 +504,12 @@ func main() {
 
 		var output *sql.Rows
 		if r.URL.Query().Get("page") == "null" {
-			output, err = db.Query("select id, \"title\", description, author, post_files_key from tfldata.posts order by createdon DESC limit 2;")
+			output, err = db.Query(fmt.Sprintf("select id, \"title\", description, author, post_files_key from tfldata.posts where title ilike '%s' or description ilike '%s' or author ilike '%s' order by createdon DESC limit 2;", "%"+r.URL.Query().Get("search")+"%", "%"+r.URL.Query().Get("search")+"%", "%"+r.URL.Query().Get("search")+"%"))
 		} else if r.URL.Query().Get("limit") == "current" {
 			w.Header().Set("HX-Reswap", "innerHTML")
-			output, err = db.Query(fmt.Sprintf("select id, \"title\", description, author, post_files_key from tfldata.posts where id >= %s order by createdon DESC;", r.URL.Query().Get("page")))
+			output, err = db.Query(fmt.Sprintf("select id, \"title\", description, author, post_files_key from tfldata.posts where id >= %s and (title ilike '%s' or description ilike '%s' or author ilike '%s') order by createdon DESC;", r.URL.Query().Get("page"), "%"+r.URL.Query().Get("search")+"%", "%"+r.URL.Query().Get("search")+"%", "%"+r.URL.Query().Get("search")+"%"))
 		} else {
-			output, err = db.Query(fmt.Sprintf("select id, \"title\", description, author, post_files_key from tfldata.posts where id < %s order by createdon DESC limit 2;", r.URL.Query().Get("page")))
+			output, err = db.Query(fmt.Sprintf("select id, \"title\", description, author, post_files_key from tfldata.posts where id < %s and (title ilike '%s' or description ilike '%s' or author ilike '%s') order by createdon DESC limit 2;", r.URL.Query().Get("page"), "%"+r.URL.Query().Get("search")+"%", "%"+r.URL.Query().Get("search")+"%", "%"+r.URL.Query().Get("search")+"%"))
 		}
 
 		var dataStr string
@@ -577,7 +578,6 @@ func main() {
 					dataStr = fmt.Sprintf("<div class='card my-4' style='background-color: rgb(22 30 255 / .42); border-radius: 72px 72px / 67px 67px; box-shadow: 6px 6px 3px 3px rgb(54 141 150 / 42&percnt;);'>%s<video style='border-radius: 18px 18px; z-index: 6;' muted playsinline controls preload='auto' id='%s'><source src='https://%s/posts/videos/%s'></video><div class='p-2' style='display: flex; justify-content: space-around;'></div><div id='%d' class='card-body'><b>%s</b><br/><p>%s</p><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' hx-swap='innerHTML' class='btn btn-primary'>Comments (%s)</button>%s</div></div>", editElement, postrows.Postfileskey, cfdistro, firstImg.filename, postrows.Id, postrows.Author, postrows.Title, postrows.Description, postrows.Id, postrows.Id, commentCount, reactionBtn)
 				}
 			}
-
 			postTmpl, tmerr = template.New("tem").Parse(dataStr)
 			if tmerr != nil {
 				activityStr := "posts handler postTmpl err"

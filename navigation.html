@@ -385,6 +385,7 @@
     navItemWelcomeAvatar.setAttribute("alt", "Click here to change")
 
     var username = ''
+    var isAdmin = false
 
     p.append(c)
     async function fetchSeshDetails() {
@@ -410,6 +411,10 @@
         chatTheme = text.BGtheme
         gchatOrderOpt = text.GchatOrderOpt
         cfDomain = text.CFDomain
+        isAdmin = text.Isadmin
+
+        if (window.location.path === "/admin-dashboard" && (isAdmin != null || isAdmin != undefined))
+            isAdmin = text.Isadmin
 
         text.Isadmin ?
             document.getElementById('adminDashboardLinkDiv').style.display = "block"

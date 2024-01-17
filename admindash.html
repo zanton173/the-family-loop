@@ -31,13 +31,32 @@
     <div class="sticky-top" id="anchor">
 
     </div>
-    <div>
 
+    <div id="divOfTabs"
+        style="height: 55px; width: 100dvw; background-color: rgba(22, 22, 62, 0.558); box-shadow: 3px 3px 7px;">
+        <div style="display: flex; justify-content: space-evenly; align-items: center; height: inherit">
+            <button class="btn btn-primary mx-3" style="box-shadow: 3px 3px 7px black; border-radius: 13px / 13px;"
+                hx-get="/admin-list-of-users" hx-target="#listOfUsersDivList">Users</button>
+            <button class="btn btn-primary mx-3"
+                style="box-shadow: 3px 3px 7px black; border-radius: 13px / 13px;">TBD...</button>
+            <button class="btn btn-primary mx-3"
+                style="box-shadow: 3px 3px 7px black; border-radius: 13px / 13px;">TBD...</button>
+        </div>
     </div>
+
+    <div id="listOfUsersDiv">
+        <ul id="listOfUsersDivList">
+
+        </ul>
+    </div>
+
+    <script>
+        var isAdmin = false
+        document.addEventListener("DOMContentLoaded", () => {
+            if (!isAdmin)
+                window.location.href = "/"
+        })
+    </script>
 </body>
-
-<script>
-
-</script>
 
 </html>

@@ -2425,6 +2425,49 @@ func main() {
 		})
 	}
 
+	adminGetListOfUsersHandler := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, w, r)
+
+		var isAdmin bool
+
+		rowRes := db.QueryRow(fmt.Sprintf("select is_admin from tfldata.users where username='%s';", usernameFromSession))
+
+		rowRes.Scan(&isAdmin)
+
+		validBool := validateJWTToken(jwtSignKey, w, r)
+		if !validBool || !allowOrDeny || !isAdmin {
+			w.Header().Set("HX-Retarget", "window")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		type dataStruct struct {
+			username      string
+			email         string
+			lastPassReset string
+		}
+
+		output, outerr := db.Query("select username, email, last_pass_reset from tfldata.users order by id asc;")
+		if outerr != nil {
+			activityStr := "Gathering listofusers for admin dash"
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", outerr, time.Now().In(nyLoc).Format(time.DateTime), activityStr))
+		}
+		defer output.Close()
+
+		var curDataObj dataStruct
+		for output.Next() {
+			scnErr := output.Scan(&curDataObj.username, &curDataObj.email, &curDataObj.lastPassReset)
+			if scnErr != nil {
+				activityStr := "Scan err on listofusers admin dash"
+				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", outerr, time.Now().In(nyLoc).Format(time.DateTime), activityStr))
+			}
+			w.Write([]byte(fmt.Sprintf("<p style='font-size: smaller;'>%s - %s - %s</p>", curDataObj.username, curDataObj.email, strings.Split(curDataObj.lastPassReset, "T")[0])))
+
+		}
+
+	}
+
 	http.HandleFunc("/", pagesHandler)
 	http.HandleFunc("/create-post", createPostHandler)
 
@@ -2486,6 +2529,8 @@ func main() {
 
 	http.HandleFunc("/get-users-subscribed-threads", getUsersSubscribedThreadsHandler)
 	http.HandleFunc("/change-if-notified-for-thread", changeUserSubscriptionToThreadHandler)
+
+	http.HandleFunc("/admin-list-of-users", adminGetListOfUsersHandler)
 
 	http.HandleFunc("/signup", signUpHandler)
 	http.HandleFunc("/login", loginHandler)

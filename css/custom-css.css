@@ -34,6 +34,36 @@ div.htmx-request.spinner-indicator {
 
 }
 
+.openSeachBarReversed {
+    height: 45px;
+    animation: expandSearchReverse 400ms ease-in;
+}
+
+.openSearchInputReversed {
+    opacity: 100%;
+    animation: expandSearchInputReverse 440ms ease-in;
+}
+
+.openSearchArrowReversed {
+    transform: rotate(90deg);
+    animation: expandSearchArrowReverse 400ms ease-in;
+}
+
+.openSeachBar {
+    height: 17px;
+    animation: expandSearch 400ms ease-in;
+}
+
+.openSearchInput {
+    opacity: 0%;
+    animation: expandSearchInput 380ms ease-in;
+}
+
+.openSearchArrow {
+    transform: rotate(0deg);
+    animation: expandSearchArrow 400ms ease-in;
+}
+
 .customModalTrans {
     border-radius: 25px / 25px;
 
@@ -264,6 +294,74 @@ button.btn.btn-primary {
     100% {
         left: 0;
     }
+}
+
+@keyframes expandSearchArrow {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(90deg)
+    }
+}
+
+@keyframes expandSearchInput {
+    65% {
+        opacity: 0%;
+    }
+
+    100% {
+        opacity: 100%;
+    }
+}
+
+@keyframes expandSearch {
+
+    0% {
+        height: 17px
+    }
+
+    100% {
+        height: 45px
+    }
+
+}
+
+@keyframes expandSearchArrowReverse {
+    0% {
+        transform: rotate(90deg);
+    }
+
+    100% {
+        transform: rotate(calc(0deg))
+    }
+}
+
+@keyframes expandSearchInputReverse {
+    0% {
+        opacity: 100%;
+    }
+
+    70% {
+        opacity: 0%;
+    }
+
+    100% {
+        opacity: 0%;
+    }
+}
+
+@keyframes expandSearchReverse {
+
+    0% {
+        height: 45px
+    }
+
+    100% {
+        height: 15px
+    }
+
 }
 
 @keyframes enter {

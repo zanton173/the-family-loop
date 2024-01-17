@@ -299,10 +299,12 @@ button.btn.btn-primary {
 @keyframes expandSearchArrow {
     0% {
         transform: rotate(0deg);
+        -webkit-transform: rotate(0deg);
     }
 
     100% {
-        transform: rotate(90deg)
+        transform: rotate(90deg);
+        -webkit-transform: rotate(90deg);
     }
 }
 
@@ -331,10 +333,12 @@ button.btn.btn-primary {
 @keyframes expandSearchArrowReverse {
     0% {
         transform: rotate(90deg);
+        -webkit-transform: rotate(90deg);
     }
 
     100% {
-        transform: rotate(calc(0deg))
+        transform: rotate(calc(0deg));
+        -webkit-transform: rotate(calc(0deg));
     }
 }
 

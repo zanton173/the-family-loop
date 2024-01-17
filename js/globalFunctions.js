@@ -2,6 +2,7 @@ import app from "./init-firebase.js";
 import { getMessaging, getToken } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-messaging.js";
 const messaging = getMessaging(app);
 
+
 function logoutFunction() {
 
     location.href = "/"

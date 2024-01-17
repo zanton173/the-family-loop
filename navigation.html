@@ -32,6 +32,8 @@
                                 style="background-color: rgb(99 81 95 / 15%);">Catch it</a></li>
                     </ul>
                 </li>
+                <li class="nav-item navCustomItem" id="adminDashboardLinkDiv"><a class="nav-link"
+                        href="/admin-dashboard" style="color: rgb(200, 210, 230)">Admin Portal</a></li>
                 <li class="nav-item navCustomItem"><a class="nav-link" href="/bugreport"
                         style="color: rgb(200, 210, 230)">report an
                         issue</a></li>
@@ -49,12 +51,14 @@
     aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content p-3" style="border-radius: 15px / 15px; background-color: rgb(99 81 255 / 65%);">
-            <div class="modal-header p-2 my-1" id="changepfpheader"
-                style="display: block; background-color: white; border-radius: 15px / 15px;">
-                <h4 class="modal-title" style="text-align: center;">Change profile picture</h4>
-            </div>
+
+
+
             <form hx-encoding="multipart/form-data" class="form modal-content border-0" hx-post="/update-pfp"
                 hx-swap="none" id="updatepfpform" style="padding: 5%; border-radius: 15px / 15px;">
+                <div class="modal-header p-2 my-1" id="changepfpheader" style="display: block;">
+                    <h5 class="modal-title" style="text-align: center;">Change profile picture</h5>
+                </div>
                 <input id="pfpchangeinput" type="file" class="my-2" name="changepfp" placeholder="Upload new pfp"
                     accept="image/*" oninput="checkPfpChangeValidity()" />
                 <input style="display: none;" name="usernameinput" id="invisibleusernameinput" />
@@ -407,6 +411,10 @@
         gchatOrderOpt = text.GchatOrderOpt
         cfDomain = text.CFDomain
 
+        text.Isadmin ?
+            document.getElementById('adminDashboardLinkDiv').style.display = "block"
+            : document.getElementById('adminDashboardLinkDiv').style.display = "none"
+
         text.Username.length < 1
             ? window.dispatchEvent(new Event("onUnauthorizedEvent"))
             :
@@ -687,6 +695,5 @@
     window.addEventListener("onUnauthorizedEvent", () => {
         logoutFunction()
     })
-
 
 </script>

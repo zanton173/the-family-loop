@@ -57,6 +57,7 @@ type seshStruct struct {
 	BGtheme       string
 	GchatOrderOpt bool
 	CFDomain      string
+	Isadmin       bool
 }
 type notificationOpts struct {
 	notificationPage  string
@@ -446,9 +447,6 @@ func main() {
 	}
 	pagesHandler := func(w http.ResponseWriter, r *http.Request) {
 
-		//tmpl := template.Must(template.ParseFiles("index.html"))
-
-		// tmpl.Execute(w, nil)
 		bs, _ := os.ReadFile("navigation.html")
 		navtmple := template.New("Navt")
 		tm, _ := navtmple.Parse(string(bs))
@@ -459,7 +457,6 @@ func main() {
 			tmpl.Execute(w, nil)
 			tm.Execute(w, nil)
 		case "/home":
-			// go cookieExpirationCheck(w, r, db)
 			tmpl := template.Must(template.ParseFiles("index.html"))
 			tmpl.Execute(w, nil)
 			tm.Execute(w, nil)
@@ -480,6 +477,10 @@ func main() {
 		case "/games/catchit":
 			tmpl := template.Must(template.ParseFiles("catchit.html"))
 			tmpl.Execute(w, nil)
+		case "/admin-dashboard":
+			tmpl := template.Must(template.ParseFiles("admindash.html"))
+			tmpl.Execute(w, nil)
+			tm.Execute(w, nil)
 		default:
 			tmpl := template.Must(template.ParseFiles("index.html"))
 			tmpl.Execute(w, nil)
@@ -504,12 +505,12 @@ func main() {
 
 		var output *sql.Rows
 		if r.URL.Query().Get("page") == "null" {
-			output, err = db.Query(fmt.Sprintf("select id, \"title\", description, author, post_files_key, createdon::date from tfldata.posts where title ilike '%s' or description ilike '%s' or author ilike '%s' order by createdon DESC limit 2;", "%"+r.URL.Query().Get("search")+"%", "%"+r.URL.Query().Get("search")+"%", "%"+r.URL.Query().Get("search")+"%"))
+			output, err = db.Query(fmt.Sprintf("select id, \"title\", description, author, post_files_key, createdon from tfldata.posts where title ilike '%s' or description ilike '%s' or author ilike '%s' order by createdon DESC limit 2;", "%"+r.URL.Query().Get("search")+"%", "%"+r.URL.Query().Get("search")+"%", "%"+r.URL.Query().Get("search")+"%"))
 		} else if r.URL.Query().Get("limit") == "current" {
 			w.Header().Set("HX-Reswap", "innerHTML")
-			output, err = db.Query(fmt.Sprintf("select id, \"title\", description, author, post_files_key, createdon::date from tfldata.posts where id >= %s and (title ilike '%s' or description ilike '%s' or author ilike '%s') order by createdon DESC;", r.URL.Query().Get("page"), "%"+r.URL.Query().Get("search")+"%", "%"+r.URL.Query().Get("search")+"%", "%"+r.URL.Query().Get("search")+"%"))
+			output, err = db.Query(fmt.Sprintf("select id, \"title\", description, author, post_files_key, createdon from tfldata.posts where id >= %s and (title ilike '%s' or description ilike '%s' or author ilike '%s') order by createdon DESC;", r.URL.Query().Get("page"), "%"+r.URL.Query().Get("search")+"%", "%"+r.URL.Query().Get("search")+"%", "%"+r.URL.Query().Get("search")+"%"))
 		} else {
-			output, err = db.Query(fmt.Sprintf("select id, \"title\", description, author, post_files_key, createdon::date from tfldata.posts where id < %s and (title ilike '%s' or description ilike '%s' or author ilike '%s') order by createdon DESC limit 2;", r.URL.Query().Get("page"), "%"+r.URL.Query().Get("search")+"%", "%"+r.URL.Query().Get("search")+"%", "%"+r.URL.Query().Get("search")+"%"))
+			output, err = db.Query(fmt.Sprintf("select id, \"title\", description, author, post_files_key, createdon from tfldata.posts where id < %s and (title ilike '%s' or description ilike '%s' or author ilike '%s') order by createdon DESC limit 2;", r.URL.Query().Get("page"), "%"+r.URL.Query().Get("search")+"%", "%"+r.URL.Query().Get("search")+"%", "%"+r.URL.Query().Get("search")+"%"))
 		}
 
 		var dataStr string
@@ -1598,8 +1599,8 @@ func main() {
 
 		var ourSeshStruct seshStruct
 
-		row := db.QueryRow(fmt.Sprintf("select username, pfp_name, gchat_bg_theme, gchat_order_option, cf_domain_name from tfldata.users where username='%s';", usernameFromSession))
-		scnerr := row.Scan(&ourSeshStruct.Username, &ourSeshStruct.Pfpname, &ourSeshStruct.BGtheme, &ourSeshStruct.GchatOrderOpt, &ourSeshStruct.CFDomain)
+		row := db.QueryRow(fmt.Sprintf("select username, pfp_name, gchat_bg_theme, gchat_order_option, cf_domain_name, is_admin from tfldata.users where username='%s';", usernameFromSession))
+		scnerr := row.Scan(&ourSeshStruct.Username, &ourSeshStruct.Pfpname, &ourSeshStruct.BGtheme, &ourSeshStruct.GchatOrderOpt, &ourSeshStruct.CFDomain, &ourSeshStruct.Isadmin)
 		if scnerr != nil {
 			fmt.Println(scnerr)
 		}

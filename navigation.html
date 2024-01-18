@@ -18,8 +18,8 @@
                 </li>
                 <li class="nav-item navCustomItem"><a class="nav-link" href="/posts"
                         style="color: rgb(200, 210, 230)">posts</a></li>
-                <li class="nav-item navCustomItem"><a class="nav-link" href="/time-capsule"
-                        style="color: rgb(200, 210, 230)">time capsule</a></li>
+                <!--<li class="nav-item navCustomItem"><a class="nav-link" href="/time-capsule"
+                        style="color: rgb(200, 210, 230)">time capsule</a></li>-->
                 <li class="nav-item navCustomItem"><a class="nav-link dropdown-toggle" href="#" role="button"
                         data-bs-toggle="dropdown" aria-expanded="false" style="color: rgb(200, 210, 230)">
                         games
@@ -93,43 +93,45 @@
                         hx-post="/reset-password-with-code"
                         hx-vals="js:{'user': usernameToResetPass, 'email': emailToResetPass}"
                         hx-on::after-request="afterResetRequest(event)" hx-indicator="#loadingspinner">
-                        <input style="display: none;" type="text" autocomplete="username" placeholder="username" />
+                        <input style="display: none;" id="invisibleuserfield" type="text" autocomplete="username"
+                            placeholder="username" />
                         <div class="p-4">
-                            <label>New Password:</label>
-                            <input class="form-control" type="password" name="resetnewpassinput"
-                                autocomplete="new-password" placeholder="Password"
-                                oninput="checkForValidResetPassChange()" required id="resetnewpassin" />
+                            <label>New Password:
+                                <input class="form-control" type="password" name="resetnewpassinput"
+                                    autocomplete="new-password" placeholder="Password"
+                                    oninput="checkForValidResetPassChange()" required id="resetnewpassin" /></label>
                         </div>
                         <div class="p-4">
-                            <label>Confirm New Password:</label>
-                            <input class="form-control" type="password" autocomplete="new-password"
-                                placeholder="Password" oninput="checkForValidResetPassChange()" required
-                                id="resetconfirmnewpassin" name="resetconfirmnewpassinput" />
+                            <label>Confirm New Password:
+                                <input class="form-control" type="password" autocomplete="new-password"
+                                    placeholder="Password" oninput="checkForValidResetPassChange()" required
+                                    id="resetconfirmnewpassin" name="resetconfirmnewpassinput" /></label>
                         </div>
                         <p id="passworddonotmatchreset" style="color: red;"></p>
                         <p id="passwordnotstrongreset" style="color: red"></p>
                         <div class="p-4">
-                            <label>Reset Code:</label>
-                            <input class="form-control" type="text" maxlength="6" placeholder="000000" required
-                                id="resetCodeIn" name="resetCodeInput" />
+                            <label>Reset Code:
+                                <input class="form-control" type="text" maxlength="6" placeholder="000000" required
+                                    id="resetCodeIn" name="resetCodeInput" /></label>
                         </div>
                     </form>
                     <form class="form" style="display: none; z-index: 5;" name="changeAdminPassForm"
                         id="changeAdminPassForm" hx-post="/update-admin-pass"
                         hx-vals="js:{'username': document.getElementById('usernamelogininput').value}" hx-ext="json-enc"
                         hx-trigger="submit" hx-swap="none" hx-indicator="#loadingspinner">
-                        <input style="display: none;" type="text" autocomplete="username" placeholder="username" />
+                        <input style="display: none;" id="invisibleusernamefield" type="text" autocomplete="username"
+                            placeholder="username" />
                         <div class="p-4">
-                            <label>New Password:</label>
-                            <input class="form-control" type="password" name="newadminpassinput"
-                                autocomplete="new-password" placeholder="Password"
-                                oninput="checkForValidAdminPassChange()" required id="newadminpassin" />
+                            <label>New Password:
+                                <input class="form-control" type="password" name="newadminpassinput"
+                                    autocomplete="new-password" placeholder="Password"
+                                    oninput="checkForValidAdminPassChange()" required id="newadminpassin" /></label>
                         </div>
                         <div class="p-4">
-                            <label>Confirm New Password:</label>
-                            <input class="form-control" type="password" autocomplete="new-password"
-                                placeholder="Password" oninput="checkForValidAdminPassChange()" required
-                                id="confirmnewadminpassin" name="confirmnewadminpassinput" />
+                            <label>Confirm New Password:
+                                <input class="form-control" type="password" autocomplete="new-password"
+                                    placeholder="Password" oninput="checkForValidAdminPassChange()" required
+                                    id="confirmnewadminpassin" name="confirmnewadminpassinput" /></label>
                         </div>
                         <p id="passworddonotmatchresetadmin" style="color: red;"></p>
                         <p id="passwordnotstrongresetadmin" style="color: red">
@@ -138,16 +140,16 @@
                         hx-on="loginevent: loginFunction()" hx-swap="none" hx-indicator="#loadingspinner">
                         <div class="p-4">
                             <h5>Login</h5>
-                            <label>Username or email:</label>
-                            <input class="form-control" autocomplete="username" type="text" style="width: 100%"
-                                name="usernamelogin" placeholder="Username or email"
-                                oninput="checkForValidLoginSubmission()" required id="usernamelogininput" />
+                            <label>Username or email:
+                                <input class="form-control" autocomplete="username" type="text" style="width: 100%"
+                                    name="usernamelogin" placeholder="Username or email"
+                                    oninput="checkForValidLoginSubmission()" required id="usernamelogininput" /></label>
                         </div>
                         <div class="p-4">
-                            <label>Password:</label>
-                            <input class="form-control" style="width: 100%" name="passwordlogin" type="password"
-                                autocomplete="new-password" placeholder="Password"
-                                oninput="checkForValidLoginSubmission()" required id="passwordlogininput" />
+                            <label>Password:
+                                <input class="form-control" style="width: 100%" name="passwordlogin" type="password"
+                                    autocomplete="new-password" placeholder="Password"
+                                    oninput="checkForValidLoginSubmission()" required id="passwordlogininput" /></label>
                         </div>
                         <a hx-prompt="What is your email associated with the account?" hx-post="/reset-password"
                             hx-ext="json-enc" hx-on::after-request="showResetLink(event)" hx-swap="none"
@@ -159,57 +161,59 @@
                         hx-indicator="#loadingspinner">
                         <div class="p-4">
                             <h5>Sign Up</h5>
-                            <label for="usernamesignup">Username:</label>
-                            <input class="form-control" autocomplete="username" type="text" name="usernamesignup"
-                                placeholder="Username" oninput="checkForValidSignUpSubmission()" required
-                                id="usernamesignupinput" />
+                            <label for="usernamesignupinput">Username:
+                                <input class="form-control" autocomplete="username" type="text" name="usernamesignup"
+                                    placeholder="Username" oninput="checkForValidSignUpSubmission()" required
+                                    id="usernamesignupinput" /></label>
                         </div>
                         <div class="p-4">
-                            <label for="emailsignup">Email:</label>
-                            <input class="form-control" type="email" name="emailsignup" autocomplete="email"
-                                placeholder="email@example.com" oninput="checkForValidSignUpSubmission()" required
-                                id="emailsignupinput" maxlength="64" />
+                            <label for="emailsignupinput">Email:
+                                <input class="form-control" type="email" name="emailsignup" autocomplete="email"
+                                    placeholder="email@example.com" oninput="checkForValidSignUpSubmission()" required
+                                    id="emailsignupinput" maxlength="64" /></label>
                         </div>
                         <div class="p-4">
-                            <label>Password:</label>
-                            <input class="form-control" type="password" name="passwordsignup"
-                                autocomplete="new-password" placeholder="Password"
-                                oninput="checkForValidSignUpSubmission()" required id="passwordsignupinput" />
+                            <label for="passwordsignupinput">Password:
+                                <input class="form-control" type="password" name="passwordsignup"
+                                    autocomplete="new-password" placeholder="Password"
+                                    oninput="checkForValidSignUpSubmission()" required
+                                    id="passwordsignupinput" /></label>
                         </div>
                         <div class="p-4">
-                            <label>Confirm Password:</label>
-                            <input class="form-control" type="password" autocomplete="new-password"
-                                placeholder="Password" oninput="checkForValidSignUpSubmission()" required
-                                id="confirmpasswordsignupinput" name="confirmpasswordsignup" />
+                            <label for="confirmpasswordsignupinput">Confirm Password:
+                                <input class="form-control" type="password" autocomplete="new-password"
+                                    placeholder="Password" oninput="checkForValidSignUpSubmission()" required
+                                    id="confirmpasswordsignupinput" name="confirmpasswordsignup" /></label>
                             <p id="passworddonotmatch" style="color: red;"></p>
                             <p id="passwordnotstrong" style="color: red;"></p>
                         </div>
                         <div class="p-4">
-                            <label>When is your birthday?</label>
-                            <input id="birthdayInput" type="date" name="birthday"
-                                onchange="checkForValidSignUpSubmission()" required />
+                            <label for="birthdayInput">When is your birthday?
+                                <input id="birthdayInput" type="date" name="birthday"
+                                    onchange="checkForValidSignUpSubmission()" required /></label>
                             <p id="invalidBirthday" style="color: red;"></p>
                         </div>
                         <div class="p-4">
-                            <label>Family Passcode (Ask your admin for this):</label>
-                            <input class="form-control" type="text" placeholder="familyname_123abc234"
-                                oninput="checkForValidSignUpSubmission()" required id="orgidinput" name="orgidinput" />
+                            <label for="orgidinput">Family Passcode (Ask your admin for this):
+                                <input class="form-control" type="text" placeholder="familyname_123abc234"
+                                    oninput="checkForValidSignUpSubmission()" required id="orgidinput"
+                                    name="orgidinput" /></label>
                         </div>
                         <div class="p-4">
 
-                            <label>Pick a profile picture</label>
-                            <input class="form-control" id="pfpimage" type="file" accept="image/*"
-                                oninput="checkForValidSignUpSubmission()" name="pfpformfile" required />
-
+                            <label for="pfpimage">Pick a profile picture
+                                <input class="form-control" id="pfpimage" type="file" accept="image/*"
+                                    oninput="checkForValidSignUpSubmission()" name="pfpformfile" required />
+                            </label>
                         </div>
                         <div class="p-4">
-                            <label>You must accept the term's and conditions:</label>
-                            <button class="btn btn-primary" type="button"
-                                onclick="{tandcModal.toggle(); document.getElementById('accepttandcinput').style.display = ''; document.getElementById('labelforaccept').style.display = ''}">Open
-                            </button><br />
-                            <label id="labelforaccept" style="display: none" for="accepttandcinput">Accept:</label>
-                            <input onchange="checkForValidSignUpSubmission()" type="checkbox" name="acceptedtandc"
-                                id="accepttandcinput" placeholder="accept" style="display: none;" />
+                            <label for="opentcbtn">You must accept the term's and conditions:
+                                <button id="opentcbtn" class="btn btn-primary" type="button"
+                                    onclick="{tandcModal.toggle(); document.getElementById('accepttandcinput').style.display = ''; document.getElementById('labelforaccept').style.display = ''}">Open
+                                </button><br /></label>
+                            <label id="labelforaccept" style="display: none" for="accepttandcinput">Accept:
+                                <input onchange="checkForValidSignUpSubmission()" type="checkbox" name="acceptedtandc"
+                                    id="accepttandcinput" placeholder="accept" style="display: none;" /></label>
                         </div>
 
                     </form>

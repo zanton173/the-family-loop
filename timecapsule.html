@@ -48,7 +48,41 @@
         <p onclick="switchActivePage()" style="margin-bottom: 0%">&gt;</p>
     </div>
     <div id="createNewCapsuleDiv">
-        create new
+
+        <form id="createCapsuleForm" class="d-inline-grid" hx-post="/create-new-tc" hx-encoding="multipart/form-data"
+            hx-swap="none" hx-indicator="#loadingspinner"
+            style="background-color: white; border-radius: 15px / 15px; padding: 3%; margin-top: 5%">
+            <div style="display: block;">
+                <h3>How long would you like to store your time capsule?</h3>
+                <div class="form-check">
+
+                    <input class="form-check-input" type="radio" value="one_year" name="yearsToStore"
+                        id="yearsToStoreInput" checked>
+                    <label class="form-check-label" for="labelradiolabel">
+                        1 Year
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" value="three_years" name="yearsToStore"
+                        id="enhancementlabelradio">
+                    <label class="form-check-label" for="labelradiolabel">
+                        3 Years
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" value="seven_years" name="yearsToStore"
+                        id="yearsToStoreInputSeven">
+                    <label class="form-check-label" for="labelradiolabel">
+                        7 Years
+                    </label>
+                </div>
+            </div>
+            <label for="tcfileinputname">Choose what to put in your time capsule:</label>
+            <input id="tcfileinput" name="tcfileinputname" class="my-2 shadow" oninput="checkValidityOfFiles()" multiple
+                type="file" required style="width: 100%" name="file_name" accept="image/*,video/*"
+                placeholder="Upload photos or video" />
+
+        </form>
     </div>
     <div id="myCapsulesDiv" style="display: none;">
         my current
@@ -71,6 +105,9 @@
                 createNewCapPage.style.display = ""
                 usersCapsPage.style.display = "none"
             }
+        }
+        function checkValidityOfFiles() {
+
         }
     </script>
 </body>

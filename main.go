@@ -464,6 +464,10 @@ func main() {
 			tmpl := template.Must(template.ParseFiles("calendar.html"))
 			tmpl.Execute(w, nil)
 			tm.Execute(w, nil)
+		case "/time-capsule":
+			tmpl := template.Must(template.ParseFiles("timecapsule.html"))
+			tmpl.Execute(w, nil)
+			tm.Execute(w, nil)
 		case "/bugreport":
 			tmpl := template.Must(template.ParseFiles("bugreport.html"))
 			tmpl.Execute(w, nil)

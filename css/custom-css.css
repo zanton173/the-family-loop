@@ -34,6 +34,15 @@ div.htmx-request.spinner-indicator {
 
 }
 
+#timecapheader {
+    opacity: 0;
+    transition: opacity 1s ease-in;
+}
+
+#timecapheader.fadeInOpacity {
+    opacity: 1;
+}
+
 .openSeachBarReversed {
     height: 45px;
     animation: expandSearchReverse 400ms ease-in;

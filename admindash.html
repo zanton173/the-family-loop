@@ -44,15 +44,22 @@
         </div>
     </div>
 
-    <div id="listOfUsersDiv">
-        <ul id="listOfUsersDivList">
-
-        </ul>
+    <div style="margin-top: 1%">
+        <table class="table d-grid">
+            <thead>
+                <tr style="display: flex; width: 100dvw; justify-content: space-between; background-color: white;">
+                    <th style="font-size: smaller;">Username</th>
+                    <th style="font-size: smaller;">Email</th>
+                    <th style="font-size: smaller;">Last Password Reset</th>
+                </tr>
+            </thead>
+            <tbody id="listOfUsersDivList" style="font-size: small; display: inline-table"></tbody>
+        </table>
     </div>
 
     <script>
         var isAdmin = false
-        document.addEventListener("DOMContentLoaded", () => {
+        document.addEventListener("load", () => {
             if (!isAdmin)
                 window.location.href = "/"
         })

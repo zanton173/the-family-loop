@@ -2448,7 +2448,7 @@ func main() {
 			lastPassReset string
 		}
 
-		output, outerr := db.Query("select username, email, last_pass_reset from tfldata.users order by id desc;")
+		output, outerr := db.Query(fmt.Sprintf("select username, email, last_pass_reset from tfldata.users order by id %s;", r.URL.Query().Get("sortByLastPass")))
 		if outerr != nil {
 			activityStr := "Gathering listofusers for admin dash"
 			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", outerr, time.Now().In(nyLoc).Format(time.DateTime), activityStr))

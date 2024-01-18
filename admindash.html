@@ -36,7 +36,9 @@
         style="height: 55px; width: 100dvw; background-color: rgba(22, 22, 62, 0.558); box-shadow: 3px 3px 7px;">
         <div style="display: flex; justify-content: space-evenly; align-items: center; height: inherit">
             <button class="btn btn-primary mx-3" style="box-shadow: 3px 3px 7px black; border-radius: 13px / 13px;"
-                hx-get="/admin-list-of-users" hx-target="#listOfUsersDivList">Users</button>
+                hx-get="/admin-list-of-users" hx-target="#listOfUsersDivList"
+                hx-trigger="click, click from:#sortOrderLastPassReset"
+                hx-vals="js:{'sortByLastPass': sortOrderByLastPassReset}">Users</button>
             <button class="btn btn-primary mx-3"
                 style="box-shadow: 3px 3px 7px black; border-radius: 13px / 13px;">TBD...</button>
             <button class="btn btn-primary mx-3"
@@ -50,7 +52,9 @@
                 <tr style="display: flex; width: 100dvw; justify-content: space-between; background-color: white;">
                     <th style="font-size: smaller;">Username</th>
                     <th style="font-size: smaller;">Email</th>
-                    <th style="font-size: smaller;">Last Password Reset</th>
+                    <th style="font-size: smaller;" id="sortOrderLastPassReset"
+                        onclick="sortOrderByLastPassReset === 'desc' ? sortOrderByLastPassReset = 'asc' : sortOrderByLastPassReset = 'desc'">
+                        Last Password Reset</th>
                 </tr>
             </thead>
             <tbody id="listOfUsersDivList" style="font-size: small; display: inline-table"></tbody>
@@ -59,6 +63,7 @@
 
     <script>
         var isAdmin = false
+        var sortOrderByLastPassReset = 'desc'
         document.addEventListener("load", () => {
             if (!isAdmin)
                 window.location.href = "/"

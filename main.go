@@ -709,14 +709,6 @@ func main() {
 			return
 		}
 
-		var chatMessageNotificationOpts notificationOpts
-		chatMessageNotificationOpts.extraPayloadKey = "post"
-		chatMessageNotificationOpts.extraPayloadVal = "posts"
-		chatMessageNotificationOpts.notificationPage = "posts"
-
-		chatMessageNotificationOpts.notificationTitle = "Somebody just made a new post!"
-		chatMessageNotificationOpts.notificationBody = strings.ReplaceAll(r.PostFormValue("title"), "\\", "")
-		go sendNotificationToAllUsers(db, usernameFromSession, fb_message_client, &chatMessageNotificationOpts)
 		parseerr := r.ParseMultipartForm(10 << 20)
 		if parseerr != nil {
 			// handle error
@@ -798,6 +790,14 @@ func main() {
 		   db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", errinsert))
 		   }*/
 		//defer upload.Close()
+		var chatMessageNotificationOpts notificationOpts
+		chatMessageNotificationOpts.extraPayloadKey = "post"
+		chatMessageNotificationOpts.extraPayloadVal = "posts"
+		chatMessageNotificationOpts.notificationPage = "posts"
+
+		chatMessageNotificationOpts.notificationTitle = "Somebody just made a new post!"
+		chatMessageNotificationOpts.notificationBody = strings.ReplaceAll(r.PostFormValue("title"), "\\", "")
+		go sendNotificationToAllUsers(db, usernameFromSession, fb_message_client, &chatMessageNotificationOpts)
 
 	}
 	createPostReactionHandler := func(w http.ResponseWriter, r *http.Request) {
@@ -1363,6 +1363,20 @@ func main() {
 			w.WriteHeader(http.StatusConflict)
 			return
 		}
+
+		_, inserr := db.Exec(fmt.Sprintf("insert into tfldata.gchat(\"chat\", \"author\", \"createdon\", \"thread\") values(E'%s', '%s', '%s', '%s');", chatMessage, usernameFromSession, time.Now().In(nyLoc).Format(time.DateTime), threadVal))
+		if inserr != nil {
+			fmt.Println("error here: " + inserr.Error())
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		_, ttbleerr := db.Exec(fmt.Sprintf("insert into tfldata.threads(\"thread\", \"threadauthor\", \"createdon\") values(E'%s', '%s', '%s');", threadVal, usernameFromSession, time.Now().In(nyLoc).Format(time.DateTime)))
+		if ttbleerr != nil {
+			fmt.Println("We can ignore this error: " + ttbleerr.Error())
+		} else {
+			db.Exec("insert into tfldata.users_to_threads(\"username\") select distinct(username) from tfldata.users;")
+			db.Exec(fmt.Sprintf("update tfldata.users_to_threads set is_subscribed=true, thread='%s' where is_subscribed is null and thread is null;", threadVal))
+		}
 		var fcmRegToken string
 		var chatMessageNotificationOpts notificationOpts
 		chatMessageNotificationOpts.extraPayloadKey = "thread"
@@ -1380,20 +1394,6 @@ func main() {
 					sendNotificationToTaggedUser(w, r, fcmRegToken, db, strings.ReplaceAll(chatMessage, "\\", ""), app)
 				}
 			}
-		}
-
-		_, inserr := db.Exec(fmt.Sprintf("insert into tfldata.gchat(\"chat\", \"author\", \"createdon\", \"thread\") values(E'%s', '%s', '%s', '%s');", chatMessage, usernameFromSession, time.Now().In(nyLoc).Format(time.DateTime), threadVal))
-		if inserr != nil {
-			fmt.Println("error here: " + inserr.Error())
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-		_, ttbleerr := db.Exec(fmt.Sprintf("insert into tfldata.threads(\"thread\", \"threadauthor\", \"createdon\") values(E'%s', '%s', '%s');", threadVal, usernameFromSession, time.Now().In(nyLoc).Format(time.DateTime)))
-		if ttbleerr != nil {
-			fmt.Println("We can ignore this error: " + ttbleerr.Error())
-		} else {
-			db.Exec("insert into tfldata.users_to_threads(\"username\") select distinct(username) from tfldata.users;")
-			db.Exec(fmt.Sprintf("update tfldata.users_to_threads set is_subscribed=true, thread='%s' where is_subscribed is null and thread is null;", threadVal))
 		}
 		w.Header().Set("HX-Trigger", "success-send")
 

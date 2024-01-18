@@ -81,7 +81,8 @@
             <input id="tcfileinput" name="tcfileinputname" class="my-2 shadow" oninput="checkValidityOfFiles()" multiple
                 type="file" required style="width: 100%" name="file_name" accept="image/*,video/*"
                 placeholder="Upload photos or video" />
-
+            <p id="checkForFileListSize" style="color: red"></p>
+            <button id="submitNewTCForm" class="btn btn-success" style="display: none" type="submit">Create!</button>
         </form>
     </div>
     <div id="myCapsulesDiv" style="display: none;">
@@ -107,7 +108,23 @@
             }
         }
         function checkValidityOfFiles() {
+            var curFileListSize = 0
+            for (var i = 0; i < document.getElementById('tcfileinput').files.length; i++) {
+                curFileListSize += Math.trunc(document.getElementById('tcfileinput').files[i].size / 1024 / 1024)
+            }
 
+            if (document.getElementById('tcfileinput').files.length > 0)
+                document.getElementById('submitNewTCForm').style.display = ""
+            else
+                document.getElementById('submitNewTCForm').style.display = "none"
+
+            if (curFileListSize > 16384) {
+                document.getElementById('submitNewTCForm').disabled = true
+                document.getElementById('checkForFileListSize').innerHTML = "File size limit is 16gb"
+            } else {
+                document.getElementById('submitNewTCForm').disabled = false
+                document.getElementById('checkForFileListSize').innerHTML = ""
+            }
         }
     </script>
 </body>

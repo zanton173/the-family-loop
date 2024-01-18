@@ -32,8 +32,18 @@
 
     </div>
     <header id="timecapheader">
-        <p onload="document.getElementById('timecapheader').classList.add('fadeInOpacity')"></p>
+        <p id="headerContent" style="text-align: center; color: white; padding: 4%;">
+            Have you ever lost pictures from over the years or spent way too much time trying to find a specific video?
+            Create a digital time capsule to store pictures & video in your own custom time capsule! Currently available
+            for 1, 3 or 7 year periods.
+        </p>
     </header>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            document.getElementById('timecapheader').classList.add('fadeInOpacity')
+        })
+    </script>
 </body>
 
 </html>

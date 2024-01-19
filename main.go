@@ -2393,12 +2393,31 @@ func main() {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
+		var expiresOn string
+		var curAmountOfStoredCapsules int
+
+		row := db.QueryRow(fmt.Sprintf("select count(*) from tfldata.timecapsule where username='%s' and available_on > now();", usernameFromSession))
+		row.Scan(&curAmountOfStoredCapsules)
+
+		if curAmountOfStoredCapsules >= 5 {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte("You currently have the maximum amount of time capsules (5). You can delete ones you no longer want to store."))
+			return
+		}
+
 		curDate := time.Now().Format(time.DateOnly)
 		tcFile, err := os.Create(curDate + "_" + r.PostFormValue("tcName") + "_capsule_" + usernameFromSession + ".zip")
 		if err != nil {
 			panic(err)
 		}
 
+		if r.PostFormValue("yearsToStore") == "one_year" {
+			expiresOn = time.Now().Add(time.Hour * 8760).Format(time.DateOnly)
+		} else if r.PostFormValue("yearsToStore") == "three_years" {
+			expiresOn = time.Now().Add(time.Hour * 8760 * 3).Format(time.DateOnly)
+		} else if r.PostFormValue("yearsToStore") == "seven_years" {
+			expiresOn = time.Now().Add(time.Hour * 8760 * 7).Format(time.DateOnly)
+		}
 		zipWriter := zip.NewWriter(tcFile)
 		parseerr := r.ParseMultipartForm(10 << 20)
 		if parseerr != nil {
@@ -2429,7 +2448,14 @@ func main() {
 		}
 		zipWriter.Close()
 
-		// Send zip to S3
+		_, inserr := db.Exec(fmt.Sprintf("insert into tfldata.timecapsule(\"username\", \"available_on\", \"tcname\", \"createdon\") values('%s', '%s'::date + INTERVAL '2 days', '%s', '%s');", usernameFromSession, expiresOn, r.PostFormValue("tcName"), curDate))
+
+		if inserr != nil {
+			activityStr := "Failed to add time capsule to DB"
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", inserr, time.Now().In(nyLoc).Format(time.DateTime), activityStr))
+			return
+		}
+
 		go uploadTimeCapsuleToS3(awskey, awskeysecret, tcFile, curDate+"_"+r.PostFormValue("tcName")+"_capsule_"+usernameFromSession+".zip", r)
 	}
 

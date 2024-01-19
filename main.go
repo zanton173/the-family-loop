@@ -1410,29 +1410,10 @@ func main() {
 				var fcmToken string
 				row := db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where username='%s';", taggedUser))
 
-				row.Scan(&fcmToken)
-
-				typePayload := make(map[string]string)
-				typePayload["type"] = "groupchat"
-				sentRes, sendErr := fb_message_client.Send(context.TODO(), &messaging.Message{
-					Token: fcmToken,
-					Notification: &messaging.Notification{
-						Title: usernameFromSession + " just tagged you on in the " + threadVal + " thread",
-						Body:  strings.ReplaceAll(chatMessage, "\\", ""),
-					},
-
-					Webpush: &messaging.WebpushConfig{
-						Notification: &messaging.WebpushNotification{
-							Title: usernameFromSession + " just tagged you on in the " + threadVal + " thread",
-							Body:  strings.ReplaceAll(chatMessage, "\\", ""),
-							Data:  typePayload,
-						},
-					},
-				})
-				if sendErr != nil {
-					fmt.Print(sendErr)
+				scnerr := row.Scan(&fcmToken)
+				if scnerr == nil {
+					go sendNotificationToSingleUser(db, fb_message_client, usernameFromSession, threadVal, fcmToken, chatMessage)
 				}
-				db.Exec(fmt.Sprintf("insert into tfldata.sent_notification_log(\"notification_result\", \"createdon\") values('%s', '%s');", sentRes, time.Now().In(nyLoc).Local().Format(time.DateTime)))
 
 			}
 		}
@@ -2848,6 +2829,30 @@ func uploadFileToS3(k string, s string, bucketexists bool, f multipart.File, fn 
 	}
 	defer ourfile.Close()
 	return filetype
+}
+
+func sendNotificationToSingleUser(db *sql.DB, fb_message_client *messaging.Client, sendingUser string, threadVal string, fcmToken string, notificationBody string) {
+	typePayload := make(map[string]string)
+	typePayload["type"] = "groupchat"
+	sentRes, sendErr := fb_message_client.Send(context.TODO(), &messaging.Message{
+		Token: fcmToken,
+		Notification: &messaging.Notification{
+			Title: sendingUser + " just tagged you on in the " + threadVal + " thread",
+			Body:  strings.ReplaceAll(notificationBody, "\\", ""),
+		},
+
+		Webpush: &messaging.WebpushConfig{
+			Notification: &messaging.WebpushNotification{
+				Title: sendingUser + " just tagged you on in the " + threadVal + " thread",
+				Body:  strings.ReplaceAll(notificationBody, "\\", ""),
+				Data:  typePayload,
+			},
+		},
+	})
+	if sendErr != nil {
+		fmt.Print(sendErr)
+	}
+	db.Exec(fmt.Sprintf("insert into tfldata.sent_notification_log(\"notification_result\", \"createdon\") values('%s', '%s');", sentRes, time.Now().In(nyLoc).Local().Format(time.DateTime)))
 }
 
 func sendNotificationToAllUsers(db *sql.DB, curUser string, fb_message_client *messaging.Client, opts *notificationOpts) {

@@ -2408,7 +2408,9 @@ func main() {
 		curDate := time.Now().Format(time.DateOnly)
 		tcFile, err := os.Create(curDate + "_" + r.PostFormValue("tcName") + "_capsule_" + usernameFromSession + ".zip")
 		if err != nil {
-			panic(err)
+			activityStr := "Failed to create zip file in tccreatehandler"
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", err, time.Now().In(nyLoc).Format(time.DateTime), activityStr))
+			return
 		}
 
 		if r.PostFormValue("yearsToStore") == "one_year" {
@@ -2421,27 +2423,37 @@ func main() {
 		zipWriter := zip.NewWriter(tcFile)
 		parseerr := r.ParseMultipartForm(10 << 20)
 		if parseerr != nil {
-			fmt.Println(parseerr)
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('memory error multi file upload %s');", err))
+			activityStr := "Failed to parse multipart form create tc"
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", parseerr, time.Now().In(nyLoc).Format(time.DateTime), activityStr))
+			return
 		}
 		totalFilesSize := 0
 		for _, fh := range r.MultipartForm.File["tcfileinputname"] {
 
-			f, _ := fh.Open()
+			f, openErr := fh.Open()
+			if openErr != nil {
+				activityStr := "failed to open multipart file tc create"
+				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", openErr, time.Now().In(nyLoc).Format(time.DateTime), activityStr))
+				return
+			}
 
-			w1, err := zipWriter.Create("timecapsule/" + fh.Filename)
-			if err != nil {
-				fmt.Println("Err creating file to place in zip")
+			w1, createerr := zipWriter.Create("timecapsule/" + fh.Filename)
+			if createerr != nil {
+				activityStr := "Err creating file to place in zip tccreate handler"
+				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", createerr, time.Now().In(nyLoc).Format(time.DateTime), activityStr))
+				return
 			}
 			_, copyerr := io.Copy(w1, f)
 			if copyerr != nil {
-				fmt.Println("Err copying to zip")
+				activityStr := "Err copying file to zip create tc handler"
+				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", copyerr, time.Now().In(nyLoc).Format(time.DateTime), activityStr))
+				return
 			}
 			totalFilesSize += int(fh.Size / 1024 / 1024)
 			if err != nil {
 				activityStr := fmt.Sprintf("Open multipart file in createtimecapsulehandler - %s", usernameFromSession)
 				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", err, time.Now().In(nyLoc).Format(time.DateTime), activityStr))
-				w.WriteHeader(http.StatusBadRequest)
+				w.WriteHeader(http.StatusUnsupportedMediaType)
 				return
 			}
 			f.Close()

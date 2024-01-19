@@ -33,7 +33,7 @@
     </div>
     <header id="timecapheader">
         <p id="headerContent"
-            style="text-align: center; color: white; padding-left: 4%; padding-right: 4%; padding-bottom: 0%;">
+            style="text-align: center; color: white; padding-left: 2%; padding-right: 2%; padding-bottom: 0%; font-size: 9.5pt">
             Have you ever lost pictures from over the years or spent way too much time trying to find a specific video?
             Create a durable, digital time capsule to store pictures, video & even text files! Stored safely
             for 1, 3 or 7 years.
@@ -91,8 +91,9 @@
             </div><br />
             <label for="tcfileinput">Choose what to put in your time capsule:</label>
             <input id="tcfileinput" name="tcfileinputname" class="my-2 shadow" oninput="checkValidityOfFiles()" multiple
-                type="file" required style="width: 100%" maxlength="18" name="file_name"
-                accept="image/*,video/*,.txt,.pdf" placeholder="Upload photos or video" />
+                type="file" required
+                style="width: 100%; box-shadow: 3px 6px 10px gray!important; border-radius: 15px / 15px;" maxlength="18"
+                name="file_name" accept="image/*,video/*,.txt,.pdf" placeholder="Upload photo, videos or text files" />
             <p id="checkForFileListSize" style="color: red"></p>
             <button id="submitNewTCForm" class="btn btn-success" style="display: none" type="submit">Create!</button>
         </form>

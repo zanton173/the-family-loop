@@ -49,34 +49,43 @@
     </div>
     <div id="createNewCapsuleDiv">
 
-        <form id="createCapsuleForm" class="d-inline-grid" hx-post="/create-new-tc" hx-encoding="multipart/form-data"
-            hx-swap="none" hx-indicator="#loadingspinner"
+        <form id="createCapsuleForm" class="d-inline-grid mx-1" hx-post="/create-new-tc"
+            hx-encoding="multipart/form-data" hx-swap="none" hx-indicator="#loadingspinner"
             style="background-color: white; border-radius: 15px / 15px; padding: 3%; margin-top: 5%">
             <div style="display: block;">
-                <h3>How long would you like to store your time capsule?</h3>
-                <div class="form-check">
+                <h4>How long would you like to store your time capsule?</h4><br />
+                <div style="display: flex; justify-content: space-around;">
+                    <div class="form-check">
 
-                    <label class="form-check-label" for="yearsToStoreInput">
-                        <input class="form-check-input" type="radio" value="one_year" name="yearsToStore"
-                            id="yearsToStoreInput" checked>
-                        1 Year
-                    </label>
+                        <label class="form-check-label" for="yearsToStoreInput">
+                            <input class="form-check-input" type="radio" value="one_year" name="yearsToStore"
+                                id="yearsToStoreInput" checked>
+                            1 Year
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <label class="form-check-label" for="threeYearsToStore">
+                            <input class="form-check-input" type="radio" value="three_years" name="yearsToStore"
+                                id="threeYearsToStore">
+                            3 Years
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <label class="form-check-label" for="yearsToStoreInputSeven">
+                            <input class="form-check-input" type="radio" value="seven_years" name="yearsToStore"
+                                id="yearsToStoreInputSeven">
+                            7 Years
+                        </label>
+                    </div>
                 </div>
-                <div class="form-check">
-                    <label class="form-check-label" for="threeYearsToStore">
-                        <input class="form-check-input" type="radio" value="three_years" name="yearsToStore"
-                            id="threeYearsToStore">
-                        3 Years
-                    </label>
-                </div>
-                <div class="form-check">
-                    <label class="form-check-label" for="yearsToStoreInputSeven">
-                        <input class="form-check-input" type="radio" value="seven_years" name="yearsToStore"
-                            id="yearsToStoreInputSeven">
-                        7 Years
-                    </label>
-                </div>
-            </div>
+            </div><br />
+            <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+                <label for="capsulename">Give it a name!</label>
+                <input id="capsulename" name="tcName" type="text" maxlength="18" placeholder="My memories" required
+                    oninput="checkValidityOfFiles()"
+                    style="width: 50%; border-width: thin; border-radius: 24px / 24px; text-align: center; box-shadow: 2px 2px 7px gray;" />
+
+            </div><br />
             <label for="tcfileinput">Choose what to put in your time capsule:</label>
             <input id="tcfileinput" name="tcfileinputname" class="my-2 shadow" oninput="checkValidityOfFiles()" multiple
                 type="file" required style="width: 100%" name="file_name" accept="image/*,video/*"
@@ -113,7 +122,7 @@
                 curFileListSize += Math.trunc(document.getElementById('tcfileinput').files[i].size / 1024 / 1024)
             }
 
-            if (document.getElementById('tcfileinput').files.length > 0)
+            if (document.getElementById('tcfileinput').files.length > 0 && document.getElementById('capsulename').value.length > 0)
                 document.getElementById('submitNewTCForm').style.display = ""
             else
                 document.getElementById('submitNewTCForm').style.display = "none"

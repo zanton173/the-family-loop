@@ -11,4 +11,4 @@ firebase-config.js
 node_modules/
 terms_and_conditions.txt
 example_manifest.json
-.zip
+*.zip

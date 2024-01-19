@@ -2394,7 +2394,7 @@ func main() {
 			return
 		}
 		curDate := time.Now().Format(time.DateOnly)
-		tcFile, err := os.Create(curDate + "_capsule_" + usernameFromSession + ".zip")
+		tcFile, err := os.Create(curDate + "_" + r.PostFormValue("tcName") + "_capsule_" + usernameFromSession + ".zip")
 		if err != nil {
 			panic(err)
 		}
@@ -2430,7 +2430,7 @@ func main() {
 		zipWriter.Close()
 
 		// Send zip to S3
-		go uploadTimeCapsuleToS3(awskey, awskeysecret, tcFile, curDate+"_capsule_"+usernameFromSession+".zip", r)
+		go uploadTimeCapsuleToS3(awskey, awskeysecret, tcFile, curDate+"_"+r.PostFormValue("tcName")+"_capsule_"+usernameFromSession+".zip", r)
 	}
 
 	validateJWTHandler := func(w http.ResponseWriter, r *http.Request) {

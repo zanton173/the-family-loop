@@ -9,7 +9,7 @@ this.addEventListener("push", (event) => {
     event.waitUntil(this.registration.showNotification(notification.title, {
         actions: notification.actions,
         body: notification.body,
-        icon: "assets/apple-touch-icon.png",
+        icon: "assets/apple-touch-icon.jpg",
     }));
     notificationtype = notification.data.type
     notificationthread = notification.data.thread

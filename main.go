@@ -66,6 +66,7 @@ type notificationOpts struct {
 	extraPayloadVal   string
 	notificationTitle string
 	notificationBody  string
+	isTagged          bool
 }
 
 var awskey string
@@ -798,6 +799,7 @@ func main() {
 
 		chatMessageNotificationOpts.notificationTitle = "Somebody just made a new post!"
 		chatMessageNotificationOpts.notificationBody = strings.ReplaceAll(r.PostFormValue("title"), "\\", "")
+
 		go sendNotificationToAllUsers(db, usernameFromSession, fb_message_client, &chatMessageNotificationOpts)
 
 	}
@@ -959,7 +961,7 @@ func main() {
 
 	}
 	createCommentHandler := func(w http.ResponseWriter, r *http.Request) {
-		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
+		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, w, r)
 
 		validBool := validateJWTToken(jwtSignKey, w, r)
 		if !validBool || !allowOrDeny {
@@ -968,41 +970,29 @@ func main() {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
-		c, err := r.Cookie("session_id")
-
-		if err != nil {
-			if err == http.ErrNoCookie {
-				w.WriteHeader(http.StatusUnauthorized)
-				return
-			}
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-
-		if c.Valid() != nil {
-			fmt.Println("Cook is no longer valid")
-		}
 
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 
 		bs, _ := io.ReadAll(r.Body)
 		type postBody struct {
-			Comment        string
-			SelectedPostId int
+			Comment        string   `json:"comment"`
+			SelectedPostId int      `json:"selectedPostId"`
+			Taggedusers    []string `json:"taggedUser"`
 		}
+
 		var postData postBody
 		errmarsh := json.Unmarshal(bs, &postData)
 		if errmarsh != nil {
 			fmt.Println(errmarsh)
 		}
 
-		_, inserterr := db.Exec(fmt.Sprintf("insert into tfldata.comments(\"comment\", \"post_id\", \"author\") values(E'%s', '%d', (select username from tfldata.users where session_token='%s'));", replacer.Replace(postData.Comment), postData.SelectedPostId, c.Value))
+		_, inserterr := db.Exec(fmt.Sprintf("insert into tfldata.comments(\"comment\", \"post_id\", \"author\") values(E'%s', '%d', (select username from tfldata.users where username='%s'));", replacer.Replace(postData.Comment), postData.SelectedPostId, usernameFromSession))
 		if inserterr != nil {
 			fmt.Println(inserterr)
 		}
 		var author string
 		var pfpname string
-		row := db.QueryRow(fmt.Sprintf("select username, pfp_name from tfldata.users where session_token='%s';", c.Value))
+		row := db.QueryRow(fmt.Sprintf("select username, pfp_name from tfldata.users where username='%s';", usernameFromSession))
 		userscnerr := row.Scan(&author, &pfpname)
 
 		if userscnerr != nil || len(pfpname) == 0 {
@@ -1019,20 +1009,11 @@ func main() {
 		commentTmpl.Execute(w, nil)
 
 		var fcmToken string
-		fcmrow := db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where username = (select author from tfldata.posts where id=%d) and username != (select username from tfldata.users where session_token='%s');", postData.SelectedPostId, c.Value))
+		fcmrow := db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where username = (select author from tfldata.posts where id=%d) and username != (select username from tfldata.users where username='%s') and fcm_registration_id is not null;", postData.SelectedPostId, usernameFromSession))
 		scnerr := fcmrow.Scan(&fcmToken)
-		if scnerr != nil {
+		if scnerr == nil {
 
-			if scnerr.Error() == "sql: no rows in result set" {
-				w.WriteHeader(http.StatusAccepted)
-				return
-			}
-			db.Exec("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", scnerr, time.Now().In(nyLoc).Local().Format(time.DateTime))
-
-			return
-		} else {
-
-			fb_message_client, _ := app.Messaging(context.TODO())
+			//fb_message_client, _ := app.Messaging(context.TODO())
 			typePayload := make(map[string]string)
 			typePayload["type"] = "posts"
 			sentRes, sendErr := fb_message_client.Send(context.TODO(), &messaging.Message{
@@ -1054,6 +1035,43 @@ func main() {
 				fmt.Print(sendErr)
 			}
 			db.Exec(fmt.Sprintf("insert into tfldata.sent_notification_log(\"notification_result\", \"createdon\") values('%s', '%s');", sentRes, time.Now().In(nyLoc).Local().Format(time.DateTime)))
+		}
+		if len(postData.Taggedusers) > 0 {
+			var usersPost string
+			row := db.QueryRow(fmt.Sprintf("select author from tfldata.posts where id=%d", postData.SelectedPostId))
+			row.Scan(&usersPost)
+
+			for _, userTagged := range postData.Taggedusers {
+				var fcmToken string
+				fcmrow := db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where username = '%s' and username != (select username from tfldata.users where username='%s') and fcm_registration_id is not null;", userTagged, usernameFromSession))
+				scnerr := fcmrow.Scan(&fcmToken)
+				if scnerr == nil {
+
+					//fb_message_client, _ := app.Messaging(context.TODO())
+					typePayload := make(map[string]string)
+					typePayload["type"] = "posts"
+					sentRes, sendErr := fb_message_client.Send(context.TODO(), &messaging.Message{
+						Token: fcmToken,
+						Notification: &messaging.Notification{
+							Title: usernameFromSession + " tagged you on " + usersPost + "'s post",
+							Body:  "\"" + postData.Comment + "\"",
+						},
+
+						Webpush: &messaging.WebpushConfig{
+							Notification: &messaging.WebpushNotification{
+								Title: usernameFromSession + " tagged you on " + usersPost + "'s post",
+								Body:  "\"" + postData.Comment + "\"",
+								Data:  typePayload,
+							},
+						},
+					})
+					if sendErr != nil {
+						fmt.Print(sendErr)
+					}
+					db.Exec(fmt.Sprintf("insert into tfldata.sent_notification_log(\"notification_result\", \"createdon\") values('%s', '%s');", sentRes, time.Now().In(nyLoc).Local().Format(time.DateTime)))
+				}
+
+			}
 		}
 	}
 	getEventsHandler := func(w http.ResponseWriter, r *http.Request) {
@@ -1378,7 +1396,6 @@ func main() {
 			db.Exec("insert into tfldata.users_to_threads(\"username\") select distinct(username) from tfldata.users;")
 			db.Exec(fmt.Sprintf("update tfldata.users_to_threads set is_subscribed=true, thread='%s' where is_subscribed is null and thread is null;", threadVal))
 		}
-		var fcmRegToken string
 		var chatMessageNotificationOpts notificationOpts
 		chatMessageNotificationOpts.extraPayloadKey = "thread"
 		chatMessageNotificationOpts.extraPayloadVal = threadVal
@@ -1387,13 +1404,36 @@ func main() {
 		chatMessageNotificationOpts.notificationBody = strings.ReplaceAll(chatMessage, "\\", "")
 
 		go sendNotificationToAllUsers(db, usernameFromSession, fb_message_client, &chatMessageNotificationOpts)
-		if len(listOfUsersTagged) > 0 {
-			for _, val := range listOfUsersTagged {
-				fcmRegRow := db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where username='%s' and username != '%s';", val, usernameFromSession))
-				scner := fcmRegRow.Scan(&fcmRegToken)
-				if scner == nil {
-					sendNotificationToTaggedUser(w, r, fcmRegToken, db, strings.ReplaceAll(chatMessage, "\\", ""), app)
+
+		if len(listOfUsersTagged[0]) > 0 {
+			for _, taggedUser := range listOfUsersTagged {
+				var fcmToken string
+				row := db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where username='%s';", taggedUser))
+
+				row.Scan(&fcmToken)
+
+				typePayload := make(map[string]string)
+				typePayload["type"] = "groupchat"
+				sentRes, sendErr := fb_message_client.Send(context.TODO(), &messaging.Message{
+					Token: fcmToken,
+					Notification: &messaging.Notification{
+						Title: usernameFromSession + " just tagged you on in the " + threadVal + " thread",
+						Body:  strings.ReplaceAll(chatMessage, "\\", ""),
+					},
+
+					Webpush: &messaging.WebpushConfig{
+						Notification: &messaging.WebpushNotification{
+							Title: usernameFromSession + " just tagged you on in the " + threadVal + " thread",
+							Body:  strings.ReplaceAll(chatMessage, "\\", ""),
+							Data:  typePayload,
+						},
+					},
+				})
+				if sendErr != nil {
+					fmt.Print(sendErr)
 				}
+				db.Exec(fmt.Sprintf("insert into tfldata.sent_notification_log(\"notification_result\", \"createdon\") values('%s', '%s');", sentRes, time.Now().In(nyLoc).Local().Format(time.DateTime)))
+
 			}
 		}
 		w.Header().Set("HX-Trigger", "success-send")
@@ -2810,41 +2850,15 @@ func uploadFileToS3(k string, s string, bucketexists bool, f multipart.File, fn 
 	return filetype
 }
 
-func sendNotificationToTaggedUser(w http.ResponseWriter, r *http.Request, fcmToken string, db *sql.DB, message string, app *firebase.App) {
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-
-	fb_message_client, _ := app.Messaging(context.TODO())
-	typePayload := make(map[string]string)
-	typePayload["type"] = "groupchat"
-	sentRes, sendErr := fb_message_client.Send(context.TODO(), &messaging.Message{
-		Token: fcmToken,
-
-		Webpush: &messaging.WebpushConfig{
-			Notification: &messaging.WebpushNotification{
-				Title: "Someone tagged you",
-				Body:  message,
-				Data:  typePayload,
-				/*
-				   Actions: []*messaging.WebpushNotificationAction{
-				   {
-				   Action: "Open",
-				   Title:  "Open message",
-				   Icon:   "assets/android-chrome-512x512.png",
-				   },
-				   },
-				*/
-			},
-		},
-	})
-	if sendErr != nil {
-		fmt.Print(sendErr)
-	}
-	db.Exec(fmt.Sprintf("insert into tfldata.sent_notification_log(\"notification_result\", \"createdon\") values('%s', '%s');", sentRes, time.Now().In(nyLoc).Format(time.DateTime)))
-}
-
 func sendNotificationToAllUsers(db *sql.DB, curUser string, fb_message_client *messaging.Client, opts *notificationOpts) {
 
-	output, outerr := db.Query(fmt.Sprintf("select username from tfldata.users_to_threads where thread='%s' and username != '%s' and is_subscribed=true;", opts.extraPayloadVal, curUser))
+	var output *sql.Rows
+	var outerr error
+	if opts.isTagged {
+		output, outerr = db.Query(fmt.Sprintf("select username from tfldata.users_to_threads where thread='%s' and username != '%s';", opts.extraPayloadVal, curUser))
+	} else {
+		output, outerr = db.Query(fmt.Sprintf("select username from tfldata.users_to_threads where thread='%s' and username != '%s' and is_subscribed=true;", opts.extraPayloadVal, curUser))
+	}
 	if outerr != nil {
 		activityStr := "Panic on sendnotificationtoallusers first db output"
 		db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"activity\", \"createdon\") values ('%s', '%s', now());", outerr, activityStr))
@@ -2892,7 +2906,7 @@ func sendNotificationToAllUsers(db *sql.DB, curUser string, fb_message_client *m
 			}
 			if sendErr != nil {
 				activityStr := "Error sending notificationtoallusers"
-				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", sendErr, time.Now().In(nyLoc).Format(time.DateTime), activityStr))
+				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", sendErr.Error()[90:], time.Now().In(nyLoc).Format(time.DateTime), activityStr))
 				// fmt.Print(sendErr.Error() + " for user: " + userToSend)
 				if strings.Contains(sendErr.Error(), "404") {
 					db.Exec(fmt.Sprintf("update tfldata.users set fcm_registration_id=null where username='%s';", userToSend))

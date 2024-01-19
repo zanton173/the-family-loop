@@ -112,10 +112,21 @@
                 </div>
 
                 <form id="createcomment" class="d-grid" hx-post="/create-comment"
-                    hx-vals='js:{"selectedPostId": selectedPostId}' hx-ext='json-enc' hx-target="#modal-post-content"
-                    hx-swap="beforeend" hx-on:htmx:after-request="clearForm()">
+                    hx-vals='js:{"selectedPostId": selectedPostId, "taggedUser": taggedUser}' hx-ext='json-enc'
+                    hx-target="#modal-post-content" hx-swap="beforeend" hx-on:htmx:after-request="clearForm()">
+
+                    <div id="popovermain" style="display: none; justify-content: center;" class="popover"
+                        role="tooltip">
+                        <h3 class="popover-header">tag user</h3>
+                        <div id="popbody">
+
+                        </div>
+
+                    </div>
+
                     <input class="my-2 shadow-sm border-1 text-center" name="comment" id="commentnote" type="text"
-                        placeholder="add comment" required maxlength="280" oninput="checkCommentValidity()" />
+                        placeholder="add comment" required maxlength="280"
+                        oninput="{checkCommentValidity(); checkForTagging()}" />
 
 
                     <button type="button" class="btn btn-dark col" data-bs-dismiss="modal">close</button><br />
@@ -176,6 +187,10 @@
     </div>
 
     <script>
+
+        var listOfUsersArr = []
+        var taggedUser = []
+        var newInput = ""
 
         const reactIcons = document.getElementById('reactionicons')
         var sendEmojiTo = null
@@ -320,6 +335,46 @@
  
          }*/
 
+        async function checkForTagging() {
+            newInput = document.getElementById('commentnote').value
+            for (var i = 0; i < taggedUser.length; i++) {
+                newInput = newInput.replace(taggedUser[i], "")
+            }
+
+            if (newInput.includes('@') && newInput.split('@')[1] > '') {
+
+                const resp = await fetch("/get-all-users-to-tag?user=" + newInput.split('@')[1], {
+                    method: "GET",
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+
+                listOfUsersArr = await resp.json()
+                if (listOfUsersArr != null) {
+                    var userStr = ""
+                    listOfUsersArr.forEach((item) => {
+                        userStr += `<p style='text-align: center;' onclick=selectTaggedUser('${item}') id='${item}'>${item}</p>`
+                        document.getElementById('popbody').innerHTML = userStr
+
+                    })
+
+                } else {
+                    document.getElementById('popbody').innerHTML = "No user found..."
+                }
+
+                document.getElementById('popovermain').setAttribute("style", "display: block; width: 50%; margin-left: 25%")
+
+            } else {
+                document.getElementById('popovermain').setAttribute("style", "display: none")
+            }
+        }
+        function selectTaggedUser(username) {
+            document.getElementById('commentnote').focus()
+            taggedUser.push(username)
+            document.getElementById('commentnote').value = document.getElementById('commentnote').value.replace('@'.concat(newInput.split('@')[1]), username)
+            document.getElementById('popovermain').setAttribute("style", "display: none")
+        }
         function checkCommentValidity() {
 
 
@@ -340,6 +395,7 @@
             if (document.getElementById('createcomment').contains(submitBtn)) {
                 document.getElementById('createcomment').removeChild(submitBtn)
                 document.getElementById('commentnote').value = ''
+                taggedUser = []
             }
         }
 

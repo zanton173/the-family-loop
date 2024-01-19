@@ -2520,8 +2520,22 @@ func main() {
 
 			output.Scan(&myTcOut.tcname, &myTcOut.createdon, &myTcOut.availableOn)
 
-			w.Write([]byte(fmt.Sprintf("<tr><td>%s</td><td>%s</td><td>%s</td></tr>", myTcOut.tcname, strings.Split(myTcOut.createdon, "T")[0], strings.Split(myTcOut.availableOn, "T")[0])))
+			w.Write([]byte(fmt.Sprintf("<tr><td>%s</td><td>%s</td><td>%s</td><td hx-swap='none' hx-post='/delete-my-tc' hx-ext='json-enc' hx-vals='{%s: %s}' hx-confirm='This will delete the time capsule forever and it will be unretrievable. Are you sure you want to continue?' style='text-align: center; font-size: larger; color: red;'>X</td></tr>", myTcOut.tcname, strings.Split(myTcOut.createdon, "T")[0], strings.Split(myTcOut.availableOn, "T")[0], "\"myTCName\"", "\""+myTcOut.tcname+"\"")))
 		}
+	}
+
+	deleteMyTChandler := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, w, r)
+
+		validBool := validateJWTToken(jwtSignKey, w, r)
+		if !validBool || !allowOrDeny {
+			w.Header().Set("HX-Retarget", "window")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		w.Write([]byte(usernameFromSession))
 	}
 
 	validateJWTHandler := func(w http.ResponseWriter, r *http.Request) {
@@ -2680,6 +2694,8 @@ func main() {
 
 	http.HandleFunc("/create-new-tc", createNewTimeCapsuleHandler)
 	http.HandleFunc("/get-my-time-capsules", getMyTimeCapsulesHandler)
+
+	http.HandleFunc("/delete-my-tc", deleteMyTChandler)
 
 	http.HandleFunc("/admin-list-of-users", adminGetListOfUsersHandler)
 

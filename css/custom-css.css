@@ -34,6 +34,10 @@ div.htmx-request.spinner-indicator {
 
 }
 
+label {
+    width: 100% !important
+}
+
 #timecapheader {
     opacity: 0;
     transition: opacity 1s ease-in;
@@ -43,6 +47,7 @@ div.htmx-request.spinner-indicator {
     opacity: 1;
 }
 
+#postinput::file-selector-button,
 #tcfileinput::file-selector-button {
     border-radius: 15px / 15px;
     border-width: 0;

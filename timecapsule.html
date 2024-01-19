@@ -99,12 +99,33 @@
         </form>
     </div>
     <div id="myCapsulesDiv" style="display: none;">
-        my current
+        <div style="margin-top: 1%" id="getEleListOfTC" hx-get="/get-my-time-capsules" hx-target="#listOfTCDivList"
+            hx-trigger="click" hx-vals="js:{'pastorpresent': pastOrPresentTC}">
+            <table class="table d-grid">
+                <thead>
+                    <tr style="display: flex; width: 100dvw; justify-content: space-between; background-color: white;">
+                        <th style="font-size: smaller;">Capsule Name</th>
+                        <th style="font-size: smaller;">Created on</th>
+                        <th style="font-size: smaller;" id="sortOrderPastOrPresentHeading"
+                            onclick="pastOrPresentTC === '>' ? pastOrPresentTC = '<' : pastOrPresentTC = '>'">
+                            Availablility Date</th>
+                    </tr>
+                </thead>
+                <tbody id="listOfTCDivList" style="font-size: small; display: inline-table"></tbody>
+            </table>
+        </div>
     </div>
 
     <script>
+        // pastorpresent
+        /*
+        hx-get="/admin-list-of-users" hx-target="#listOfUsersDivList"
+                hx-trigger="click, click from:#sortOrderLastPassReset"
+                hx-vals="js:{'sortByLastPass': sortOrderByLastPassReset}"
+                */
         const createNewCapPage = document.getElementById('createNewCapsuleDiv')
         const usersCapsPage = document.getElementById('myCapsulesDiv')
+        var pastOrPresentTC = ">"
         document.addEventListener('DOMContentLoaded', () => {
 
             document.getElementById('timecapheader').classList.add('fadeInOpacity')
@@ -114,6 +135,7 @@
                 document.getElementById('currentPageSelector').innerHTML = "My Capsules"
                 createNewCapPage.style.display = "none"
                 usersCapsPage.style.display = ""
+                document.getElementById('getEleListOfTC').dispatchEvent(new Event('click'))
             } else {
                 document.getElementById('currentPageSelector').innerHTML = "Create a New Capsule!"
                 createNewCapPage.style.display = ""

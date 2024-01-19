@@ -2471,6 +2471,38 @@ func main() {
 		go uploadTimeCapsuleToS3(awskey, awskeysecret, tcFile, curDate+"_"+r.PostFormValue("tcName")+"_capsule_"+usernameFromSession+".zip", r)
 	}
 
+	getMyTimeCapsulesHandler := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "multipart/form-data")
+		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, w, r)
+
+		validBool := validateJWTToken(jwtSignKey, w, r)
+		if !validBool || !allowOrDeny {
+			w.Header().Set("HX-Retarget", "window")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		type listOfTC struct {
+			tcname      string
+			createdon   string
+			availableOn string
+		}
+
+		output, _ := db.Query(fmt.Sprintf("select tcname, createdon, available_on from tfldata.timecapsule where username='%s' and available_on %s now() order by available_on asc;", usernameFromSession, r.URL.Query().Get("pastorpresent")))
+
+		defer output.Close()
+
+		for output.Next() {
+
+			var myTcOut listOfTC
+
+			output.Scan(&myTcOut.tcname, &myTcOut.createdon, &myTcOut.availableOn)
+
+			w.Write([]byte(fmt.Sprintf("<tr><td>%s</td><td>%s</td><td>%s</td></tr>", myTcOut.tcname, strings.Split(myTcOut.createdon, "T")[0], strings.Split(myTcOut.availableOn, "T")[0])))
+		}
+	}
+
 	validateJWTHandler := func(w http.ResponseWriter, r *http.Request) {
 		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
 
@@ -2626,6 +2658,7 @@ func main() {
 	http.HandleFunc("/change-if-notified-for-thread", changeUserSubscriptionToThreadHandler)
 
 	http.HandleFunc("/create-new-tc", createNewTimeCapsuleHandler)
+	http.HandleFunc("/get-my-time-capsules", getMyTimeCapsulesHandler)
 
 	http.HandleFunc("/admin-list-of-users", adminGetListOfUsersHandler)
 

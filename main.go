@@ -1,6 +1,7 @@
 package main
 
 import (
+	"archive/zip"
 	"bytes"
 	"context"
 	"crypto/rand"
@@ -2381,6 +2382,57 @@ func main() {
 		}
 
 	}
+	createNewTimeCapsuleHandler := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "multipart/form-data")
+		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, w, r)
+
+		validBool := validateJWTToken(jwtSignKey, w, r)
+		if !validBool || !allowOrDeny {
+			w.Header().Set("HX-Retarget", "window")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		curDate := time.Now().Format(time.DateOnly)
+		tcFile, err := os.Create(curDate + "_capsule_" + usernameFromSession + ".zip")
+		if err != nil {
+			panic(err)
+		}
+
+		zipWriter := zip.NewWriter(tcFile)
+		parseerr := r.ParseMultipartForm(10 << 20)
+		if parseerr != nil {
+			fmt.Println(parseerr)
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('memory error multi file upload %s');", err))
+		}
+		totalFilesSize := 0
+		for _, fh := range r.MultipartForm.File["tcfileinputname"] {
+
+			f, _ := fh.Open()
+
+			w1, err := zipWriter.Create("timecapsule/" + fh.Filename)
+			if err != nil {
+				fmt.Println("Err creating file to place in zip")
+			}
+			_, copyerr := io.Copy(w1, f)
+			if copyerr != nil {
+				fmt.Println("Err copying to zip")
+			}
+			totalFilesSize += int(fh.Size / 1024 / 1024)
+			if err != nil {
+				activityStr := fmt.Sprintf("Open multipart file in createtimecapsulehandler - %s", usernameFromSession)
+				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", err, time.Now().In(nyLoc).Format(time.DateTime), activityStr))
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+			f.Close()
+		}
+		zipWriter.Close()
+
+		// Send zip to S3
+		go uploadTimeCapsuleToS3(awskey, awskeysecret, tcFile, curDate+"_capsule_"+usernameFromSession+".zip", r)
+	}
+
 	validateJWTHandler := func(w http.ResponseWriter, r *http.Request) {
 		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
 
@@ -2391,6 +2443,7 @@ func main() {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
+
 	}
 	/* NOT USING THIS RIGHT NOW */
 	/*refreshTokenHandler := func(w http.ResponseWriter, r *http.Request) {
@@ -2533,6 +2586,8 @@ func main() {
 
 	http.HandleFunc("/get-users-subscribed-threads", getUsersSubscribedThreadsHandler)
 	http.HandleFunc("/change-if-notified-for-thread", changeUserSubscriptionToThreadHandler)
+
+	http.HandleFunc("/create-new-tc", createNewTimeCapsuleHandler)
 
 	http.HandleFunc("/admin-list-of-users", adminGetListOfUsersHandler)
 
@@ -2826,4 +2881,37 @@ func validateCurrentSessionId(db *sql.DB, w http.ResponseWriter, r *http.Request
 
 	return scnerr == nil, username
 
+}
+func uploadTimeCapsuleToS3(k string, s string, f *os.File, fn string, r *http.Request) {
+	f.Seek(0, 0)
+	cfg, err := config.LoadDefaultConfig(context.TODO(),
+		config.WithDefaultRegion("us-east-1"),
+		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(k, s, "")),
+	)
+
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(4)
+	}
+
+	client := s3.NewFromConfig(cfg)
+
+	defer f.Close()
+
+	_, s3err := client.PutObject(context.TODO(), &s3.PutObjectInput{
+		Bucket:      aws.String(s3Domain),
+		Key:         aws.String("timecapsules/" + fn),
+		ContentType: aws.String("application/octet-stream"),
+		Body:        f,
+
+		//StorageClass: types.StorageClassGlacier,
+		Tagging: aws.String("YearsToStore=" + r.PostFormValue("yearsToStore")),
+	})
+
+	if s3err != nil {
+		fmt.Println("error on upload")
+		fmt.Println(s3err.Error())
+	}
+
+	defer os.Remove(fn)
 }

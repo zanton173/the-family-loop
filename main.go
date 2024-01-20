@@ -2547,9 +2547,32 @@ func main() {
 			return
 		}
 
-		//bs, _ := io.ReadAll(r.Body)
+		type postBody struct {
+			MyTCName string `json:"myTCName"`
+		}
+		type tcData struct {
+			username  string
+			createdon string
+			tcname    string
+		}
+		var postData postBody
+		var selectedTc tcData
+		bs, _ := io.ReadAll(r.Body)
 
-		w.Write([]byte(usernameFromSession))
+		json.Unmarshal(bs, &postData)
+
+		tcrow := db.QueryRow(fmt.Sprintf("select username,createdon,tcname from tfldata.timecapsule where username='%s' and tcname='%s';", usernameFromSession, postData.MyTCName))
+
+		tcrow.Scan(&selectedTc.username, &selectedTc.createdon, &selectedTc.tcname)
+
+		_, delerr := db.Exec(fmt.Sprintf("delete from tfldata.timecapsule where username='%s' and tcname='%s';", usernameFromSession, postData.MyTCName))
+		if delerr != nil {
+			activityStr := "Failed to delete time capsule from DB"
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", delerr, time.Now().In(nyLoc).Format(time.DateTime), activityStr))
+			return
+		}
+		deletename := strings.Split(selectedTc.createdon, "T")[0] + "_" + selectedTc.tcname + "_capsule_" + selectedTc.username + ".zip"
+		go deleteTCFromS3(awskey, awskeysecret, deletename)
 	}
 
 	validateJWTHandler := func(w http.ResponseWriter, r *http.Request) {
@@ -3034,4 +3057,27 @@ func uploadTimeCapsuleToS3(k string, s string, f *os.File, fn string, r *http.Re
 	}
 
 	defer os.Remove(fn)
+}
+func deleteTCFromS3(k string, s string, delname string) {
+	cfg, err := config.LoadDefaultConfig(context.TODO(),
+		config.WithDefaultRegion("us-east-1"),
+		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(k, s, "")),
+	)
+
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(4)
+	}
+
+	client := s3.NewFromConfig(cfg)
+
+	client.DeleteObject(context.TODO(), &s3.DeleteObjectInput{
+		Bucket: aws.String(s3Domain),
+		Key:    aws.String("timecapsules/" + delname),
+	})
+
+	if err != nil {
+		fmt.Println("error on image delete")
+		fmt.Println(err.Error())
+	}
 }

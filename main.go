@@ -2416,6 +2416,17 @@ func main() {
 		}
 		var expiresOn string
 		var curAmountOfStoredCapsules int
+		var nameExists bool
+
+		searchForName := db.QueryRow(fmt.Sprintf("select true as true from tfldata.timecapsule where tcname='%s' and username='%s' limit 1;", r.PostFormValue("tcName"), usernameFromSession))
+
+		searchForName.Scan(&nameExists)
+
+		if !nameExists {
+			w.WriteHeader(http.StatusNotAcceptable)
+			w.Write([]byte("Please use a unique name."))
+			return
+		}
 
 		row := db.QueryRow(fmt.Sprintf("select count(*) from tfldata.timecapsule where username='%s' and available_on > now();", usernameFromSession))
 		row.Scan(&curAmountOfStoredCapsules)
@@ -2535,6 +2546,9 @@ func main() {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
+
+		//bs, _ := io.ReadAll(r.Body)
+
 		w.Write([]byte(usernameFromSession))
 	}
 

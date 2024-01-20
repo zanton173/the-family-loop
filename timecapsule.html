@@ -162,6 +162,8 @@
         function afterTCCreateReq(event) {
             if (event.detail.xhr.status === 200)
                 alert("Upload successful!")
+            else if (event.detail.xhr.status == 406)
+                alert(event.detail.xhr.responseText)
             else
                 alert(event.detail.xhr.responseText)
         }

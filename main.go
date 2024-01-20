@@ -2416,13 +2416,13 @@ func main() {
 		}
 		var expiresOn string
 		var curAmountOfStoredCapsules int
-		var nameExists bool
+		var nameExists string
 
-		searchForName := db.QueryRow(fmt.Sprintf("select true as true from tfldata.timecapsule where tcname='%s' and username='%s' limit 1;", r.PostFormValue("tcName"), usernameFromSession))
+		searchForName := db.QueryRow(fmt.Sprintf("select tcname from tfldata.timecapsule where tcname='%s' and username='%s' limit 1;", r.PostFormValue("tcName"), usernameFromSession))
 
 		searchForName.Scan(&nameExists)
 
-		if !nameExists {
+		if len(nameExists) > 0 {
 			w.WriteHeader(http.StatusNotAcceptable)
 			w.Write([]byte("Please use a unique name."))
 			return

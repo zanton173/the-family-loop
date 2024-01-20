@@ -107,8 +107,9 @@
             </select>
         </div>
         <div style="display: inline-flex">
-            <b id="usernameLeaderBoardTag" class="px-1 m-0"
-                style="position: absolute; left: 16%; text-align: center">Username</b>
+            <b id="usernameLeaderBoardTag" hx-get="/get-my-personal-score-catchit" hx-target="#leaderboardLoadTarget"
+                class="px-1 m-0" style="position: absolute; left: 16%; text-align: center">Username<i
+                    class="bi bi-filter"></i></b>
             <b id="scoreLeaderBoardTag" class="px-2 mx-3"
                 style="position: absolute; left: 60%; text-align: center">Points</b>
             <b id="familyLeaderBoardTag" class="px-2 mx-3"
@@ -141,6 +142,8 @@
         const gameLifeTwo = document.getElementById('gamelifetwo')
         const gameLifeThree = document.getElementById('gamelifethree')
         const gameNet = document.getElementById('gameNet')
+        var filt = document.createElement('i')
+        filt.classList.add('bi', 'bi-filter')
         var currentGameNetPos = 50
         var score = document.getElementById('score')
         for (var i = 0; i < 100; i++) {
@@ -186,6 +189,17 @@
             document.getElementById('delvingprizesbanner').innerHTML = ""
             document.getElementById('htmxleaderboard').dispatchEvent(new Event('click'))
         }
+        document.getElementById('usernameLeaderBoardTag').addEventListener('click', () => {
+            if (document.getElementById('usernameLeaderBoardTag').innerHTML.includes('Username')) {
+                document.getElementById('usernameLeaderBoardTag').innerHTML = username
+                document.getElementById('usernameLeaderBoardTag').append(filt)
+            } else {
+
+                document.getElementById('htmxleaderboard').dispatchEvent(new Event('click'))
+                document.getElementById('usernameLeaderBoardTag').innerHTML = 'Username'
+                document.getElementById('usernameLeaderBoardTag').append(filt)
+            }
+        })
         async function getCurrentUsername() {
 
             const resp = await fetch("/get-username-from-session", {

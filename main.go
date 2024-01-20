@@ -2005,6 +2005,34 @@ func main() {
 		}
 		coll.InsertOne(context.TODO(), bson.M{"org_id": orgId, "game": "stackerz", "bonus_points": postData.BonusPoints, "level": postData.Level, "username": postData.Username, "createdOn": time.Now()})
 	}
+	getPersonalCatchitLeaderboardHandler := func(w http.ResponseWriter, r *http.Request) {
+		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, w, r)
+
+		validBool := validateJWTToken(jwtSignKey, w, r)
+		if !validBool || !allowOrDeny {
+			w.Header().Set("HX-Retarget", "window")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		output, outerr := db.Query(fmt.Sprintf("select username, score from tfldata.catchitleaderboard where username='%s' order by score desc limit 20;", usernameFromSession))
+		if outerr != nil {
+			fmt.Println(outerr)
+		}
+		defer output.Close()
+		iter := 1
+		for output.Next() {
+			var username string
+			var score string
+			scnerr := output.Scan(&username, &score)
+			if scnerr != nil {
+				fmt.Println(scnerr)
+			}
+			dataStr := "<div class='py-0 my-0' style='display: inline-flex;'><p class='px-2 m-0' style='position: absolute; left: 2%;'>" + fmt.Sprintf("%d", iter) + ".)&nbsp;&nbsp;</p><p class='px-2 m-0' style='text-align: center; position: absolute; left: 15%;'>" + username + "</p><p class='px-2 m-0' style='text-align: center; position: absolute; left: 65%;'>" + score + "</p></div><br/>"
+			iter++
+			w.Write([]byte(dataStr))
+		}
+	}
 	getCatchitLeaderboardHandler := func(w http.ResponseWriter, r *http.Request) {
 		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
 
@@ -2525,13 +2553,21 @@ func main() {
 
 		defer output.Close()
 
-		for output.Next() {
+		iter := 0
 
+		for output.Next() {
+			bgColor := "white"
 			var myTcOut listOfTC
+			if iter%2 == 0 {
+				bgColor = "white"
+			} else {
+				bgColor = "#efefefe6"
+			}
 
 			output.Scan(&myTcOut.tcname, &myTcOut.createdon, &myTcOut.availableOn)
 
-			w.Write([]byte(fmt.Sprintf("<tr><td>%s</td><td>%s</td><td>%s</td><td hx-swap='none' hx-post='/delete-my-tc' hx-ext='json-enc' hx-vals='{%s: %s}' hx-confirm='This will delete the time capsule forever and it will be unretrievable. Are you sure you want to continue?' style='text-align: center; font-size: larger; color: red;'>X</td></tr>", myTcOut.tcname, strings.Split(myTcOut.createdon, "T")[0], strings.Split(myTcOut.availableOn, "T")[0], "\"myTCName\"", "\""+myTcOut.tcname+"\"")))
+			w.Write([]byte(fmt.Sprintf("<tr><td style='background-color: %s'>%s</td><td style='background-color: %s'>%s</td><td style='background-color: %s'>%s</td><td  style='background-color: %s; text-align: center; font-size: larger; color: red;' hx-swap='none' hx-post='/delete-my-tc' hx-ext='json-enc' hx-vals='{%s: %s}' hx-confirm='This will delete the time capsule forever and it will be unretrievable. Are you sure you want to continue?'>X</td></tr>", bgColor, myTcOut.tcname, bgColor, strings.Split(myTcOut.createdon, "T")[0], bgColor, strings.Split(myTcOut.availableOn, "T")[0], bgColor, "\"myTCName\"", "\""+myTcOut.tcname+"\"")))
+			iter++
 		}
 	}
 
@@ -2722,6 +2758,7 @@ func main() {
 	http.HandleFunc("/update-stackerz-score", updateStackerzScoreHandler)
 
 	http.HandleFunc("/get-catchit-leaderboard", getCatchitLeaderboardHandler)
+	http.HandleFunc("/get-my-personal-score-catchit", getPersonalCatchitLeaderboardHandler)
 	http.HandleFunc("/update-catchit-score", updateCatchitScoreHandler)
 
 	http.HandleFunc("/get-open-threads", getOpenThreadsHandler)

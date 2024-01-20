@@ -103,13 +103,14 @@
             hx-trigger="click" hx-vals="js:{'pastorpresent': pastOrPresentTC}">
             <table class="table d-grid">
                 <thead>
-                    <tr style="display: flex; width: 100dvw; justify-content: space-between; background-color: white;">
-                        <th style="font-size: smaller;">Capsule Name</th>
-                        <th style="font-size: smaller;">Created on</th>
-                        <th style="font-size: smaller;" id="sortOrderPastOrPresentHeading"
+                    <tr
+                        style="display: flex; width: 100dvw; justify-content: space-between; background-color: white; align-items: center">
+                        <th style="font-size: 8pt; left: 0%; position: relative;">Capsule Name</th>
+                        <th style="font-size: 8pt; left: 5%; position: relative;">Created on</th>
+                        <th style="font-size: 8pt; left: 5%; position: relative;" id="sortOrderPastOrPresentHeading"
                             onclick="pastOrPresentTC === '>' ? pastOrPresentTC = '<' : pastOrPresentTC = '>'">
-                            Availablility Date</th>
-                        <th onclick="alert('delete')" style="font-size: smaller">
+                            Availablility Date<i class="bi bi-filter"></i></th>
+                        <th style="font-size: 7pt;">
                             delete
                         </th>
                     </tr>

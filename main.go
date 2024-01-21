@@ -1019,8 +1019,9 @@ func main() {
 			sentRes, sendErr := fb_message_client.Send(context.TODO(), &messaging.Message{
 				Token: fcmToken,
 				Notification: &messaging.Notification{
-					Title: author + " commented on your post!",
-					Body:  "\"" + postData.Comment + "\"",
+					Title:    author + " commented on your post!",
+					Body:     "\"" + postData.Comment + "\"",
+					ImageURL: "/assets/icon-180x180.jpg",
 				},
 
 				Webpush: &messaging.WebpushConfig{
@@ -1028,6 +1029,8 @@ func main() {
 						Title: author + " commented on your post!",
 						Body:  "\"" + postData.Comment + "\"",
 						Data:  typePayload,
+						Image: "/assets/icon-180x180.jpg",
+						Icon:  "/assets/icon-96x96.jpg",
 					},
 				},
 			})
@@ -1053,8 +1056,9 @@ func main() {
 					sentRes, sendErr := fb_message_client.Send(context.TODO(), &messaging.Message{
 						Token: fcmToken,
 						Notification: &messaging.Notification{
-							Title: usernameFromSession + " tagged you on " + usersPost + "'s post",
-							Body:  "\"" + postData.Comment + "\"",
+							Title:    usernameFromSession + " tagged you on " + usersPost + "'s post",
+							Body:     "\"" + postData.Comment + "\"",
+							ImageURL: "/assets/icon-180x180.jpg",
 						},
 
 						Webpush: &messaging.WebpushConfig{
@@ -1062,6 +1066,8 @@ func main() {
 								Title: usernameFromSession + " tagged you on " + usersPost + "'s post",
 								Body:  "\"" + postData.Comment + "\"",
 								Data:  typePayload,
+								Image: "/assets/icon-180x180.jpg",
+								Icon:  "/assets/icon-96x96.jpg",
 							},
 						},
 					})
@@ -1275,8 +1281,9 @@ func main() {
 			sentRes, sendErr := fb_message_client.Send(context.TODO(), &messaging.Message{
 				Token: fcmToken,
 				Notification: &messaging.Notification{
-					Title: "Someone RSVPed to your event",
-					Body:  postData.Username + " responded to your event",
+					Title:    "Someone RSVPed to your event",
+					Body:     postData.Username + " responded to your event",
+					ImageURL: "/assets/icon-180x180.jpg",
 				},
 
 				Webpush: &messaging.WebpushConfig{
@@ -1284,6 +1291,8 @@ func main() {
 						Title: "Someone RSVPed to your event",
 						Body:  postData.Username + " responded to your event",
 						Data:  typePayload,
+						Image: "/assets/icon-180x180.jpg",
+						Icon:  "/assets/icon-96x96.jpg",
 					},
 				},
 			})
@@ -2927,8 +2936,9 @@ func sendNotificationToSingleUser(db *sql.DB, fb_message_client *messaging.Clien
 	sentRes, sendErr := fb_message_client.Send(context.TODO(), &messaging.Message{
 		Token: fcmToken,
 		Notification: &messaging.Notification{
-			Title: sendingUser + " just tagged you on in the " + threadVal + " thread",
-			Body:  strings.ReplaceAll(notificationBody, "\\", ""),
+			Title:    sendingUser + " just tagged you on in the " + threadVal + " thread",
+			Body:     strings.ReplaceAll(notificationBody, "\\", ""),
+			ImageURL: "/assets/icon-180x180.jpg",
 		},
 
 		Webpush: &messaging.WebpushConfig{
@@ -2936,6 +2946,8 @@ func sendNotificationToSingleUser(db *sql.DB, fb_message_client *messaging.Clien
 				Title: sendingUser + " just tagged you on in the " + threadVal + " thread",
 				Body:  strings.ReplaceAll(notificationBody, "\\", ""),
 				Data:  typePayload,
+				Image: "/assets/icon-180x180.jpg",
+				Icon:  "/assets/icon-96x96.jpg",
 			},
 		},
 	})
@@ -2991,7 +3003,7 @@ func sendNotificationToAllUsers(db *sql.DB, curUser string, fb_message_client *m
 							Body:  opts.notificationBody,
 							Data:  typePayload,
 							Image: "/assets/icon-180x180.jpg",
-							Icon:  "/assets/icon-180x180.jpg",
+							Icon:  "/assets/icon-96x96.jpg",
 						},
 					},
 					Android: &messaging.AndroidConfig{
@@ -2999,7 +3011,7 @@ func sendNotificationToAllUsers(db *sql.DB, curUser string, fb_message_client *m
 							Title:    opts.notificationTitle,
 							Body:     opts.notificationBody,
 							ImageURL: "/assets/icon-180x180.jpg",
-							Icon:     "/assets/ZCAN2301 The Family Loop Favicon_B_16 x 16.jpg",
+							Icon:     "/assets/icon-96x96.jpg",
 						},
 					},
 				})

@@ -11,7 +11,7 @@ this.addEventListener("push", (event) => {
         body: notification.body,
 
         icon: notification.image,
-        image: "/assets/icon-180x180.jpg",
+        image: "/assets/icon-96x96.png",
     }));
     notificationtype = notification.data.type
     notificationthread = notification.data.thread

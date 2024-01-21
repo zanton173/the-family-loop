@@ -325,6 +325,8 @@
                         addPoints = 30
                     else if (Number(score.innerHTML) > 1200)
                         addPoints = 65
+                    else if (Number(score.innerHTML) > 7500)
+                        addPoints = 85
                     score.innerHTML = Number(score.innerHTML) + addPoints
                     resetGameObj()
                     return

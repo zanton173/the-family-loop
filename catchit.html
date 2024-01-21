@@ -321,12 +321,12 @@
             gameObj.addEventListener("animationend", async () => {
 
                 if (gameNet.offsetLeft <= gameObj.offsetLeft && gameNet.offsetLeft + 100 >= gameObj.offsetLeft + 30) {
-                    if (Number(score.innerHTML) > 300)
-                        addPoints = 30
+                    if (Number(score.innerHTML) > 7500)
+                        addPoints = 85
                     else if (Number(score.innerHTML) > 1200)
                         addPoints = 65
-                    else if (Number(score.innerHTML) > 7500)
-                        addPoints = 85
+                    else if (Number(score.innerHTML) > 300)
+                        addPoints = 30
                     score.innerHTML = Number(score.innerHTML) + addPoints
                     resetGameObj()
                     return

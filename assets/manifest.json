@@ -34,25 +34,25 @@
             "name": "Posts",
             "url": "/home",
             "description": "tfl posts",
-            "icon": "tfl_pwa_icon_svg.svg"
+            "icon": "icon-96x96.png"
         },
         {
             "name": "Calendar",
             "url": "/calendar",
             "description": "upcoming events",
-            "icon": "tfl_pwa_icon_svg.svg"
+            "icon": "icon-96x96.png"
         },
         {
             "name": "Chat",
             "url": "/groupchat",
             "description": "group chat",
-            "icon": "tfl_pwa_icon_svg.svg"
+            "icon": "icon-96x96.png"
         },
         {
             "name": "Bug",
             "url": "/bugreport",
             "description": "report a bug",
-            "icon": "tfl_pwa_icon_svg.svg"
+            "icon": "icon-96x96.png"
         }
     ],
     "display": "standalone",

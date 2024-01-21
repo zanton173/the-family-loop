@@ -142,6 +142,7 @@
         const gameLifeTwo = document.getElementById('gamelifetwo')
         const gameLifeThree = document.getElementById('gamelifethree')
         const gameNet = document.getElementById('gameNet')
+        var addPoints = 15
         var filt = document.createElement('i')
         filt.classList.add('bi', 'bi-filter')
         var currentGameNetPos = 50
@@ -283,6 +284,7 @@
             gameNet.style.bottom = '0%'
             gameNet.style.top = ''
             score.innerHTML = 0
+            addPoints = 15
             document.getElementById('catchitGameObj').remove()
 
         }
@@ -319,7 +321,11 @@
             gameObj.addEventListener("animationend", async () => {
 
                 if (gameNet.offsetLeft <= gameObj.offsetLeft && gameNet.offsetLeft + 100 >= gameObj.offsetLeft + 30) {
-                    score.innerHTML = Number(score.innerHTML) + 15
+                    if (Number(score.innerHTML) > 300)
+                        addPoints = 30
+                    else if (Number(score.innerHTML) > 1200)
+                        addPoints = 65
+                    score.innerHTML = Number(score.innerHTML) + addPoints
                     resetGameObj()
                     return
                 }

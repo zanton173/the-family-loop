@@ -2981,27 +2981,32 @@ func sendNotificationToAllUsers(db *sql.DB, curUser string, fb_message_client *m
 
 					Token: fcmToken,
 					Notification: &messaging.Notification{
-						Title: opts.notificationTitle,
-						Body:  opts.notificationBody,
+						Title:    opts.notificationTitle,
+						Body:     opts.notificationBody,
+						ImageURL: "/assets/icon-180x180.jpg",
 					},
 					Webpush: &messaging.WebpushConfig{
 						Notification: &messaging.WebpushNotification{
 							Title: opts.notificationTitle,
 							Body:  opts.notificationBody,
 							Data:  typePayload,
+							Image: "/assets/icon-180x180.jpg",
+							Icon:  "/assets/icon-180x180.jpg",
 						},
 					},
 					Android: &messaging.AndroidConfig{
 						Notification: &messaging.AndroidNotification{
-							Title: opts.notificationTitle,
-							Body:  opts.notificationBody,
+							Title:    opts.notificationTitle,
+							Body:     opts.notificationBody,
+							ImageURL: "/assets/icon-180x180.jpg",
+							Icon:     "/assets/ZCAN2301 The Family Loop Favicon_B_16 x 16.jpg",
 						},
 					},
 				})
 			}
 			if sendErr != nil {
 				activityStr := "Error sending notificationtoallusers"
-				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", sendErr.Error()[90:], time.Now().In(nyLoc).Format(time.DateTime), activityStr))
+				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", sendErr.Error(), time.Now().In(nyLoc).Format(time.DateTime), activityStr))
 				// fmt.Print(sendErr.Error() + " for user: " + userToSend)
 				if strings.Contains(sendErr.Error(), "404") {
 					db.Exec(fmt.Sprintf("update tfldata.users set fcm_registration_id=null where username='%s';", userToSend))

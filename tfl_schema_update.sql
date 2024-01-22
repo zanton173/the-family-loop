@@ -1,5 +1,6 @@
 ALTER TABLE tfldata.users DROP COLUMN firebase_user_uid;
 CREATE TABLE IF NOT EXISTS tfldata.timecapsule(username varchar(128), available_on date, tcname varchar(18), createdon date);
+ALTER TABLE tfldata.users ADD UNIQUE(username);
 ALTER TABLE tfldata.timecapsule ADD UNIQUE(tcname);
 ALTER TABLE tfldata.users ALTER COLUMN username TYPE VARCHAR(15);
 ALTER TABLE tfldata.timecapsule ALTER COLUMN username TYPE VARCHAR(15);

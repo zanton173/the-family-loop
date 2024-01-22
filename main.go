@@ -1389,13 +1389,13 @@ func main() {
 			return
 		}
 
-		_, inserr := db.Exec(fmt.Sprintf("insert into tfldata.gchat(\"chat\", \"author\", \"createdon\", \"thread\") values(E'%s', '%s', '%s', '%s');", chatMessage, usernameFromSession, time.Now().In(nyLoc).Format(time.DateTime), threadVal))
+		_, inserr := db.Exec(fmt.Sprintf("insert into tfldata.gchat(\"chat\", \"author\", \"createdon\", \"thread\") values(E'%s', '%s', now(), '%s');", chatMessage, usernameFromSession, threadVal))
 		if inserr != nil {
 			fmt.Println("error here: " + inserr.Error())
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		_, ttbleerr := db.Exec(fmt.Sprintf("insert into tfldata.threads(\"thread\", \"threadauthor\", \"createdon\") values(E'%s', '%s', '%s');", threadVal, usernameFromSession, time.Now().In(nyLoc).Format(time.DateTime)))
+		_, ttbleerr := db.Exec(fmt.Sprintf("insert into tfldata.threads(\"thread\", \"threadauthor\", \"createdon\") values(E'%s', '%s', now());", threadVal, usernameFromSession))
 		if ttbleerr != nil {
 			fmt.Println("We can ignore this error: " + ttbleerr.Error())
 		} else {
@@ -1487,7 +1487,7 @@ func main() {
 			orderAscOrDesc = "desc"
 		}
 		limitVal, _ := strconv.Atoi(r.URL.Query().Get("limit"))
-		output, err := db.Query(fmt.Sprintf("select id, chat, author, createdon from (select * from tfldata.gchat where thread='%s' order by createdon DESC limit %d) as tmp order by createdon %s;", r.URL.Query().Get("threadval"), limitVal, orderAscOrDesc))
+		output, err := db.Query(fmt.Sprintf("select id, chat, author, createdon at time zone (select mytz from tfldata.users where username='%s') from (select * from tfldata.gchat where thread='%s' order by createdon DESC limit %d) as tmp order by createdon %s;", currentUserFromSession, r.URL.Query().Get("threadval"), limitVal, orderAscOrDesc))
 		//output, err := db.Query(fmt.Sprintf("select id, chat, author, createdon from tfldata.gchat where thread='%s' order by createdon %s limit %d;", r.URL.Query().Get("threadval"), orderAscOrDesc, limitVal))
 
 		if err != nil {

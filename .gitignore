@@ -12,3 +12,4 @@ node_modules/
 terms_and_conditions.txt
 example_manifest.json
 *.zip
+Dockerfile

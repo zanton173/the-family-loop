@@ -221,7 +221,7 @@ func main() {
 			fmt.Println(err)
 		}
 
-		_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.users(\"username\", \"password\", \"pfp_name\", \"email\", \"gchat_bg_theme\", \"gchat_order_option\", \"cf_domain_name\", \"orgid\", \"is_admin\") values('%s', '%s', '%s', '%s', '%s', %t, '%s', '%s', %t);", strings.ToLower(r.PostFormValue("usernamesignup")), bytesOfPass, filename.Filename, strings.ToLower(r.PostFormValue("emailsignup")), "background: linear-gradient(142deg, #00009f, #3dc9ff 26%)", true, cfdistro, orgId, false))
+		_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.users(\"username\", \"password\", \"pfp_name\", \"email\", \"gchat_bg_theme\", \"gchat_order_option\", \"cf_domain_name\", \"orgid\", \"is_admin\", \"mytz\") values('%s', '%s', '%s', '%s', '%s', %t, '%s', '%s', %t, '%s');", strings.ToLower(r.PostFormValue("usernamesignup")), bytesOfPass, filename.Filename, strings.ToLower(r.PostFormValue("emailsignup")), "background: linear-gradient(142deg, #00009f, #3dc9ff 26%)", true, cfdistro, orgId, false, r.PostFormValue("mytz")))
 
 		if errinsert != nil {
 			activityStr := "err inserting into users table on sign up"
@@ -243,6 +243,7 @@ func main() {
 		var isAdmin bool
 		var emailIn string
 		passScan := db.QueryRow(fmt.Sprintf("select is_admin, password, email from tfldata.users where username='%s' or email='%s';", userStr, userStr))
+
 		scnerr := passScan.Scan(&isAdmin, &password, &emailIn)
 
 		if isAdmin {
@@ -250,8 +251,7 @@ func main() {
 			if password == r.PostFormValue("passwordlogin") {
 
 				w.Header().Set("HX-Trigger", "changeAdminPassword")
-
-				setLoginCookie(w, db, userStr, r)
+				setLoginCookie(w, db, userStr, r, r.PostFormValue("mytz"))
 				generateLoginJWT(userStr, w, r, jwtSignKey)
 			} else {
 				err := bcrypt.CompareHashAndPassword([]byte(password), []byte(r.PostFormValue("passwordlogin")))
@@ -264,8 +264,7 @@ func main() {
 
 					generateLoginJWT(userStr, w, r, jwtSignKey)
 
-					setLoginCookie(w, db, userStr, r)
-					db.Exec(fmt.Sprintf("update tfldata.users set last_sign_on='%s' where username='%s';", time.Now().In(nyLoc).Format(time.DateTime), userStr))
+					setLoginCookie(w, db, userStr, r, r.PostFormValue("mytz"))
 
 					w.Header().Set("HX-Refresh", "true")
 				}
@@ -284,9 +283,7 @@ func main() {
 
 				generateLoginJWT(userStr, w, r, jwtSignKey)
 
-				setLoginCookie(w, db, userStr, r)
-
-				db.Exec(fmt.Sprintf("update tfldata.users set last_sign_on='%s' where username='%s';", time.Now().In(nyLoc).Format(time.DateTime), userStr))
+				setLoginCookie(w, db, userStr, r, r.PostFormValue("mytz"))
 
 				w.Header().Set("HX-Refresh", "true")
 			}
@@ -511,12 +508,12 @@ func main() {
 
 		var output *sql.Rows
 		if r.URL.Query().Get("page") == "null" {
-			output, err = db.Query(fmt.Sprintf("select id, \"title\", description, author, post_files_key, createdon from tfldata.posts where title ilike '%s' or description ilike '%s' or author ilike '%s' order by createdon DESC limit 2;", "%"+r.URL.Query().Get("search")+"%", "%"+r.URL.Query().Get("search")+"%", "%"+r.URL.Query().Get("search")+"%"))
+			output, err = db.Query(fmt.Sprintf("select id, \"title\", description, author, post_files_key, createdon at time zone (select mytz from tfldata.users where username='%s') from tfldata.posts where title ilike '%s' or description ilike '%s' or author ilike '%s' order by createdon DESC limit 2;", usernameFromSession, "%"+r.URL.Query().Get("search")+"%", "%"+r.URL.Query().Get("search")+"%", "%"+r.URL.Query().Get("search")+"%"))
 		} else if r.URL.Query().Get("limit") == "current" {
 			w.Header().Set("HX-Reswap", "innerHTML")
-			output, err = db.Query(fmt.Sprintf("select id, \"title\", description, author, post_files_key, createdon from tfldata.posts where id >= %s and (title ilike '%s' or description ilike '%s' or author ilike '%s') order by createdon DESC;", r.URL.Query().Get("page"), "%"+r.URL.Query().Get("search")+"%", "%"+r.URL.Query().Get("search")+"%", "%"+r.URL.Query().Get("search")+"%"))
+			output, err = db.Query(fmt.Sprintf("select id, \"title\", description, author, post_files_key, createdon at time zone (select mytz from tfldata.users where username='%s') from tfldata.posts where id >= %s and (title ilike '%s' or description ilike '%s' or author ilike '%s') order by createdon DESC;", usernameFromSession, r.URL.Query().Get("page"), "%"+r.URL.Query().Get("search")+"%", "%"+r.URL.Query().Get("search")+"%", "%"+r.URL.Query().Get("search")+"%"))
 		} else {
-			output, err = db.Query(fmt.Sprintf("select id, \"title\", description, author, post_files_key, createdon from tfldata.posts where id < %s and (title ilike '%s' or description ilike '%s' or author ilike '%s') order by createdon DESC limit 2;", r.URL.Query().Get("page"), "%"+r.URL.Query().Get("search")+"%", "%"+r.URL.Query().Get("search")+"%", "%"+r.URL.Query().Get("search")+"%"))
+			output, err = db.Query(fmt.Sprintf("select id, \"title\", description, author, post_files_key, createdon at time zone (select mytz from tfldata.users where username='%s') from tfldata.posts where id < %s and (title ilike '%s' or description ilike '%s' or author ilike '%s') order by createdon DESC limit 2;", usernameFromSession, r.URL.Query().Get("page"), "%"+r.URL.Query().Get("search")+"%", "%"+r.URL.Query().Get("search")+"%", "%"+r.URL.Query().Get("search")+"%"))
 		}
 
 		var dataStr string
@@ -2803,7 +2800,7 @@ func main() {
 	// log.Fatal(http.ListenAndServeTLS(":443", "../tflserver.crt", "../tflserver.key", nil))
 }
 
-func setLoginCookie(w http.ResponseWriter, db *sql.DB, userStr string, r *http.Request) {
+func setLoginCookie(w http.ResponseWriter, db *sql.DB, userStr string, r *http.Request, acceptedTz string) {
 
 	sessionToken := uuid.NewString()
 	expiresAt := time.Now().Add(3600 * time.Hour)
@@ -2814,7 +2811,7 @@ func setLoginCookie(w http.ResponseWriter, db *sql.DB, userStr string, r *http.R
 	  db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", inserterr))
 	  fmt.Println(inserterr)
 	  }*/
-	_, updateerr := db.Exec(fmt.Sprintf("update tfldata.users set session_token='%s' where username='%s' or email='%s';", sessionToken, userStr, userStr))
+	_, updateerr := db.Exec(fmt.Sprintf("update tfldata.users set session_token='%s', mytz='%s' where username='%s' or email='%s';", sessionToken, acceptedTz, userStr, userStr))
 	if updateerr != nil {
 		db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s');", updateerr, time.Now().In(nyLoc).Format(time.DateTime)))
 		fmt.Printf("err: '%s'", updateerr)

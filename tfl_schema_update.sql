@@ -14,3 +14,5 @@ ALTER TABLE tfldata.reactions ALTER COLUMN author TYPE VARCHAR(15);
 ALTER TABLE tfldata.ss_leaderboard ALTER COLUMN username TYPE VARCHAR(15);
 ALTER TABLE tfldata.stack_leaderboard ALTER COLUMN username TYPE VARCHAR(15);
 ALTER TABLE tfldata.threads ALTER COLUMN threadauthor TYPE VARCHAR(15);
+
+ALTER TABLE tfldata.users ADD COLUMN mytz VARCHAR(30);

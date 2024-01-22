@@ -136,7 +136,8 @@
                         <p id="passworddonotmatchresetadmin" style="color: red;"></p>
                         <p id="passwordnotstrongresetadmin" style="color: red">
                     </form>
-                    <form class="form" id="login-form" name="loginform" hx-post="/login" hx-trigger="submit"
+                    <form class="form" id="login-form" name="loginform" hx-post="/login"
+                        hx-vals="js:{'mytz': Intl.DateTimeFormat().resolvedOptions().timeZone}" hx-trigger="submit"
                         hx-on="loginevent: loginFunction()" hx-swap="none" hx-indicator="#loadingspinner">
                         <div class="p-4">
                             <h5>Login</h5>
@@ -157,7 +158,8 @@
                             password</a>
                     </form>
                     <form class="form" hx-post="/signup" id="sign-up-form" hx-trigger="submit"
-                        hx-encoding="multipart/form-data" hx-swap="none" hx-target="this"
+                        hx-encoding="multipart/form-data" hx-swap="none"
+                        hx-vals="js:{'mytz': Intl.DateTimeFormat().resolvedOptions().timeZone}" hx-target="this"
                         hx-indicator="#loadingspinner">
                         <div class="p-4">
                             <h5>Sign Up</h5>

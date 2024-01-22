@@ -1,3 +1,15 @@
 ALTER TABLE tfldata.users DROP COLUMN firebase_user_uid;
 CREATE TABLE IF NOT EXISTS tfldata.timecapsule(username varchar(128), available_on date, tcname varchar(18), createdon date);
-ALTER TABLE tfldata.timecapsule add unique(tcname);
+ALTER TABLE tfldata.timecapsule ADD UNIQUE(tcname);
+ALTER TABLE tfldata.users ALTER COLUMN username TYPE VARCHAR(15);
+ALTER TABLE tfldata.timecapsule ALTER COLUMN username TYPE VARCHAR(15);
+ALTER TABLE tfldata.calendar ALTER COLUMN event_owner TYPE VARCHAR(15);
+ALTER TABLE tfldata.calendar_rsvp ALTER COLUMN username TYPE VARCHAR(15);
+ALTER TABLE tfldata.catchitleaderboard ALTER COLUMN username TYPE VARCHAR(15);
+ALTER TABLE tfldata.comments ALTER COLUMN author TYPE VARCHAR(15);
+ALTER TABLE tfldata.gchat ALTER COLUMN author TYPE VARCHAR(15);
+ALTER TABLE tfldata.posts ALTER COLUMN author TYPE VARCHAR(15);
+ALTER TABLE tfldata.reactions ALTER COLUMN author TYPE VARCHAR(15);
+ALTER TABLE tfldata.ss_leaderboard ALTER COLUMN username TYPE VARCHAR(15);
+ALTER TABLE tfldata.stack_leaderboard ALTER COLUMN username TYPE VARCHAR(15);
+ALTER TABLE tfldata.threads ALTER COLUMN threadauthor TYPE VARCHAR(15);

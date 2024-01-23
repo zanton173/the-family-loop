@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,height=device-height, initial-scale=1.0">
     <link rel="manifest" href="assets/manifest.json" />
+    <link href="https://www.gstatic.com" rel="preconnect">
     <title>The Family Loop</title>
 </head>
 
@@ -170,220 +171,6 @@
     <link defer async href="css/bootstrap.min.css" rel="stylesheet">
     <link defer async href="css/custom-css.css" rel="stylesheet">
     <link defer async href="css/font-css.css" rel="stylesheet">
-    <script>
-
-        var listOfUsersArr = []
-        var taggedUser = []
-        var newInput = ""
-
-        const reactIcons = document.getElementById('reactionicons')
-        var sendEmojiTo = null
-        limit = 10
-        function addAReaction(postId) {
-            var divToAddBtnsTo = document.getElementById(postId)
-            sendEmojiTo = postId
-            divToAddBtnsTo.appendChild(reactIcons)
-            if (reactIcons.getAttribute("style").includes("display: flex")) {
-                reactIcons.setAttribute('style', "position: relative; margin-top: 4%; background-color: rgba(255, 255, 255, .9); border-radius: 10px / 10px; border-style: solid; border-width: medium; display: none; z-index: 2; overflow: auto;")
-                sendEmojiTo = null
-            } else
-                reactIcons.setAttribute('style', "position: relative; margin-top: 4%; background-color: rgba(255, 255, 255, .9); border-radius: 10px / 10px; border-style: solid; border-width: medium; display: flex; z-index: 2; overflow: auto;")
-        }
-        async function postEmoji(val) {
-            var selectedEmoji = val.target.innerHTML
-            const resp = await fetch("/create-reaction-to-post", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({ username, emoji: selectedEmoji, selectedPostId: sendEmojiTo })
-            }).then((data) => {
-                if (reactIcons.getAttribute("style").includes("display: flex")) {
-                    reactIcons.setAttribute('style', "position: relative; margin-top: 4%; background-color: rgba(255, 255, 255, .9); border-radius: 10px / 10px; border-style: solid; border-width: medium; display: none; z-index: 2; overflow: auto;")
-                    sendEmojiTo = null
-                }
-                // bug here. Emojis don't load immediately on event fire. Needs a page reload to display
-                limit = "current"
-                document.getElementById('divofposts').dispatchEvent(new Event('loadNewVars'))
-            })
-
-        }
-
-        window.addEventListener("load", () => {
-
-            if (document.cookie.includes("session_id="))
-                document.getElementById('divofposts').dispatchEvent(new Event('afterLogin'))
-
-            /*if (username) {
-                fetch("/refresh-token?usersession=" + username, {
-                    method: "GET",
-                    headers: {
-                        "Content-Type": "application/json",
-
-                    }
-                })
-            }*/
-
-            Notification.permission !== 'granted' || fcmKey.length < 1 ?
-                document.getElementById('notifydiv').setAttribute("style", "display: inline")
-                : document.getElementById('notifydiv').setAttribute("style", "display: none")
-        })
-
-        var createPostModalObj = new bootstrap.Modal(document.getElementById('createPostModal'), {});
-
-        var openPostModalObj = new bootstrap.Modal(document.getElementById('openPostModal'), {});
-
-
-        var openPostModalEle = document.getElementById('openPostModal')
-        const submitBtn = document.createElement('button')
-        var divForFormBtns = document.getElementById('post-div')
-
-        var createPostSubmitBtn = document.createElement('button')
-        createPostSubmitBtn.setAttribute("type", "submit")
-        createPostSubmitBtn.setAttribute("class", "btn btn-success col my-2")
-        createPostSubmitBtn.setAttribute("id", "formsubmit")
-        createPostSubmitBtn.innerHTML = "post"
-        var errorMessage = document.createElement('p')
-        errorMessage.setAttribute("style", "color: red;")
-        errorMessage.innerHTML = "You cannot post a video and pictures together"
-        const createPostEle = document.getElementById('createpostele')
-        var fileTypeList = []
-
-        function checkValidityOfFiles() {
-            fileTypeList = []
-            for (var i = 0; i < document.getElementById('postinput').files.length; i++) {
-                fileTypeList.push(document.getElementById('postinput').files[i].type.split("/")[0])
-            }
-            if (fileTypeList.includes('video') && fileTypeList.includes('image') && fileTypeList.length > 1) {
-                if (createPostEle.contains(createPostSubmitBtn))
-                    createPostEle.removeChild(createPostSubmitBtn)
-
-                createPostEle.append(errorMessage)
-            } else {
-                // append form button again
-                if (createPostEle.contains(errorMessage))
-                    createPostEle.removeChild(errorMessage)
-
-                createPostEle.append(createPostSubmitBtn)
-            }
-        }
-
-        htmx.on('#post-div', 'htmx:xhr:progress', function (evt) {
-            document.getElementById('progressdiv').style.display = 'block'
-            htmx.find('#progress').setAttribute('value', evt.detail.loaded / evt.detail.total * 100)
-            if (document.getElementById('progress').value == 100) {
-                createPostModalObj.toggle()
-            }
-        });
-
-        function openAndShutSearchDiv() {
-
-            if (document.getElementById('searchBarDiv').style.height == "17px") {
-                document.getElementById('searchCollapsedCarrot').classList.add('openSearchArrow')
-                document.getElementById('searchByKeywordInput').style.display = ""
-                document.getElementById('searchByKeywordInput').classList.add('openSearchInput')
-                document.getElementById('searchBarDiv').classList.add('openSeachBar')
-                document.getElementById('searchBarDiv').addEventListener('animationend', () => {
-                    document.getElementById('searchBarDiv').style.height = "45px"
-                    document.getElementById('searchBarDiv').classList.remove('openSeachBar')
-                    document.getElementById('searchByKeywordInput').classList.remove('openSearchInput')
-                    document.getElementById('searchCollapsedCarrot').style.transform = "rotate(90deg)"
-                    document.getElementById('searchCollapsedCarrot').classList.remove('openSearchArrow')
-                    document.getElementById('searchByKeywordInput').style.display = ""
-                })
-
-            } else {
-
-                document.getElementById('searchCollapsedCarrot').classList.add('openSearchArrowReversed')
-                document.getElementById('searchByKeywordInput').classList.add('openSearchInputReversed')
-                document.getElementById('searchBarDiv').classList.add('openSeachBarReversed')
-                document.getElementById('searchBarDiv').addEventListener('animationend', () => {
-                    document.getElementById('searchBarDiv').style.height = "17px"
-                    document.getElementById('searchBarDiv').classList.remove('openSeachBarReversed')
-                    document.getElementById('searchByKeywordInput').classList.remove('openSearchInputReversed')
-                    document.getElementById('searchCollapsedCarrot').style.transform = "rotate(calc(0deg))"
-                    document.getElementById('searchCollapsedCarrot').classList.remove('openSearchArrowReversed')
-                    document.getElementById('searchByKeywordInput').style.display = "none"
-                })
-
-            }
-        }
-
-        /* function onChangeSearchByMethod() {
-             document.getElementById('searchByKeywordInput').style.display = "none"
-             document.getElementById('searchByDateInput').style.display = "none"
-             document.getElementById('searchBySelector').value == "bydate" ?
-                 document.getElementById('searchByDateInput').style.display = ""
-                 :
-                 document.getElementById('searchByKeywordInput').style.display = ""
- 
-         }*/
-
-        async function checkForTagging() {
-            newInput = document.getElementById('commentnote').value
-            for (var i = 0; i < taggedUser.length; i++) {
-                newInput = newInput.replace(taggedUser[i], "")
-            }
-
-            if (newInput.includes('@') && newInput.split('@')[1] > '') {
-
-                const resp = await fetch("/get-all-users-to-tag?user=" + newInput.split('@')[1], {
-                    method: "GET",
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                })
-
-                listOfUsersArr = await resp.json()
-                if (listOfUsersArr != null) {
-                    var userStr = ""
-                    listOfUsersArr.forEach((item) => {
-                        userStr += `<p style='text-align: center;' onclick=selectTaggedUser('${item}') id='${item}'>${item}</p>`
-                        document.getElementById('popbody').innerHTML = userStr
-
-                    })
-
-                } else {
-                    document.getElementById('popbody').innerHTML = "No user found..."
-                }
-
-                document.getElementById('popovermain').setAttribute("style", "display: block; width: 50%; margin-left: 25%")
-
-            } else {
-                document.getElementById('popovermain').setAttribute("style", "display: none")
-            }
-        }
-        function selectTaggedUser(username) {
-            document.getElementById('commentnote').focus()
-            taggedUser.push(username)
-            document.getElementById('commentnote').value = document.getElementById('commentnote').value.replace('@'.concat(newInput.split('@')[1]), username)
-            document.getElementById('popovermain').setAttribute("style", "display: none")
-        }
-        function checkCommentValidity() {
-
-
-            if (document.getElementById('commentnote').value > '' && !document.getElementById('createcomment').contains(submitBtn)) {
-
-                submitBtn.setAttribute('class', 'btn btn-success col')
-                submitBtn.setAttribute('type', 'submit')
-                submitBtn.setAttribute('id', 'submitCommentBtn')
-                submitBtn.innerHTML = 'comment'
-                document.getElementById('createcomment').append(submitBtn)
-            } else if (document.getElementById('commentnote').value == '' && document.getElementById('createcomment').contains(submitBtn)) {
-                document.getElementById('createcomment').removeChild(submitBtn)
-
-            }
-
-        }
-        function clearForm() {
-            if (document.getElementById('createcomment').contains(submitBtn)) {
-                document.getElementById('createcomment').removeChild(submitBtn)
-                document.getElementById('commentnote').value = ''
-                taggedUser = []
-            }
-        }
-
-    </script>
 
     <script src="js/htmx.min.js"></script>
     <script src="js/htmx_json-enc.js"></script>
@@ -402,190 +189,404 @@
         </div>
     </div>
 
-    <script>
-
-        var iter = 0
-        var pageLoadPaginator = null
-        htmx.on("#post-items", "htmx:afterSettle", function updatePaginator() {
-            var postItems = document.querySelectorAll("[hx-get]")
-            var tmpArr = []
-            postItems.forEach((data) => {
-                {
-                    if (data.getAttribute("hx-get").includes("/get-selected-post?post-id=")) {
-                        tmpArr.push(Number(data.getAttribute("hx-get").split("/get-selected-post?post-id=")[1]))
-                    }
-                }
-            })
-
-            pageLoadPaginator = tmpArr.sort((a, b) => a - b)[0]
-            window.addEventListener("scroll", thisFunc)
-        })
-
-
-        function thisFunc() {
-            if (document.getElementById('post-items').scrollHeight - window.pageYOffset <= (window.visualViewport.height - 50)) {
-                document.getElementById('divofposts').dispatchEvent(new Event('anotherCustomEvent'))
-                //alert('load')
-                window.removeEventListener('scroll', thisFunc)
-            }
-        }
-        const listOfImageObj = []
-        htmx.on("#divofposts", "htmx:load", async function getImgs(event) {
-            limit = 10
-            if (event.detail.elt.querySelector('img, video') !== null)
-                var imgListUUID = event.detail.elt.querySelector('img, video').getAttribute('id')
-            else
-                return
-
-            //if (imgListUUID != 'video') {
-            listOfImageObj.push({ id: imgListUUID, imgs: await getListOfImgs(imgListUUID) })
-            //}
-
-        })
-        async function getListOfImgs(imgListUUID) {
-
-            const resp = await fetch("/get-post-images?id=" + imgListUUID, {
-                method: "GET",
-                headers: {
-                    "Content-Type": "application/json"
-                }
-            })
-            var output = resp.json()
-            return output
-        }
-        // consider zindex for img toggling
-        function nextLeftImage(id) {
-            var itemTag = "IMG"
-            var imgCaro = document.getElementById(id)
-            imgCaro.tagName == "IMG" ?
-                itemTag = "images"
-                :
-                itemTag = "videos"
-            const imgArray = listOfImageObj.filter((data) => data.id === imgCaro.getAttribute('id'))[0].imgs
-
-            if (iter == 0) {
-                iter = imgArray.length - 1
-                imgCaro.setAttribute("src", "https://d33gjmrumfzeah.cloudfront.net/posts/" + itemTag + "/" + imgArray[iter])
-                imgCaro.setAttribute("alt", imgArray[iter])
-            }
-            else {
-                imgCaro.setAttribute("src", "https://d33gjmrumfzeah.cloudfront.net/posts/" + itemTag + "/" + imgArray[iter - 1])
-                imgCaro.setAttribute("alt", imgArray[iter - 1])
-                iter--
-            }
-        }
-        function nextRightImage(id) {
-            var itemTag = "IMG"
-            var imgCaro = document.getElementById(id)
-            imgCaro.tagName == "IMG" ?
-                itemTag = "images"
-                :
-                itemTag = "videos"
-
-            const imgArray = listOfImageObj.filter((data) => data.id === imgCaro.getAttribute('id'))[0].imgs
-
-            if (iter == imgArray.length - 1) {
-                iter = 0
-                imgCaro.setAttribute("src", "https://d33gjmrumfzeah.cloudfront.net/posts/" + itemTag + "/" + imgArray[iter])
-                imgCaro.setAttribute("alt", imgArray[iter])
-            }
-            else {
-                imgCaro.setAttribute("src", "https://d33gjmrumfzeah.cloudfront.net/posts/" + itemTag + "/" + imgArray[iter + 1])
-                imgCaro.setAttribute("alt", imgArray[iter + 1])
-                iter++
-            }
-
-
-        }
-
-        /*var listOfImgsForEvent = document.querySelectorAll('div .card')
-        listOfImgsForEvent.forEach((data) => data.children.item)
-            .addEventListener("mousedown", function (event) {
-            console.log('down')
-        })*/
-
-
-        var selectedPostId = 0
-        let badge = document.createElement('i')
-        badge.setAttribute('class', 'bi bi-patch-exclamation px-1')
-        badge.setAttribute('id', 'notebadge')
-        function scrollToTop() {
-            window.scrollTo({ top: 0, behavior: "smooth" });
-            document.getElementById('notification').removeChild(badge)
-        }
-
-        htmx.on("#createpostele", "htmx:afterRequest", function (event) {
-            if (event.detail.xhr.status == 401) {
-                alert("Please login before creating a post.")
-            } else if (event.detail.xhr.status == 400) {
-                alert("Something was wrong with the file you provided.")
-            } else if (event.detail.xhr.status == 200) {
-
-                window.location.reload()
-            }
-        })
-
-        function openPostFunction(id) {
-            selectedPostId = id
-            document.getElementById('modal-post-reactions').dispatchEvent(new Event('getReactionsEvent'))
-            openPostModalObj.toggle()
-        }
-
-        /* openPostModalEle.addEventListener('shown.bs.modal', function modalOpen(event) {
- 
-         })
- 
-         openPostModalEle.addEventListener('hidden.bs.modal', function modalClosed(event) {
-             //console.log('hidden')
- 
-         })*/
-        function sendEventToLoad() {
-            document.getElementById('divofposts').dispatchEvent(new Event('anotherCustomEvent'))
-
-        }
-    </script>
-
-
     <footer style="display: none" id="pwafooter">
         <button id="pwainstall" class="btn btn-success"
             style="flex-wrap: wrap; text-wrap: wrap; border-radius: 15px / 15px; position: absolute; top: calc(50% - 33px); right: 5%; width: 65px; height: 65px; border: none; box-shadow: 3px 3px 6px black; text-align: center;">install
             app</button>
     </footer>
-    <script>
-        /*var deferredPrompt = null;
-        if (!window.matchMedia('(display-mode: standalone)').matches) {
-            document.getElementById('pwafooter').style.display = "none"
-        }
-        const pwaInstallBtn = document.getElementById('pwainstall')
-
-        window.addEventListener('beforeinstallprompt', (e) => {
-            // Prevents the default mini-infobar or install dialog from appearing on mobile
-            e.preventDefault();
-            // Save the event because you'll need to trigger it later.
-            deferredPrompt = e;
-            // Show your customized install prompt for your PWA
-            // Your own UI doesn't have to be a single element, you
-            // can have buttons in different locations, or wait to prompt
-            // as part of a critical journey.
-            console.log(e)
-        });
-
-        pwaInstallBtn.addEventListener('click', async () => {
-            // deferredPrompt is a global variable we've been using in the sample to capture the `beforeinstallevent`
-            deferredPrompt.prompt();
-            // Find out whether the user confirmed the installation or not
-            const { outcome } = await deferredPrompt.userChoice;
-            // The deferredPrompt can only be used once.
-            deferredPrompt = null;
-            // Act on the user's choice
-            if (outcome === 'accepted') {
-                console.log('User accepted the install prompt.');
-            } else if (outcome === 'dismissed') {
-                console.log('User dismissed the install prompt');
-            }
-        });*/
-    </script>
 
 </body>
+<script>
+
+    var listOfUsersArr = []
+    var taggedUser = []
+    var newInput = ""
+
+    const reactIcons = document.getElementById('reactionicons')
+    var sendEmojiTo = null
+    limit = 10
+    function addAReaction(postId) {
+        var divToAddBtnsTo = document.getElementById(postId)
+        sendEmojiTo = postId
+        divToAddBtnsTo.appendChild(reactIcons)
+        if (reactIcons.getAttribute("style").includes("display: flex")) {
+            reactIcons.setAttribute('style', "position: relative; margin-top: 4%; background-color: rgba(255, 255, 255, .9); border-radius: 10px / 10px; border-style: solid; border-width: medium; display: none; z-index: 2; overflow: auto;")
+            sendEmojiTo = null
+        } else
+            reactIcons.setAttribute('style', "position: relative; margin-top: 4%; background-color: rgba(255, 255, 255, .9); border-radius: 10px / 10px; border-style: solid; border-width: medium; display: flex; z-index: 2; overflow: auto;")
+    }
+    async function postEmoji(val) {
+        var selectedEmoji = val.target.innerHTML
+        const resp = await fetch("/create-reaction-to-post", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ username, emoji: selectedEmoji, selectedPostId: sendEmojiTo })
+        }).then((data) => {
+            if (reactIcons.getAttribute("style").includes("display: flex")) {
+                reactIcons.setAttribute('style', "position: relative; margin-top: 4%; background-color: rgba(255, 255, 255, .9); border-radius: 10px / 10px; border-style: solid; border-width: medium; display: none; z-index: 2; overflow: auto;")
+                sendEmojiTo = null
+            }
+            // bug here. Emojis don't load immediately on event fire. Needs a page reload to display
+            limit = "current"
+            document.getElementById('divofposts').dispatchEvent(new Event('loadNewVars'))
+        })
+
+    }
+
+    window.addEventListener("load", () => {
+
+        if (document.cookie.includes("session_id="))
+            document.getElementById('divofposts').dispatchEvent(new Event('afterLogin'))
+
+        /*if (username) {
+            fetch("/refresh-token?usersession=" + username, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+
+                }
+            })
+        }*/
+
+        Notification.permission !== 'granted' || fcmKey.length < 1 ?
+            document.getElementById('notifydiv').setAttribute("style", "display: inline")
+            : document.getElementById('notifydiv').setAttribute("style", "display: none")
+    })
+
+    var createPostModalObj = new bootstrap.Modal(document.getElementById('createPostModal'), {});
+
+    var openPostModalObj = new bootstrap.Modal(document.getElementById('openPostModal'), {});
+
+
+    var openPostModalEle = document.getElementById('openPostModal')
+    const submitBtn = document.createElement('button')
+    var divForFormBtns = document.getElementById('post-div')
+
+    var createPostSubmitBtn = document.createElement('button')
+    createPostSubmitBtn.setAttribute("type", "submit")
+    createPostSubmitBtn.setAttribute("class", "btn btn-success col my-2")
+    createPostSubmitBtn.setAttribute("id", "formsubmit")
+    createPostSubmitBtn.innerHTML = "post"
+    var errorMessage = document.createElement('p')
+    errorMessage.setAttribute("style", "color: red;")
+    errorMessage.innerHTML = "You cannot post a video and pictures together"
+    const createPostEle = document.getElementById('createpostele')
+    var fileTypeList = []
+
+    function checkValidityOfFiles() {
+        fileTypeList = []
+        for (var i = 0; i < document.getElementById('postinput').files.length; i++) {
+            fileTypeList.push(document.getElementById('postinput').files[i].type.split("/")[0])
+        }
+        if (fileTypeList.includes('video') && fileTypeList.includes('image') && fileTypeList.length > 1) {
+            if (createPostEle.contains(createPostSubmitBtn))
+                createPostEle.removeChild(createPostSubmitBtn)
+
+            createPostEle.append(errorMessage)
+        } else {
+            // append form button again
+            if (createPostEle.contains(errorMessage))
+                createPostEle.removeChild(errorMessage)
+
+            createPostEle.append(createPostSubmitBtn)
+        }
+    }
+
+
+    function openAndShutSearchDiv() {
+
+        if (document.getElementById('searchBarDiv').style.height == "17px") {
+            document.getElementById('searchCollapsedCarrot').classList.add('openSearchArrow')
+            document.getElementById('searchByKeywordInput').style.display = ""
+            document.getElementById('searchByKeywordInput').classList.add('openSearchInput')
+            document.getElementById('searchBarDiv').classList.add('openSeachBar')
+            document.getElementById('searchBarDiv').addEventListener('animationend', () => {
+                document.getElementById('searchBarDiv').style.height = "45px"
+                document.getElementById('searchBarDiv').classList.remove('openSeachBar')
+                document.getElementById('searchByKeywordInput').classList.remove('openSearchInput')
+                document.getElementById('searchCollapsedCarrot').style.transform = "rotate(90deg)"
+                document.getElementById('searchCollapsedCarrot').classList.remove('openSearchArrow')
+                document.getElementById('searchByKeywordInput').style.display = ""
+            })
+
+        } else {
+
+            document.getElementById('searchCollapsedCarrot').classList.add('openSearchArrowReversed')
+            document.getElementById('searchByKeywordInput').classList.add('openSearchInputReversed')
+            document.getElementById('searchBarDiv').classList.add('openSeachBarReversed')
+            document.getElementById('searchBarDiv').addEventListener('animationend', () => {
+                document.getElementById('searchBarDiv').style.height = "17px"
+                document.getElementById('searchBarDiv').classList.remove('openSeachBarReversed')
+                document.getElementById('searchByKeywordInput').classList.remove('openSearchInputReversed')
+                document.getElementById('searchCollapsedCarrot').style.transform = "rotate(calc(0deg))"
+                document.getElementById('searchCollapsedCarrot').classList.remove('openSearchArrowReversed')
+                document.getElementById('searchByKeywordInput').style.display = "none"
+            })
+
+        }
+    }
+
+    /* function onChangeSearchByMethod() {
+         document.getElementById('searchByKeywordInput').style.display = "none"
+         document.getElementById('searchByDateInput').style.display = "none"
+         document.getElementById('searchBySelector').value == "bydate" ?
+             document.getElementById('searchByDateInput').style.display = ""
+             :
+             document.getElementById('searchByKeywordInput').style.display = ""
+ 
+     }*/
+
+    async function checkForTagging() {
+        newInput = document.getElementById('commentnote').value
+        for (var i = 0; i < taggedUser.length; i++) {
+            newInput = newInput.replace(taggedUser[i], "")
+        }
+
+        if (newInput.includes('@') && newInput.split('@')[1] > '') {
+
+            const resp = await fetch("/get-all-users-to-tag?user=" + newInput.split('@')[1], {
+                method: "GET",
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+
+            listOfUsersArr = await resp.json()
+            if (listOfUsersArr != null) {
+                var userStr = ""
+                listOfUsersArr.forEach((item) => {
+                    userStr += `<p style='text-align: center;' onclick=selectTaggedUser('${item}') id='${item}'>${item}</p>`
+                    document.getElementById('popbody').innerHTML = userStr
+
+                })
+
+            } else {
+                document.getElementById('popbody').innerHTML = "No user found..."
+            }
+
+            document.getElementById('popovermain').setAttribute("style", "display: block; width: 50%; margin-left: 25%")
+
+        } else {
+            document.getElementById('popovermain').setAttribute("style", "display: none")
+        }
+    }
+    function selectTaggedUser(username) {
+        document.getElementById('commentnote').focus()
+        taggedUser.push(username)
+        document.getElementById('commentnote').value = document.getElementById('commentnote').value.replace('@'.concat(newInput.split('@')[1]), username)
+        document.getElementById('popovermain').setAttribute("style", "display: none")
+    }
+    function checkCommentValidity() {
+
+
+        if (document.getElementById('commentnote').value > '' && !document.getElementById('createcomment').contains(submitBtn)) {
+
+            submitBtn.setAttribute('class', 'btn btn-success col')
+            submitBtn.setAttribute('type', 'submit')
+            submitBtn.setAttribute('id', 'submitCommentBtn')
+            submitBtn.innerHTML = 'comment'
+            document.getElementById('createcomment').append(submitBtn)
+        } else if (document.getElementById('commentnote').value == '' && document.getElementById('createcomment').contains(submitBtn)) {
+            document.getElementById('createcomment').removeChild(submitBtn)
+
+        }
+
+    }
+    function clearForm() {
+        if (document.getElementById('createcomment').contains(submitBtn)) {
+            document.getElementById('createcomment').removeChild(submitBtn)
+            document.getElementById('commentnote').value = ''
+            taggedUser = []
+        }
+    }
+
+</script>
+<script>
+
+    var iter = 0
+    var pageLoadPaginator = null
+    htmx.on("#post-items", "htmx:afterSettle", function updatePaginator() {
+        var postItems = document.querySelectorAll("[hx-get]")
+        var tmpArr = []
+        postItems.forEach((data) => {
+            {
+                if (data.getAttribute("hx-get").includes("/get-selected-post?post-id=")) {
+                    tmpArr.push(Number(data.getAttribute("hx-get").split("/get-selected-post?post-id=")[1]))
+                }
+            }
+        })
+
+        pageLoadPaginator = tmpArr.sort((a, b) => a - b)[0]
+        window.addEventListener("scroll", thisFunc)
+    })
+
+    htmx.on('#post-div', 'htmx:xhr:progress', function (evt) {
+        document.getElementById('progressdiv').style.display = 'block'
+        htmx.find('#progress').setAttribute('value', evt.detail.loaded / evt.detail.total * 100)
+        if (document.getElementById('progress').value == 100) {
+            createPostModalObj.toggle()
+        }
+    });
+    function thisFunc() {
+        if (document.getElementById('post-items').scrollHeight - window.pageYOffset <= (window.visualViewport.height - 50)) {
+            document.getElementById('divofposts').dispatchEvent(new Event('anotherCustomEvent'))
+            //alert('load')
+            window.removeEventListener('scroll', thisFunc)
+        }
+    }
+    const listOfImageObj = []
+    htmx.on("#divofposts", "htmx:load", async function getImgs(event) {
+        limit = 10
+        if (event.detail.elt.querySelector('img, video') !== null)
+            var imgListUUID = event.detail.elt.querySelector('img, video').getAttribute('id')
+        else
+            return
+
+        //if (imgListUUID != 'video') {
+        listOfImageObj.push({ id: imgListUUID, imgs: await getListOfImgs(imgListUUID) })
+        //}
+
+    })
+    async function getListOfImgs(imgListUUID) {
+
+        const resp = await fetch("/get-post-images?id=" + imgListUUID, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json"
+            }
+        })
+        var output = resp.json()
+        return output
+    }
+    // consider zindex for img toggling
+    function nextLeftImage(id) {
+        var itemTag = "IMG"
+        var imgCaro = document.getElementById(id)
+        imgCaro.tagName == "IMG" ?
+            itemTag = "images"
+            :
+            itemTag = "videos"
+        const imgArray = listOfImageObj.filter((data) => data.id === imgCaro.getAttribute('id'))[0].imgs
+
+        if (iter == 0) {
+            iter = imgArray.length - 1
+            imgCaro.setAttribute("src", "https://d33gjmrumfzeah.cloudfront.net/posts/" + itemTag + "/" + imgArray[iter])
+            imgCaro.setAttribute("alt", imgArray[iter])
+        }
+        else {
+            imgCaro.setAttribute("src", "https://d33gjmrumfzeah.cloudfront.net/posts/" + itemTag + "/" + imgArray[iter - 1])
+            imgCaro.setAttribute("alt", imgArray[iter - 1])
+            iter--
+        }
+    }
+    function nextRightImage(id) {
+        var itemTag = "IMG"
+        var imgCaro = document.getElementById(id)
+        imgCaro.tagName == "IMG" ?
+            itemTag = "images"
+            :
+            itemTag = "videos"
+
+        const imgArray = listOfImageObj.filter((data) => data.id === imgCaro.getAttribute('id'))[0].imgs
+
+        if (iter == imgArray.length - 1) {
+            iter = 0
+            imgCaro.setAttribute("src", "https://d33gjmrumfzeah.cloudfront.net/posts/" + itemTag + "/" + imgArray[iter])
+            imgCaro.setAttribute("alt", imgArray[iter])
+        }
+        else {
+            imgCaro.setAttribute("src", "https://d33gjmrumfzeah.cloudfront.net/posts/" + itemTag + "/" + imgArray[iter + 1])
+            imgCaro.setAttribute("alt", imgArray[iter + 1])
+            iter++
+        }
+
+
+    }
+
+    /*var listOfImgsForEvent = document.querySelectorAll('div .card')
+    listOfImgsForEvent.forEach((data) => data.children.item)
+        .addEventListener("mousedown", function (event) {
+        console.log('down')
+    })*/
+
+
+    var selectedPostId = 0
+    let badge = document.createElement('i')
+    badge.setAttribute('class', 'bi bi-patch-exclamation px-1')
+    badge.setAttribute('id', 'notebadge')
+    function scrollToTop() {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        document.getElementById('notification').removeChild(badge)
+    }
+
+    htmx.on("#createpostele", "htmx:afterRequest", function (event) {
+        if (event.detail.xhr.status == 401) {
+            alert("Please login before creating a post.")
+        } else if (event.detail.xhr.status == 400) {
+            alert("Something was wrong with the file you provided.")
+        } else if (event.detail.xhr.status == 200) {
+
+            window.location.reload()
+        }
+    })
+
+    function openPostFunction(id) {
+        selectedPostId = id
+        document.getElementById('modal-post-reactions').dispatchEvent(new Event('getReactionsEvent'))
+        openPostModalObj.toggle()
+    }
+
+    /* openPostModalEle.addEventListener('shown.bs.modal', function modalOpen(event) {
+ 
+     })
+ 
+     openPostModalEle.addEventListener('hidden.bs.modal', function modalClosed(event) {
+         //console.log('hidden')
+ 
+     })*/
+    function sendEventToLoad() {
+        document.getElementById('divofposts').dispatchEvent(new Event('anotherCustomEvent'))
+
+    }
+</script>
+
+
+
+<script>
+    /*var deferredPrompt = null;
+    if (!window.matchMedia('(display-mode: standalone)').matches) {
+        document.getElementById('pwafooter').style.display = "none"
+    }
+    const pwaInstallBtn = document.getElementById('pwainstall')
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+        // Prevents the default mini-infobar or install dialog from appearing on mobile
+        e.preventDefault();
+        // Save the event because you'll need to trigger it later.
+        deferredPrompt = e;
+        // Show your customized install prompt for your PWA
+        // Your own UI doesn't have to be a single element, you
+        // can have buttons in different locations, or wait to prompt
+        // as part of a critical journey.
+        console.log(e)
+    });
+
+    pwaInstallBtn.addEventListener('click', async () => {
+        // deferredPrompt is a global variable we've been using in the sample to capture the `beforeinstallevent`
+        deferredPrompt.prompt();
+        // Find out whether the user confirmed the installation or not
+        const { outcome } = await deferredPrompt.userChoice;
+        // The deferredPrompt can only be used once.
+        deferredPrompt = null;
+        // Act on the user's choice
+        if (outcome === 'accepted') {
+            console.log('User accepted the install prompt.');
+        } else if (outcome === 'dismissed') {
+            console.log('User dismissed the install prompt');
+        }
+    });*/
+</script>
 
 </html>

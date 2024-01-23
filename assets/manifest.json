@@ -34,7 +34,7 @@
             "name": "Posts",
             "url": "/home",
             "description": "tfl posts",
-            "icon": [
+            "icons": [
                 {
                     "src": "icon-192x192.png",
                     "type": "image/png",
@@ -46,7 +46,7 @@
             "name": "Calendar",
             "url": "/calendar",
             "description": "upcoming events",
-            "icon": [
+            "icons": [
                 {
                     "src": "icon-192x192.png",
                     "type": "image/png",
@@ -58,7 +58,7 @@
             "name": "Chat",
             "url": "/groupchat",
             "description": "group chat",
-            "icon": [
+            "icons": [
                 {
                     "src": "icon-192x192.png",
                     "type": "image/png",
@@ -70,7 +70,7 @@
             "name": "Bug",
             "url": "/bugreport",
             "description": "report a bug",
-            "icon": [
+            "icons": [
                 {
                     "src": "icon-192x192.png",
                     "type": "image/png",

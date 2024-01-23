@@ -2956,6 +2956,20 @@ func sendNotificationToSingleUser(db *sql.DB, fb_message_client *messaging.Clien
 
 func sendNotificationToAllUsers(db *sql.DB, curUser string, fb_message_client *messaging.Client, opts *notificationOpts) {
 
+	usersNotInUtT, outperr := db.Query(fmt.Sprintf("select username from tfldata.users where username not in (select username from tfldata.users_to_threads where thread='%s');", opts.extraPayloadVal))
+	if outperr != nil {
+		activityStr := "Panic on sendnotificationtoallusers second db output"
+		db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"activity\", \"createdon\") values ('%s', '%s', now());", outperr, activityStr))
+	}
+
+	defer usersNotInUtT.Close()
+
+	for usersNotInUtT.Next() {
+		var user string
+		usersNotInUtT.Scan(&user)
+		db.Exec(fmt.Sprintf("insert into tfldata.users_to_threads(\"username\",\"thread\",\"is_subscribed\") values('%s', '%s', true);", user, opts.extraPayloadVal))
+	}
+
 	var output *sql.Rows
 	var outerr error
 	if opts.isTagged {
@@ -2964,7 +2978,7 @@ func sendNotificationToAllUsers(db *sql.DB, curUser string, fb_message_client *m
 		output, outerr = db.Query(fmt.Sprintf("select username from tfldata.users_to_threads where thread='%s' and username != '%s' and is_subscribed=true;", opts.extraPayloadVal, curUser))
 	}
 	if outerr != nil {
-		activityStr := "Panic on sendnotificationtoallusers first db output"
+		activityStr := "Panic on sendnotificationtoallusers second db output"
 		db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"activity\", \"createdon\") values ('%s', '%s', now());", outerr, activityStr))
 	}
 
@@ -2985,7 +2999,6 @@ func sendNotificationToAllUsers(db *sql.DB, curUser string, fb_message_client *m
 			scnerr := tokenRow.Scan(&fcmToken)
 
 			if scnerr == nil {
-
 				_, sendErr = fb_message_client.Send(context.TODO(), &messaging.Message{
 
 					Token: fcmToken,
@@ -3012,14 +3025,15 @@ func sendNotificationToAllUsers(db *sql.DB, curUser string, fb_message_client *m
 						},
 					},
 				})
-			}
-			if sendErr != nil {
-				activityStr := "Error sending notificationtoallusers"
-				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", sendErr.Error(), time.Now().In(nyLoc).Format(time.DateTime), activityStr))
-				// fmt.Print(sendErr.Error() + " for user: " + userToSend)
-				if strings.Contains(sendErr.Error(), "404") {
-					db.Exec(fmt.Sprintf("update tfldata.users set fcm_registration_id=null where username='%s';", userToSend))
-					fmt.Println("updated " + userToSend + "\\'s fcm token")
+
+				if sendErr != nil {
+					activityStr := "Error sending notificationtoallusers"
+					db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", sendErr.Error(), time.Now().In(nyLoc).Format(time.DateTime), activityStr))
+					// fmt.Print(sendErr.Error() + " for user: " + userToSend)
+					if strings.Contains(sendErr.Error(), "404") {
+						db.Exec(fmt.Sprintf("update tfldata.users set fcm_registration_id=null where username='%s';", userToSend))
+						fmt.Println("updated " + userToSend + "\\'s fcm token")
+					}
 				}
 			}
 		}

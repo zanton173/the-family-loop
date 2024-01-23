@@ -393,6 +393,7 @@
     navItemWelcomeAvatar.setAttribute("alt", "Click here to change")
 
     var username = ''
+    var fcmKey = ''
     var isAdmin = false
 
     p.append(c)
@@ -420,6 +421,7 @@
         gchatOrderOpt = text.GchatOrderOpt
         cfDomain = text.CFDomain
         isAdmin = text.Isadmin
+        fcmKey = text.Fcmkey
 
         if (window.location.path === "/admin-dashboard" && (isAdmin != null || isAdmin != undefined))
             isAdmin = text.Isadmin
@@ -700,9 +702,9 @@
 <script type="module">
     import { logoutFunction, getNotified } from "/js/globalFunctions.js"
 
-    document.getElementById("logoutButtonOnNav") &&
+    if (document.getElementById("logoutButtonOnNav"))
         document.getElementById("logoutButtonOnNav").addEventListener("click", logoutFunction)
-    document.getElementById("notifydiv") &&
+    if (document.getElementById("notifydiv") || fcmKey.length < 1)
         document.getElementById("notifydiv").addEventListener("click", getNotified)
 
     window.addEventListener("onUnauthorizedEvent", () => {

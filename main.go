@@ -59,6 +59,7 @@ type seshStruct struct {
 	GchatOrderOpt bool
 	CFDomain      string
 	Isadmin       bool
+	Fcmkey        string
 }
 type notificationOpts struct {
 	notificationPage  string
@@ -1631,8 +1632,8 @@ func main() {
 
 		var ourSeshStruct seshStruct
 
-		row := db.QueryRow(fmt.Sprintf("select username, pfp_name, gchat_bg_theme, gchat_order_option, cf_domain_name, is_admin from tfldata.users where username='%s';", usernameFromSession))
-		scnerr := row.Scan(&ourSeshStruct.Username, &ourSeshStruct.Pfpname, &ourSeshStruct.BGtheme, &ourSeshStruct.GchatOrderOpt, &ourSeshStruct.CFDomain, &ourSeshStruct.Isadmin)
+		row := db.QueryRow(fmt.Sprintf("select username, pfp_name, gchat_bg_theme, gchat_order_option, cf_domain_name, is_admin, substr(fcm_registration_id,0,3) from tfldata.users where username='%s';", usernameFromSession))
+		scnerr := row.Scan(&ourSeshStruct.Username, &ourSeshStruct.Pfpname, &ourSeshStruct.BGtheme, &ourSeshStruct.GchatOrderOpt, &ourSeshStruct.CFDomain, &ourSeshStruct.Isadmin, &ourSeshStruct.Fcmkey)
 		if scnerr != nil {
 			fmt.Println(scnerr)
 		}
@@ -2664,6 +2665,7 @@ func main() {
 			SameSite: http.SameSiteStrictMode,
 			Path:     "/",
 		})
+		db.Exec(fmt.Sprintf("update tfldata.users set fcm_registration_id=null where username='%s';", r.URL.Query().Get("user")))
 	}
 
 	adminGetListOfUsersHandler := func(w http.ResponseWriter, r *http.Request) {

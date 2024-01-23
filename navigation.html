@@ -704,7 +704,7 @@
 
     if (document.getElementById("logoutButtonOnNav"))
         document.getElementById("logoutButtonOnNav").addEventListener("click", logoutFunction)
-    if (document.getElementById("notifydiv") || fcmKey.length < 1)
+    if (document.getElementById("notifydiv"))
         document.getElementById("notifydiv").addEventListener("click", getNotified)
 
     window.addEventListener("onUnauthorizedEvent", () => {

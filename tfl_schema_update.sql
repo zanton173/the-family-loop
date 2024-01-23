@@ -17,3 +17,4 @@ ALTER TABLE tfldata.threads ALTER COLUMN threadauthor TYPE VARCHAR(15);
 
 ALTER TABLE tfldata.users ADD COLUMN mytz VARCHAR(30);
 UPDATE tfldata.users SET mytz='America/New_York' WHERE mytz IS NULL OR mytz='';
+ALTER TABLE tfldata.gchat ALTER COLUMN createdon TYPE TIMESTAMPTZ;

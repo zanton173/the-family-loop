@@ -3013,7 +3013,7 @@ func sendNotificationToAllUsers(db *sql.DB, curUser string, fb_message_client *m
 							Body:  opts.notificationBody,
 							Data:  typePayload,
 							Image: "/assets/icon-180x180.jpg",
-							Icon:  "/assets/icon-96x96.jpg",
+							Icon:  "/assets/icon-96x96.png",
 						},
 					},
 					Android: &messaging.AndroidConfig{
@@ -3021,7 +3021,7 @@ func sendNotificationToAllUsers(db *sql.DB, curUser string, fb_message_client *m
 							Title:    opts.notificationTitle,
 							Body:     opts.notificationBody,
 							ImageURL: "/assets/icon-180x180.jpg",
-							Icon:     "/assets/icon-96x96.jpg",
+							Icon:     "/assets/icon-96x96.png",
 						},
 					},
 				})

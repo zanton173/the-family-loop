@@ -34,25 +34,49 @@
             "name": "Posts",
             "url": "/home",
             "description": "tfl posts",
-            "icon": "icon-96x96.png"
+            "icon": [
+                {
+                    "src": "icon-192x192.png",
+                    "type": "image/png",
+                    "sizes": "192x192"
+                }
+            ]
         },
         {
             "name": "Calendar",
             "url": "/calendar",
             "description": "upcoming events",
-            "icon": "icon-96x96.png"
+            "icon": [
+                {
+                    "src": "icon-192x192.png",
+                    "type": "image/png",
+                    "sizes": "192x192"
+                }
+            ]
         },
         {
             "name": "Chat",
             "url": "/groupchat",
             "description": "group chat",
-            "icon": "icon-96x96.png"
+            "icon": [
+                {
+                    "src": "icon-192x192.png",
+                    "type": "image/png",
+                    "sizes": "192x192"
+                }
+            ]
         },
         {
             "name": "Bug",
             "url": "/bugreport",
             "description": "report a bug",
-            "icon": "icon-96x96.png"
+            "icon": [
+                {
+                    "src": "icon-192x192.png",
+                    "type": "image/png",
+                    "sizes": "192x192"
+                }
+            ]
         }
     ],
     "display": "standalone",

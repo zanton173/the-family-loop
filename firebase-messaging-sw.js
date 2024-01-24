@@ -18,12 +18,12 @@ this.addEventListener("push", (event) => {
 
 });
 this.addEventListener("notificationclick", (event) => {
-    console.log(event)
+
     event.notification.close()
-    console.log(event.notification)
-    if (notificationtype == "event")
+
+    if (event.notification.data == "event")
         clients.openWindow("/calendar")
-    else if (notificationtype == "posts")
+    else if (event.notification.data == "posts")
         clients.openWindow("/posts")
     else
         clients.openWindow("/groupchat?chatMessage=" + event.notification.body.replace(" ", "%20") + "&thread=" + notificationthread)

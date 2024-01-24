@@ -249,10 +249,6 @@
                 }
             })
         }*/
-
-        Notification.permission !== 'granted' || fcmKey.length < 1 ?
-            document.getElementById('notifydiv').setAttribute("style", "display: inline")
-            : document.getElementById('notifydiv').setAttribute("style", "display: none")
     })
 
     var createPostModalObj = new bootstrap.Modal(document.getElementById('createPostModal'), {});

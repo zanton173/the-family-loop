@@ -437,6 +437,12 @@
                 navItemWelcomeAvatar.setAttribute("src", "assets/apple-touch-icon.jpg")
                 : navItemWelcomeAvatar.setAttribute("src", "https://" + cfDomain + "/pfp/" + text.Pfpname)
 
+        if (document.getElementById('notifydiv')) {
+            Notification.permission !== 'granted' || fcmKey.length < 1 ?
+                document.getElementById('notifydiv').setAttribute("style", "display: inline")
+                : document.getElementById('notifydiv').setAttribute("style", "display: none")
+        }
+
         return text
     }
 

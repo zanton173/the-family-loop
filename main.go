@@ -559,7 +559,7 @@ func main() {
 				filename string
 				filetype string
 			}
-			firstRow := db.QueryRow(fmt.Sprintf("select file_name, file_type from tfldata.postfiles where post_files_key='%s' order by id desc limit 1;", postrows.Postfileskey))
+			firstRow := db.QueryRow(fmt.Sprintf("select file_name, file_type from tfldata.postfiles where post_files_key='%s' order by id asc limit 1;", postrows.Postfileskey))
 			firstRow.Scan(&firstImg.filename, &firstImg.filetype)
 
 			/*if strings.Contains(postrows.Title, "'") {

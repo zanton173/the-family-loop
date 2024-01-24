@@ -26,5 +26,5 @@ this.addEventListener("notificationclick", (event) => {
     else if (event.notification.data == "posts")
         clients.openWindow("/posts")
     else
-        clients.openWindow("/groupchat?chatMessage=" + event.notification.body.replace(" ", "%20") + "&thread=" + notificationthread)
+        clients.openWindow("/groupchat?thread=" + notificationthread)
 })

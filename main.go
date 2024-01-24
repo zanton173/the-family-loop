@@ -547,7 +547,7 @@ func main() {
 				}
 			} else {
 				reactionBtn = ""
-				editElement = fmt.Sprintf("<i style='position: absolute; background-color: gray; border-radius: 13px / 13px; left: 87%s; z-index: 3' class='bi bi-three-dots m-1 px-1' hx-post='/delete-this-post' hx-swap='none' hx-vals=\"js:{'deletionID': %d}\" hx-params='not page, limit, token' hx-ext='json-enc' hx-confirm='Delete this post forever? This cannot be undone'></i>", "%", postrows.Id)
+				editElement = fmt.Sprintf("<i style='position: absolute; background-color: gray; border-radius: 13px / 13px; left: 91%s; z-index: 3' class='bi bi-three-dots m-1 px-1' hx-post='/delete-this-post' hx-swap='none' hx-vals=\"js:{'deletionID': %d}\" hx-params='not page, limit, token' hx-ext='json-enc' hx-confirm='Delete this post forever? This cannot be undone'></i>", "%", postrows.Id)
 			}
 			comment := db.QueryRow(fmt.Sprintf("select count(*) from tfldata.comments where post_id='%d';", postrows.Id))
 			var commentCount string
@@ -1623,10 +1623,7 @@ func main() {
 		var ourSeshStruct seshStruct
 
 		row := db.QueryRow(fmt.Sprintf("select username, pfp_name, gchat_bg_theme, gchat_order_option, cf_domain_name, is_admin, substr(fcm_registration_id,0,3) from tfldata.users where username='%s';", usernameFromSession))
-		scnerr := row.Scan(&ourSeshStruct.Username, &ourSeshStruct.Pfpname, &ourSeshStruct.BGtheme, &ourSeshStruct.GchatOrderOpt, &ourSeshStruct.CFDomain, &ourSeshStruct.Isadmin, &ourSeshStruct.Fcmkey)
-		if scnerr != nil {
-			fmt.Println(scnerr)
-		}
+		row.Scan(&ourSeshStruct.Username, &ourSeshStruct.Pfpname, &ourSeshStruct.BGtheme, &ourSeshStruct.GchatOrderOpt, &ourSeshStruct.CFDomain, &ourSeshStruct.Isadmin, &ourSeshStruct.Fcmkey)
 
 		data, err := json.Marshal(&ourSeshStruct)
 		if err != nil {
@@ -2893,7 +2890,7 @@ func uploadFileToS3(k string, s string, bucketexists bool, f multipart.File, fn 
 			Key:          aws.String("posts/images/" + fn),
 			Body:         f,
 			ContentType:  &filetype,
-			CacheControl: aws.String("max-age=86400"),
+			CacheControl: aws.String("max-age=31536000"),
 		})
 
 		if err4 != nil {
@@ -2903,10 +2900,11 @@ func uploadFileToS3(k string, s string, bucketexists bool, f multipart.File, fn 
 	} else {
 
 		_, err4 := client.PutObject(context.TODO(), &s3.PutObjectInput{
-			Bucket:      aws.String(s3Domain),
-			Key:         aws.String("posts/videos/" + fn),
-			Body:        f,
-			ContentType: &filetype,
+			Bucket:       aws.String(s3Domain),
+			Key:          aws.String("posts/videos/" + fn),
+			Body:         f,
+			ContentType:  &filetype,
+			CacheControl: aws.String("max-age=31536000"),
 		})
 
 		if err4 != nil {

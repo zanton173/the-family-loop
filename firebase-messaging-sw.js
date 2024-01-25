@@ -3,7 +3,7 @@ var notificationthread = ""
 this.addEventListener("push", (event) => {
 
     const notification = event.data.json().notification
-    console.log(notification)
+
     //console.log(notification)
     event.waitUntil(this.registration.showNotification(notification.title, {
         actions: notification.actions,

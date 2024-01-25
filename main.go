@@ -2676,12 +2676,11 @@ func main() {
 			return
 		}
 		type dataStruct struct {
-			username      string
-			email         string
-			lastPassReset string
+			username string
+			email    string
 		}
 
-		output, outerr := db.Query(fmt.Sprintf("select username, email, last_pass_reset from tfldata.users order by id %s;", r.URL.Query().Get("sortByLastPass")))
+		output, outerr := db.Query(fmt.Sprintf("select username, email from tfldata.users order by id %s;", r.URL.Query().Get("sortByLastPass")))
 		if outerr != nil {
 			activityStr := "Gathering listofusers for admin dash"
 			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", outerr, time.Now().In(nyLoc).Format(time.DateTime), activityStr))
@@ -2690,12 +2689,12 @@ func main() {
 
 		var curDataObj dataStruct
 		for output.Next() {
-			scnErr := output.Scan(&curDataObj.username, &curDataObj.email, &curDataObj.lastPassReset)
+			scnErr := output.Scan(&curDataObj.username, &curDataObj.email)
 			if scnErr != nil {
 				activityStr := "Scan err on listofusers admin dash"
 				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", outerr, time.Now().In(nyLoc).Format(time.DateTime), activityStr))
 			}
-			w.Write([]byte(fmt.Sprintf("<tr><td>%s</td><td>%s</td><td>%s</td></tr>", curDataObj.username, curDataObj.email, strings.Split(curDataObj.lastPassReset, "T")[0])))
+			w.Write([]byte(fmt.Sprintf("<tr><td style='padding-bottom: &percnt;'>%s</td><td style='padding-bottom: &percnt;'>%s</td><td style='padding-bottom: &percnt;'><p onclick='openDeleteModal(`%s`)' style='color: white; border-radius: 13px / 13px; box-shadow: 1px 1px 3px black; text-align: center; margin-bottom: 50%s; background: linear-gradient(130deg, #9d9d9d, #ff5f5fb8)'>X</p></td></tr>", curDataObj.username, curDataObj.email, curDataObj.username, "%")))
 
 		}
 

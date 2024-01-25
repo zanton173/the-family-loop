@@ -1400,7 +1400,7 @@ func main() {
 		if ttbleerr != nil {
 			fmt.Println("We can ignore this error: " + ttbleerr.Error())
 		} else {
-			db.Exec("insert into tfldata.users_to_threads(\"username\") select distinct(username) from tfldata.users;")
+			db.Exec("insert into tfldata.users_to_threads(\"username\") values select distinct(username) from tfldata.users;")
 			db.Exec(fmt.Sprintf("update tfldata.users_to_threads set is_subscribed=true, thread='%s' where is_subscribed is null and thread is null;", threadVal))
 		}
 		var chatMessageNotificationOpts notificationOpts
@@ -1449,6 +1449,7 @@ func main() {
 		}
 		db.Exec(fmt.Sprintf("delete from tfldata.gchat where thread='%s';", postData.ThreadToDel))
 		db.Exec(fmt.Sprintf("delete from tfldata.threads where thread='%s';", postData.ThreadToDel))
+		db.Exec(fmt.Sprintf("delete from tfldata.users_to_threads where thread='%s' or thread is null;", postData.ThreadToDel))
 	}
 	changeGchatOrderOptHandler := func(w http.ResponseWriter, r *http.Request) {
 		bs, _ := io.ReadAll(r.Body)

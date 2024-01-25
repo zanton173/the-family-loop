@@ -295,6 +295,7 @@
                             document.getElementById('threadSelector').children[i].selected = true
                             document.getElementById('loadGChathere').dispatchEvent(new Event('afterThreadSelectorLoadsEvent'))
                             window.history.pushState({}, document.title, "/" + "groupchat")
+                            document.getElementById('loadGChathere').removeEventListener("htmx:afterRequest", checkNotified)
                             //document.getElementById('threadSelector').children[i].dispatchEvent(new Event("onchange"))
                         }
                     }

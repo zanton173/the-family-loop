@@ -301,7 +301,7 @@
                 alert("RSVP sent")
             checkForRSVP(commentSelectedEventId)
         }).catch((err) => {
-            alert("Something went wrong: " + JSON.stringify(err))
+            console.log("Something went wrong: " + JSON.stringify(err))
         })
 
     }
@@ -346,7 +346,7 @@
             }
 
         }).catch((err) => {
-            alert('something went wrong: ' + JSON.stringify(err))
+            console.log('something went wrong: ' + JSON.stringify(err))
         })
     }
     function resetAllRSVPBtns() {

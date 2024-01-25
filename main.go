@@ -1587,17 +1587,19 @@ func main() {
 	}
 	getSubscribedHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-type", "application/json; charset=utf-8")
-		seshToken, seshErr := r.Cookie("session_id")
-		if seshErr != nil {
+		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, w, r)
+
+		validBool := validateJWTToken(jwtSignKey, w, r)
+
+		if !validBool || !allowOrDeny {
 			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
-		seshVal := strings.Split(seshToken.Value, "session_id=")[0]
 
 		var fcmRegToken string
-		fcmRegRow := db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where session_token='%s';", seshVal))
+		fcmRegRow := db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where username='%s';", usernameFromSession))
 		scnerr := fcmRegRow.Scan(&fcmRegToken)
 
 		if scnerr != nil {
@@ -2948,7 +2950,7 @@ func sendNotificationToAllUsers(db *sql.DB, curUser string, fb_message_client *m
 
 	usersNotInUtT, outperr := db.Query(fmt.Sprintf("select username from tfldata.users where username not in (select username from tfldata.users_to_threads where thread='%s');", opts.extraPayloadVal))
 	if outperr != nil {
-		activityStr := "Panic on sendnotificationtoallusers second db output"
+		activityStr := "Non issue logging on sendnotificationtoallusers first db output"
 		db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"activity\", \"createdon\") values ('%s', '%s', now());", outperr, activityStr))
 	}
 
@@ -3004,6 +3006,13 @@ func sendNotificationToAllUsers(db *sql.DB, curUser string, fb_message_client *m
 							Data:  typePayload,
 							Image: "/assets/icon-180x180.jpg",
 							Icon:  "/assets/icon-96x96.png",
+							Actions: []*messaging.WebpushNotificationAction{
+								{
+									Action: typePayload["type"],
+									Title:  opts.notificationTitle,
+									Icon:   "/assets/icon-96x96.png",
+								},
+							},
 						},
 					},
 					Android: &messaging.AndroidConfig{
@@ -3022,7 +3031,7 @@ func sendNotificationToAllUsers(db *sql.DB, curUser string, fb_message_client *m
 					// fmt.Print(sendErr.Error() + " for user: " + userToSend)
 					if strings.Contains(sendErr.Error(), "404") {
 						db.Exec(fmt.Sprintf("update tfldata.users set fcm_registration_id=null where username='%s';", userToSend))
-						fmt.Println("updated " + userToSend + "\\'s fcm token")
+						fmt.Println("updated " + userToSend + "'s fcm token")
 					}
 				}
 			}

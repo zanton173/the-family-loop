@@ -484,7 +484,7 @@
             return
         }
         var postBody = {}
-        if (finalEndDate === undefined) {
+        if (finalEndDate === undefined || finalEndDate.toDateString() === finalStartDate.toDateString()) {
             postBody = {
                 "start_date": finalStartDate.toDateString(),
                 "event_details": txtAreaToAddEvent.value,

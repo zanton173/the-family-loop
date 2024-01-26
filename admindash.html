@@ -55,8 +55,11 @@
         <div class="modal-dialog">
             <div class="modal-content p-3 border-0 customModalTrans" id="deleteUserModalContent">
                 <div class="modal-header" style="display: block;">
-                    <h4 class="modal-title" style="text-align: center; padding-bottom: 1%;">Delete User Options</h4>
-                    <form hx-post="/test-endpoint" hx-swap="none"
+                    <h4 class="modal-title" id="delete-modal-title" style="text-align: center; padding-bottom: 1%;">
+                        Delete User Options
+                    </h4>
+                    <form hx-post="/admin-delete-user" hx-swap="none" hx-ext="json-enc"
+                        hx-vals="js:{'user': selectedUser}"
                         hx-confirm="This action cannot be undone. This will erase the user and the settings you have selected. Please confirm.">
                         <div style="display: flex; justify-content: space-evenly;">
                             <label for="deleteAllDataradioyes">Delete user & all data (group chat messages, posts, game
@@ -128,6 +131,7 @@
         const deleteUserModal = new bootstrap.Modal(document.getElementById('deleteUserModal'), {})
         var isAdmin = false
         var sortOrderByLastPassReset = 'desc'
+        var selectedUser = ''
         document.addEventListener("load", () => {
             if (!isAdmin)
                 window.location.href = "/"
@@ -135,9 +139,12 @@
 
         function openDeleteModal(userid) {
             deleteUserModal.toggle()
-            console.log(userid)
+            selectedUser = userid
+            document.getElementById('delete-modal-title').innerHTML = document.getElementById('delete-modal-title').innerHTML.replace("User", "User: " + userid)
         }
-
+        document.getElementById('deleteUserModal').addEventListener("hide.bs.modal", () => {
+            document.getElementById('delete-modal-title').innerHTML = "Delete User Options"
+        })
     </script>
 </body>
 

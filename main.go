@@ -2694,12 +2694,69 @@ func main() {
 				activityStr := "Scan err on listofusers admin dash"
 				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", outerr, time.Now().In(nyLoc).Format(time.DateTime), activityStr))
 			}
-			w.Write([]byte(fmt.Sprintf("<tr><td style='padding-bottom: &percnt;'>%s</td><td style='padding-bottom: &percnt;'>%s</td><td style='padding-bottom: &percnt;'><p onclick='openDeleteModal(`%s`)' style='color: white; border-radius: 13px / 13px; box-shadow: 1px 1px 3px black; text-align: center; margin-bottom: 50%s; background: linear-gradient(130deg, #9d9d9d, #ff5f5fb8)'>X</p></td></tr>", curDataObj.username, curDataObj.email, curDataObj.username, "%")))
+			w.Write([]byte(fmt.Sprintf("<tr><td style='padding-bottom: 0&percnt;'>%s</td><td style='padding-bottom: 0&percnt;'>%s</td><td style='padding-bottom: 0&percnt;; width: 12&percnt;'><p onclick='openDeleteModal(`%s`)' style='color: white; border-radius: 10px / 10px; box-shadow: 1px 1px 3px black; text-align: center; margin-bottom: 50%s; background: linear-gradient(130deg, #9d9d9d, #ff5f5fb8)'>X</p></td></tr>", curDataObj.username, curDataObj.email, curDataObj.username, "%")))
 
 		}
 
 	}
+	adminDeleteUserHandler := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, w, r)
 
+		var isAdmin bool
+
+		rowRes := db.QueryRow(fmt.Sprintf("select is_admin from tfldata.users where username='%s';", usernameFromSession))
+
+		rowRes.Scan(&isAdmin)
+
+		validBool := validateJWTToken(jwtSignKey, w, r)
+		if !validBool || !allowOrDeny || !isAdmin {
+			w.Header().Set("HX-Retarget", "window")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		bs, _ := io.ReadAll(r.Body)
+		type postBody struct {
+			DeleteAllOpt            string `json:"deleteAllData"`
+			DeleteChatsOpt          string `json:"deleteDataChatsOptions,omitempty"`
+			DeletePostsOpt          string `json:"deleteDataPostsOptions,omitempty"`
+			DeleteGameScoresOpt     string `json:"deleteDataGameScoresOptions,omitempty"`
+			DeleteCalendarEventsOpt string `json:"deleteDataCalendarEventsOptions,omitempty"`
+			SelectedUser            string `json:"user"`
+		}
+		var postData postBody
+		marshErr := json.Unmarshal(bs, &postData)
+
+		if marshErr != nil {
+			fmt.Println(marshErr)
+		}
+
+		if postData.DeleteAllOpt == "yes" {
+			// Gather all data first
+			// then run go delete functions
+			var mongoRecords []bson.M
+
+			cursor, findErr := coll.Find(context.Background(), bson.D{{Key: "username", Value: postData.SelectedUser}, {Key: "org_id", Value: orgId}})
+			if findErr != nil {
+				fmt.Println(findErr)
+			}
+
+			marsherr := cursor.All(context.Background(), &mongoRecords)
+			if marsherr != nil {
+				fmt.Println("here: " + marsherr.Error())
+			}
+
+			for _, val := range mongoRecords {
+				delRes, delErr := coll.DeleteOne(context.TODO(), bson.D{{Key: "_id", Value: val["_id"]}})
+				if delErr != nil {
+					fmt.Println("err: " + delErr.Error())
+				}
+				fmt.Print(delRes.DeletedCount)
+			}
+		}
+
+	}
 	http.HandleFunc("/", pagesHandler)
 	http.HandleFunc("/create-post", createPostHandler)
 
@@ -2769,6 +2826,7 @@ func main() {
 	http.HandleFunc("/delete-my-tc", deleteMyTChandler)
 
 	http.HandleFunc("/admin-list-of-users", adminGetListOfUsersHandler)
+	http.HandleFunc("/admin-delete-user", adminDeleteUserHandler)
 
 	http.HandleFunc("/signup", signUpHandler)
 	http.HandleFunc("/login", loginHandler)

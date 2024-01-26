@@ -29,7 +29,7 @@
                 onclick="document.getElementById('listOfUsersToggle').style.display == 'none' ? document.getElementById('listOfUsersToggle').style.display = '' : document.getElementById('listOfUsersToggle').style.display = 'none'"
                 class="btn btn-primary mx-3" style="box-shadow: 3px 3px 7px black; border-radius: 13px / 13px;"
                 hx-get="/admin-list-of-users" hx-target="#listOfUsersDivList"
-                hx-trigger="click, click from:#sortOrderLastPassReset"
+                hx-trigger="click, click from:#sortOrderLastPassReset, click from:#listOfUsersDivList"
                 hx-vals="js:{'sortByLastPass': sortOrderByLastPassReset}">Users</button>
             <button class="btn btn-primary mx-3" style="box-shadow: 3px 3px 7px black; border-radius: 13px / 13px;">Time
                 Capsule</button>
@@ -59,7 +59,10 @@
                         Delete User Options
                     </h4>
                     <form hx-post="/admin-delete-user" hx-swap="none" hx-ext="json-enc"
-                        hx-vals="js:{'user': selectedUser}"
+                        hx-vals="js:{'user': selectedUser}" hx-indicator="#loadingspinner"
+                        hx-on::after-request="{document.getElementById('listOfUsersDivList').dispatchEvent(new Event('click')); deleteUserModal.hide(); document.getElementById('deleteUserModal').style.zIndex = null}"
+                        hx-target="#listOfUsersDivList"
+                        hx-on::before-request="document.getElementById('deleteUserModal').style.zIndex = 5"
                         hx-confirm="This action cannot be undone. This will erase the user and the settings you have selected. Please confirm.">
                         <div style="display: flex; justify-content: space-evenly;">
                             <label for="deleteAllDataradioyes">Delete user & all data (group chat messages, posts, game

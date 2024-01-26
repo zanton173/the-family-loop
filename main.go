@@ -2745,59 +2745,114 @@ func main() {
 		var tcFileToDeleteTcname string
 		var pfpName string
 
-		postfileout, postfileouterr := db.Query(fmt.Sprintf("select file_name,file_type from tfldata.postfiles where post_files_key in (select post_files_key from tfldata.posts where author='%s');", usernameFromSession))
+		postfileout, postfileouterr := db.Query(fmt.Sprintf("select file_name,file_type from tfldata.postfiles where post_files_key in (select post_files_key from tfldata.posts where author='%s');", postData.SelectedUser))
 		if postfileouterr != nil {
 			fmt.Println(postfileouterr)
 		}
 		defer postfileout.Close()
 
-		tcrow := db.QueryRow(fmt.Sprintf("select createdon,tcname from tfldata.timecapsule where username='%s';", usernameFromSession))
+		tcrow := db.QueryRow(fmt.Sprintf("select createdon,tcname from tfldata.timecapsule where username='%s';", postData.SelectedUser))
 
 		scner := tcrow.Scan(&tcFileToDeleteCreatedon, &tcFileToDeleteTcname)
 		if scner != nil {
 			fmt.Println(scner)
 		}
 
-		pfprow := db.QueryRow(fmt.Sprintf("select pfp_name from tfldata.users where username='%s';", usernameFromSession))
+		pfprow := db.QueryRow(fmt.Sprintf("select pfp_name from tfldata.users where username='%s';", postData.SelectedUser))
 		pfpscnerr := pfprow.Scan(&pfpName)
 		if pfpscnerr != nil {
 			fmt.Println(pfpscnerr)
 		}
-		tcFileToDeleteTcname = tcFileToDeleteCreatedon + "_" + tcFileToDeleteTcname + "_capsule_" + usernameFromSession + ".zip"
+		tcFileToDeleteTcname = strings.Split(tcFileToDeleteCreatedon, "T")[0] + "_" + tcFileToDeleteTcname + "_capsule_" + postData.SelectedUser + ".zip"
 
+		var mongoRecords []bson.M
+
+		cursor, findErr := coll.Find(context.TODO(), bson.D{{Key: "username", Value: postData.SelectedUser}, {Key: "org_id", Value: orgId}})
+		if findErr != nil {
+			fmt.Println(findErr)
+		}
+
+		marsherr := cursor.All(context.TODO(), &mongoRecords)
+		if marsherr != nil {
+			fmt.Println("here: " + marsherr.Error())
+		}
+
+		for _, val := range mongoRecords {
+			_, delErr := coll.DeleteOne(context.TODO(), bson.D{{Key: "_id", Value: val["_id"]}})
+			if delErr != nil {
+				fmt.Println("err: " + delErr.Error())
+			}
+		}
+		go deleteFileFromS3(awskey, awskeysecret, tcFileToDeleteTcname, "timecapsules/")
+		deleteFileFromS3(awskey, awskeysecret, pfpName, "pfp/")
 		if postData.DeleteAllOpt == "yes" {
-			// Gather all data first
-			// then run go delete functions
-			var mongoRecords []bson.M
-
-			cursor, findErr := coll.Find(context.TODO(), bson.D{{Key: "username", Value: postData.SelectedUser}, {Key: "org_id", Value: orgId}})
-			if findErr != nil {
-				fmt.Println(findErr)
-			}
-
-			marsherr := cursor.All(context.TODO(), &mongoRecords)
-			if marsherr != nil {
-				fmt.Println("here: " + marsherr.Error())
-			}
-
-			for _, val := range mongoRecords {
-				_, delErr := coll.DeleteOne(context.TODO(), bson.D{{Key: "_id", Value: val["_id"]}})
-				if delErr != nil {
-					fmt.Println("err: " + delErr.Error())
-				}
-			}
-			go deleteFileFromS3(awskey, awskeysecret, tcFileToDeleteTcname, "timecapsules/")
-			go deleteFileFromS3(awskey, awskeysecret, pfpName, "pfp/")
 			for postfileout.Next() {
 				var fileName string
 				var fileType string
-				postfileout.Scan(&fileName, &fileType)
+				scnerr := postfileout.Scan(&fileName, &fileType)
+				if scnerr != nil {
+					fmt.Println(scnerr)
+				}
 				if strings.Contains(fileType, "image") {
-					go deleteFileFromS3(awskey, awskeysecret, fileName, "posts/images")
+					deleteFileFromS3(awskey, awskeysecret, fileName, "posts/images/")
 				} else {
-					go deleteFileFromS3(awskey, awskeysecret, fileName, "posts/videos")
+					go deleteFileFromS3(awskey, awskeysecret, fileName, "posts/videos/")
 				}
 			}
+			db.Exec(fmt.Sprintf("delete from tfldata.calendar where event_owner='%s';", postData.SelectedUser))
+			db.Exec(fmt.Sprintf("delete from tfldata.comments where author='%s';", postData.SelectedUser))
+			db.Exec(fmt.Sprintf("delete from tfldata.calendar_rsvp where username='%s';", postData.SelectedUser))
+			db.Exec(fmt.Sprintf("delete from tfldata.gchat where thread in (select thread from tfldata.threads where threadauthor = '%s');", postData.SelectedUser))
+			db.Exec(fmt.Sprintf("delete from tfldata.gchat where author='%s';", postData.SelectedUser))
+			db.Exec(fmt.Sprintf("delete from tfldata.threads where threadauthor='%s';", postData.SelectedUser))
+			db.Exec(fmt.Sprintf("delete from tfldata.users_to_threads where username='%s';", postData.SelectedUser))
+			db.Exec(fmt.Sprintf("delete from tfldata.stack_leaderboard where username='%s';", postData.SelectedUser))
+			db.Exec(fmt.Sprintf("delete from tfldata.ss_leaderboard where username='%s';", postData.SelectedUser))
+			db.Exec(fmt.Sprintf("delete from tfldata.catchitleaderboard where username='%s';", postData.SelectedUser))
+			db.Exec(fmt.Sprintf("delete from tfldata.timecapsule where username='%s';", postData.SelectedUser))
+			db.Exec(fmt.Sprintf("delete from tfldata.posts where author='%s';", postData.SelectedUser))
+			db.Exec(fmt.Sprintf("delete from tfldata.postfiles where post_files_key in (select post_files_key from tfldata.posts where author='%s');", postData.SelectedUser))
+			db.Exec(fmt.Sprintf("delete from tfldata.users where username='%s';", postData.SelectedUser))
+
+		} else {
+			if postData.DeleteChatsOpt == "on" {
+				db.Exec(fmt.Sprintf("delete from tfldata.gchat where thread in (select thread from tfldata.threads where threadauthor = '%s');", postData.SelectedUser))
+				db.Exec(fmt.Sprintf("delete from tfldata.gchat where author='%s';", postData.SelectedUser))
+				db.Exec(fmt.Sprintf("delete from tfldata.threads where threadauthor='%s';", postData.SelectedUser))
+				db.Exec(fmt.Sprintf("delete from tfldata.users_to_threads where username='%s';", postData.SelectedUser))
+				db.Exec(fmt.Sprintf("delete from tfldata.users where username='%s';", postData.SelectedUser))
+			}
+			if postData.DeletePostsOpt == "on" {
+				for postfileout.Next() {
+					var fileName string
+					var fileType string
+					scnerr := postfileout.Scan(&fileName, &fileType)
+					if scnerr != nil {
+						fmt.Println(scnerr)
+					}
+					if strings.Contains(fileType, "image") {
+						deleteFileFromS3(awskey, awskeysecret, fileName, "posts/images/")
+					} else {
+						go deleteFileFromS3(awskey, awskeysecret, fileName, "posts/videos/")
+					}
+				}
+				db.Exec(fmt.Sprintf("delete from tfldata.posts where author='%s';", postData.SelectedUser))
+				db.Exec(fmt.Sprintf("delete from tfldata.postfiles where post_files_key in (select post_files_key from tfldata.posts where author='%s');", postData.SelectedUser))
+				db.Exec(fmt.Sprintf("delete from tfldata.users where username='%s';", postData.SelectedUser))
+			}
+			if postData.DeleteGameScoresOpt == "on" {
+				db.Exec(fmt.Sprintf("delete from tfldata.stack_leaderboard where username='%s';", postData.SelectedUser))
+				db.Exec(fmt.Sprintf("delete from tfldata.ss_leaderboard where username='%s';", postData.SelectedUser))
+				db.Exec(fmt.Sprintf("delete from tfldata.catchitleaderboard where username='%s';", postData.SelectedUser))
+				db.Exec(fmt.Sprintf("delete from tfldata.users where username='%s';", postData.SelectedUser))
+			}
+			if postData.DeleteCalendarEventsOpt == "on" {
+				db.Exec(fmt.Sprintf("delete from tfldata.calendar where event_owner='%s';", postData.SelectedUser))
+				db.Exec(fmt.Sprintf("delete from tfldata.comments where author='%s';", postData.SelectedUser))
+				db.Exec(fmt.Sprintf("delete from tfldata.calendar_rsvp where username='%s';", postData.SelectedUser))
+				db.Exec(fmt.Sprintf("delete from tfldata.users where username='%s';", postData.SelectedUser))
+			}
+
 		}
 
 	}

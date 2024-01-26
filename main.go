@@ -75,6 +75,7 @@ var awskeysecret string
 var ghissuetoken string
 var s3Domain string
 var nyLoc *time.Location
+var s3Client *s3.Client
 
 func main() {
 	replacer := strings.NewReplacer("'", "\\'", "\"", "\\\"")
@@ -98,7 +99,7 @@ func main() {
 	opts := []option.ClientOption{option.WithCredentialsFile("the-family-loop-fb0d9-firebase-adminsdk-k6sxl-14c7d4c4f7.json")}
 
 	// Initialize firebase app
-	app, err := firebase.NewApp(context.Background(), nil, opts...)
+	app, err := firebase.NewApp(context.TODO(), nil, opts...)
 	if err != nil {
 		fmt.Printf("Error in initializing firebase app: %s", err)
 	}
@@ -139,6 +140,13 @@ func main() {
 		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(awskey, awskeysecret, "")),
 	)
 	sqsClient := sqs.NewFromConfig(awscfg)
+
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(4)
+	}
+
+	s3Client = s3.NewFromConfig(awscfg)
 
 	var postTmpl *template.Template
 	var tmerr error
@@ -611,7 +619,6 @@ func main() {
 
 		if err != nil {
 			w.Write([]byte("<p>This is a delete issue. Please create an issue on the bug report page</p>"))
-
 			return
 		}
 
@@ -2607,7 +2614,7 @@ func main() {
 			return
 		}
 		deletename := strings.Split(selectedTc.createdon, "T")[0] + "_" + selectedTc.tcname + "_capsule_" + selectedTc.username + ".zip"
-		go deleteTCFromS3(awskey, awskeysecret, deletename)
+		go deleteFileFromS3(awskey, awskeysecret, deletename, "timecapsules/")
 	}
 
 	validateJWTHandler := func(w http.ResponseWriter, r *http.Request) {
@@ -2734,27 +2741,62 @@ func main() {
 			fmt.Println(marshErr)
 		}
 
+		var tcFileToDeleteCreatedon string
+		var tcFileToDeleteTcname string
+		var pfpName string
+
+		postfileout, postfileouterr := db.Query(fmt.Sprintf("select file_name,file_type from tfldata.postfiles where post_files_key in (select post_files_key from tfldata.posts where author='%s');", usernameFromSession))
+		if postfileouterr != nil {
+			fmt.Println(postfileouterr)
+		}
+		defer postfileout.Close()
+
+		tcrow := db.QueryRow(fmt.Sprintf("select createdon,tcname from tfldata.timecapsule where username='%s';", usernameFromSession))
+
+		scner := tcrow.Scan(&tcFileToDeleteCreatedon, &tcFileToDeleteTcname)
+		if scner != nil {
+			fmt.Println(scner)
+		}
+
+		pfprow := db.QueryRow(fmt.Sprintf("select pfp_name from tfldata.users where username='%s';", usernameFromSession))
+		pfpscnerr := pfprow.Scan(&pfpName)
+		if pfpscnerr != nil {
+			fmt.Println(pfpscnerr)
+		}
+		tcFileToDeleteTcname = tcFileToDeleteCreatedon + "_" + tcFileToDeleteTcname + "_capsule_" + usernameFromSession + ".zip"
+
 		if postData.DeleteAllOpt == "yes" {
 			// Gather all data first
 			// then run go delete functions
 			var mongoRecords []bson.M
 
-			cursor, findErr := coll.Find(context.Background(), bson.D{{Key: "username", Value: postData.SelectedUser}, {Key: "org_id", Value: orgId}})
+			cursor, findErr := coll.Find(context.TODO(), bson.D{{Key: "username", Value: postData.SelectedUser}, {Key: "org_id", Value: orgId}})
 			if findErr != nil {
 				fmt.Println(findErr)
 			}
 
-			marsherr := cursor.All(context.Background(), &mongoRecords)
+			marsherr := cursor.All(context.TODO(), &mongoRecords)
 			if marsherr != nil {
 				fmt.Println("here: " + marsherr.Error())
 			}
 
 			for _, val := range mongoRecords {
-				delRes, delErr := coll.DeleteOne(context.TODO(), bson.D{{Key: "_id", Value: val["_id"]}})
+				_, delErr := coll.DeleteOne(context.TODO(), bson.D{{Key: "_id", Value: val["_id"]}})
 				if delErr != nil {
 					fmt.Println("err: " + delErr.Error())
 				}
-				fmt.Print(delRes.DeletedCount)
+			}
+			go deleteFileFromS3(awskey, awskeysecret, tcFileToDeleteTcname, "timecapsules/")
+			go deleteFileFromS3(awskey, awskeysecret, pfpName, "pfp/")
+			for postfileout.Next() {
+				var fileName string
+				var fileType string
+				postfileout.Scan(&fileName, &fileType)
+				if strings.Contains(fileType, "image") {
+					go deleteFileFromS3(awskey, awskeysecret, fileName, "posts/images")
+				} else {
+					go deleteFileFromS3(awskey, awskeysecret, fileName, "posts/videos")
+				}
 			}
 		}
 
@@ -3212,26 +3254,15 @@ func uploadTimeCapsuleToS3(k string, s string, f *os.File, fn string, r *http.Re
 
 	defer os.Remove(fn)
 }
-func deleteTCFromS3(k string, s string, delname string) {
-	cfg, err := config.LoadDefaultConfig(context.TODO(),
-		config.WithDefaultRegion("us-east-1"),
-		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(k, s, "")),
-	)
+func deleteFileFromS3(k string, s string, delname string, delPath string) {
 
-	if err != nil {
-		log.Fatal(err)
-		os.Exit(4)
-	}
-
-	client := s3.NewFromConfig(cfg)
-
-	client.DeleteObject(context.TODO(), &s3.DeleteObjectInput{
+	_, err := s3Client.DeleteObject(context.TODO(), &s3.DeleteObjectInput{
 		Bucket: aws.String(s3Domain),
-		Key:    aws.String("timecapsules/" + delname),
+		Key:    aws.String(delPath + delname),
 	})
 
 	if err != nil {
-		fmt.Println("error on image delete")
+		fmt.Println("error on file delete")
 		fmt.Println(err.Error())
 	}
 }

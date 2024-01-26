@@ -214,7 +214,7 @@ func main() {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		uploadPfpToS3(awskey, awskeysecret, upload, filename.Filename, r, "pfpformfile")
+		fn := uploadPfpToS3(awskey, awskeysecret, upload, filename.Filename, r, "pfpformfile")
 		bs := []byte(r.PostFormValue("passwordsignup"))
 
 		bytesOfPass, err := bcrypt.GenerateFromPassword(bs, len(bs))
@@ -222,7 +222,7 @@ func main() {
 			fmt.Println(err)
 		}
 
-		_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.users(\"username\", \"password\", \"pfp_name\", \"email\", \"gchat_bg_theme\", \"gchat_order_option\", \"cf_domain_name\", \"orgid\", \"is_admin\", \"mytz\") values('%s', '%s', '%s', '%s', '%s', %t, '%s', '%s', %t, '%s');", strings.ToLower(r.PostFormValue("usernamesignup")), bytesOfPass, filename.Filename, strings.ToLower(r.PostFormValue("emailsignup")), "background: linear-gradient(142deg, #00009f, #3dc9ff 26%)", true, cfdistro, orgId, false, r.PostFormValue("mytz")))
+		_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.users(\"username\", \"password\", \"pfp_name\", \"email\", \"gchat_bg_theme\", \"gchat_order_option\", \"cf_domain_name\", \"orgid\", \"is_admin\", \"mytz\") values('%s', '%s', '%s', '%s', '%s', %t, '%s', '%s', %t, '%s');", strings.ToLower(r.PostFormValue("usernamesignup")), bytesOfPass, fn, strings.ToLower(r.PostFormValue("emailsignup")), "background: linear-gradient(142deg, #00009f, #3dc9ff 26%)", true, cfdistro, orgId, false, r.PostFormValue("mytz")))
 
 		if errinsert != nil {
 			activityStr := "err inserting into users table on sign up"
@@ -1625,8 +1625,10 @@ func main() {
 
 		var ourSeshStruct seshStruct
 
-		row := db.QueryRow(fmt.Sprintf("select username, pfp_name, gchat_bg_theme, gchat_order_option, cf_domain_name, is_admin, substr(fcm_registration_id,0,3) from tfldata.users where username='%s';", usernameFromSession))
-		row.Scan(&ourSeshStruct.Username, &ourSeshStruct.Pfpname, &ourSeshStruct.BGtheme, &ourSeshStruct.GchatOrderOpt, &ourSeshStruct.CFDomain, &ourSeshStruct.Isadmin, &ourSeshStruct.Fcmkey)
+		row := db.QueryRow(fmt.Sprintf("select username, pfp_name, gchat_bg_theme, gchat_order_option, is_admin, substr(fcm_registration_id,0,3) from tfldata.users where username='%s';", usernameFromSession))
+		row.Scan(&ourSeshStruct.Username, &ourSeshStruct.Pfpname, &ourSeshStruct.BGtheme, &ourSeshStruct.GchatOrderOpt, &ourSeshStruct.Isadmin, &ourSeshStruct.Fcmkey)
+
+		ourSeshStruct.CFDomain = cfdistro
 
 		data, err := json.Marshal(&ourSeshStruct)
 		if err != nil {
@@ -1651,14 +1653,14 @@ func main() {
 
 		username := r.PostFormValue("usernameinput")
 
-		_, uperr := db.Exec(fmt.Sprintf("update tfldata.users set pfp_name='%s' where username='%s';", filename.Filename, username))
+		fn := uploadPfpToS3(awskey, awskeysecret, upload, filename.Filename, r, "changepfp")
+		_, uperr := db.Exec(fmt.Sprintf("update tfldata.users set pfp_name='%s' where username='%s';", fn, username))
 		if uperr != nil {
 			activityStr := fmt.Sprintf("update table users set pfp_name failed for user %s", usernameFromSession)
 			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", uperr, time.Now().In(nyLoc).Format(time.DateTime), activityStr))
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		uploadPfpToS3(awskey, awskeysecret, upload, filename.Filename, r, "changepfp")
 	}
 	updateChatThemeHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
@@ -2876,7 +2878,7 @@ func setLoginCookie(w http.ResponseWriter, db *sql.DB, userStr string, r *http.R
 	})
 
 }
-func uploadPfpToS3(k string, s string, f multipart.File, fn string, r *http.Request, formInputIdentifier string) {
+func uploadPfpToS3(k string, s string, f multipart.File, fn string, r *http.Request, formInputIdentifier string) string {
 	cfg, err := config.LoadDefaultConfig(context.TODO(),
 		config.WithDefaultRegion("us-east-1"),
 		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(k, s, "")),
@@ -2901,6 +2903,30 @@ func uploadPfpToS3(k string, s string, f multipart.File, fn string, r *http.Requ
 	ourfile.Read(fileContents)
 	filetype := http.DetectContentType(fileContents)
 
+	tmpFileName := fn
+
+	getout, geterr := client.GetObjectAttributes(context.TODO(), &s3.GetObjectAttributesInput{
+		Bucket: aws.String(s3Domain),
+		Key:    aws.String("pfp/" + tmpFileName),
+		ObjectAttributes: []types.ObjectAttributes{
+			"ObjectSize",
+		},
+	})
+
+	if geterr != nil {
+		fmt.Println("We can ignore this image: " + geterr.Error())
+
+	} else {
+
+		if *getout.ObjectSize > 1 {
+			tmpFileName = strings.ReplaceAll(strings.ReplaceAll(time.Now().Format(time.DateTime), " ", "_"), ":", "") + "_" + tmpFileName
+			fn = tmpFileName
+		}
+	}
+
+	if len(tmpFileName) > 55 {
+		fn = tmpFileName[len(tmpFileName)-35:]
+	}
 	defer ourfile.Close()
 
 	_, err4 := client.PutObject(context.TODO(), &s3.PutObjectInput{
@@ -2908,14 +2934,14 @@ func uploadPfpToS3(k string, s string, f multipart.File, fn string, r *http.Requ
 		Key:          aws.String("pfp/" + fn),
 		Body:         f,
 		ContentType:  &filetype,
-		CacheControl: aws.String("max-age=86400"),
+		CacheControl: aws.String("max-age=31536000"),
 	})
 
 	if err4 != nil {
 		fmt.Println("error on upload")
 		fmt.Println(err.Error())
 	}
-
+	return fn
 }
 func uploadFileToS3(k string, s string, bucketexists bool, f multipart.File, fn string, r *http.Request) string {
 

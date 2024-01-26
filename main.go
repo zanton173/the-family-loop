@@ -3052,6 +3052,7 @@ func sendNotificationToAllUsers(db *sql.DB, curUser string, fb_message_client *m
 				_, sendErr = fb_message_client.Send(context.TODO(), &messaging.Message{
 
 					Token: fcmToken,
+					Data:  typePayload,
 					Notification: &messaging.Notification{
 						Title:    opts.notificationTitle,
 						Body:     opts.notificationBody,
@@ -3068,6 +3069,11 @@ func sendNotificationToAllUsers(db *sql.DB, curUser string, fb_message_client *m
 								{
 									Action: typePayload["type"],
 									Title:  opts.notificationTitle,
+									Icon:   "/assets/icon-96x96.png",
+								},
+								{
+									Action: typePayload[opts.extraPayloadKey],
+									Title:  "NA",
 									Icon:   "/assets/icon-96x96.png",
 								},
 							},

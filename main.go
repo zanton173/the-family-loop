@@ -2700,6 +2700,50 @@ func main() {
 		}
 
 	}
+	adminGetAllTCHandler := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, w, r)
+
+		var isAdmin bool
+
+		rowRes := db.QueryRow(fmt.Sprintf("select is_admin from tfldata.users where username='%s';", usernameFromSession))
+
+		rowRes.Scan(&isAdmin)
+
+		validBool := validateJWTToken(jwtSignKey, w, r)
+		if !validBool || !allowOrDeny || !isAdmin {
+			w.Header().Set("HX-Retarget", "window")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		type listOfTC struct {
+			tcname      string
+			createdon   string
+			availableOn string
+		}
+
+		output, _ := db.Query(fmt.Sprintf("select tcname, createdon, available_on from tfldata.timecapsule where available_on %s now() order by available_on asc;", r.URL.Query().Get("pastorpresent")))
+
+		defer output.Close()
+
+		iter := 0
+
+		for output.Next() {
+			bgColor := "white"
+			var myTcOut listOfTC
+			if iter%2 == 0 {
+				bgColor = "white"
+			} else {
+				bgColor = "#efefefe6"
+			}
+
+			output.Scan(&myTcOut.tcname, &myTcOut.createdon, &myTcOut.availableOn)
+
+			w.Write([]byte(fmt.Sprintf("<tr><td style='background-color: %s'>%s</td><td style='background-color: %s'>%s</td><td style='background-color: %s'>%s</td></tr>", bgColor, myTcOut.tcname, bgColor, strings.Split(myTcOut.createdon, "T")[0], bgColor, strings.Split(myTcOut.availableOn, "T")[0])))
+			iter++
+		}
+	}
 	adminDeleteUserHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, w, r)
@@ -2917,6 +2961,7 @@ func main() {
 	http.HandleFunc("/delete-my-tc", deleteMyTChandler)
 
 	http.HandleFunc("/admin-list-of-users", adminGetListOfUsersHandler)
+	http.HandleFunc("/admin-get-all-time-capsules", adminGetAllTCHandler)
 	http.HandleFunc("/admin-delete-user", adminDeleteUserHandler)
 
 	http.HandleFunc("/signup", signUpHandler)

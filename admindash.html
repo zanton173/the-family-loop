@@ -25,13 +25,14 @@
     <div id="divOfTabs"
         style="height: 55px; width: 100dvw; background-color: rgba(22, 22, 62, 0.558); box-shadow: 3px 3px 7px;">
         <div style="display: flex; justify-content: space-evenly; align-items: center; height: inherit">
-            <button
-                onclick="document.getElementById('listOfUsersToggle').style.display == 'none' ? document.getElementById('listOfUsersToggle').style.display = '' : document.getElementById('listOfUsersToggle').style.display = 'none'"
-                class="btn btn-primary mx-3" style="box-shadow: 3px 3px 7px black; border-radius: 13px / 13px;"
-                hx-get="/admin-list-of-users" hx-target="#listOfUsersDivList"
+            <button onclick="togglePanes('listOfUsersToggle')" class="btn btn-primary mx-3"
+                style="box-shadow: 3px 3px 7px black; border-radius: 13px / 13px;" hx-get="/admin-list-of-users"
+                hx-target="#listOfUsersDivList"
                 hx-trigger="click, click from:#sortOrderLastPassReset, click from:#listOfUsersDivList"
                 hx-vals="js:{'sortByLastPass': sortOrderByLastPassReset}">Users</button>
-            <button class="btn btn-primary mx-3" style="box-shadow: 3px 3px 7px black; border-radius: 13px / 13px;">Time
+            <button
+                onclick="{togglePanes('myCapsulesDiv'); document.getElementById('getEleListOfTC').dispatchEvent(new Event('click'))}"
+                class="btn btn-primary mx-3" style="box-shadow: 3px 3px 7px black; border-radius: 13px / 13px;">Time
                 Capsule</button>
             <button class="btn btn-primary mx-3"
                 style="box-shadow: 3px 3px 7px black; border-radius: 13px / 13px;">TBD...</button>
@@ -50,6 +51,26 @@
             </thead>
             <tbody id="listOfUsersDivList" style="font-size: small; display: inline-table"></tbody>
         </table>
+    </div>
+    <div id="myCapsulesDiv" style="display: none;">
+        <div style="margin-top: 1%" id="getEleListOfTC" hx-get="/admin-get-all-time-capsules"
+            hx-target="#listOfTCDivList" hx-trigger="click" hx-vals="js:{'pastorpresent': pastOrPresentTC}">
+            <table class="table d-grid">
+                <thead>
+                    <tr
+                        style="display: flex; width: 100dvw; justify-content: space-between; background-color: white; align-items: center">
+                        <th style="font-size: 8pt; left: 0%; position: relative;">Capsule Name</th>
+                        <th style="font-size: 8pt; left: 5%; position: relative;">Created on</th>
+                        <th style="font-size: 8pt; left: 1%; position: relative;" id="sortOrderPastOrPresentHeading"
+                            onclick="pastOrPresentTC === '>' ? pastOrPresentTC = '<' : pastOrPresentTC = '>'">
+                            Availablility Date<i class="bi bi-filter"></i></th>
+
+                    </tr>
+                </thead>
+                <tbody id="listOfTCDivList" style="font-size: smaller; display: inline-table"></tbody>
+            </table>
+        </div>
+
     </div>
     <div class="modal" tabindex="-1" id="deleteUserModal" aria-labelledby="deleteUserModal" aria-hidden="true">
         <div class="modal-dialog">
@@ -132,6 +153,8 @@
     <script type="javascript" src="firebase-messaging-sw.js"></script>
     <script>
         const deleteUserModal = new bootstrap.Modal(document.getElementById('deleteUserModal'), {})
+        const listOfPanes = ["myCapsulesDiv", "listOfUsersToggle"]
+        var pastOrPresentTC = ">"
         var isAdmin = false
         var sortOrderByLastPassReset = 'desc'
         var selectedUser = ''
@@ -148,6 +171,17 @@
         document.getElementById('deleteUserModal').addEventListener("hide.bs.modal", () => {
             document.getElementById('delete-modal-title').innerHTML = "Delete User Options"
         })
+        function togglePanes(targetpane) {
+            listOfPanes.forEach((pane) => {
+                if (targetpane === pane) {
+                    document.getElementById(targetpane).style.display === "none" ?
+                        document.getElementById(targetpane).style.display = "" :
+                        document.getElementById(targetpane).style.display = "none"
+                } else {
+                    document.getElementById(pane).style.display = "none"
+                }
+            })
+        }
     </script>
 </body>
 

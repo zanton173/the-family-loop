@@ -109,13 +109,51 @@ button.btn.btn-primary {
 
 #bannerimg {
     position: absolute;
+    width: 35dvw;
+    margin-left: 50%;
+    margin-right: auto;
     transform: translateX(-50%);
     -webkit-transform: translateX(-50%)
 }
 
-@media (min-width: 576px) {
+#searchBarDiv {
+    width: 90dvw;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+@media (min-width: 645px) {
+    div>.card {
+        width: 70%;
+        margin: auto
+    }
+
     #bannerimg {
-        display: none;
+        width: 25dvw !important;
+    }
+
+    #searchBarDiv {
+        width: 60dvw;
+    }
+}
+
+@media (min-width: 1000px) {
+    div>.card {
+        width: 18%;
+        margin: auto
+    }
+
+    #bannerimg {
+        width: 13dvw !important;
+        top: 0%;
+    }
+
+    #showthemebtn {
+        margin-top: 2%;
+    }
+
+    #searchBarDiv {
+        width: 20dvw;
     }
 }
 

@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"image"
 	"io"
 	"log"
 	"mime/multipart"
@@ -26,6 +27,9 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
+
+	"image/jpeg"
+	_ "image/png"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/go-github/github"
@@ -693,18 +697,6 @@ func main() {
 			return
 		}
 
-		cfg, err := config.LoadDefaultConfig(context.TODO(),
-			config.WithDefaultRegion("us-east-1"),
-			config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(awskey, awskeysecret, "")),
-		)
-
-		if err != nil {
-			log.Fatal(err)
-			os.Exit(4)
-		}
-
-		client := s3.NewFromConfig(cfg)
-
 		postFilesKey := uuid.NewString()
 
 		_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.posts(\"title\", \"description\", \"author\", \"post_files_key\", \"createdon\") values(E'%s', E'%s', '%s', '%s', now());", replacer.Replace(r.PostFormValue("title")), replacer.Replace(r.PostFormValue("description")), usernameFromSession, postFilesKey))
@@ -733,7 +725,7 @@ func main() {
 
 			tmpFileName := fh.Filename
 
-			getout, geterr := client.GetObjectAttributes(context.TODO(), &s3.GetObjectAttributesInput{
+			getout, geterr := s3Client.GetObjectAttributes(context.TODO(), &s3.GetObjectAttributesInput{
 				Bucket: aws.String(s3Domain),
 				Key:    aws.String("posts/images/" + tmpFileName),
 				ObjectAttributes: []types.ObjectAttributes{
@@ -743,7 +735,7 @@ func main() {
 
 			if geterr != nil {
 				fmt.Println("We can ignore this image: " + geterr.Error())
-				getvidout, getviderr := client.GetObjectAttributes(context.TODO(), &s3.GetObjectAttributesInput{
+				getvidout, getviderr := s3Client.GetObjectAttributes(context.TODO(), &s3.GetObjectAttributesInput{
 					Bucket: aws.String(s3Domain),
 					Key:    aws.String("posts/videos/" + tmpFileName),
 					ObjectAttributes: []types.ObjectAttributes{
@@ -3042,18 +3034,6 @@ func uploadPfpToS3(k string, s string, f multipart.File, fn string, r *http.Requ
 }
 func uploadFileToS3(k string, s string, bucketexists bool, f multipart.File, fn string, r *http.Request) string {
 
-	cfg, err := config.LoadDefaultConfig(context.TODO(),
-		config.WithDefaultRegion("us-east-1"),
-		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(k, s, "")),
-	)
-
-	if err != nil {
-		log.Fatal(err)
-		os.Exit(4)
-	}
-
-	client := s3.NewFromConfig(cfg)
-
 	defer f.Close()
 	ourfile, fileHeader, errfile := r.FormFile("file_name")
 
@@ -3068,10 +3048,30 @@ func uploadFileToS3(k string, s string, bucketexists bool, f multipart.File, fn 
 	filetype := http.DetectContentType(fileContents)
 
 	if strings.Contains(filetype, "image") {
-		_, err4 := client.PutObject(context.TODO(), &s3.PutObjectInput{
+		f.Seek(0, 0)
+		buf := bytes.NewBuffer(nil)
+		_, err := io.Copy(buf, f)
+		if err != nil {
+			os.Exit(2)
+		}
+
+		f.Seek(0, 0)
+
+		newimg, _, decerr := image.Decode(buf)
+		if decerr != nil {
+			log.Fatal("dec err: " + decerr.Error())
+		}
+		var compfile bytes.Buffer
+		encerr := jpeg.Encode(&compfile, newimg, &jpeg.Options{
+			Quality: 25,
+		})
+		if encerr != nil {
+			fmt.Println(encerr)
+		}
+		_, err4 := s3Client.PutObject(context.TODO(), &s3.PutObjectInput{
 			Bucket:       aws.String(s3Domain),
 			Key:          aws.String("posts/images/" + fn),
-			Body:         f,
+			Body:         &compfile,
 			ContentType:  &filetype,
 			CacheControl: aws.String("max-age=31536000"),
 		})
@@ -3082,7 +3082,7 @@ func uploadFileToS3(k string, s string, bucketexists bool, f multipart.File, fn 
 		}
 	} else {
 
-		_, err4 := client.PutObject(context.TODO(), &s3.PutObjectInput{
+		_, err4 := s3Client.PutObject(context.TODO(), &s3.PutObjectInput{
 			Bucket:       aws.String(s3Domain),
 			Key:          aws.String("posts/videos/" + fn),
 			Body:         f,

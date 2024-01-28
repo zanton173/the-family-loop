@@ -2917,6 +2917,43 @@ func main() {
 		}
 
 	}
+	healthCheckHandler := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		type healthBody struct {
+			Healthy bool
+			IpData  string
+		}
+		newClient := &http.Client{}
+
+		var reqBuff bytes.Buffer
+		ipReq, reqerr := http.NewRequest("GET", "http://ifconfig.me/ip", &reqBuff)
+		if reqerr != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		newResp, respErr := newClient.Do(ipReq)
+		if respErr != nil {
+			fmt.Println(respErr)
+		}
+
+		defer newClient.CloseIdleConnections()
+		defer newResp.Body.Close()
+		bs, readerr := io.ReadAll(newResp.Body)
+		if readerr != nil {
+			fmt.Println(readerr)
+		}
+		resp := healthBody{
+			Healthy: true,
+			IpData:  string(bs),
+		}
+		respbs, marsherr := json.Marshal(resp)
+		if marsherr != nil {
+			fmt.Println(marsherr)
+			return
+		}
+		w.Write(respbs)
+	}
+
 	http.HandleFunc("/", pagesHandler)
 	http.HandleFunc("/create-post", createPostHandler)
 
@@ -2994,6 +3031,8 @@ func main() {
 	http.HandleFunc("/reset-password", getResetPasswordCodeHandler)
 	http.HandleFunc("/reset-password-with-code", resetPasswordHandler)
 	http.HandleFunc("/update-admin-pass", updateAdminPassHandler)
+
+	http.HandleFunc("/healthy-me-checky", healthCheckHandler)
 
 	http.HandleFunc("/jwt-validation-endpoint", validateJWTHandler)
 	// NOT USING THIS RIGHT NOW

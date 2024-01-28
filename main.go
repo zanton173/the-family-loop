@@ -559,7 +559,7 @@ func main() {
 				}
 			} else {
 				reactionBtn = ""
-				editElement = fmt.Sprintf("<i style='position: absolute; background-color: gray; border-radius: 13px / 13px; left: 91%s; z-index: 3' class='bi bi-three-dots m-1 px-1' hx-post='/delete-this-post' hx-swap='none' hx-vals=\"js:{'deletionID': %d}\" hx-params='not page, limit, token' hx-ext='json-enc' hx-confirm='Delete this post forever? This cannot be undone'></i>", "%", postrows.Id)
+				editElement = fmt.Sprintf("<i style='position: absolute; background-color: gray; border-radius: 13px / 13px; z-index: 3' class='bi bi-three-dots m-1 px-1 editbtnclass' hx-post='/delete-this-post' hx-swap='none' hx-vals=\"js:{'deletionID': %d}\" hx-params='not page, limit, token' hx-ext='json-enc' hx-confirm='Delete this post forever? This cannot be undone'></i>", postrows.Id)
 			}
 			comment := db.QueryRow(fmt.Sprintf("select count(*) from tfldata.comments where post_id='%d';", postrows.Id))
 			var commentCount string
@@ -582,17 +582,17 @@ func main() {
 			if strings.Contains(firstImg.filetype, "image") {
 
 				if countOfImg > 1 {
-					dataStr = fmt.Sprintf("<div class='card my-4' style='background-color: rgb(22 30 255 / .42); border-radius: 72px 72px / 67px 67px; box-shadow: 6px 6px 3px 3px rgb(54 141 150 / 42&percnt;);'>%s<img class='img-fluid' id='%s' src='https://%s/posts/images/%s' alt='%s' style='border-radius: 18px 18px;' alt='default' /><p style='margin-bottom: -6%s; margin-left: 78%s; font-size: 8pt; text-decoration: underline; color: #4e4c4c;'>%s</p><div class='p-2' style='display: flex; justify-content: space-around;'><i onclick='nextLeftImage(`%s`)' class='bi bi-arrow-90deg-left'></i><i onclick='nextRightImage(`%s`)' class='bi bi-arrow-90deg-right'></i></div><div id='%d' class='card-body'><b>%s</b><br/><p>%s</p><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' class='btn btn-primary' hx-swap='innerHTML'>Comments (%s)</button>%s</div></div>", editElement, postrows.Postfileskey, cfdistro, firstImg.filename, firstImg.filename, "%", "%", strings.Split(postrows.Createdon, "T")[0], postrows.Postfileskey, postrows.Postfileskey, postrows.Id, postrows.Author, postrows.Title, postrows.Description, postrows.Id, postrows.Id, commentCount, reactionBtn)
+					dataStr = fmt.Sprintf("<div class='card my-4' style='background-color: rgb(22 30 255 / .42); border-radius: 72px 72px / 67px 67px; box-shadow: 6px 6px 3px 3px rgb(54 141 150 / 42&percnt;);'>%s<img class='img-fluid' id='%s' src='https://%s/posts/images/%s' alt='%s' style='border-radius: 18px 18px;' alt='default' /><p class='createdontime' style='margin-bottom: -6%s; margin-left: 78%s; text-decoration: underline; color: #4e4c4c;'>%s</p><div class='postarrows' style='display: flex; justify-content: space-around;'><i onclick='nextLeftImage(`%s`)' class='bi bi-arrow-90deg-left'></i><i onclick='nextRightImage(`%s`)' class='bi bi-arrow-90deg-right'></i></div><div id='%d' class='card-body'><b>%s</b><br/><p>%s</p><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' class='btn btn-primary' hx-swap='innerHTML'>Comments (%s)</button>%s</div></div>", editElement, postrows.Postfileskey, cfdistro, firstImg.filename, firstImg.filename, "%", "%", strings.Split(postrows.Createdon, "T")[0], postrows.Postfileskey, postrows.Postfileskey, postrows.Id, postrows.Author, postrows.Title, postrows.Description, postrows.Id, postrows.Id, commentCount, reactionBtn)
 				} else if countOfImg == 1 {
-					dataStr = fmt.Sprintf("<div class='card my-4' style='background-color: rgb(22 30 255 / .42); border-radius: 72px 72px / 67px 67px; box-shadow: 6px 6px 3px 3px rgb(54 141 150 / 42&percnt;);'>%s<img class='img-fluid' id='%s' src='https://%s/posts/images/%s' alt='%s' style='border-radius: 18px 18px;' alt='default' /><p style='margin-bottom: -6%s; margin-left: 78%s; font-size: 8pt; text-decoration: underline; color: #4e4c4c;'>%s</p><div class='p-2' style='display: flex; justify-content: space-around;'></div><div id='%d' class='card-body'><b>%s</b><br/><p>%s</p><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' hx-swap='innerHTML' class='btn btn-primary'>Comments (%s)</button>%s</div></div>", editElement, postrows.Postfileskey, cfdistro, firstImg.filename, firstImg.filename, "%", "%", strings.Split(postrows.Createdon, "T")[0], postrows.Id, postrows.Author, postrows.Title, postrows.Description, postrows.Id, postrows.Id, commentCount, reactionBtn)
+					dataStr = fmt.Sprintf("<div class='card my-4' style='background-color: rgb(22 30 255 / .42); border-radius: 72px 72px / 67px 67px; box-shadow: 6px 6px 3px 3px rgb(54 141 150 / 42&percnt;);'>%s<img class='img-fluid' id='%s' src='https://%s/posts/images/%s' alt='%s' style='border-radius: 18px 18px;' alt='default' /><p class='createdontime' style='margin-bottom: -6%s; margin-left: 78%s; text-decoration: underline; color: #4e4c4c;'>%s</p><div id='%d' class='card-body'><b>%s</b><br/><p>%s</p><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' hx-swap='innerHTML' class='btn btn-primary'>Comments (%s)</button>%s</div></div>", editElement, postrows.Postfileskey, cfdistro, firstImg.filename, firstImg.filename, "%", "%", strings.Split(postrows.Createdon, "T")[0], postrows.Id, postrows.Author, postrows.Title, postrows.Description, postrows.Id, postrows.Id, commentCount, reactionBtn)
 				}
 
 			} else {
 
 				if countOfImg > 1 {
-					dataStr = fmt.Sprintf("<div class='card my-4' style='background-color: rgb(22 30 255 / .42); border-radius: 72px 72px / 67px 67px; box-shadow: 6px 6px 3px 3px rgb(54 141 150 / 42&percnt;);'>%s<video style='border-radius: 18px 18px; z-index: 6;' muted playsinline controls preload='auto' id='%s'><source src='https://%s/posts/videos/%s'></video><p style='margin-bottom: -6%s;margin-left: 78%s;font-size: 8pt;text-decoration: underline;color: #4e4c4c;'>%s</p><div class='p-2' style='display: flex; justify-content: space-around;'><i onclick='nextLeftImage(`%s`)' class='bi bi-arrow-90deg-left'></i><i onclick='nextRightImage(`%s`)' class='bi bi-arrow-90deg-right'></i></div><div id='%d' class='card-body'><b>%s</b><br/><p>%s</p><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' hx-swap='innerHTML' class='btn btn-primary'>Comments (%s)</button>%s</div></div>", editElement, postrows.Postfileskey, cfdistro, firstImg.filename, "%", "%", strings.Split(postrows.Createdon, "T")[0], postrows.Postfileskey, postrows.Postfileskey, postrows.Id, postrows.Author, postrows.Title, postrows.Description, postrows.Id, postrows.Id, commentCount, reactionBtn)
+					dataStr = fmt.Sprintf("<div class='card my-4' style='background-color: rgb(22 30 255 / .42); border-radius: 72px 72px / 67px 67px; box-shadow: 6px 6px 3px 3px rgb(54 141 150 / 42&percnt;);'>%s<video style='border-radius: 18px 18px; z-index: 6;' muted playsinline controls preload='auto' id='%s'><source src='https://%s/posts/videos/%s'></video><p class='createdontime' style='margin-bottom: -6%s; margin-left: 78%s;text-decoration: underline;color: #4e4c4c;'>%s</p><div class='postarrows' style='display: flex; justify-content: space-around;'><i onclick='nextLeftImage(`%s`)' class='bi bi-arrow-90deg-left'></i><i onclick='nextRightImage(`%s`)' class='bi bi-arrow-90deg-right'></i></div><div id='%d' class='card-body'><b>%s</b><br/><p>%s</p><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' hx-swap='innerHTML' class='btn btn-primary'>Comments (%s)</button>%s</div></div>", editElement, postrows.Postfileskey, cfdistro, firstImg.filename, "%", "%", strings.Split(postrows.Createdon, "T")[0], postrows.Postfileskey, postrows.Postfileskey, postrows.Id, postrows.Author, postrows.Title, postrows.Description, postrows.Id, postrows.Id, commentCount, reactionBtn)
 				} else if countOfImg == 1 {
-					dataStr = fmt.Sprintf("<div class='card my-4' style='background-color: rgb(22 30 255 / .42); border-radius: 72px 72px / 67px 67px; box-shadow: 6px 6px 3px 3px rgb(54 141 150 / 42&percnt;);'>%s<video style='border-radius: 18px 18px; z-index: 6;' muted playsinline controls preload='auto' id='%s'><source src='https://%s/posts/videos/%s'></video><p style='margin-bottom: -6%s;margin-left: 78%s;font-size: 8pt;text-decoration: underline;color: #4e4c4c;'>%s</p><div class='p-2' style='display: flex; justify-content: space-around;'></div><div id='%d' class='card-body'><b>%s</b><br/><p>%s</p><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' hx-swap='innerHTML' class='btn btn-primary'>Comments (%s)</button>%s</div></div>", editElement, postrows.Postfileskey, cfdistro, firstImg.filename, "%", "%", strings.Split(postrows.Createdon, "T")[0], postrows.Id, postrows.Author, postrows.Title, postrows.Description, postrows.Id, postrows.Id, commentCount, reactionBtn)
+					dataStr = fmt.Sprintf("<div class='card my-4' style='background-color: rgb(22 30 255 / .42); border-radius: 72px 72px / 67px 67px; box-shadow: 6px 6px 3px 3px rgb(54 141 150 / 42&percnt;);'>%s<video style='border-radius: 18px 18px; z-index: 6;' muted playsinline controls preload='auto' id='%s'><source src='https://%s/posts/videos/%s'></video><p class='createdontime' style='margin-bottom: -6%s; margin-left: 78%s;text-decoration: underline;color: #4e4c4c;'>%s</p><div id='%d' class='card-body'><b>%s</b><br/><p>%s</p><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' hx-swap='innerHTML' class='btn btn-primary'>Comments (%s)</button>%s</div></div>", editElement, postrows.Postfileskey, cfdistro, firstImg.filename, "%", "%", strings.Split(postrows.Createdon, "T")[0], postrows.Id, postrows.Author, postrows.Title, postrows.Description, postrows.Id, postrows.Id, commentCount, reactionBtn)
 				}
 			}
 			postTmpl, tmerr = template.New("tem").Parse(dataStr)
@@ -1015,6 +1015,7 @@ func main() {
 			typePayload["type"] = "posts"
 			sentRes, sendErr := fb_message_client.Send(context.TODO(), &messaging.Message{
 				Token: fcmToken,
+				Data:  typePayload,
 				Notification: &messaging.Notification{
 					Title:    author + " commented on your post!",
 					Body:     "\"" + postData.Comment + "\"",
@@ -1028,6 +1029,18 @@ func main() {
 						Data:  typePayload,
 						Image: "/assets/icon-180x180.jpg",
 						Icon:  "/assets/icon-96x96.jpg",
+						Actions: []*messaging.WebpushNotificationAction{
+							{
+								Action: typePayload["type"],
+								Title:  author + " commented on your post!",
+								Icon:   "/assets/icon-96x96.png",
+							},
+							{
+								Action: typePayload["type"],
+								Title:  "NA",
+								Icon:   "/assets/icon-96x96.png",
+							},
+						},
 					},
 				},
 			})
@@ -1290,6 +1303,18 @@ func main() {
 						Data:  typePayload,
 						Image: "/assets/icon-180x180.jpg",
 						Icon:  "/assets/icon-96x96.jpg",
+						Actions: []*messaging.WebpushNotificationAction{
+							{
+								Action: typePayload["type"],
+								Title:  postData.Username + " responded to your event",
+								Icon:   "/assets/icon-96x96.png",
+							},
+							{
+								Action: typePayload["type"],
+								Title:  "NA",
+								Icon:   "/assets/icon-96x96.png",
+							},
+						},
 					},
 				},
 			})
@@ -1526,7 +1551,7 @@ func main() {
 			if author == currentUserFromSession {
 				editDelBtn = "<i class='bi bi-three-dots-vertical px-1' onclick='editOrDeleteChat(`" + gchatid + "`)'></i>"
 			}
-			dataStr := "<div style='max-width: 100%; background-color: rgb(22 53 255 / 13%); border-width: thin; border-style: solid; box-shadow: 4px 4px 5px; border-radius: 16px 5px 23px 3px; padding-bottom: 3%' class='container my-2'><div class='row'><b class='col-2 px-1'>" + author + "</b><div class='row'><img style='width: 15%; position: sticky;' class='col-2 px-2 my-1' src='" + pfpImg + "' alt='tfl pfp' /></div><p class='col-10' style='position: relative; left: 10%; margin-bottom: 1%; margin-top: -15%; overflow-wrap: anywhere;'>" + message + "</p></div><div class='row'><p class='col' style='margin-left: 60%; font-size: smaller; margin-bottom: 0%'>" + createdat.Format(formatCreatedatTime) + editDelBtn + "</p></div></div>"
+			dataStr := "<div class='container gchatmessagecard'><div class='row'><b class='col-2 px-1'>" + author + "</b><div class='row'><img style='width: 15%; position: sticky;' class='col-2 px-2 my-1' src='" + pfpImg + "' alt='tfl pfp' /></div><p class='col-10' style='position: relative; left: 10%; margin-bottom: 1%; margin-top: -15%; overflow-wrap: anywhere;'>" + message + "</p></div><div class='row'><p class='col' style='margin-left: 60%; font-size: smaller; margin-bottom: 0%'>" + createdat.Format(formatCreatedatTime) + editDelBtn + "</p></div></div>"
 			chattmp, tmperr := template.New("gchat").Parse(dataStr)
 			if tmperr != nil {
 				fmt.Println(tmperr)
@@ -3163,6 +3188,18 @@ func sendNotificationToSingleUser(db *sql.DB, fb_message_client *messaging.Clien
 				Data:  typePayload,
 				Image: "/assets/icon-180x180.jpg",
 				Icon:  "/assets/icon-96x96.jpg",
+				Actions: []*messaging.WebpushNotificationAction{
+					{
+						Action: typePayload["type"],
+						Title:  sendingUser + " just tagged you on in the " + threadVal + " thread",
+						Icon:   "/assets/icon-96x96.png",
+					},
+					{
+						Action: typePayload["type"],
+						Title:  "NA",
+						Icon:   "/assets/icon-96x96.png",
+					},
+				},
 			},
 		},
 	})

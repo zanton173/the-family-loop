@@ -116,16 +116,44 @@ button.btn.btn-primary {
     -webkit-transform: translateX(-50%)
 }
 
+.gchatmessagecard {
+    margin-top: .5rem !important;
+    margin-bottom: .5rem !important;
+    max-width: 100%;
+    background-color: rgb(22 53 255 / 13%);
+    border-width: thin;
+    border-style: solid;
+    box-shadow: 4px 4px 5px;
+    border-radius: 16px 5px 23px 3px;
+    padding-bottom: 3%;
+}
+
 #searchBarDiv {
     width: 90dvw;
     margin-left: auto;
     margin-right: auto;
 }
 
+.createdontime {
+    font-size: 8pt;
+}
+
+.postarrows {
+    padding-top: .5rem !important;
+}
+
 @media (min-width: 645px) {
     div>.card {
         width: 70%;
         margin: auto
+    }
+
+    div>.card>.card-body>p:first-of-type {
+        margin-bottom: 0%;
+    }
+
+    div>.card>.card-body>.card-text {
+        margin-bottom: 0%;
     }
 
     #bannerimg {
@@ -135,12 +163,20 @@ button.btn.btn-primary {
     #searchBarDiv {
         width: 60dvw;
     }
+
+    .gchatmessagecard {
+        max-width: 65%;
+    }
 }
 
 @media (min-width: 1000px) {
     div>.card {
         width: 18%;
         margin: auto
+    }
+
+    div>.card>.card-body {
+        padding-top: 0%;
     }
 
     #bannerimg {
@@ -154,6 +190,31 @@ button.btn.btn-primary {
 
     #searchBarDiv {
         width: 20dvw;
+        margin-top: 1% !important;
+    }
+
+    #ournav {
+        padding-bottom: 0% !important;
+    }
+
+    .createdontime {
+        font-size: 7pt;
+        margin-left: 70% !important;
+    }
+
+    .gchatmessagecard {
+        max-width: 40%;
+        padding-bottom: 0%;
+    }
+
+    div>.card>.card-body>p:first-of-type {
+        margin-bottom: 0%;
+        font-size: 8pt;
+    }
+
+    div>.card>.card-body>.card-text {
+        margin-bottom: 0%;
+        font-size: 8pt;
     }
 }
 

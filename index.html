@@ -9,7 +9,7 @@
     <title>The Family Loop</title>
 </head>
 
-<body style="background: linear-gradient(180deg, #00106e, #00ecff 55%)">
+<body style="background: linear-gradient(180deg, #00106e, #00ecff 55%); height: 100dvh">
 
 
     <div class="spinner-indicator" id="loadingspinner"
@@ -179,7 +179,7 @@
     <script type="javascript" src="firebase-messaging-sw.js"></script>
     <div style="text-align: center;" class="px-5" id="posts-div">
         <div hx-get="/get-posts" hx-trigger="afterLogin, loadNewVars, anotherCustomEvent" hx-target="#post-items"
-            id="divofposts" hx-indicator="#loadingspinner"
+            id="divofposts" hx-indicator="#loadingspinner" hx-on::after-request="changeBodyHeight(event)"
             hx-vals="js:{'page': pageLoadPaginator, 'limit': limit, 'search': document.getElementById('searchByKeywordInput').value}"
             hx-swap="beforeend">
             <div id="post-items" name="item-count">
@@ -234,7 +234,10 @@
         })
 
     }
-
+    function changeBodyHeight(event) {
+        if (event.detail.elt.childNodes[1].childNodes.length > 1)
+            document.body.style.height = ''
+    }
     window.addEventListener("load", () => {
 
         if (document.cookie.includes("session_id="))

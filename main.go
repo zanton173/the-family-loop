@@ -2919,41 +2919,61 @@ func main() {
 	}
 	healthCheckHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		type healthBody struct {
-			Healthy bool
-			IpData  string
-		}
-		newClient := &http.Client{}
-
-		var reqBuff bytes.Buffer
-		ipReq, reqerr := http.NewRequest("GET", "http://ifconfig.me/ip", &reqBuff)
-		if reqerr != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-		newResp, respErr := newClient.Do(ipReq)
-		if respErr != nil {
-			fmt.Println(respErr)
-		}
-
-		defer newClient.CloseIdleConnections()
-		defer newResp.Body.Close()
-		bs, readerr := io.ReadAll(newResp.Body)
-		if readerr != nil {
-			fmt.Println(readerr)
-		}
-		resp := healthBody{
-			Healthy: true,
-			IpData:  string(bs),
-		}
-		respbs, marsherr := json.Marshal(resp)
-		if marsherr != nil {
-			fmt.Println(marsherr)
-			return
-		}
-		w.Write(respbs)
+		w.Write([]byte("true"))
 	}
+	/*
+		healthCheckHandler := func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			type healthBody struct {
+				Healthy string
+				IpData  string
+			}
+			newClient := &http.Client{}
 
+			var reqBuff bytes.Buffer
+			ipReq, reqerr := http.NewRequest("GET", "http://ifconfig.me/ip", &reqBuff)
+			if reqerr != nil {
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+			newResp, respErr := newClient.Do(ipReq)
+			if respErr != nil {
+				fmt.Println(respErr)
+			}
+
+			defer newClient.CloseIdleConnections()
+			defer newResp.Body.Close()
+			bs, readerr := io.ReadAll(newResp.Body)
+			if readerr != nil {
+				fmt.Println(readerr)
+			}
+			resp := healthBody{
+				Healthy: "true",
+				IpData:  string(bs),
+			}
+			respbs, marsherr := json.Marshal(resp)
+			if marsherr != nil {
+				fmt.Println(marsherr)
+				return
+			}
+			cwlClient.CreateLogStream(context.TODO(), &cloudwatchlogs.CreateLogStreamInput{
+				LogGroupName:  aws.String("test-localhost"),
+				LogStreamName: aws.String("/my-stream"),
+			})
+			cwlClient.PutLogEvents(context.TODO(), &cloudwatchlogs.PutLogEventsInput{
+				LogGroupName:  aws.String("test-localhost"),
+				LogStreamName: aws.String("/my-stream"),
+				LogEvents: []cwtypes.InputLogEvent{
+					{
+						Message:   aws.String(resp.Healthy),
+						Timestamp: aws.Int64(time.Now().UnixNano() / int64(time.Millisecond)),
+					},
+				},
+			})
+
+			w.Write(respbs)
+		}
+	*/
 	http.HandleFunc("/", pagesHandler)
 	http.HandleFunc("/create-post", createPostHandler)
 

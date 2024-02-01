@@ -42,7 +42,7 @@ header .calendar-navigation span:hover {
 header .calendar-current-date {
     font-weight: 500;
     font-size: 1.45rem;
-    color: rgb(170 170 170 / 82%);
+    color: white;
 }
 
 .calendar-body {
@@ -69,11 +69,19 @@ header .calendar-current-date {
 .calendar-body .calendar-weekdays li {
     cursor: default;
     font-weight: 500;
-    color: rgb(214 214 214 / 85%);
+    color: white;
+}
+
+.calendar-weekdays {
+    padding-left: 0%;
+}
+
+#listOfActiveDates {
+    padding-left: 0%;
 }
 
 .calendar-body .calendar-dates li {
-    margin-top: 30px;
+    margin-top: 6%;
     position: relative;
     z-index: 1;
     cursor: pointer;
@@ -85,6 +93,7 @@ header .calendar-current-date {
 
 .calendar-dates li.active {
     color: #fff;
+    margin: 1%
 }
 
 .calendar-dates li::before {
@@ -95,7 +104,7 @@ header .calendar-current-date {
     left: 50%;
     width: 40px;
     height: 40px;
-    border-radius: 50%;
+    border-radius: 12px / 12px;
     transform: translate(-50%, -50%);
 }
 
@@ -109,5 +118,5 @@ header .calendar-current-date {
 
 .has-an-event {
     background: #837dff;
-    border-radius: 50%;
+    border-radius: 12px / 12px;
 }

@@ -238,7 +238,7 @@
     }
     function setDatesThatHaveEvents() {
 
-        listOfActive = document.querySelectorAll("[style='background-color: rgba(255, 255, 255, .5); border-radius: 15%;']")
+        listOfActive = document.querySelectorAll("[style='background-color: rgba(255, 255, 255, .5); border-radius: 15px / 15px;']")
         tmpAllEvents = allEvents.filter((event) => Number(event.Startdate[1]) == month + 1 || (Number(event.Enddate[1]) == month + 1))
         tmpMultiAllEvents = tmpAllEvents.filter((event) => event.Enddate.length > 1)
         tmpSingleEvents = tmpAllEvents.filter((event) => event.Enddate.length === 1)
@@ -246,7 +246,7 @@
         for (var j = 0; j < tmpSingleEvents.length; j++) {
             calendarItems.forEach((item) => {
                 if (new Date(item.id).toDateString() == new Date(tmpSingleEvents[j].Startdate[0], tmpSingleEvents[j].Startdate[1] - 1, tmpSingleEvents[j].Startdate[2]).toDateString()) {
-                    item.setAttribute("style", "background-color: #837dff; border-radius: 25%;")
+                    item.setAttribute("style", "background-color: #837dff; border-radius: 15px / 15px;")
                     item.setAttribute("onclick", `{setSelectedDate('${item.id}'); openEventModal(${JSON.stringify(tmpSingleEvents)}, ${JSON.stringify(tmpMultiAllEvents)});}`)
                     return
                 }
@@ -275,7 +275,7 @@
 
                     if (data.id == date) {
 
-                        data.setAttribute("style", "background-color: #5ef4b9; border-radius: 25%;")
+                        data.setAttribute("style", "background-color: #5ef4b9; border-radius: 15px / 15px;")
                         data.setAttribute("onclick", `{setSelectedDate('${data.id}'); openEventModal(${JSON.stringify(tmpSingleEvents)}, ${JSON.stringify(tmpMultiAllEvents)}); }`)
                         return
                     }
@@ -695,7 +695,7 @@
             //var id = i + (month * 2) + year
             //console.log(month)
             //lit += `<li id='${i}' style='background-color: rgba(255, 255, 255, .5); border-radius: 15%;' onclick = 'toggleActiveElement(${i}, ${month}, ${year})'>${i}</li>`
-            lit += `<li id='${year}/${month + 1}/${i}' style='background-color: rgba(255, 255, 255, .5); border-radius: 15%;' >${i}</li>`
+            lit += `<li id='${year}/${month + 1}/${i}' style='background-color: rgba(255, 255, 255, .5); border-radius: 15px / 15px; margin-left: auto; margin-right: auto' >${i}</li>`
 
         }
 

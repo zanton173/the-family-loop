@@ -23,21 +23,23 @@
     <div class="modal" tabindex="-1" id="editOrDeleteModal" aria-labelledby="editOrDeleteModal" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content p-3 border-0 customModalTrans" id="editOrDeleteModalContent">
-                <div class="modal-header" style="display: block;">
+                <div class="modal-header p-1" style="display: block;">
                     <h4 class="modal-title" style="text-align: center;">Edit or delete</h4>
                 </div>
 
                 <div style="text-align: center;">
                     <div style="display: grid; " class="my-1">
-                        <input name="usernameinput" id="currentChatMessage" />
-                        <button id="changePfpSubmitBtn" class="btn btn-success col my-2" hx-post="/update-selected-chat"
+                        <input name="usernameinput" id="currentChatMessage"
+                            style="border-radius: 15px / 15px; border-width: 0; box-shadow: 1px 1px 4px; margin-top: 1%;" />
+                        <button class="btn btn-success col my-2" hx-post="/update-selected-chat"
                             hx-on::after-request="editOrDeleteModal.hide()" hx-ext="json-enc" hx-trigger="click"
                             hx-vals="js:{'newMessage': document.getElementById('currentChatMessage').value, 'selectedChatId': selectedChatId}"
-                            hx-swap="none" style="padding-top: 2%; width: 50%; margin-left: 25%;">change</button><br />
+                            hx-swap="none"
+                            style="padding-top: 2%; width: 50%; margin-left: 25%; box-shadow: 2px 2px 5px black">change</button>
                     </div>
                     <p style="text-align: center; color: rgba(58, 58, 58, 0.776);">-----------------------------------
-                    </p><br />
-                    <button type="button" class="btn btn-danger px-5 my-1"
+                    </p>
+                    <button type="button" class="btn btn-danger px-5 my-1" style="box-shadow: 2px 2px 5px black"
                         hx-on::after-request="editOrDeleteModal.hide()"
                         hx-confirm="This will permanently delete this message. Do you want to continue?"
                         hx-trigger="click" hx-post="/delete-selected-chat"

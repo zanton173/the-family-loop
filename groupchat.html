@@ -110,6 +110,7 @@
     </div>
     <div id="loadGChathere" hx-get="/group-chat-messages"
         hx-vals="js:{'threadval': document.getElementById('threadSelector').value, 'order_option': gchatOrderOpt, 'limit': limitVal}"
+        hx-on::after-request="countOfMessages(event)"
         hx-trigger="afterThreadSelectorLoadsEvent, every 3s, success-send from:#messageform, limitChange"
         class="border-1 d-block m-2" style="justify-content: center; text-align: center; border-radius: 1%;">
 
@@ -203,6 +204,13 @@
         const subscribeToThreadBtn = document.getElementById('subscribeToThisThreadBtn')
 
         const delThreadBtn = document.getElementById('delThreadBtn')
+
+        function countOfMessages(event) {
+            if (event.detail.elt.children.length > 4)
+                document.body.style.height = ''
+            else
+                document.body.style.height = '100dvh'
+        }
 
         var usersSubbedThreads = []
 

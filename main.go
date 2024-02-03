@@ -582,17 +582,17 @@ func main() {
 			if strings.Contains(firstImg.filetype, "image") {
 
 				if countOfImg > 1 {
-					dataStr = fmt.Sprintf("<div class='card my-4' style='background-color: rgb(22 30 255 / .42); border-radius: 72px 72px / 67px 67px; box-shadow: 6px 6px 3px 3px rgb(54 141 150 / 42&percnt;);'>%s<img class='img-fluid' id='%s' src='https://%s/posts/images/%s' alt='%s' style='border-radius: 18px 18px;' alt='default' /><p class='createdontime' style='margin-bottom: -6%s; margin-left: 78%s; text-decoration: underline; color: #4e4c4c;'>%s</p><div class='postarrows' style='display: flex; justify-content: space-around;'><i onclick='nextLeftImage(`%s`)' class='bi bi-arrow-90deg-left'></i><i onclick='nextRightImage(`%s`)' class='bi bi-arrow-90deg-right'></i></div><div id='%d' class='card-body'><b>%s</b><br/><p>%s</p><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' class='btn btn-primary' hx-swap='innerHTML'>Comments (%s)</button>%s</div></div>", editElement, postrows.Postfileskey, cfdistro, firstImg.filename, firstImg.filename, "%", "%", strings.Split(postrows.Createdon, "T")[0], postrows.Postfileskey, postrows.Postfileskey, postrows.Id, postrows.Author, postrows.Title, postrows.Description, postrows.Id, postrows.Id, commentCount, reactionBtn)
+					dataStr = fmt.Sprintf("<div class='card my-4' style='background-color: rgb(22 30 255 / .42); border-radius: 72px 72px / 67px 67px; box-shadow: 5px 4px 9px 3px rgb(0 0 0 / 52&percnt;);'>%s<img class='img-fluid' id='%s' src='https://%s/posts/images/%s' alt='%s' style='border-radius: 18px 18px;' alt='default' /><p class='createdontime' style='margin-bottom: -6%s; margin-left: 78%s; text-decoration: underline; color: #4e4c4c;'>%s</p><div class='postarrows' style='display: flex; justify-content: space-around;'><i onclick='nextLeftImage(`%s`)' class='bi bi-arrow-90deg-left'></i><i onclick='nextRightImage(`%s`)' class='bi bi-arrow-90deg-right'></i></div><div id='%d' class='card-body'><b>%s</b><br/><p>%s</p><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' class='btn btn-primary' hx-swap='innerHTML'>Comments (%s)</button>%s</div></div>", editElement, postrows.Postfileskey, cfdistro, firstImg.filename, firstImg.filename, "%", "%", strings.Split(postrows.Createdon, "T")[0], postrows.Postfileskey, postrows.Postfileskey, postrows.Id, postrows.Author, postrows.Title, postrows.Description, postrows.Id, postrows.Id, commentCount, reactionBtn)
 				} else if countOfImg == 1 {
-					dataStr = fmt.Sprintf("<div class='card my-4' style='background-color: rgb(22 30 255 / .42); border-radius: 72px 72px / 67px 67px; box-shadow: 6px 6px 3px 3px rgb(54 141 150 / 42&percnt;);'>%s<img class='img-fluid' id='%s' src='https://%s/posts/images/%s' alt='%s' style='border-radius: 18px 18px;' alt='default' /><p class='createdontime' style='margin-bottom: -6%s; margin-left: 78%s; text-decoration: underline; color: #4e4c4c;'>%s</p><div id='%d' class='card-body'><b>%s</b><br/><p>%s</p><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' hx-swap='innerHTML' class='btn btn-primary'>Comments (%s)</button>%s</div></div>", editElement, postrows.Postfileskey, cfdistro, firstImg.filename, firstImg.filename, "%", "%", strings.Split(postrows.Createdon, "T")[0], postrows.Id, postrows.Author, postrows.Title, postrows.Description, postrows.Id, postrows.Id, commentCount, reactionBtn)
+					dataStr = fmt.Sprintf("<div class='card my-4' style='background-color: rgb(22 30 255 / .42); border-radius: 72px 72px / 67px 67px; box-shadow: 5px 4px 9px 3px rgb(0 0 0 / 52&percnt;);'>%s<img class='img-fluid' id='%s' src='https://%s/posts/images/%s' alt='%s' style='border-radius: 18px 18px;' alt='default' /><p class='createdontime' style='margin-bottom: -6%s; margin-left: 78%s; text-decoration: underline; color: #4e4c4c;'>%s</p><div id='%d' class='card-body'><b>%s</b><br/><p>%s</p><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' hx-swap='innerHTML' class='btn btn-primary'>Comments (%s)</button>%s</div></div>", editElement, postrows.Postfileskey, cfdistro, firstImg.filename, firstImg.filename, "%", "%", strings.Split(postrows.Createdon, "T")[0], postrows.Id, postrows.Author, postrows.Title, postrows.Description, postrows.Id, postrows.Id, commentCount, reactionBtn)
 				}
 
 			} else {
 
 				if countOfImg > 1 {
-					dataStr = fmt.Sprintf("<div class='card my-4' style='background-color: rgb(22 30 255 / .42); border-radius: 72px 72px / 67px 67px; box-shadow: 6px 6px 3px 3px rgb(54 141 150 / 42&percnt;);'>%s<video style='border-radius: 18px 18px; z-index: 6;' muted playsinline controls preload='auto' id='%s'><source src='https://%s/posts/videos/%s'></video><p class='createdontime' style='margin-bottom: -6%s; margin-left: 78%s;text-decoration: underline;color: #4e4c4c;'>%s</p><div class='postarrows' style='display: flex; justify-content: space-around;'><i onclick='nextLeftImage(`%s`)' class='bi bi-arrow-90deg-left'></i><i onclick='nextRightImage(`%s`)' class='bi bi-arrow-90deg-right'></i></div><div id='%d' class='card-body'><b>%s</b><br/><p>%s</p><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' hx-swap='innerHTML' class='btn btn-primary'>Comments (%s)</button>%s</div></div>", editElement, postrows.Postfileskey, cfdistro, firstImg.filename, "%", "%", strings.Split(postrows.Createdon, "T")[0], postrows.Postfileskey, postrows.Postfileskey, postrows.Id, postrows.Author, postrows.Title, postrows.Description, postrows.Id, postrows.Id, commentCount, reactionBtn)
+					dataStr = fmt.Sprintf("<div class='card my-4' style='background-color: rgb(22 30 255 / .42); border-radius: 72px 72px / 67px 67px; box-shadow: 5px 4px 9px 3px rgb(0 0 0 / 52&percnt;);'>%s<video style='border-radius: 18px 18px; z-index: 6;' muted playsinline controls preload='auto' id='%s'><source src='https://%s/posts/videos/%s'></video><p class='createdontime' style='margin-bottom: -6%s; margin-left: 78%s;text-decoration: underline;color: #4e4c4c;'>%s</p><div class='postarrows' style='display: flex; justify-content: space-around;'><i onclick='nextLeftImage(`%s`)' class='bi bi-arrow-90deg-left'></i><i onclick='nextRightImage(`%s`)' class='bi bi-arrow-90deg-right'></i></div><div id='%d' class='card-body'><b>%s</b><br/><p>%s</p><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' hx-swap='innerHTML' class='btn btn-primary'>Comments (%s)</button>%s</div></div>", editElement, postrows.Postfileskey, cfdistro, firstImg.filename, "%", "%", strings.Split(postrows.Createdon, "T")[0], postrows.Postfileskey, postrows.Postfileskey, postrows.Id, postrows.Author, postrows.Title, postrows.Description, postrows.Id, postrows.Id, commentCount, reactionBtn)
 				} else if countOfImg == 1 {
-					dataStr = fmt.Sprintf("<div class='card my-4' style='background-color: rgb(22 30 255 / .42); border-radius: 72px 72px / 67px 67px; box-shadow: 6px 6px 3px 3px rgb(54 141 150 / 42&percnt;);'>%s<video style='border-radius: 18px 18px; z-index: 6;' muted playsinline controls preload='auto' id='%s'><source src='https://%s/posts/videos/%s'></video><p class='createdontime' style='margin-bottom: -6%s; margin-left: 78%s;text-decoration: underline;color: #4e4c4c;'>%s</p><div id='%d' class='card-body'><b>%s</b><br/><p>%s</p><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' hx-swap='innerHTML' class='btn btn-primary'>Comments (%s)</button>%s</div></div>", editElement, postrows.Postfileskey, cfdistro, firstImg.filename, "%", "%", strings.Split(postrows.Createdon, "T")[0], postrows.Id, postrows.Author, postrows.Title, postrows.Description, postrows.Id, postrows.Id, commentCount, reactionBtn)
+					dataStr = fmt.Sprintf("<div class='card my-4' style='background-color: rgb(22 30 255 / .42); border-radius: 72px 72px / 67px 67px; box-shadow: 5px 4px 9px 3px rgb(0 0 0 / 52&percnt;);'>%s<video style='border-radius: 18px 18px; z-index: 6;' muted playsinline controls preload='auto' id='%s'><source src='https://%s/posts/videos/%s'></video><p class='createdontime' style='margin-bottom: -6%s; margin-left: 78%s;text-decoration: underline;color: #4e4c4c;'>%s</p><div id='%d' class='card-body'><b>%s</b><br/><p>%s</p><p class='card-text'>%s</p><button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' hx-swap='innerHTML' class='btn btn-primary'>Comments (%s)</button>%s</div></div>", editElement, postrows.Postfileskey, cfdistro, firstImg.filename, "%", "%", strings.Split(postrows.Createdon, "T")[0], postrows.Id, postrows.Author, postrows.Title, postrows.Description, postrows.Id, postrows.Id, commentCount, reactionBtn)
 				}
 			}
 			postTmpl, tmerr = template.New("tem").Parse(dataStr)
@@ -2489,7 +2489,8 @@ func main() {
 		}
 
 		curDate := time.Now().Format(time.DateOnly)
-		tcFile, err := os.Create(curDate + "_" + r.PostFormValue("tcName") + "_capsule_" + usernameFromSession + ".zip")
+		tcFileName := curDate + "_" + r.PostFormValue("tcName") + "_capsule_" + usernameFromSession + ".zip"
+		tcFile, err := os.Create(tcFileName)
 		if err != nil {
 			activityStr := "Failed to create zip file in tccreatehandler"
 			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", err, time.Now().In(nyLoc).Format(time.DateTime), activityStr))
@@ -2543,7 +2544,7 @@ func main() {
 		}
 		zipWriter.Close()
 
-		_, inserr := db.Exec(fmt.Sprintf("insert into tfldata.timecapsule(\"username\", \"available_on\", \"tcname\", \"createdon\") values('%s', '%s'::date + INTERVAL '2 days', '%s', '%s');", usernameFromSession, expiresOn, r.PostFormValue("tcName"), curDate))
+		_, inserr := db.Exec(fmt.Sprintf("insert into tfldata.timecapsule(\"username\", \"available_on\", \"tcname\", \"tcfilename\", \"createdon\") values('%s', '%s'::date + INTERVAL '2 days', '%s', '%s', '%s');", usernameFromSession, expiresOn, r.PostFormValue("tcName"), tcFileName, curDate))
 
 		if inserr != nil {
 			activityStr := "Failed to add time capsule to DB"
@@ -2551,7 +2552,7 @@ func main() {
 			return
 		}
 
-		go uploadTimeCapsuleToS3(awskey, awskeysecret, tcFile, curDate+"_"+r.PostFormValue("tcName")+"_capsule_"+usernameFromSession+".zip", r)
+		go uploadTimeCapsuleToS3(awskey, awskeysecret, tcFile, tcFileName, r)
 	}
 
 	getMyTimeCapsulesHandler := func(w http.ResponseWriter, r *http.Request) {
@@ -2570,9 +2571,10 @@ func main() {
 			tcname      string
 			createdon   string
 			availableOn string
+			tcfilename  string
 		}
 
-		output, _ := db.Query(fmt.Sprintf("select tcname, createdon, available_on from tfldata.timecapsule where username='%s' and available_on %s now() order by available_on asc;", usernameFromSession, r.URL.Query().Get("pastorpresent")))
+		output, _ := db.Query(fmt.Sprintf("select tcname, createdon, available_on, tcfilename from tfldata.timecapsule where username='%s' and available_on %s now() order by available_on asc;", usernameFromSession, r.URL.Query().Get("pastorpresent")))
 
 		defer output.Close()
 
@@ -2587,9 +2589,9 @@ func main() {
 				bgColor = "#efefefe6"
 			}
 
-			output.Scan(&myTcOut.tcname, &myTcOut.createdon, &myTcOut.availableOn)
+			output.Scan(&myTcOut.tcname, &myTcOut.createdon, &myTcOut.availableOn, &myTcOut.tcfilename)
 
-			w.Write([]byte(fmt.Sprintf("<tr><td style='background-color: %s'>%s</td><td style='background-color: %s'>%s</td><td style='background-color: %s'>%s</td><td  style='background-color: %s; text-align: center; font-size: larger; color: red;' hx-swap='none' hx-post='/delete-my-tc' hx-ext='json-enc' hx-vals='{%s: %s}' hx-confirm='This will delete the time capsule forever and it will be unretrievable. Are you sure you want to continue?'>X</td></tr>", bgColor, myTcOut.tcname, bgColor, strings.Split(myTcOut.createdon, "T")[0], bgColor, strings.Split(myTcOut.availableOn, "T")[0], bgColor, "\"myTCName\"", "\""+myTcOut.tcname+"\"")))
+			w.Write([]byte(fmt.Sprintf("<tr onclick=\"window.open('https://www.the-family-loop.com/product-page/time-capsule-early-access?tcname=%s')\"><td style='background-color: %s'>%s</td><td style='background-color: %s'>%s</td><td style='background-color: %s'>%s</td><td  style='background-color: %s; text-align: center; font-size: larger; color: red;' hx-swap='none' hx-post='/delete-my-tc' hx-ext='json-enc' hx-vals='{%s: %s}' hx-confirm='This will delete the time capsule forever and it will be unretrievable. Are you sure you want to continue?'>X</td></tr>", myTcOut.tcfilename, bgColor, myTcOut.tcname, bgColor, strings.Split(myTcOut.createdon, "T")[0], bgColor, strings.Split(myTcOut.availableOn, "T")[0], bgColor, "\"myTCName\"", "\""+myTcOut.tcname+"\"")))
 			iter++
 		}
 	}

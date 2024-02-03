@@ -18,8 +18,6 @@ require (
 	google.golang.org/api v0.136.0
 )
 
-require github.com/aws/aws-sdk-go-v2/service/cloudwatchlogs v1.31.0
-
 require (
 	cloud.google.com/go v0.110.7 // indirect
 	cloud.google.com/go/compute v1.23.0 // indirect

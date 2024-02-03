@@ -2591,9 +2591,16 @@ func main() {
 
 			output.Scan(&myTcOut.tcname, &myTcOut.createdon, &myTcOut.availableOn, &myTcOut.tcfilename)
 
-			w.Write([]byte(fmt.Sprintf("<tr onclick=\"window.open('https://www.the-family-loop.com/product-page/time-capsule-early-access?tcname=%s')\"><td style='background-color: %s'>%s</td><td style='background-color: %s'>%s</td><td style='background-color: %s'>%s</td><td  style='background-color: %s; text-align: center; font-size: larger; color: red;' hx-swap='none' hx-post='/delete-my-tc' hx-ext='json-enc' hx-vals='{%s: %s}' hx-confirm='This will delete the time capsule forever and it will be unretrievable. Are you sure you want to continue?'>X</td></tr>", myTcOut.tcfilename, bgColor, myTcOut.tcname, bgColor, strings.Split(myTcOut.createdon, "T")[0], bgColor, strings.Split(myTcOut.availableOn, "T")[0], bgColor, "\"myTCName\"", "\""+myTcOut.tcname+"\"")))
+			w.Write([]byte(fmt.Sprintf("<tr><td onclick='openInStore(`%s`)' style='background-color: %s'>%s</td><td style='background-color: %s'>%s</td><td style='background-color: %s'>%s</td><td  style='background-color: %s; text-align: center; font-size: larger; color: red;' hx-swap='none' hx-post='/delete-my-tc' hx-ext='json-enc' hx-vals='{%s: %s}' hx-confirm='This will delete the time capsule forever and it will be unretrievable. Are you sure you want to continue?'>X</td></tr>", myTcOut.tcfilename, bgColor, myTcOut.tcname, bgColor, strings.Split(myTcOut.createdon, "T")[0], bgColor, strings.Split(myTcOut.availableOn, "T")[0], bgColor, "\"myTCName\"", "\""+myTcOut.tcname+"\"")))
 			iter++
 		}
+	}
+	wixWebhookEarlyAccessPaymentCompleteHandler := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		validBool := validateWebhookJWTToken(jwtSignKey, w, r)
+		bs, _ := io.ReadAll(r.Body)
+		fmt.Println(string(bs))
+		fmt.Println(validBool)
 	}
 
 	deleteMyTChandler := func(w http.ResponseWriter, r *http.Request) {
@@ -3042,6 +3049,8 @@ func main() {
 	http.HandleFunc("/create-new-tc", createNewTimeCapsuleHandler)
 	http.HandleFunc("/get-my-time-capsules", getMyTimeCapsulesHandler)
 
+	http.HandleFunc("/webhook-tc-early-access-payment-complete", wixWebhookEarlyAccessPaymentCompleteHandler)
+
 	http.HandleFunc("/delete-my-tc", deleteMyTChandler)
 
 	http.HandleFunc("/admin-list-of-users", adminGetListOfUsersHandler)
@@ -3398,6 +3407,19 @@ func validateJWTToken(tokenKey string, w http.ResponseWriter, r *http.Request) b
 	}
 
 	jwtToken, jwtValidateErr := jwt.Parse(jwtCookie.Value, func(jwtToken *jwt.Token) (interface{}, error) {
+		return []byte(tokenKey), nil
+	}, jwt.WithValidMethods([]string{"HS256"}))
+
+	if jwtValidateErr != nil {
+		return false
+	}
+	return jwtToken.Valid
+}
+func validateWebhookJWTToken(tokenKey string, w http.ResponseWriter, r *http.Request) bool {
+	jwtHeaderVal := r.Header.Get("Authorization")
+	fmt.Println(r.Header)
+	fmt.Println(jwtHeaderVal)
+	jwtToken, jwtValidateErr := jwt.Parse(jwtHeaderVal, func(jwtToken *jwt.Token) (interface{}, error) {
 		return []byte(tokenKey), nil
 	}, jwt.WithValidMethods([]string{"HS256"}))
 

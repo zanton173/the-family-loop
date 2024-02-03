@@ -195,6 +195,18 @@
             else
                 alert(event.detail.xhr.responseText)
         }
+        function openInStore(capsulename) {
+
+            if (pastOrPresentTC === ">") {
+                // Early access
+                window.open(`https://www.the-family-loop.com/product-page/time-capsule-early-access?tcname=${capsulename}`)
+
+            } else if (pastOrPresentTC === "<") {
+                // Available for download
+
+            }
+
+        }
     </script>
 </body>
 

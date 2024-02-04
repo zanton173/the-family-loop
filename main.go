@@ -2598,7 +2598,10 @@ func main() {
 	wixWebhookEarlyAccessPaymentCompleteHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		validBool := validateWebhookJWTToken(jwtSignKey, w, r)
-		bs, _ := io.ReadAll(r.Body)
+		bs, readerr := io.ReadAll(r.Body)
+		if readerr != nil {
+			fmt.Println(readerr)
+		}
 		fmt.Println(string(bs))
 		fmt.Println(validBool)
 	}
@@ -3417,8 +3420,6 @@ func validateJWTToken(tokenKey string, w http.ResponseWriter, r *http.Request) b
 }
 func validateWebhookJWTToken(tokenKey string, w http.ResponseWriter, r *http.Request) bool {
 	jwtHeaderVal := r.Header.Get("Authorization")
-	fmt.Println(r.Header)
-	fmt.Println(jwtHeaderVal)
 	jwtToken, jwtValidateErr := jwt.Parse(jwtHeaderVal, func(jwtToken *jwt.Token) (interface{}, error) {
 		return []byte(tokenKey), nil
 	}, jwt.WithValidMethods([]string{"HS256"}))

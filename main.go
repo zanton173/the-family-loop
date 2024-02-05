@@ -2591,19 +2591,32 @@ func main() {
 
 			output.Scan(&myTcOut.tcname, &myTcOut.createdon, &myTcOut.availableOn, &myTcOut.tcfilename)
 
-			w.Write([]byte(fmt.Sprintf("<tr><td onclick='openInStore(`%s`)' style='background-color: %s'>%s</td><td style='background-color: %s'>%s</td><td style='background-color: %s'>%s</td><td  style='background-color: %s; text-align: center; font-size: larger; color: red;' hx-swap='none' hx-post='/delete-my-tc' hx-ext='json-enc' hx-vals='{%s: %s}' hx-confirm='This will delete the time capsule forever and it will be unretrievable. Are you sure you want to continue?'>X</td></tr>", myTcOut.tcfilename, bgColor, myTcOut.tcname, bgColor, strings.Split(myTcOut.createdon, "T")[0], bgColor, strings.Split(myTcOut.availableOn, "T")[0], bgColor, "\"myTCName\"", "\""+myTcOut.tcname+"\"")))
+			w.Write([]byte(fmt.Sprintf("<tr><td onclick='openInStore(`%s`, `%s`, `%s`)' style='background-color: %s'>%s</td><td style='background-color: %s'>%s</td><td style='background-color: %s'>%s</td><td  style='background-color: %s; text-align: center; font-size: larger; color: red;' hx-swap='none' hx-post='/delete-my-tc' hx-ext='json-enc' hx-vals='{%s: %s}' hx-confirm='This will delete the time capsule forever and it will be unretrievable. Are you sure you want to continue?'>X</td></tr>", myTcOut.tcfilename, strings.Split(orgId, "_")[1], strings.Split(orgId, "_")[0], bgColor, myTcOut.tcname, bgColor, strings.Split(myTcOut.createdon, "T")[0], bgColor, strings.Split(myTcOut.availableOn, "T")[0], bgColor, "\"myTCName\"", "\""+myTcOut.tcname+"\"")))
 			iter++
 		}
 	}
 	wixWebhookEarlyAccessPaymentCompleteHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		validBool := validateWebhookJWTToken(jwtSignKey, w, r)
-		bs, readerr := io.ReadAll(r.Body)
-		if readerr != nil {
-			fmt.Println(readerr)
+		if !validBool {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
 		}
-		fmt.Println(string(bs))
-		fmt.Println(validBool)
+		type postBody struct {
+			Family      string `json:"family"`
+			Orgcode     string `json:"orgcode"`
+			Capsulename string `json:"capsule"`
+			Route       string `json:"route"`
+		}
+		bs, _ := io.ReadAll(r.Body)
+		var postData postBody
+
+		marsherr := json.Unmarshal(bs, &postData)
+		if marsherr != nil {
+			fmt.Println()
+		}
+		fmt.Println(postData)
+
 	}
 
 	deleteMyTChandler := func(w http.ResponseWriter, r *http.Request) {

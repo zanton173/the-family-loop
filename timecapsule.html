@@ -195,11 +195,11 @@
             else
                 alert(event.detail.xhr.responseText)
         }
-        function openInStore(capsulename) {
+        function openInStore(capsulename, orgid, familyName) {
 
             if (pastOrPresentTC === ">") {
                 // Early access
-                window.open(`https://www.the-family-loop.com/product-page/time-capsule-early-access?tcname=${capsulename}`)
+                window.open(`https://www.the-family-loop.com/product-page/time-capsule-early-access?tcname=${capsulename}&orgname=${orgid}&famname=${familyName}&route=${window.location.host.split(".")[0]}`)
 
             } else if (pastOrPresentTC === "<") {
                 // Available for download

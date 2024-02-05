@@ -20,3 +20,6 @@ UPDATE tfldata.users SET mytz='America/New_York' WHERE mytz IS NULL OR mytz='';
 ALTER TABLE tfldata.gchat ALTER COLUMN createdon TYPE TIMESTAMPTZ;
 
 ALTER TABLE tfldata.timecapsule ADD COLUMN tcfilename VARCHAR(59);
+ALTER TABLE tfldata.timecapsule ADD COLUMN waspurchased bool;
+ALTER TABLE tfldata.timecapsule ADD COLUMN wasearlyaccesspurchased bool;
+UPDATE tfldata.timecapsule SET wasearlyaccesspurchased=false, waspurchased=false WHERE wasearlyaccesspurchased IS NULL AND waspurchased IS NULL;

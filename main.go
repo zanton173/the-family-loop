@@ -2613,7 +2613,14 @@ func main() {
 
 		marsherr := json.Unmarshal(bs, &postData)
 		if marsherr != nil {
-			fmt.Println()
+			fmt.Println("Some marsh err at wixWebhookearlyaccess")
+			return
+		}
+		_, uperr := db.Exec(fmt.Sprintf("update tfldata.timecapsule set wasearlyaccesspurchased=true where tcfilename='%s';", postData.Capsulename))
+		if uperr != nil {
+			activityStr := "Failed attempt purchase early access from wix"
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage,createdon,activity) values(substr('%s',0,240), now(), substr('%s',0,105);", uperr.Error(), activityStr))
+			return
 		}
 		fmt.Println(postData)
 

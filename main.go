@@ -3219,7 +3219,7 @@ func uploadFileToS3(k string, s string, bucketexists bool, f multipart.File, fn 
 		}
 		var compfile bytes.Buffer
 		encerr := jpeg.Encode(&compfile, newimg, &jpeg.Options{
-			Quality: 25,
+			Quality: 18,
 		})
 		if encerr != nil {
 			fmt.Println(encerr)

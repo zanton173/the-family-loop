@@ -2713,7 +2713,7 @@ func main() {
 			SameSite: http.SameSiteStrictMode,
 			Path:     "/",
 		})
-		db.Exec(fmt.Sprintf("update tfldata.users set fcm_registration_id=null where username='%s';", r.URL.Query().Get("user")))
+		//db.Exec(fmt.Sprintf("update tfldata.users set fcm_registration_id=null where username='%s';", r.URL.Query().Get("user")))
 	}
 
 	adminGetListOfUsersHandler := func(w http.ResponseWriter, r *http.Request) {

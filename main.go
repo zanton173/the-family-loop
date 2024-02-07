@@ -1649,8 +1649,11 @@ func main() {
 
 		var ourSeshStruct seshStruct
 
-		row := db.QueryRow(fmt.Sprintf("select username, pfp_name, gchat_bg_theme, gchat_order_option, is_admin, substr(fcm_registration_id,0,3) from tfldata.users where username='%s';", usernameFromSession))
-		row.Scan(&ourSeshStruct.Username, &ourSeshStruct.Pfpname, &ourSeshStruct.BGtheme, &ourSeshStruct.GchatOrderOpt, &ourSeshStruct.Isadmin, &ourSeshStruct.Fcmkey)
+		row := db.QueryRow(fmt.Sprintf("select username, gchat_bg_theme, gchat_order_option, is_admin, substr(fcm_registration_id,0,3), pfp_name from tfldata.users where username='%s';", usernameFromSession))
+		scerr := row.Scan(&ourSeshStruct.Username, &ourSeshStruct.BGtheme, &ourSeshStruct.GchatOrderOpt, &ourSeshStruct.Isadmin, &ourSeshStruct.Fcmkey, &ourSeshStruct.Pfpname)
+		if scerr != nil {
+			fmt.Println(scerr)
+		}
 
 		ourSeshStruct.CFDomain = cfdistro
 

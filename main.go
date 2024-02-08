@@ -1649,8 +1649,8 @@ func main() {
 
 		var ourSeshStruct seshStruct
 
-		row := db.QueryRow(fmt.Sprintf("select username, gchat_bg_theme, gchat_order_option, is_admin, substr(fcm_registration_id,0,3), pfp_name from tfldata.users where username='%s';", usernameFromSession))
-		scerr := row.Scan(&ourSeshStruct.Username, &ourSeshStruct.BGtheme, &ourSeshStruct.GchatOrderOpt, &ourSeshStruct.Isadmin, &ourSeshStruct.Fcmkey, &ourSeshStruct.Pfpname)
+		row := db.QueryRow(fmt.Sprintf("select username, gchat_bg_theme, gchat_order_option, is_admin, pfp_name, substr(fcm_registration_id,0,3) from tfldata.users where username='%s';", usernameFromSession))
+		scerr := row.Scan(&ourSeshStruct.Username, &ourSeshStruct.BGtheme, &ourSeshStruct.GchatOrderOpt, &ourSeshStruct.Isadmin, &ourSeshStruct.Pfpname, &ourSeshStruct.Fcmkey)
 		if scerr != nil {
 			fmt.Println(scerr)
 		}
@@ -3134,17 +3134,6 @@ func setLoginCookie(w http.ResponseWriter, db *sql.DB, userStr string, r *http.R
 
 }
 func uploadPfpToS3(k string, s string, f multipart.File, fn string, r *http.Request, formInputIdentifier string) string {
-	cfg, err := config.LoadDefaultConfig(context.TODO(),
-		config.WithDefaultRegion("us-east-1"),
-		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(k, s, "")),
-	)
-	// conf, err := config.NewEnvConfig(config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(k, s, "")))
-	if err != nil {
-		log.Fatal(err)
-		os.Exit(9)
-	}
-
-	client := s3.NewFromConfig(cfg)
 
 	defer f.Close()
 	ourfile, fileHeader, errfile := r.FormFile(formInputIdentifier)
@@ -3157,10 +3146,29 @@ func uploadPfpToS3(k string, s string, f multipart.File, fn string, r *http.Requ
 
 	ourfile.Read(fileContents)
 	filetype := http.DetectContentType(fileContents)
+	f.Seek(0, 0)
+	buf := bytes.NewBuffer(nil)
+	_, err := io.Copy(buf, f)
+	if err != nil {
+		os.Exit(2)
+	}
 
+	f.Seek(0, 0)
+
+	newimg, _, decerr := image.Decode(buf)
+	if decerr != nil {
+		log.Fatal("dec err: " + decerr.Error())
+	}
+	var compfile bytes.Buffer
+	encerr := jpeg.Encode(&compfile, newimg, &jpeg.Options{
+		Quality: 18,
+	})
+	if encerr != nil {
+		fmt.Println(encerr)
+	}
 	tmpFileName := fn
 
-	getout, geterr := client.GetObjectAttributes(context.TODO(), &s3.GetObjectAttributesInput{
+	getout, geterr := s3Client.GetObjectAttributes(context.TODO(), &s3.GetObjectAttributesInput{
 		Bucket: aws.String(s3Domain),
 		Key:    aws.String("pfp/" + tmpFileName),
 		ObjectAttributes: []types.ObjectAttributes{
@@ -3184,17 +3192,17 @@ func uploadPfpToS3(k string, s string, f multipart.File, fn string, r *http.Requ
 	}
 	defer ourfile.Close()
 
-	_, err4 := client.PutObject(context.TODO(), &s3.PutObjectInput{
+	_, err4 := s3Client.PutObject(context.TODO(), &s3.PutObjectInput{
 		Bucket:       aws.String(s3Domain),
 		Key:          aws.String("pfp/" + fn),
-		Body:         f,
+		Body:         &compfile,
 		ContentType:  &filetype,
 		CacheControl: aws.String("max-age=31536000"),
 	})
 
 	if err4 != nil {
 		fmt.Println("error on upload")
-		fmt.Println(err.Error())
+		fmt.Println(err4.Error())
 	}
 	return fn
 }

@@ -2560,7 +2560,7 @@ func main() {
 	}
 
 	getMyTimeCapsulesHandler := func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "multipart/form-data")
+		w.Header().Set("Content-Type", "application/json")
 		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, w, r)
 
 		validBool := validateJWTToken(jwtSignKey, w, r)
@@ -2578,7 +2578,7 @@ func main() {
 			tcfilename  string
 		}
 
-		output, _ := db.Query(fmt.Sprintf("select tcname, createdon, available_on, tcfilename from tfldata.timecapsule where username='%s' and available_on %s now() order by available_on asc;", usernameFromSession, r.URL.Query().Get("pastorpresent")))
+		output, _ := db.Query(fmt.Sprintf("select tcname, createdon, available_on, tcfilename from tfldata.timecapsule where username='%s' and available_on %s now() and waspurchased = true order by available_on asc;", usernameFromSession, r.URL.Query().Get("pastorpresent")))
 
 		defer output.Close()
 
@@ -2597,6 +2597,14 @@ func main() {
 
 			w.Write([]byte(fmt.Sprintf("<tr><td onclick='openInStore(`%s`, `%s`, `%s`)' style='background-color: %s'>%s</td><td style='background-color: %s'>%s</td><td style='background-color: %s'>%s</td><td  style='background-color: %s; text-align: center; font-size: larger; color: red;' hx-swap='none' hx-post='/delete-my-tc' hx-ext='json-enc' hx-vals='{%s: %s}' hx-confirm='This will delete the time capsule forever and it will be unretrievable. Are you sure you want to continue?'>X</td></tr>", myTcOut.tcfilename, strings.Split(orgId, "_")[1], strings.Split(orgId, "_")[0], bgColor, myTcOut.tcname, bgColor, strings.Split(myTcOut.createdon, "T")[0], bgColor, strings.Split(myTcOut.availableOn, "T")[0], bgColor, "\"myTCName\"", "\""+myTcOut.tcname+"\"")))
 			iter++
+		}
+	}
+	wixWebhookTCInitialPurchaseHandler := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		validBool := validateWebhookJWTToken(jwtSignKey, w, r)
+		if !validBool {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
 		}
 	}
 	wixWebhookEarlyAccessPaymentCompleteHandler := func(w http.ResponseWriter, r *http.Request) {
@@ -3077,6 +3085,7 @@ func main() {
 	http.HandleFunc("/get-my-time-capsules", getMyTimeCapsulesHandler)
 
 	http.HandleFunc("/webhook-tc-early-access-payment-complete", wixWebhookEarlyAccessPaymentCompleteHandler)
+	http.HandleFunc("/webhook-tc-initial-payment-complete", wixWebhookTCInitialPurchaseHandler)
 
 	http.HandleFunc("/delete-my-tc", deleteMyTChandler)
 
@@ -3484,7 +3493,6 @@ func uploadTimeCapsuleToS3(k string, s string, f *os.File, fn string, r *http.Re
 		Key:         aws.String("timecapsules/" + fn),
 		ContentType: aws.String("application/octet-stream"),
 		Body:        f,
-
 		//StorageClass: types.StorageClassGlacier,
 		//Tagging: aws.String("YearsToStore=" + r.PostFormValue("yearsToStore")),
 	})

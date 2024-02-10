@@ -40,7 +40,7 @@
             Create a New Capsule!</p>
         <p onclick="togglePanesRight()" style="margin-bottom: 0%">&gt;</p>
     </div>
-    <div id="createNewCapsuleDiv">
+    <div id="createNewCapsuleDiv" name="Create a New Capsule!">
 
         <form id="createCapsuleForm" class="d-inline-grid mx-1" hx-on::after-request="afterTCCreateReq(event)"
             hx-post="/create-new-tc" hx-encoding="multipart/form-data" hx-swap="none" hx-indicator="#loadingspinner"
@@ -89,9 +89,9 @@
             <button id="submitNewTCForm" class="btn btn-success" style="display: none" type="submit">Create!</button>
         </form>
     </div>
-    <div id="myCapsulesDiv" style="display: none;">
+    <div id="myCapsulesDiv" style="display: none;" name="My Capsules (Purchased)">
         <div style="margin-top: 1%" id="getEleListOfTC" hx-get="/get-my-time-capsules" hx-target="#listOfTCDivList"
-            hx-trigger="click" hx-vals="js:{'pastorpresent': pastOrPresentTC}">
+            hx-trigger="click, load" hx-vals="js:{'pastorpresent': pastOrPresentTC}">
             <table class="table d-grid">
                 <thead>
                     <tr
@@ -111,7 +111,7 @@
         </div>
 
     </div>
-    <div id="myCapsulesNotYetPurchasedDiv" style="display: none">
+    <div id="myCapsulesNotYetPurchasedDiv" style="display: none" name="My Capsules (Not Yet Purchased)">
         <h1>not yet purchased</h1>
     </div>
     <div class="modal customModalTrans" id="howItWorksModal" tabindex="-1" aria-labelledby="howItWorks">
@@ -177,6 +177,7 @@
                 }
             })
             document.getElementById(listOfPanes[paneIter]).style.display = ""
+            changeHeader(document.getElementById(listOfPanes[paneIter]).id)
         }
         function togglePanesLeft() {
             console.log(paneIter)
@@ -190,19 +191,27 @@
                 }
             })
             document.getElementById(listOfPanes[paneIter]).style.display = ""
+            changeHeader(document.getElementById(listOfPanes[paneIter]).id)
         }
-        function switchActivePage() {
-            if (!createNewCapPage.style.display.includes("none")) {
-                document.getElementById('currentPageSelector').innerHTML = "My Capsules"
-                createNewCapPage.style.display = "none"
-                usersCapsPage.style.display = ""
-                document.getElementById('getEleListOfTC').dispatchEvent(new Event('click'))
-            } else {
-                document.getElementById('currentPageSelector').innerHTML = "Create a New Capsule!"
-                createNewCapPage.style.display = ""
-                usersCapsPage.style.display = "none"
-            }
+        function changeHeader(paneid) {
+
+            listOfPanes.forEach((pane) => {
+                if (paneid === pane)
+                    document.getElementById('currentPageSelector').innerHTML = document.getElementById(pane).getAttribute("name")
+            })
         }
+        /* function switchActivePage() {
+             if (!createNewCapPage.style.display.includes("none")) {
+                 document.getElementById('currentPageSelector').innerHTML = "My Capsules"
+                 createNewCapPage.style.display = "none"
+                 usersCapsPage.style.display = ""
+                 document.getElementById('getEleListOfTC').dispatchEvent(new Event('click'))
+             } else {
+                 document.getElementById('currentPageSelector').innerHTML = "Create a New Capsule!"
+                 createNewCapPage.style.display = ""
+                 usersCapsPage.style.display = "none"
+             }
+         }*/
         function checkValidityOfFiles() {
             var curFileListSize = 0
             for (var i = 0; i < document.getElementById('tcfileinput').files.length; i++) {

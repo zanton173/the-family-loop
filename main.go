@@ -2500,13 +2500,16 @@ func main() {
 			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", err, time.Now().In(nyLoc).Format(time.DateTime), activityStr))
 			return
 		}
-
+		var yearsfordb int
 		if r.PostFormValue("yearsToStore") == "one_year" {
 			expiresOn = time.Now().Add(time.Hour * 8760).Format(time.DateOnly)
+			yearsfordb = 1
 		} else if r.PostFormValue("yearsToStore") == "three_years" {
 			expiresOn = time.Now().Add(time.Hour * 8760 * 3).Format(time.DateOnly)
+			yearsfordb = 3
 		} else if r.PostFormValue("yearsToStore") == "seven_years" {
 			expiresOn = time.Now().Add(time.Hour * 8760 * 7).Format(time.DateOnly)
+			yearsfordb = 7
 		}
 		zipWriter := zip.NewWriter(tcFile)
 		parseerr := r.ParseMultipartForm(10 << 20)
@@ -2548,7 +2551,7 @@ func main() {
 		}
 		zipWriter.Close()
 
-		_, inserr := db.Exec(fmt.Sprintf("insert into tfldata.timecapsule(\"username\", \"available_on\", \"tcname\", \"tcfilename\", \"createdon\") values('%s', '%s'::date + INTERVAL '2 days', '%s', '%s', '%s');", usernameFromSession, expiresOn, r.PostFormValue("tcName"), tcFileName, curDate))
+		_, inserr := db.Exec(fmt.Sprintf("insert into tfldata.timecapsule(\"username\", \"available_on\", \"tcname\", \"tcfilename\", \"createdon\", waspurchased, wasearlyaccesspurchased, yearstostore) values('%s', '%s'::date + INTERVAL '2 days', '%s', '%s', '%s', false, false, %d);", usernameFromSession, expiresOn, r.PostFormValue("tcName"), tcFileName, curDate, yearsfordb))
 
 		if inserr != nil {
 			activityStr := "Failed to add time capsule to DB"
@@ -2559,7 +2562,48 @@ func main() {
 		go uploadTimeCapsuleToS3(awskey, awskeysecret, tcFile, tcFileName, r)
 	}
 
-	getMyTimeCapsulesHandler := func(w http.ResponseWriter, r *http.Request) {
+	getMyNotYetPurchasedTimeCapsulesHandler := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, w, r)
+
+		validBool := validateJWTToken(jwtSignKey, w, r)
+		if !validBool || !allowOrDeny {
+			w.Header().Set("HX-Retarget", "window")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		type listOfTC struct {
+			tcname      string
+			createdon   string
+			availableOn string
+			tcfilename  string
+		}
+
+		output, _ := db.Query(fmt.Sprintf("select tcname, createdon, available_on, tcfilename from tfldata.timecapsule where username='%s' and available_on %s now() and waspurchased = false order by available_on asc;", usernameFromSession, r.URL.Query().Get("pastorpresent")))
+
+		defer output.Close()
+
+		iter := 0
+
+		for output.Next() {
+			bgColor := "white"
+			var myTcOut listOfTC
+			if iter%2 == 0 {
+				bgColor = "white"
+			} else {
+				bgColor = "#efefefe6"
+			}
+
+			output.Scan(&myTcOut.tcname, &myTcOut.createdon, &myTcOut.availableOn, &myTcOut.tcfilename)
+
+			w.Write([]byte(fmt.Sprintf("<tr><td onclick='openInStore(`%s`, `%s`, `%s`, `c56248d5-dabf-a970-6dc6-9ee1d8e3a6e0`)' style='background-color: %s'>%s</td><td style='background-color: %s'>%s</td><td style='background-color: %s'>%s</td><td  style='background-color: %s; text-align: center; font-size: larger; color: red;' hx-swap='none' hx-post='/delete-my-tc' hx-ext='json-enc' hx-vals='{%s: %s}' hx-confirm='This will delete the time capsule forever and it will be unretrievable. Are you sure you want to continue?'>X</td></tr>", myTcOut.tcfilename, strings.Split(orgId, "_")[1], strings.Split(orgId, "_")[0], bgColor, myTcOut.tcname, bgColor, strings.Split(myTcOut.createdon, "T")[0], bgColor, strings.Split(myTcOut.availableOn, "T")[0], bgColor, "\"myTCName\"", "\""+myTcOut.tcname+"\"")))
+			iter++
+		}
+	}
+
+	getMyPurchasedTimeCapsulesHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, w, r)
 
@@ -2595,7 +2639,7 @@ func main() {
 
 			output.Scan(&myTcOut.tcname, &myTcOut.createdon, &myTcOut.availableOn, &myTcOut.tcfilename)
 
-			w.Write([]byte(fmt.Sprintf("<tr><td onclick='openInStore(`%s`, `%s`, `%s`)' style='background-color: %s'>%s</td><td style='background-color: %s'>%s</td><td style='background-color: %s'>%s</td><td  style='background-color: %s; text-align: center; font-size: larger; color: red;' hx-swap='none' hx-post='/delete-my-tc' hx-ext='json-enc' hx-vals='{%s: %s}' hx-confirm='This will delete the time capsule forever and it will be unretrievable. Are you sure you want to continue?'>X</td></tr>", myTcOut.tcfilename, strings.Split(orgId, "_")[1], strings.Split(orgId, "_")[0], bgColor, myTcOut.tcname, bgColor, strings.Split(myTcOut.createdon, "T")[0], bgColor, strings.Split(myTcOut.availableOn, "T")[0], bgColor, "\"myTCName\"", "\""+myTcOut.tcname+"\"")))
+			w.Write([]byte(fmt.Sprintf("<tr><td onclick='openInStore(`%s`, `%s`, `%s`, `df19c1f7-07d8-a265-42f8-e8dfa824cc6e`)' style='background-color: %s'>%s</td><td style='background-color: %s'>%s</td><td style='background-color: %s'>%s</td><td  style='background-color: %s; text-align: center; font-size: larger; color: red;' hx-swap='none' hx-post='/delete-my-tc' hx-ext='json-enc' hx-vals='{%s: %s}' hx-confirm='This will delete the time capsule forever and it will be unretrievable. Are you sure you want to continue?'>X</td></tr>", myTcOut.tcfilename, strings.Split(orgId, "_")[1], strings.Split(orgId, "_")[0], bgColor, myTcOut.tcname, bgColor, strings.Split(myTcOut.createdon, "T")[0], bgColor, strings.Split(myTcOut.availableOn, "T")[0], bgColor, "\"myTCName\"", "\""+myTcOut.tcname+"\"")))
 			iter++
 		}
 	}
@@ -2606,6 +2650,50 @@ func main() {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
+		type postBody struct {
+			Family      string `json:"family"`
+			Orgcode     string `json:"orgcode"`
+			Capsulename string `json:"capsule"`
+			Route       string `json:"route"`
+		}
+		bs, _ := io.ReadAll(r.Body)
+		var postData postBody
+
+		marsherr := json.Unmarshal(bs, &postData)
+		if marsherr != nil {
+			fmt.Println("Some marsh err at wixWebhookearlyaccess")
+			return
+		}
+		_, uperr := db.Exec(fmt.Sprintf("update tfldata.timecapsule set waspurchased=true where tcfilename='%s';", postData.Capsulename))
+		if uperr != nil {
+			fmt.Println("something went wrong")
+		}
+		var yearstostore string
+		row := db.QueryRow(fmt.Sprintf("select yearstostore from tfldata.timecapsule where tcfilename='%s';", postData.Capsulename))
+		sner := row.Scan(&yearstostore)
+		if sner != nil {
+			fmt.Println("scan err")
+			return
+		}
+		if yearstostore == "1" {
+			yearstostore = "one_year"
+		} else if yearstostore == "3" {
+			yearstostore = "three_years"
+		} else if yearstostore == "7" {
+			yearstostore = "seven_years"
+		}
+		s3Client.PutObjectTagging(context.TODO(), &s3.PutObjectTaggingInput{
+			Bucket: &s3Domain,
+			Key:    aws.String("timecapsules/" + postData.Capsulename),
+			Tagging: &types.Tagging{
+				TagSet: []types.Tag{
+					{
+						Key:   aws.String("YearsToStore"),
+						Value: &yearstostore,
+					},
+				},
+			},
+		})
 	}
 	wixWebhookEarlyAccessPaymentCompleteHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -3082,7 +3170,9 @@ func main() {
 	http.HandleFunc("/change-if-notified-for-thread", changeUserSubscriptionToThreadHandler)
 
 	http.HandleFunc("/create-new-tc", createNewTimeCapsuleHandler)
-	http.HandleFunc("/get-my-time-capsules", getMyTimeCapsulesHandler)
+	http.HandleFunc("/get-my-time-capsules", getMyPurchasedTimeCapsulesHandler)
+	http.HandleFunc("/get-my-purchased-time-capsules", getMyPurchasedTimeCapsulesHandler)
+	http.HandleFunc("/get-my-notyetpurchased-time-capsules", getMyNotYetPurchasedTimeCapsulesHandler)
 
 	http.HandleFunc("/webhook-tc-early-access-payment-complete", wixWebhookEarlyAccessPaymentCompleteHandler)
 	http.HandleFunc("/webhook-tc-initial-payment-complete", wixWebhookTCInitialPurchaseHandler)

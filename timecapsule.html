@@ -90,8 +90,8 @@
         </form>
     </div>
     <div id="myCapsulesDiv" style="display: none;" name="My Capsules (Purchased)">
-        <div style="margin-top: 1%" id="getEleListOfTC" hx-get="/get-my-time-capsules" hx-target="#listOfTCDivList"
-            hx-trigger="click, load" hx-vals="js:{'pastorpresent': pastOrPresentTC}">
+        <div style="margin-top: 1%" id="getEleListOfTC" hx-get="/get-my-purchased-time-capsules"
+            hx-target="#listOfTCDivList" hx-trigger="click, load" hx-vals="js:{'pastorpresent': pastOrPresentTC}">
             <table class="table d-grid">
                 <thead>
                     <tr
@@ -109,10 +109,28 @@
                 <tbody id="listOfTCDivList" style="font-size: smaller; display: inline-table"></tbody>
             </table>
         </div>
-
     </div>
     <div id="myCapsulesNotYetPurchasedDiv" style="display: none" name="My Capsules (Not Yet Purchased)">
-        <h1>not yet purchased</h1>
+        <div style="margin-top: 1%" id="getEleListOfTC" hx-get="/get-my-notyetpurchased-time-capsules"
+            hx-target="#listOfTCNotPurchasedDivList" hx-trigger="click, load"
+            hx-vals="js:{'pastorpresent': pastOrPresentTC}">
+            <table class="table d-grid">
+                <thead>
+                    <tr
+                        style="display: flex; width: 100dvw; justify-content: space-between; background-color: white; align-items: center">
+                        <th style="font-size: 8pt; left: 0%; position: relative;">Capsule Name</th>
+                        <th style="font-size: 8pt; left: 5%; position: relative;">Created on</th>
+                        <th style="font-size: 8pt; left: 5%; position: relative;" id="sortOrderPastOrPresentHeading"
+                            onclick="pastOrPresentTC === '>' ? pastOrPresentTC = '<' : pastOrPresentTC = '>'">
+                            Availablility Date<i class="bi bi-filter"></i></th>
+                        <th style="font-size: 7pt;">
+                            delete
+                        </th>
+                    </tr>
+                </thead>
+                <tbody id="listOfTCNotPurchasedDivList" style="font-size: smaller; display: inline-table"></tbody>
+            </table>
+        </div>
     </div>
     <div class="modal customModalTrans" id="howItWorksModal" tabindex="-1" aria-labelledby="howItWorks">
         <div class="modal-dialog" style="margin-top: calc(50dvh - 50%);">
@@ -239,11 +257,11 @@
             else
                 alert(event.detail.xhr.responseText)
         }
-        function openInStore(capsulename, orgid, familyName) {
+        function openInStore(capsulename, orgid, familyName, productid) {
 
             if (pastOrPresentTC === ">") {
                 // Early access
-                window.open(`https://www.the-family-loop.com/product-page/time-capsule-early-access?tcname=${capsulename}&orgname=${orgid}&famname=${familyName}&route=${window.location.host.split(".")[0]}`)
+                window.open(`https://www.the-family-loop.com/product-page?tcname=${capsulename}&orgname=${orgid}&famname=${familyName}&route=${window.location.host.split(".")[0]}&productid=${productid}`)
 
             } else if (pastOrPresentTC === "<") {
                 // Available for download

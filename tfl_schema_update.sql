@@ -23,3 +23,5 @@ ALTER TABLE tfldata.timecapsule ADD COLUMN tcfilename VARCHAR(59);
 ALTER TABLE tfldata.timecapsule ADD COLUMN waspurchased bool;
 ALTER TABLE tfldata.timecapsule ADD COLUMN wasearlyaccesspurchased bool;
 UPDATE tfldata.timecapsule SET wasearlyaccesspurchased=false, waspurchased=false WHERE wasearlyaccesspurchased IS NULL AND waspurchased IS NULL;
+ALTER TABLE tfldata.timecapsule ADD COLUMN yearstostore INTEGER;
+update tfldata.timecapsule as "a" set yearstostore = (select (available_on - createdon) / 365 from tfldata.timecapsule as "b" where a.tcfilename = b.tcfilename) where a.yearstostore is null;

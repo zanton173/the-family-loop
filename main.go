@@ -266,17 +266,18 @@ func main() {
 				w.Header().Set("HX-Trigger", "changeAdminPassword")
 				setLoginCookie(w, db, userStr, r, r.PostFormValue("mytz"))
 				generateLoginJWT(userStr, w, r, jwtSignKey)
+
 			} else {
 				err := bcrypt.CompareHashAndPassword([]byte(password), []byte(r.PostFormValue("passwordlogin")))
 
 				if err != nil {
 
 					db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values(substr('%s',0,105), '%s');", err, time.Now().In(nyLoc).Format(time.DateTime)))
-					w.Header().Set("HX-Trigger", "loginevent")
+					w.WriteHeader(http.StatusUnauthorized)
+					return
 				} else if err == nil {
 
 					generateLoginJWT(userStr, w, r, jwtSignKey)
-
 					setLoginCookie(w, db, userStr, r, r.PostFormValue("mytz"))
 
 					w.Header().Set("HX-Refresh", "true")
@@ -291,11 +292,11 @@ func main() {
 
 			if err != nil {
 				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values(substr('%s',0,105), '%s');", err, time.Now().In(nyLoc).Format(time.DateTime)))
-				w.Header().Set("HX-Trigger", "loginevent")
+				w.WriteHeader(http.StatusUnauthorized)
+				return
 			} else if err == nil {
 
 				generateLoginJWT(userStr, w, r, jwtSignKey)
-
 				setLoginCookie(w, db, userStr, r, r.PostFormValue("mytz"))
 
 				w.Header().Set("HX-Refresh", "true")
@@ -3475,28 +3476,17 @@ func validateCurrentSessionId(db *sql.DB, w http.ResponseWriter, r *http.Request
 }
 func uploadTimeCapsuleToS3(k string, s string, f *os.File, fn string, r *http.Request) {
 	f.Seek(0, 0)
-	cfg, err := config.LoadDefaultConfig(context.TODO(),
-		config.WithDefaultRegion("us-east-1"),
-		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(k, s, "")),
-	)
-
-	if err != nil {
-		log.Fatal(err)
-		os.Exit(4)
-	}
-
-	client := s3.NewFromConfig(cfg)
 
 	defer f.Close()
 
-	_, s3err := client.PutObject(context.TODO(), &s3.PutObjectInput{
+	_, s3err := s3Client.PutObject(context.TODO(), &s3.PutObjectInput{
 		Bucket:      aws.String(s3Domain),
 		Key:         aws.String("timecapsules/" + fn),
 		ContentType: aws.String("application/octet-stream"),
 		Body:        f,
 
 		//StorageClass: types.StorageClassGlacier,
-		Tagging: aws.String("YearsToStore=" + r.PostFormValue("yearsToStore")),
+		//Tagging: aws.String("YearsToStore=" + r.PostFormValue("yearsToStore")),
 	})
 
 	if s3err != nil {

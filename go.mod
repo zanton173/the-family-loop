@@ -9,14 +9,18 @@ require (
 	github.com/aws/aws-sdk-go-v2/credentials v1.13.38
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.47.1
 	github.com/aws/aws-sdk-go-v2/service/sqs v1.29.2
+	github.com/disintegration/imaging v1.6.2
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/uuid v1.3.1
 	github.com/joho/godotenv v1.5.1
 	github.com/lib/pq v1.10.9
+	github.com/rwcarlsen/goexif v0.0.0-20190401172101-9e8deecbddbd
 	go.mongodb.org/mongo-driver v1.13.1
 	golang.org/x/crypto v0.14.0
 	google.golang.org/api v0.136.0
 )
+
+require golang.org/x/image v0.0.0-20191009234506-e7c1f5e7dbb8 // indirect
 
 require (
 	cloud.google.com/go v0.110.7 // indirect

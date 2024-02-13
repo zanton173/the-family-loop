@@ -27,7 +27,11 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
+	"github.com/disintegration/imaging"
+	"github.com/rwcarlsen/goexif/exif"
+	"github.com/rwcarlsen/goexif/tiff"
 
+	imagego "image"
 	"image/jpeg"
 	_ "image/png"
 
@@ -2561,7 +2565,91 @@ func main() {
 
 		go uploadTimeCapsuleToS3(awskey, awskeysecret, tcFile, tcFileName, r)
 	}
+	getMyTcRequestStatusHandler := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
 
+		returnobj, returnerr := s3Client.HeadObject(context.TODO(), &s3.HeadObjectInput{
+			Bucket: &s3Domain,
+			Key:    aws.String("timecapsules/" + r.URL.Query().Get("tcfilename")),
+		})
+		if returnerr != nil {
+			fmt.Print("something went wrong: ")
+			fmt.Println(returnerr)
+			return
+		}
+		type postBody struct {
+			RestoreStatus bool `json:"status"`
+		}
+		var postData postBody
+		if strings.Contains(*returnobj.Restore, "true") {
+			postData = postBody{
+				RestoreStatus: false,
+			}
+		} else {
+			postData = postBody{
+				RestoreStatus: true,
+			}
+		}
+		bs, marsherr := json.Marshal(&postData)
+		if marsherr != nil {
+			fmt.Println("err marshing")
+		}
+
+		w.Write(bs)
+	}
+	getMyAvailableTimeCapsulesHandler := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, w, r)
+
+		validBool := validateJWTToken(jwtSignKey, w, r)
+		if !validBool || !allowOrDeny {
+			w.Header().Set("HX-Retarget", "window")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		type listOfTC struct {
+			tcname        string
+			createdon     string
+			tcfilename    string
+			wasrequested  sql.NullBool
+			wasdownloaded sql.NullBool
+		}
+
+		output, _ := db.Query(fmt.Sprintf("select tcname, tcfilename, createdon, wasrequested, wasdownloaded from tfldata.timecapsule where username='%s' and available_on <= now() + interval '1 day' and waspurchased = true order by available_on asc;", usernameFromSession))
+
+		defer output.Close()
+
+		iter := 0
+
+		for output.Next() {
+			bgColor := "white"
+			var myTcOut listOfTC
+
+			if iter%2 == 0 {
+				bgColor = "white"
+			} else {
+				bgColor = "#efefefe6"
+			}
+			showReqStatusDataStr := ""
+			output.Scan(&myTcOut.tcname, &myTcOut.tcfilename, &myTcOut.createdon, &myTcOut.wasrequested, &myTcOut.wasdownloaded)
+			if !myTcOut.wasrequested.Valid {
+				myTcOut.wasrequested.Bool = false
+			}
+			if !myTcOut.wasdownloaded.Valid {
+				myTcOut.wasdownloaded.Bool = false
+			}
+
+			if myTcOut.wasrequested.Bool {
+				showReqStatusDataStr = fmt.Sprintf("<i hx-ext='json-enc' hx-get='/get-my-tc-req-status?tcfilename=%s' hx-swap='none' hx-on::after-request='alertStatus(event)' class='bi bi-arrow-clockwise'></i>", myTcOut.tcfilename)
+			} else {
+				showReqStatusDataStr = "false"
+			}
+
+			w.Write([]byte(fmt.Sprintf("<tr><td style='background-color: %s'>%s</td><td style='background-color: %s'>%s</td><td style='background-color: %s'>%s</td><td  style='background-color: %s; text-align: center;'>%t</td></tr>", bgColor, myTcOut.tcname, bgColor, strings.Split(myTcOut.createdon, "T")[0], bgColor, showReqStatusDataStr, bgColor, myTcOut.wasdownloaded.Bool)))
+			iter++
+		}
+	}
 	getMyNotYetPurchasedTimeCapsulesHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, w, r)
@@ -3173,6 +3261,9 @@ func main() {
 	http.HandleFunc("/get-my-time-capsules", getMyPurchasedTimeCapsulesHandler)
 	http.HandleFunc("/get-my-purchased-time-capsules", getMyPurchasedTimeCapsulesHandler)
 	http.HandleFunc("/get-my-notyetpurchased-time-capsules", getMyNotYetPurchasedTimeCapsulesHandler)
+	http.HandleFunc("/get-my-available-time-capsules", getMyAvailableTimeCapsulesHandler)
+
+	http.HandleFunc("/get-my-tc-req-status", getMyTcRequestStatusHandler)
 
 	http.HandleFunc("/webhook-tc-early-access-payment-complete", wixWebhookEarlyAccessPaymentCompleteHandler)
 	http.HandleFunc("/webhook-tc-initial-payment-complete", wixWebhookTCInitialPurchaseHandler)
@@ -3323,36 +3414,106 @@ func uploadFileToS3(k string, s string, bucketexists bool, f multipart.File, fn 
 
 	if strings.Contains(filetype, "image") {
 		f.Seek(0, 0)
-		buf := bytes.NewBuffer(nil)
-		_, err := io.Copy(buf, f)
-		if err != nil {
-			os.Exit(2)
+		var gettagerr error
+		var tag *tiff.Tag
+		x, exiferr := exif.Decode(f)
+		if exiferr != nil {
+			fmt.Println("Err decoding exif format")
+			gettagerr = exiferr
+		} else {
+			tag, gettagerr = x.Get(exif.Orientation)
 		}
+		if gettagerr != nil {
+			f.Seek(0, 0)
+			buf := bytes.NewBuffer(nil)
+			_, err := io.Copy(buf, f)
+			if err != nil {
+				fmt.Println("Err copying file to buffer")
+			}
 
-		f.Seek(0, 0)
+			newimg, _, decerr := image.Decode(buf)
+			if decerr != nil {
+				fmt.Println("dec err: " + decerr.Error())
+			}
+			var compfile bytes.Buffer
+			encerr := jpeg.Encode(&compfile, newimg, &jpeg.Options{
+				Quality: 18,
+			})
+			if encerr != nil {
+				fmt.Println(encerr)
+			}
+			_, err4 := s3Client.PutObject(context.TODO(), &s3.PutObjectInput{
+				Bucket:       aws.String(s3Domain),
+				Key:          aws.String("posts/images/" + fn),
+				Body:         &compfile,
+				ContentType:  &filetype,
+				CacheControl: aws.String("max-age=31536000"),
+			})
 
-		newimg, _, decerr := image.Decode(buf)
-		if decerr != nil {
-			log.Fatal("dec err: " + decerr.Error())
-		}
-		var compfile bytes.Buffer
-		encerr := jpeg.Encode(&compfile, newimg, &jpeg.Options{
-			Quality: 18,
-		})
-		if encerr != nil {
-			fmt.Println(encerr)
-		}
-		_, err4 := s3Client.PutObject(context.TODO(), &s3.PutObjectInput{
-			Bucket:       aws.String(s3Domain),
-			Key:          aws.String("posts/images/" + fn),
-			Body:         &compfile,
-			ContentType:  &filetype,
-			CacheControl: aws.String("max-age=31536000"),
-		})
+			if err4 != nil {
+				fmt.Println("error on upload")
+				fmt.Println(err4.Error())
+			}
+			defer ourfile.Close()
+			return filetype
+		} else {
+			f.Seek(0, 0)
+			imgtrn, _, err := imagego.Decode(f)
+			if err != nil {
+				fmt.Println(err)
+				fmt.Println("err on imgtrn decoding")
+			}
+			if tag.Count == 1 && tag.Format() == tiff.IntVal {
+				orientation, err := tag.Int(0)
+				if err != nil {
+					fmt.Println(err)
+					fmt.Println("orientation err")
+				}
+				switch orientation {
+				case 3: // rotate 180
+					imgtrn = imaging.Rotate180(imgtrn)
+				case 6: // rotate 270
+					imgtrn = imaging.Rotate270(imgtrn)
+				case 8: //rotate 90
+					imgtrn = imaging.Rotate90(imgtrn)
+				}
+			}
 
-		if err4 != nil {
-			fmt.Println("error on upload")
-			fmt.Println(err4.Error())
+			newbuf := bytes.NewBuffer(nil)
+			trnencerr := jpeg.Encode(newbuf, imgtrn, nil)
+
+			if trnencerr != nil {
+				fmt.Println(trnencerr)
+				fmt.Println("error encoding turned image")
+
+			}
+
+			newimg, _, decerr := image.Decode(newbuf)
+			if decerr != nil {
+				log.Fatal("dec err: " + decerr.Error())
+			}
+			var compfile bytes.Buffer
+			encerr := jpeg.Encode(&compfile, newimg, &jpeg.Options{
+				Quality: 18,
+			})
+
+			if encerr != nil {
+				fmt.Println(encerr)
+			}
+			_, err4 := s3Client.PutObject(context.TODO(), &s3.PutObjectInput{
+				Bucket:       aws.String(s3Domain),
+				Key:          aws.String("posts/images/" + fn),
+				Body:         &compfile,
+				ContentType:  &filetype,
+				CacheControl: aws.String("max-age=31536000"),
+			})
+
+			if err4 != nil {
+				fmt.Println("error on upload")
+				fmt.Println(err4.Error())
+			}
+			defer ourfile.Close()
+			return filetype
 		}
 	} else {
 

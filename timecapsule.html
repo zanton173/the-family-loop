@@ -235,10 +235,16 @@
             })
         }
         function alertStatus(event) {
-            if (JSON.parse(event.detail.xhr.response).status)
-                alert("File is available for download")
-            else
-                alert("File needs more time before it's available")
+            debugger
+            if (event.detail.xhr.status === 200) {
+                if (JSON.parse(event.detail.xhr.response).status)
+                    alert("File is available for download")
+                else
+                    alert("File needs more time before it's available")
+            } else if (event.detail.xhr.status === 400)
+                alert("File does not exist")
+            else if (event.detail.xhr.status === 202)
+                alert("The file should be availble using the download link")
         }
         function initiateRestoreResp(event) {
 

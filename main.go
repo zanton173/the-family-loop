@@ -2617,6 +2617,7 @@ func main() {
 		if returnerr != nil {
 			fmt.Print("something went wrong: ")
 			fmt.Println(returnerr)
+			w.WriteHeader(http.StatusAccepted)
 			return
 		}
 		type postBody struct {
@@ -2645,6 +2646,8 @@ func main() {
 
 				if cperr != nil {
 					fmt.Println(cperr)
+					w.WriteHeader(http.StatusBadRequest)
+					return
 				}
 			}
 			bs, marsherr := json.Marshal(&postData)
@@ -2666,6 +2669,29 @@ func main() {
 			w.Write(bs)
 		}
 
+	}
+	availableTcWasDownloaded := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
+
+		validBool := validateJWTToken(jwtSignKey, w, r)
+		if !validBool || !allowOrDeny {
+			w.Header().Set("HX-Retarget", "window")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		bs, _ := io.ReadAll(r.Body)
+		type postBody struct {
+			Tcfilename string `json:"tcfilename"`
+		}
+		var postData postBody
+		marsherr := json.Unmarshal(bs, &postData)
+		if marsherr != nil {
+			fmt.Println(marsherr)
+			return
+		}
+		db.Exec(fmt.Sprintf("update tfldata.timecapsule set wasdownloaded = true where tcfilename='%s';", postData.Tcfilename))
 	}
 	getMyAvailableTimeCapsulesHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -2702,6 +2728,7 @@ func main() {
 				bgColor = "#efefefe6"
 			}
 			showReqStatusDataStr := ""
+			showDownLinkDataStr := ""
 			output.Scan(&myTcOut.tcname, &myTcOut.tcfilename, &myTcOut.createdon, &myTcOut.wasrequested, &myTcOut.wasdownloaded)
 			if !myTcOut.wasrequested.Valid {
 				myTcOut.wasrequested.Bool = false
@@ -2711,12 +2738,13 @@ func main() {
 			}
 
 			if myTcOut.wasrequested.Bool {
-				showReqStatusDataStr = fmt.Sprintf("<i hx-ext='json-enc' hx-get='/get-my-tc-req-status?tcfilename=%s' hx-swap='none' hx-on::after-request='alertStatus(event)' hx-trigger='click' class='bi bi-arrow-clockwise'></i>", myTcOut.tcfilename)
+				showReqStatusDataStr = fmt.Sprintf("<i hx-ext='json-enc' hx-get='/get-my-tc-req-status?tcfilename=%s' hx-target='this' hx-swap='none' hx-on::after-request='alertStatus(event)' hx-trigger='click' class='bi bi-arrow-clockwise'></i>", myTcOut.tcfilename)
+				showDownLinkDataStr = fmt.Sprintf("<div hx-ext='json-enc' hx-post='/available-tc-was-downloaded' hx-vals='js:{\"tcfilename\": \"%s\"}' hx-swap='none' hx-target='this'><a target='_blank' href='https://%s/timecapsules/restored/%s'>download</a></div>", myTcOut.tcfilename, cfdistro, myTcOut.tcfilename)
 			} else {
 				showReqStatusDataStr = fmt.Sprintf("<button class='btn' hx-post='/initiate-tc-req-for-archive-file' hx-ext='json-enc' hx-swap='none' hx-trigger='click' hx-vals='js:{\"tcfilename\": \"%s\"}' hx-on::after-request='initiateRestoreResp(event)'>Get file</button>", myTcOut.tcfilename)
 			}
 
-			w.Write([]byte(fmt.Sprintf("<tr><td style='background-color: %s'>%s</td><td style='background-color: %s'>%s</td><td style='background-color: %s; text-align: center'>%s</td><td  style='background-color: %s; text-align: center;'>%t</td></tr>", bgColor, myTcOut.tcname, bgColor, strings.Split(myTcOut.createdon, "T")[0], bgColor, showReqStatusDataStr, bgColor, myTcOut.wasdownloaded.Bool)))
+			w.Write([]byte(fmt.Sprintf("<tr><td style='background-color: %s'>%s</td><td style='background-color: %s'>%s</td><td style='background-color: %s; text-align: center'>%s</td><td  style='background-color: %s; text-align: center;'>%s</td></tr>", bgColor, myTcOut.tcname, bgColor, strings.Split(myTcOut.createdon, "T")[0], bgColor, showReqStatusDataStr, bgColor, showDownLinkDataStr)))
 			iter++
 		}
 	}
@@ -3332,6 +3360,8 @@ func main() {
 	http.HandleFunc("/get-my-purchased-time-capsules", getMyPurchasedTimeCapsulesHandler)
 	http.HandleFunc("/get-my-notyetpurchased-time-capsules", getMyNotYetPurchasedTimeCapsulesHandler)
 	http.HandleFunc("/get-my-available-time-capsules", getMyAvailableTimeCapsulesHandler)
+
+	http.HandleFunc("/available-tc-was-downloaded", availableTcWasDownloaded)
 
 	http.HandleFunc("/get-my-tc-req-status", getMyTcRequestStatusHandler)
 	http.HandleFunc("/initiate-tc-req-for-archive-file", initiateMyTCRestoreHandler)

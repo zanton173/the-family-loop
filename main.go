@@ -9,7 +9,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
-	"image"
+
+	imagego "image"
 	"io"
 	"log"
 	"mime/multipart"
@@ -31,7 +32,6 @@ import (
 	"github.com/rwcarlsen/goexif/exif"
 	"github.com/rwcarlsen/goexif/tiff"
 
-	imagego "image"
 	"image/jpeg"
 	_ "image/png"
 
@@ -2555,7 +2555,7 @@ func main() {
 		}
 		zipWriter.Close()
 
-		_, inserr := db.Exec(fmt.Sprintf("insert into tfldata.timecapsule(\"username\", \"available_on\", \"tcname\", \"tcfilename\", \"createdon\", waspurchased, wasearlyaccesspurchased, yearstostore) values('%s', '%s'::date + INTERVAL '2 days', '%s', '%s', '%s', false, false, %d);", usernameFromSession, expiresOn, r.PostFormValue("tcName"), tcFileName, curDate, yearsfordb))
+		_, inserr := db.Exec(fmt.Sprintf("insert into tfldata.timecapsule(\"username\", \"available_on\", \"tcname\", \"tcfilename\", \"createdon\", waspurchased, wasearlyaccesspurchased, yearstostore, wasrequested, wasdownloaded) values('%s', '%s'::date + INTERVAL '2 days', '%s', '%s', '%s', false, false, %d, false, false);", usernameFromSession, expiresOn, r.PostFormValue("tcName"), tcFileName, curDate, yearsfordb))
 
 		if inserr != nil {
 			activityStr := "Failed to add time capsule to DB"
@@ -2564,6 +2564,48 @@ func main() {
 		}
 
 		go uploadTimeCapsuleToS3(awskey, awskeysecret, tcFile, tcFileName, r)
+	}
+	initiateMyTCRestoreHandler := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
+
+		validBool := validateJWTToken(jwtSignKey, w, r)
+		if !validBool || !allowOrDeny {
+			w.Header().Set("HX-Retarget", "window")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		bs, _ := io.ReadAll(r.Body)
+		type postBody struct {
+			Tcfilename string `json:"tcfilename"`
+		}
+		var postData postBody
+		marsherr := json.Unmarshal(bs, &postData)
+		if marsherr != nil {
+			fmt.Println(marsherr)
+		}
+		_, uperr := db.Exec(fmt.Sprintf("update tfldata.timecapsule set wasrequested = true where tcfilename='%s';", postData.Tcfilename))
+		if uperr != nil {
+			activityStr := "Update tc after requested"
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values('%s', '%s', now());", uperr.Error(), activityStr))
+			return
+		}
+
+		_, reserr := s3Client.RestoreObject(context.TODO(), &s3.RestoreObjectInput{
+			Bucket: &s3Domain,
+			Key:    aws.String("timecapsules/" + postData.Tcfilename),
+			RestoreRequest: &types.RestoreRequest{
+				Days: aws.Int32(7),
+				GlacierJobParameters: &types.GlacierJobParameters{
+					Tier: types.TierStandard,
+				},
+			},
+		})
+		if reserr != nil {
+			fmt.Println(reserr)
+		}
+		w.Header().Set("HX-Retarget", "document.body")
 	}
 	getMyTcRequestStatusHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -2580,22 +2622,50 @@ func main() {
 		type postBody struct {
 			RestoreStatus bool `json:"status"`
 		}
+
 		var postData postBody
-		if strings.Contains(*returnobj.Restore, "true") {
-			postData = postBody{
-				RestoreStatus: false,
+		if returnobj.Restore != nil {
+
+			if strings.Contains(*returnobj.Restore, "true") {
+				// copy s3 obj
+				postData = postBody{
+					RestoreStatus: false,
+				}
+
+			} else {
+				postData = postBody{
+					RestoreStatus: true,
+				}
+				_, cperr := s3Client.CopyObject(context.TODO(), &s3.CopyObjectInput{
+					Bucket:       &s3Domain,
+					CopySource:   aws.String(s3Domain + "/timecapsules/" + r.URL.Query().Get("tcfilename")),
+					Key:          aws.String("timecapsules/restored/" + r.URL.Query().Get("tcfilename")),
+					StorageClass: types.StorageClassStandard,
+				})
+
+				if cperr != nil {
+					fmt.Println(cperr)
+				}
 			}
+			bs, marsherr := json.Marshal(&postData)
+			if marsherr != nil {
+				fmt.Println("err marshing")
+				return
+			}
+
+			w.Write(bs)
 		} else {
 			postData = postBody{
 				RestoreStatus: true,
 			}
-		}
-		bs, marsherr := json.Marshal(&postData)
-		if marsherr != nil {
-			fmt.Println("err marshing")
+			bs, marsherr := json.Marshal(&postData)
+			if marsherr != nil {
+				fmt.Println("err marshing")
+				return
+			}
+			w.Write(bs)
 		}
 
-		w.Write(bs)
 	}
 	getMyAvailableTimeCapsulesHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -2641,12 +2711,12 @@ func main() {
 			}
 
 			if myTcOut.wasrequested.Bool {
-				showReqStatusDataStr = fmt.Sprintf("<i hx-ext='json-enc' hx-get='/get-my-tc-req-status?tcfilename=%s' hx-swap='none' hx-on::after-request='alertStatus(event)' class='bi bi-arrow-clockwise'></i>", myTcOut.tcfilename)
+				showReqStatusDataStr = fmt.Sprintf("<i hx-ext='json-enc' hx-get='/get-my-tc-req-status?tcfilename=%s' hx-swap='none' hx-on::after-request='alertStatus(event)' hx-trigger='click' class='bi bi-arrow-clockwise'></i>", myTcOut.tcfilename)
 			} else {
-				showReqStatusDataStr = "false"
+				showReqStatusDataStr = fmt.Sprintf("<button class='btn' hx-post='/initiate-tc-req-for-archive-file' hx-ext='json-enc' hx-swap='none' hx-trigger='click' hx-vals='js:{\"tcfilename\": \"%s\"}' hx-on::after-request='initiateRestoreResp(event)'>Get file</button>", myTcOut.tcfilename)
 			}
 
-			w.Write([]byte(fmt.Sprintf("<tr><td style='background-color: %s'>%s</td><td style='background-color: %s'>%s</td><td style='background-color: %s'>%s</td><td  style='background-color: %s; text-align: center;'>%t</td></tr>", bgColor, myTcOut.tcname, bgColor, strings.Split(myTcOut.createdon, "T")[0], bgColor, showReqStatusDataStr, bgColor, myTcOut.wasdownloaded.Bool)))
+			w.Write([]byte(fmt.Sprintf("<tr><td style='background-color: %s'>%s</td><td style='background-color: %s'>%s</td><td style='background-color: %s; text-align: center'>%s</td><td  style='background-color: %s; text-align: center;'>%t</td></tr>", bgColor, myTcOut.tcname, bgColor, strings.Split(myTcOut.createdon, "T")[0], bgColor, showReqStatusDataStr, bgColor, myTcOut.wasdownloaded.Bool)))
 			iter++
 		}
 	}
@@ -3264,6 +3334,7 @@ func main() {
 	http.HandleFunc("/get-my-available-time-capsules", getMyAvailableTimeCapsulesHandler)
 
 	http.HandleFunc("/get-my-tc-req-status", getMyTcRequestStatusHandler)
+	http.HandleFunc("/initiate-tc-req-for-archive-file", initiateMyTCRestoreHandler)
 
 	http.HandleFunc("/webhook-tc-early-access-payment-complete", wixWebhookEarlyAccessPaymentCompleteHandler)
 	http.HandleFunc("/webhook-tc-initial-payment-complete", wixWebhookTCInitialPurchaseHandler)
@@ -3346,7 +3417,7 @@ func uploadPfpToS3(k string, s string, f multipart.File, fn string, r *http.Requ
 
 	f.Seek(0, 0)
 
-	newimg, _, decerr := image.Decode(buf)
+	newimg, _, decerr := imagego.Decode(buf)
 	if decerr != nil {
 		log.Fatal("dec err: " + decerr.Error())
 	}
@@ -3431,7 +3502,7 @@ func uploadFileToS3(k string, s string, bucketexists bool, f multipart.File, fn 
 				fmt.Println("Err copying file to buffer")
 			}
 
-			newimg, _, decerr := image.Decode(buf)
+			newimg, _, decerr := imagego.Decode(buf)
 			if decerr != nil {
 				fmt.Println("dec err: " + decerr.Error())
 			}
@@ -3488,7 +3559,7 @@ func uploadFileToS3(k string, s string, bucketexists bool, f multipart.File, fn 
 
 			}
 
-			newimg, _, decerr := image.Decode(newbuf)
+			newimg, _, decerr := imagego.Decode(newbuf)
 			if decerr != nil {
 				log.Fatal("dec err: " + decerr.Error())
 			}

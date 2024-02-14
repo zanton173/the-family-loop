@@ -112,8 +112,7 @@
     </div>
     <div id="myCapsulesNotYetPurchasedDiv" style="display: none" name="My Capsules (Not Yet Purchased)">
         <div style="margin-top: 1%" id="getEleListOfTC" hx-get="/get-my-notyetpurchased-time-capsules"
-            hx-target="#listOfTCNotPurchasedDivList" hx-trigger="click, load"
-            hx-vals="js:{'pastorpresent': pastOrPresentTC}">
+            hx-target="#listOfTCNotPurchasedDivList" hx-trigger="load" hx-vals="js:{'pastorpresent': pastOrPresentTC}">
             <table class="table d-grid">
                 <thead>
                     <tr
@@ -133,11 +132,10 @@
     </div>
     <div id="myCapsulesAvailable" style="display: none" name="Available">
         <div style="margin-top: 1%" id="getEleListOfTCAvailable" hx-get="/get-my-available-time-capsules"
-            hx-target="#listOfTCAvailableDivList" hx-trigger="click, load">
-            <table class="table d-grid">
+            hx-target="#listOfTCAvailableDivList" hx-trigger="load">
+            <table class="table" style="table-layout: fixed; width: 100dvw;">
                 <thead>
-                    <tr
-                        style="display: flex; width: 100dvw; justify-content: space-between; background-color: white; align-items: center">
+                    <tr style="background-color: white; text-align: center">
                         <th style="font-size: 8pt; left: 0%; position: relative;">Capsule Name</th>
                         <th style="font-size: 8pt;">Created on</th>
                         <th style="font-size: 8pt;">
@@ -147,7 +145,7 @@
                         </th>
                     </tr>
                 </thead>
-                <tbody id="listOfTCAvailableDivList" style="font-size: smaller; display: inline-table"></tbody>
+                <tbody id="listOfTCAvailableDivList" style="font-size: smaller;"></tbody>
             </table>
         </div>
     </div>
@@ -237,8 +235,17 @@
             })
         }
         function alertStatus(event) {
+            if (JSON.parse(event.detail.xhr.response).status)
+                alert("File is available for download")
+            else
+                alert("File needs more time before it's available")
+        }
+        function initiateRestoreResp(event) {
 
-            console.log(event)
+            document.getElementById('getEleListOfTCAvailable').dispatchEvent(new Event('load'))
+            // if (event.detail.xhr.status === 200) {
+            alert("Your file should be available by tomorrow. Use the refresh button to check the status.")
+            //}
         }
         function checkValidityOfFiles() {
             var curFileListSize = 0

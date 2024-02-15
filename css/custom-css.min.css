@@ -413,8 +413,8 @@ button.btn.btn-primary {
     }
 
     100% {
-        transform: rotate(calc(0));
-        -webkit-transform: rotate(calc(0))
+        transform: rotate(calc(0deg));
+        -webkit-transform: rotate(calc(0deg))
     }
 }
 

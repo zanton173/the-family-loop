@@ -67,6 +67,7 @@ type seshStruct struct {
 	GchatOrderOpt bool
 	CFDomain      string
 	Isadmin       bool
+	FcmkeyChk     sql.NullString
 	Fcmkey        string
 }
 type notificationOpts struct {
@@ -1655,10 +1656,16 @@ func main() {
 		var ourSeshStruct seshStruct
 
 		row := db.QueryRow(fmt.Sprintf("select username, gchat_bg_theme, gchat_order_option, is_admin, pfp_name, substr(fcm_registration_id,0,3) from tfldata.users where username='%s';", usernameFromSession))
-		scerr := row.Scan(&ourSeshStruct.Username, &ourSeshStruct.BGtheme, &ourSeshStruct.GchatOrderOpt, &ourSeshStruct.Isadmin, &ourSeshStruct.Pfpname, &ourSeshStruct.Fcmkey)
+		scerr := row.Scan(&ourSeshStruct.Username, &ourSeshStruct.BGtheme, &ourSeshStruct.GchatOrderOpt, &ourSeshStruct.Isadmin, &ourSeshStruct.Pfpname, &ourSeshStruct.FcmkeyChk)
 		if scerr != nil {
 			fmt.Println(scerr)
 		}
+
+		if !ourSeshStruct.FcmkeyChk.Valid {
+			ourSeshStruct.FcmkeyChk.String = ""
+		}
+
+		ourSeshStruct.Fcmkey = ourSeshStruct.FcmkeyChk.String
 
 		ourSeshStruct.CFDomain = cfdistro
 

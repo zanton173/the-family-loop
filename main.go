@@ -2844,7 +2844,31 @@ func main() {
 			return
 		}
 		bs, _ := io.ReadAll(r.Body)
-		fmt.Println(bs)
+
+		type postBody struct {
+			Plan string `json:"plan-name"`
+		}
+		var postData postBody
+
+		marsherr := json.Unmarshal(bs, &postData)
+		if marsherr != nil {
+			fmt.Println("Some marsh err at wixWebhookearlyaccess")
+			return
+		}
+
+		envvar, filereaderr := os.ReadFile(".env")
+		if filereaderr != nil {
+			fmt.Println(filereaderr)
+			return
+		}
+
+		rewrite := bytes.ReplaceAll(envvar, []byte("SUB_PACKAGE="+subLevel), []byte("SUB_PACKAGE="+strings.ToLower(postData.Plan)))
+		writeerr := os.WriteFile(".env", rewrite, 0644)
+		if writeerr != nil {
+			fmt.Println(writeerr)
+			return
+		}
+		subLevel = strings.ToLower(postData.Plan)
 	}
 	wixWebhookTCInitialPurchaseHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")

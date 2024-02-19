@@ -16,7 +16,6 @@
 
     <img id="bannerimg" src="assets/TFLBannerW.png" alt="Welcome to TFL!" style="text-align: center;" />
 
-
     <div class="sticky-top" id="anchor">
 
     </div>
@@ -31,10 +30,10 @@
                 hx-vals="js:{'sortByLastPass': sortOrderByLastPassReset}">Users</button>
             <button
                 onclick="{togglePanes('myCapsulesDiv'); document.getElementById('getEleListOfTC').dispatchEvent(new Event('click'))}"
-                class="btn btn-primary mx-3" style="box-shadow: 3px 3px 7px black; border-radius: 13px / 13px;">Time
-                Capsule</button>
-            <button class="btn btn-primary mx-3"
-                style="box-shadow: 3px 3px 7px black; border-radius: 13px / 13px;">TBD...</button>
+                class="btn btn-primary mx-3"
+                style="box-shadow: 3px 3px 7px black; border-radius: 13px / 13px;">TC</button>
+            <button onclick="togglePanes('subscriptionDetailsDiv')" class="btn btn-primary mx-3"
+                style="box-shadow: 3px 3px 7px black; border-radius: 13px / 13px;">Subscription</button>
         </div>
     </div>
 
@@ -70,6 +69,18 @@
             </table>
         </div>
 
+    </div>
+    <div id="subscriptionDetailsDiv" style="display: none; text-align: center;">
+        <h1>Settings</h1>
+        <div>
+            <h3>Current Subscription Package:</h3>
+            <p hx-get="/admin-get-subscription-package" hx-trigger="load"
+                hx-on::after-request="checkCurrentPlan(event)">
+            </p>
+            <div><a id="firstPlanLink" target="_blank">Switch to: <p id="switchToFirst"></p></a></div>
+            <div><a id="secondPlanLink" target="_blank">Switch to: <p id="switchToSecond"></p></a></div>
+            <a href="https://www.the-family-loop.com/account/my-subscriptions" target="_blank">My plan</a>
+        </div>
     </div>
     <div class="modal" tabindex="-1" id="deleteUserModal" aria-labelledby="deleteUserModal" aria-hidden="true">
         <div class="modal-dialog">
@@ -153,7 +164,8 @@
     <script type="javascript" src="firebase-messaging-sw.js"></script>
     <script>
         const deleteUserModal = new bootstrap.Modal(document.getElementById('deleteUserModal'), {})
-        const listOfPanes = ["myCapsulesDiv", "listOfUsersToggle"]
+        const listOfPanes = ["myCapsulesDiv", "listOfUsersToggle", "subscriptionDetailsDiv"]
+        var linkOfAlternatePlans = []
         var pastOrPresentTC = ">"
         var isAdmin = false
         var sortOrderByLastPassReset = 'desc'
@@ -181,6 +193,43 @@
                     document.getElementById(pane).style.display = "none"
                 }
             })
+        }
+        function checkCurrentPlan(event) {
+
+            if (event.detail.xhr.responseText.includes("supreme"))
+                linkOfAlternatePlans = ["standard", "extra"]
+            else if (event.detail.xhr.responseText.includes("standard"))
+                linkOfAlternatePlans = ["extra", "supreme"]
+            else if (event.detail.xhr.responseText.includes("extra"))
+                linkOfAlternatePlans = ["supreme", "standard"]
+
+            document.getElementById("switchToFirst").innerHTML = linkOfAlternatePlans[0]
+            document.getElementById("switchToSecond").innerHTML = linkOfAlternatePlans[1]
+
+            // plan ids
+            // standard: 5d2bae9b-58b2-45be-98cc-9569d3338544
+            // extra: 5905835a-ebf9-4756-8ea5-1281934fa969
+            // supreme: f32330fd-253a-4ae4-9f5c-ccdac7c9b853
+
+            var planOneId = ""
+            var planTwoId = ""
+
+            if (linkOfAlternatePlans[0] === "standard")
+                planOneId = "5d2bae9b-58b2-45be-98cc-9569d3338544"
+            else if (linkOfAlternatePlans[0] === "extra")
+                planOneId = "5905835a-ebf9-4756-8ea5-1281934fa969"
+            else if (linkOfAlternatePlans[0] === "supreme")
+                planOneId = "f32330fd-253a-4ae4-9f5c-ccdac7c9b853"
+
+            if (linkOfAlternatePlans[1] === "standard")
+                planTwoId = "5d2bae9b-58b2-45be-98cc-9569d3338544"
+            else if (linkOfAlternatePlans[1] === "extra")
+                planTwoId = "5905835a-ebf9-4756-8ea5-1281934fa969"
+            else if (linkOfAlternatePlans[1] === "supreme")
+                planTwoId = "f32330fd-253a-4ae4-9f5c-ccdac7c9b853"
+
+            document.getElementById('firstPlanLink').setAttribute("href", "https://www.the-family-loop.com/plans-pricing?subplan=" + linkOfAlternatePlans[0] + "&route=" + window.location.host.split(".")[0] + "&planid=" + planOneId)
+            document.getElementById('secondPlanLink').setAttribute("href", "https://www.the-family-loop.com/plans-pricing?subplan=" + linkOfAlternatePlans[1] + "&route=" + window.location.host.split(".")[0] + "&planid=" + planTwoId)
         }
     </script>
 </body>

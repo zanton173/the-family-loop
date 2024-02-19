@@ -2836,6 +2836,16 @@ func main() {
 			iter++
 		}
 	}
+	wixWebhookChangePlanHandler := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		validBool := validateWebhookJWTToken(jwtSignKey, w, r)
+		if !validBool {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		bs, _ := io.ReadAll(r.Body)
+		fmt.Println(bs)
+	}
 	wixWebhookTCInitialPurchaseHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		validBool := validateWebhookJWTToken(jwtSignKey, w, r)
@@ -3049,6 +3059,38 @@ func main() {
 
 		}
 
+	}
+	adminGetSubPackageHandler := func(w http.ResponseWriter, r *http.Request) {
+		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, w, r)
+
+		var isAdmin bool
+
+		rowRes := db.QueryRow(fmt.Sprintf("select is_admin from tfldata.users where username='%s';", usernameFromSession))
+
+		rowRes.Scan(&isAdmin)
+
+		validBool := validateJWTToken(jwtSignKey, w, r)
+		if !validBool || !allowOrDeny || !isAdmin {
+			w.Header().Set("HX-Retarget", "window")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		var countOfUsers int
+		var totalUsers int
+		rowOfCount := db.QueryRow("select count(*) from tfldata.users;")
+		rowOfCount.Scan(&countOfUsers)
+		switch subLevel {
+		case "supreme":
+			totalUsers = 50
+		case "extra":
+			totalUsers = 20
+		case "standard":
+			totalUsers = 8
+		}
+
+		w.Write([]byte(subLevel + " - " + "Current user count: " + fmt.Sprint(countOfUsers) + "/" + fmt.Sprint(totalUsers)))
 	}
 	adminGetAllTCHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
@@ -3375,11 +3417,13 @@ func main() {
 
 	http.HandleFunc("/webhook-tc-early-access-payment-complete", wixWebhookEarlyAccessPaymentCompleteHandler)
 	http.HandleFunc("/webhook-tc-initial-payment-complete", wixWebhookTCInitialPurchaseHandler)
+	http.HandleFunc("/wix-webhook-pricing-plan-changed", wixWebhookChangePlanHandler)
 
 	http.HandleFunc("/delete-my-tc", deleteMyTChandler)
 
 	http.HandleFunc("/admin-list-of-users", adminGetListOfUsersHandler)
 	http.HandleFunc("/admin-get-all-time-capsules", adminGetAllTCHandler)
+	http.HandleFunc("/admin-get-subscription-package", adminGetSubPackageHandler)
 	http.HandleFunc("/admin-delete-user", adminDeleteUserHandler)
 
 	http.HandleFunc("/signup", signUpHandler)

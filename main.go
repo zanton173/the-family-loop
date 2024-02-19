@@ -3061,6 +3061,7 @@ func main() {
 
 	}
 	adminGetSubPackageHandler := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
 		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, w, r)
 
 		var isAdmin bool

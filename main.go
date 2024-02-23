@@ -2745,7 +2745,7 @@ func main() {
 			}
 
 			if myTcOut.wasrequested.Bool {
-				showReqStatusDataStr = fmt.Sprintf("<i hx-ext='json-enc' hx-get='/get-my-tc-req-status?tcfilename=%s' hx-target='this' hx-swap='none' hx-on::after-request='alertStatus(event)' hx-trigger='click' class='bi bi-arrow-clockwise'></i>", myTcOut.tcfilename)
+				showReqStatusDataStr = fmt.Sprintf("<i hx-ext='json-enc' hx-get='/get-my-tc-req-status?tcfilename=%s' hx-target='this' hx-swap='none' hx-on::after-request='alertStatus(event)' hx-trigger='click' class='bi bi-arrow-clockwise toggleArrows'></i>", myTcOut.tcfilename)
 				showDownLinkDataStr = fmt.Sprintf("<div hx-ext='json-enc' hx-post='/available-tc-was-downloaded' hx-vals='js:{\"tcfilename\": \"%s\"}' hx-swap='none' hx-target='this'><a target='_blank' href='https://%s/timecapsules/restored/%s'>download</a></div>", myTcOut.tcfilename, cfdistro, myTcOut.tcfilename)
 			} else {
 				showReqStatusDataStr = fmt.Sprintf("<button class='btn' style='border-width: thin; border-color: black; border-radius: 15px / 15px; padding-top: 1&percnt;; padding-bottom: 1&percnt;; box-shadow: 3px 3px 4px;' hx-post='/initiate-tc-req-for-archive-file' hx-ext='json-enc' hx-swap='none' hx-trigger='click' hx-vals='js:{\"tcfilename\": \"%s\"}' hx-on::after-request='initiateRestoreResp(event)'>Get file</button>", myTcOut.tcfilename)
@@ -2791,7 +2791,7 @@ func main() {
 
 			output.Scan(&myTcOut.tcname, &myTcOut.createdon, &myTcOut.availableOn, &myTcOut.tcfilename)
 
-			w.Write([]byte(fmt.Sprintf("<tr><td class='toggleArrows' onclick='openInStore(`%s`, `%s`, `%s`, `c56248d5-dabf-a970-6dc6-9ee1d8e3a6e0`, `notyetpurchased`)' style='background-color: %s'>%s&nbsp;&nbsp;<span class='glyphicon glyphicon-new-window'></span></td><td style='background-color: %s; text-align: center'>%s</td><td style='background-color: %s; text-align: center'>%s</td><td  style='background-color: %s; text-align: center; font-size: larger; color: red;' hx-swap='none' hx-post='/delete-my-tc' hx-ext='json-enc' hx-vals='{%s: %s}' hx-confirm='This will delete the time capsule forever and it will be unretrievable. Are you sure you want to continue?'>X</td></tr>", myTcOut.tcfilename, strings.Split(orgId, "_")[1], strings.Split(orgId, "_")[0], bgColor, myTcOut.tcname, bgColor, strings.Split(myTcOut.createdon, "T")[0], bgColor, strings.Split(myTcOut.availableOn, "T")[0], bgColor, "\"myTCName\"", "\""+myTcOut.tcname+"\"")))
+			w.Write([]byte(fmt.Sprintf("<tr><td class='toggleArrows' onclick='openInStore(`%s`, `%s`, `%s`, `c56248d5-dabf-a970-6dc6-9ee1d8e3a6e0`, `notyetpurchased`)' style='background-color: %s'>%s&nbsp;&nbsp;<span class='glyphicon glyphicon-new-window'></span></td><td style='background-color: %s; text-align: center'>%s</td><td style='background-color: %s; text-align: center'>%s</td><td  style='background-color: %s; text-align: center; font-size: larger; color: red;' class='toggleArrows' hx-swap='none' hx-post='/delete-my-tc' hx-ext='json-enc' hx-vals='{%s: %s}' hx-confirm='This will delete the time capsule forever and it will be unretrievable. Are you sure you want to continue?'>X</td></tr>", myTcOut.tcfilename, strings.Split(orgId, "_")[1], strings.Split(orgId, "_")[0], bgColor, myTcOut.tcname, bgColor, strings.Split(myTcOut.createdon, "T")[0], bgColor, strings.Split(myTcOut.availableOn, "T")[0], bgColor, "\"myTCName\"", "\""+myTcOut.tcname+"\"")))
 			iter++
 		}
 	}
@@ -2849,7 +2849,7 @@ func main() {
 				openinstorestr = fmt.Sprintf("class='toggleArrows' onclick='openInStore(`%s`, `%s`, `%s`, `df19c1f7-07d8-a265-42f8-e8dfa824cc6e`)'", myTcOut.tcfilename, strings.Split(orgId, "_")[1], strings.Split(orgId, "_")[0])
 				openinnewwindowstr = "&nbsp;&nbsp;<span class='glyphicon glyphicon-new-window'></span>"
 			}
-			w.Write([]byte(fmt.Sprintf("<tr><td %s style='background-color: %s'>%s%s</td><td style='background-color: %s; text-align: center'>%s</td><td style='background-color: %s; text-align: center'>%s</td><td  style='background-color: %s; text-align: center; font-size: larger; color: red;' hx-swap='none' hx-post='/delete-my-tc' hx-ext='json-enc' hx-vals='{%s: %s}' hx-confirm='This will delete the time capsule forever and it will be unretrievable. Are you sure you want to continue?'>X</td></tr>", openinstorestr, bgColor, myTcOut.tcname, openinnewwindowstr, bgColor, strings.Split(myTcOut.createdon, "T")[0], bgColor, strings.Split(myTcOut.availableOn, "T")[0], bgColor, "\"myTCName\"", "\""+myTcOut.tcname+"\"")))
+			w.Write([]byte(fmt.Sprintf("<tr><td %s style='background-color: %s'>%s%s</td><td style='background-color: %s; text-align: center'>%s</td><td style='background-color: %s; text-align: center'>%s</td><td class='toggleArrows' style='background-color: %s; text-align: center; font-size: larger; color: red;' hx-swap='none' hx-post='/delete-my-tc' hx-ext='json-enc' hx-vals='{%s: %s}' hx-confirm='This will delete the time capsule forever and it will be unretrievable. Are you sure you want to continue?'>X</td></tr>", openinstorestr, bgColor, myTcOut.tcname, openinnewwindowstr, bgColor, strings.Split(myTcOut.createdon, "T")[0], bgColor, strings.Split(myTcOut.availableOn, "T")[0], bgColor, "\"myTCName\"", "\""+myTcOut.tcname+"\"")))
 			iter++
 		}
 	}

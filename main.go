@@ -2791,7 +2791,7 @@ func main() {
 
 			output.Scan(&myTcOut.tcname, &myTcOut.createdon, &myTcOut.availableOn, &myTcOut.tcfilename)
 
-			w.Write([]byte(fmt.Sprintf("<tr><td onclick='openInStore(`%s`, `%s`, `%s`, `c56248d5-dabf-a970-6dc6-9ee1d8e3a6e0`)' style='background-color: %s'>%s</td><td style='background-color: %s'>%s</td><td style='background-color: %s'>%s</td><td  style='background-color: %s; text-align: center; font-size: larger; color: red;' hx-swap='none' hx-post='/delete-my-tc' hx-ext='json-enc' hx-vals='{%s: %s}' hx-confirm='This will delete the time capsule forever and it will be unretrievable. Are you sure you want to continue?'>X</td></tr>", myTcOut.tcfilename, strings.Split(orgId, "_")[1], strings.Split(orgId, "_")[0], bgColor, myTcOut.tcname, bgColor, strings.Split(myTcOut.createdon, "T")[0], bgColor, strings.Split(myTcOut.availableOn, "T")[0], bgColor, "\"myTCName\"", "\""+myTcOut.tcname+"\"")))
+			w.Write([]byte(fmt.Sprintf("<tr><td class='toggleArrows' onclick='openInStore(`%s`, `%s`, `%s`, `c56248d5-dabf-a970-6dc6-9ee1d8e3a6e0`, `notyetpurchased`)' style='background-color: %s'>%s&nbsp;&nbsp;<span class='glyphicon glyphicon-new-window'></span></td><td style='background-color: %s; text-align: center'>%s</td><td style='background-color: %s; text-align: center'>%s</td><td  style='background-color: %s; text-align: center; font-size: larger; color: red;' hx-swap='none' hx-post='/delete-my-tc' hx-ext='json-enc' hx-vals='{%s: %s}' hx-confirm='This will delete the time capsule forever and it will be unretrievable. Are you sure you want to continue?'>X</td></tr>", myTcOut.tcfilename, strings.Split(orgId, "_")[1], strings.Split(orgId, "_")[0], bgColor, myTcOut.tcname, bgColor, strings.Split(myTcOut.createdon, "T")[0], bgColor, strings.Split(myTcOut.availableOn, "T")[0], bgColor, "\"myTCName\"", "\""+myTcOut.tcname+"\"")))
 			iter++
 		}
 	}
@@ -2809,13 +2809,14 @@ func main() {
 		}
 
 		type listOfTC struct {
-			tcname      string
-			createdon   string
-			availableOn string
-			tcfilename  string
+			tcname                  string
+			createdon               string
+			availableOn             string
+			tcfilename              string
+			wasearlyaccesspurchased *sql.NullBool
 		}
 
-		output, _ := db.Query(fmt.Sprintf("select tcname, createdon, available_on, tcfilename from tfldata.timecapsule where username='%s' and available_on %s now() and waspurchased = true order by available_on asc;", usernameFromSession, r.URL.Query().Get("pastorpresent")))
+		output, _ := db.Query(fmt.Sprintf("select tcname, createdon, available_on, tcfilename, wasearlyaccesspurchased from tfldata.timecapsule where username='%s' and available_on %s now() and waspurchased = true order by available_on asc;", usernameFromSession, r.URL.Query().Get("pastorpresent")))
 
 		defer output.Close()
 
@@ -2824,15 +2825,31 @@ func main() {
 		for output.Next() {
 			bgColor := "white"
 			var myTcOut listOfTC
+			var eabool bool
+			var openinstorestr string
+			var openinnewwindowstr string
 			if iter%2 == 0 {
 				bgColor = "white"
 			} else {
 				bgColor = "#efefefe6"
 			}
 
-			output.Scan(&myTcOut.tcname, &myTcOut.createdon, &myTcOut.availableOn, &myTcOut.tcfilename)
+			output.Scan(&myTcOut.tcname, &myTcOut.createdon, &myTcOut.availableOn, &myTcOut.tcfilename, &myTcOut.wasearlyaccesspurchased)
 
-			w.Write([]byte(fmt.Sprintf("<tr><td onclick='openInStore(`%s`, `%s`, `%s`, `df19c1f7-07d8-a265-42f8-e8dfa824cc6e`)' style='background-color: %s'>%s</td><td style='background-color: %s'>%s</td><td style='background-color: %s'>%s</td><td  style='background-color: %s; text-align: center; font-size: larger; color: red;' hx-swap='none' hx-post='/delete-my-tc' hx-ext='json-enc' hx-vals='{%s: %s}' hx-confirm='This will delete the time capsule forever and it will be unretrievable. Are you sure you want to continue?'>X</td></tr>", myTcOut.tcfilename, strings.Split(orgId, "_")[1], strings.Split(orgId, "_")[0], bgColor, myTcOut.tcname, bgColor, strings.Split(myTcOut.createdon, "T")[0], bgColor, strings.Split(myTcOut.availableOn, "T")[0], bgColor, "\"myTCName\"", "\""+myTcOut.tcname+"\"")))
+			if myTcOut.wasearlyaccesspurchased.Valid {
+				eabool = myTcOut.wasearlyaccesspurchased.Bool
+			} else {
+				eabool = false
+			}
+
+			if eabool || r.URL.Query().Get("pastorpresent") == "<" {
+				openinstorestr = ""
+				openinnewwindowstr = ""
+			} else {
+				openinstorestr = fmt.Sprintf("class='toggleArrows' onclick='openInStore(`%s`, `%s`, `%s`, `df19c1f7-07d8-a265-42f8-e8dfa824cc6e`)'", myTcOut.tcfilename, strings.Split(orgId, "_")[1], strings.Split(orgId, "_")[0])
+				openinnewwindowstr = "&nbsp;&nbsp;<span class='glyphicon glyphicon-new-window'></span>"
+			}
+			w.Write([]byte(fmt.Sprintf("<tr><td %s style='background-color: %s'>%s%s</td><td style='background-color: %s; text-align: center'>%s</td><td style='background-color: %s; text-align: center'>%s</td><td  style='background-color: %s; text-align: center; font-size: larger; color: red;' hx-swap='none' hx-post='/delete-my-tc' hx-ext='json-enc' hx-vals='{%s: %s}' hx-confirm='This will delete the time capsule forever and it will be unretrievable. Are you sure you want to continue?'>X</td></tr>", openinstorestr, bgColor, myTcOut.tcname, openinnewwindowstr, bgColor, strings.Split(myTcOut.createdon, "T")[0], bgColor, strings.Split(myTcOut.availableOn, "T")[0], bgColor, "\"myTCName\"", "\""+myTcOut.tcname+"\"")))
 			iter++
 		}
 	}
@@ -2943,7 +2960,7 @@ func main() {
 			fmt.Println("Some marsh err at wixWebhookearlyaccess")
 			return
 		}
-		_, uperr := db.Exec(fmt.Sprintf("update tfldata.timecapsule set wasearlyaccesspurchased=true where tcfilename='%s';", postData.Capsulename))
+		_, uperr := db.Exec(fmt.Sprintf("update tfldata.timecapsule set wasearlyaccesspurchased=true,available_on=now() where tcfilename='%s';", postData.Capsulename))
 		if uperr != nil {
 			activityStr := "Failed attempt purchase early access from wix"
 			db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage,createdon,activity) values(substr('%s',0,240), now(), substr('%s',0,105);", uperr.Error(), activityStr))

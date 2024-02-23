@@ -35,12 +35,12 @@
     </header>
     <div id="pageSelectionBanner"
         style="text-align: center; height: 35px; width: 100dvw; display: flex; justify-content: space-around; background-color: rgb(255 255 255 / 9%); border-width: thin; box-shadow: 1px 1px 3px black; align-content: center; flex-wrap: wrap;">
-        <p onclick="togglePanesLeft()" style="margin-bottom: 0%">&lt;</p>
+        <p class="toggleArrows" onclick="togglePanesLeft()" style="margin-bottom: 0%">&lt;</p>
         <p id="currentPageSelector" style="margin-bottom: 0%; font-weight: 600;">
             Create a New Capsule!</p>
-        <p onclick="togglePanesRight()" style="margin-bottom: 0%">&gt;</p>
+        <p class="toggleArrows" onclick="togglePanesRight()" style="margin-bottom: 0%">&gt;</p>
     </div>
-    <div id="createNewCapsuleDiv" name="Create a New Capsule!">
+    <div id="createNewCapsuleDiv" name="Create a New Capsule!" style="display: flex; justify-content: center;">
 
         <form id="createCapsuleForm" class="d-inline-grid mx-1" hx-on::after-request="afterTCCreateReq(event)"
             hx-post="/create-new-tc" hx-encoding="multipart/form-data" hx-swap="none" hx-indicator="#loadingspinner"
@@ -91,7 +91,8 @@
     </div>
     <div id="myCapsulesDiv" style="display: none;" name="My Capsules (Purchased)">
         <div style="margin-top: 1%" id="getEleListOfTC" hx-get="/get-my-purchased-time-capsules"
-            hx-target="#listOfTCDivList" hx-trigger="click, load" hx-vals="js:{'pastorpresent': pastOrPresentTC}">
+            hx-target="#listOfTCDivList" hx-trigger="load, click from:#sortOrderPastOrPresentHeading"
+            hx-vals="js:{'pastorpresent': pastOrPresentTC}">
             <table class="table" style="table-layout: fixed;">
                 <thead>
                     <tr style="background-color: white; text-align: center">
@@ -195,7 +196,7 @@
         const usersCapsPage = document.getElementById('myCapsulesDiv')
         const listOfPanes = ["createNewCapsuleDiv", "myCapsulesDiv", "myCapsulesNotYetPurchasedDiv", "myCapsulesAvailable"]
         var paneIter = 0
-        var pastOrPresentTC = ">"
+        var pastOrPresentTC = "<"
         document.addEventListener('DOMContentLoaded', () => {
 
             document.getElementById('timecapheader').classList.add('fadeInOpacity')
@@ -235,7 +236,7 @@
             })
         }
         function alertStatus(event) {
-            debugger
+
             if (event.detail.xhr.status === 200) {
                 if (JSON.parse(event.detail.xhr.response).status)
                     alert("File is available for download")
@@ -284,7 +285,8 @@
 
             if (pastOrPresentTC === ">") {
                 // Early access
-                window.open(`https://www.the-family-loop.com/product-page?tcname=${capsulename}&orgname=${orgid}&famname=${familyName}&route=${window.location.host.split(".")[0]}&productid=${productid}`)
+                if (confirm("Would you like to purchase this time capsule early? You will have to pay a fee to unlock the capsule early."))
+                    window.open(`https://www.the-family-loop.com/product-page?tcname=${capsulename}&orgname=${orgid}&famname=${familyName}&route=${window.location.host.split(".")[0]}&productid=${productid}`)
 
             } else if (pastOrPresentTC === "<") {
                 // Available for download

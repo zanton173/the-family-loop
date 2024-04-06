@@ -565,7 +565,7 @@ func main() {
 				}
 			} else {
 				reactionBtn = ""
-				editElement = fmt.Sprintf("<i style='position: absolute; background-color: gray; border-radius: 13px / 13px; z-index: 3' class='bi bi-three-dots m-1 px-1 editbtnclass' hx-post='/delete-this-post' hx-swap='none' hx-on::after-request='window.location.reload()' hx-vals=\"js:{'deletionID': %d}\" hx-params='not page, limit, token' hx-ext='json-enc' hx-confirm='Delete this post forever? This cannot be undone'></i>", postrows.Id)
+				editElement = fmt.Sprintf("<i style='position: absolute; background-color: gray; border-radius: 13px / 13px; z-index: 13' class='bi bi-three-dots m-1 px-1 editbtnclass' hx-post='/delete-this-post' hx-swap='none' hx-on::after-request='window.location.reload()' hx-vals=\"js:{'deletionID': %d}\" hx-params='not page, limit, token' hx-ext='json-enc' hx-confirm='Delete this post forever? This cannot be undone'></i>", postrows.Id)
 			}
 			comment := db.QueryRow(fmt.Sprintf("select count(*) from tfldata.comments where post_id='%d';", postrows.Id))
 			var commentCount string

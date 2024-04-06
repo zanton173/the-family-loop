@@ -231,7 +231,7 @@ func main() {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		fn := uploadPfpToS3(awskey, awskeysecret, upload, filename.Filename, r, "pfpformfile")
+		fn := uploadPfpToS3(upload, filename.Filename, r, "pfpformfile")
 		bs := []byte(r.PostFormValue("passwordsignup"))
 
 		bytesOfPass, err := bcrypt.GenerateFromPassword(bs, len(bs))
@@ -269,7 +269,7 @@ func main() {
 			if password == r.PostFormValue("passwordlogin") {
 
 				w.Header().Set("HX-Trigger", "changeAdminPassword")
-				setLoginCookie(w, db, userStr, r, r.PostFormValue("mytz"))
+				setLoginCookie(w, db, userStr, r.PostFormValue("mytz"))
 				generateLoginJWT(userStr, w, jwtSignKey)
 
 			} else {
@@ -280,10 +280,10 @@ func main() {
 					db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values(substr('%s',0,105), '%s');", err, time.Now().In(nyLoc).Format(time.DateTime)))
 					w.WriteHeader(http.StatusUnauthorized)
 					return
-				} else if err == nil {
+				} else {
 
 					generateLoginJWT(userStr, w, jwtSignKey)
-					setLoginCookie(w, db, userStr, r, r.PostFormValue("mytz"))
+					setLoginCookie(w, db, userStr, r.PostFormValue("mytz"))
 
 					w.Header().Set("HX-Refresh", "true")
 				}
@@ -299,10 +299,10 @@ func main() {
 				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values(substr('%s',0,105), '%s');", err, time.Now().In(nyLoc).Format(time.DateTime)))
 				w.WriteHeader(http.StatusUnauthorized)
 				return
-			} else if err == nil {
+			} else {
 
 				generateLoginJWT(userStr, w, jwtSignKey)
-				setLoginCookie(w, db, userStr, r, r.PostFormValue("mytz"))
+				setLoginCookie(w, db, userStr, r.PostFormValue("mytz"))
 
 				w.Header().Set("HX-Refresh", "true")
 			}
@@ -511,8 +511,8 @@ func main() {
 
 	}
 	getPostsHandler := func(w http.ResponseWriter, r *http.Request) {
-		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, w, r)
-		validBool := validateJWTToken(jwtSignKey, w, r)
+		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, r)
+		validBool := validateJWTToken(jwtSignKey, r)
 		if !validBool || !allowOrDeny {
 			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
@@ -613,9 +613,9 @@ func main() {
 	}
 	deleteThisPostHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
+		allowOrDeny, _ := validateCurrentSessionId(db, r)
 
-		validBool := validateJWTToken(jwtSignKey, w, r)
+		validBool := validateJWTToken(jwtSignKey, r)
 		if !validBool || !allowOrDeny {
 			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
@@ -693,9 +693,9 @@ func main() {
 	}
 
 	createPostHandler := func(w http.ResponseWriter, r *http.Request) {
-		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, w, r)
+		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, r)
 
-		validBool := validateJWTToken(jwtSignKey, w, r)
+		validBool := validateJWTToken(jwtSignKey, r)
 		if !validBool || !allowOrDeny {
 			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
@@ -769,7 +769,7 @@ func main() {
 				fh.Filename = tmpFileName[len(tmpFileName)-35:]
 			}
 
-			filetype := uploadFileToS3(awskey, awskeysecret, false, f, tmpFileName, r)
+			filetype := uploadFileToS3(f, tmpFileName, r)
 
 			_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.postfiles(\"file_name\", \"file_type\", \"post_files_key\") values('%s', '%s', '%s');", fh.Filename, filetype, postFilesKey))
 
@@ -808,9 +808,9 @@ func main() {
 	}
 	createPostReactionHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, w, r)
+		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, r)
 
-		validBool := validateJWTToken(jwtSignKey, w, r)
+		validBool := validateJWTToken(jwtSignKey, r)
 		if !validBool || !allowOrDeny {
 			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
@@ -838,9 +838,9 @@ func main() {
 	}
 
 	getSelectedPostsComments := func(w http.ResponseWriter, r *http.Request) {
-		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, w, r)
+		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, r)
 
-		validBool := validateJWTToken(jwtSignKey, w, r)
+		validBool := validateJWTToken(jwtSignKey, r)
 		if !validBool || !allowOrDeny {
 			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
@@ -885,9 +885,9 @@ func main() {
 
 	}
 	createEventCommentHandler := func(w http.ResponseWriter, r *http.Request) {
-		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, w, r)
+		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, r)
 
-		validBool := validateJWTToken(jwtSignKey, w, r)
+		validBool := validateJWTToken(jwtSignKey, r)
 		if !validBool || !allowOrDeny {
 			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
@@ -923,9 +923,9 @@ func main() {
 
 	}
 	getSelectedEventsComments := func(w http.ResponseWriter, r *http.Request) {
-		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
+		allowOrDeny, _ := validateCurrentSessionId(db, r)
 
-		validBool := validateJWTToken(jwtSignKey, w, r)
+		validBool := validateJWTToken(jwtSignKey, r)
 		if !validBool || !allowOrDeny {
 			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
@@ -964,9 +964,9 @@ func main() {
 
 	}
 	createCommentHandler := func(w http.ResponseWriter, r *http.Request) {
-		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, w, r)
+		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, r)
 
-		validBool := validateJWTToken(jwtSignKey, w, r)
+		validBool := validateJWTToken(jwtSignKey, r)
 		if !validBool || !allowOrDeny {
 			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
@@ -1099,9 +1099,9 @@ func main() {
 	getEventsHandler := func(w http.ResponseWriter, r *http.Request) {
 
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
+		allowOrDeny, _ := validateCurrentSessionId(db, r)
 
-		validBool := validateJWTToken(jwtSignKey, w, r)
+		validBool := validateJWTToken(jwtSignKey, r)
 		if !validBool || !allowOrDeny {
 			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
@@ -1142,9 +1142,9 @@ func main() {
 	}
 	getPostsReactionsHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
+		allowOrDeny, _ := validateCurrentSessionId(db, r)
 
-		validBool := validateJWTToken(jwtSignKey, w, r)
+		validBool := validateJWTToken(jwtSignKey, r)
 		if !validBool || !allowOrDeny {
 			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
@@ -1168,9 +1168,9 @@ func main() {
 		}
 	}
 	createEventHandler := func(w http.ResponseWriter, r *http.Request) {
-		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, w, r)
+		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, r)
 
-		validBool := validateJWTToken(jwtSignKey, w, r)
+		validBool := validateJWTToken(jwtSignKey, r)
 		if !validBool || !allowOrDeny {
 			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
@@ -1227,9 +1227,9 @@ func main() {
 	}
 	deleteEventHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
+		allowOrDeny, _ := validateCurrentSessionId(db, r)
 
-		validBool := validateJWTToken(jwtSignKey, w, r)
+		validBool := validateJWTToken(jwtSignKey, r)
 		if !validBool || !allowOrDeny {
 			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
@@ -1251,9 +1251,9 @@ func main() {
 	}
 	updateRSVPForEventHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
+		allowOrDeny, _ := validateCurrentSessionId(db, r)
 
-		validBool := validateJWTToken(jwtSignKey, w, r)
+		validBool := validateJWTToken(jwtSignKey, r)
 		if !validBool || !allowOrDeny {
 			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
@@ -1334,9 +1334,9 @@ func main() {
 	getEventRSVPHandler := func(w http.ResponseWriter, r *http.Request) {
 
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
+		allowOrDeny, _ := validateCurrentSessionId(db, r)
 
-		validBool := validateJWTToken(jwtSignKey, w, r)
+		validBool := validateJWTToken(jwtSignKey, r)
 		if !validBool || !allowOrDeny {
 			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
@@ -1357,9 +1357,9 @@ func main() {
 	}
 	getRSVPNotesHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
+		allowOrDeny, _ := validateCurrentSessionId(db, r)
 
-		validBool := validateJWTToken(jwtSignKey, w, r)
+		validBool := validateJWTToken(jwtSignKey, r)
 		if !validBool || !allowOrDeny {
 			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
@@ -1398,9 +1398,9 @@ func main() {
 
 	}
 	createGroupChatMessageHandler := func(w http.ResponseWriter, r *http.Request) {
-		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, w, r)
+		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, r)
 
-		validBool := validateJWTToken(jwtSignKey, w, r)
+		validBool := validateJWTToken(jwtSignKey, r)
 		if !validBool || !allowOrDeny {
 			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
@@ -1458,9 +1458,9 @@ func main() {
 
 	}
 	delThreadHandler := func(w http.ResponseWriter, r *http.Request) {
-		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
+		allowOrDeny, _ := validateCurrentSessionId(db, r)
 
-		validBool := validateJWTToken(jwtSignKey, w, r)
+		validBool := validateJWTToken(jwtSignKey, r)
 		if !validBool || !allowOrDeny {
 			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
@@ -1500,9 +1500,9 @@ func main() {
 
 	}
 	getGroupChatMessagesHandler := func(w http.ResponseWriter, r *http.Request) {
-		allowOrDeny, currentUserFromSession := validateCurrentSessionId(db, w, r)
+		allowOrDeny, currentUserFromSession := validateCurrentSessionId(db, r)
 
-		validBool := validateJWTToken(jwtSignKey, w, r)
+		validBool := validateJWTToken(jwtSignKey, r)
 		if !validBool || !allowOrDeny {
 			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
@@ -1567,9 +1567,9 @@ func main() {
 		}
 	}
 	getUsernamesToTagHandler := func(w http.ResponseWriter, r *http.Request) {
-		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
+		allowOrDeny, _ := validateCurrentSessionId(db, r)
 
-		validBool := validateJWTToken(jwtSignKey, w, r)
+		validBool := validateJWTToken(jwtSignKey, r)
 		if !validBool || !allowOrDeny {
 			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
@@ -1618,9 +1618,9 @@ func main() {
 	}
 	getSubscribedHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-type", "application/json; charset=utf-8")
-		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, w, r)
+		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, r)
 
-		validBool := validateJWTToken(jwtSignKey, w, r)
+		validBool := validateJWTToken(jwtSignKey, r)
 
 		if !validBool || !allowOrDeny {
 			w.Header().Set("HX-Retarget", "window")
@@ -1642,9 +1642,9 @@ func main() {
 	}
 	getSessionDataHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, w, r)
+		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, r)
 
-		validBool := validateJWTToken(jwtSignKey, w, r)
+		validBool := validateJWTToken(jwtSignKey, r)
 
 		if !validBool || !allowOrDeny {
 			w.Header().Set("HX-Retarget", "window")
@@ -1679,9 +1679,9 @@ func main() {
 
 	updatePfpHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "multipart/form-data")
-		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, w, r)
+		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, r)
 
-		validBool := validateJWTToken(jwtSignKey, w, r)
+		validBool := validateJWTToken(jwtSignKey, r)
 		if !validBool || !allowOrDeny {
 			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
@@ -1692,7 +1692,7 @@ func main() {
 
 		username := r.PostFormValue("usernameinput")
 
-		fn := uploadPfpToS3(awskey, awskeysecret, upload, filename.Filename, r, "changepfp")
+		fn := uploadPfpToS3(upload, filename.Filename, r, "changepfp")
 		_, uperr := db.Exec(fmt.Sprintf("update tfldata.users set pfp_name='%s' where username='%s';", fn, username))
 		if uperr != nil {
 			activityStr := fmt.Sprintf("update table users set pfp_name failed for user %s", usernameFromSession)
@@ -1703,9 +1703,9 @@ func main() {
 	}
 	updateChatThemeHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, w, r)
+		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, r)
 
-		validBool := validateJWTToken(jwtSignKey, w, r)
+		validBool := validateJWTToken(jwtSignKey, r)
 		if !validBool || !allowOrDeny {
 			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
@@ -1730,9 +1730,9 @@ func main() {
 	}
 	deleteSelectedChatHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, w, r)
+		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, r)
 
-		validBool := validateJWTToken(jwtSignKey, w, r)
+		validBool := validateJWTToken(jwtSignKey, r)
 		if !validBool || !allowOrDeny {
 			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
@@ -1756,9 +1756,9 @@ func main() {
 	}
 	updateSelectedChatHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, w, r)
+		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, r)
 
-		validBool := validateJWTToken(jwtSignKey, w, r)
+		validBool := validateJWTToken(jwtSignKey, r)
 		if !validBool || !allowOrDeny {
 			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
@@ -1782,9 +1782,9 @@ func main() {
 		}
 	}
 	getSelectedChatHandler := func(w http.ResponseWriter, r *http.Request) {
-		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
+		allowOrDeny, _ := validateCurrentSessionId(db, r)
 
-		validBool := validateJWTToken(jwtSignKey, w, r)
+		validBool := validateJWTToken(jwtSignKey, r)
 		if !validBool || !allowOrDeny {
 			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
@@ -1801,9 +1801,9 @@ func main() {
 		w.Write(marshbs)
 	}
 	createIssueHandler := func(w http.ResponseWriter, r *http.Request) {
-		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
+		allowOrDeny, _ := validateCurrentSessionId(db, r)
 
-		validBool := validateJWTToken(jwtSignKey, w, r)
+		validBool := validateJWTToken(jwtSignKey, r)
 		if !validBool || !allowOrDeny {
 			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
@@ -1861,9 +1861,9 @@ func main() {
 
 	}
 	getStackerzLeaderboardHandler := func(w http.ResponseWriter, r *http.Request) {
-		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
+		allowOrDeny, _ := validateCurrentSessionId(db, r)
 
-		validBool := validateJWTToken(jwtSignKey, w, r)
+		validBool := validateJWTToken(jwtSignKey, r)
 		if !validBool || !allowOrDeny {
 			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
@@ -2016,9 +2016,9 @@ func main() {
 	}
 	updateStackerzScoreHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, w, r)
+		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, r)
 
-		validBool := validateJWTToken(jwtSignKey, w, r)
+		validBool := validateJWTToken(jwtSignKey, r)
 		if !validBool || !allowOrDeny {
 			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
@@ -2044,9 +2044,9 @@ func main() {
 		coll.InsertOne(context.TODO(), bson.M{"org_id": orgId, "game": "stackerz", "bonus_points": postData.BonusPoints, "level": postData.Level, "username": postData.Username, "createdOn": time.Now()})
 	}
 	getPersonalCatchitLeaderboardHandler := func(w http.ResponseWriter, r *http.Request) {
-		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, w, r)
+		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, r)
 
-		validBool := validateJWTToken(jwtSignKey, w, r)
+		validBool := validateJWTToken(jwtSignKey, r)
 		if !validBool || !allowOrDeny {
 			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
@@ -2072,9 +2072,9 @@ func main() {
 		}
 	}
 	getCatchitLeaderboardHandler := func(w http.ResponseWriter, r *http.Request) {
-		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
+		allowOrDeny, _ := validateCurrentSessionId(db, r)
 
-		validBool := validateJWTToken(jwtSignKey, w, r)
+		validBool := validateJWTToken(jwtSignKey, r)
 		if !validBool || !allowOrDeny {
 			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
@@ -2206,9 +2206,9 @@ func main() {
 	}
 	updateCatchitScoreHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
+		allowOrDeny, _ := validateCurrentSessionId(db, r)
 
-		validBool := validateJWTToken(jwtSignKey, w, r)
+		validBool := validateJWTToken(jwtSignKey, r)
 		if !validBool || !allowOrDeny {
 			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
@@ -2234,9 +2234,9 @@ func main() {
 
 	}
 	getLeaderboardHandler := func(w http.ResponseWriter, r *http.Request) {
-		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
+		allowOrDeny, _ := validateCurrentSessionId(db, r)
 
-		validBool := validateJWTToken(jwtSignKey, w, r)
+		validBool := validateJWTToken(jwtSignKey, r)
 		if !validBool || !allowOrDeny {
 			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
@@ -2388,9 +2388,9 @@ func main() {
 
 	}
 	getOpenThreadsHandler := func(w http.ResponseWriter, r *http.Request) {
-		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
+		allowOrDeny, _ := validateCurrentSessionId(db, r)
 
-		validBool := validateJWTToken(jwtSignKey, w, r)
+		validBool := validateJWTToken(jwtSignKey, r)
 		if !validBool || !allowOrDeny {
 			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
@@ -2416,9 +2416,9 @@ func main() {
 	}
 	getUsersSubscribedThreadsHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
+		allowOrDeny, _ := validateCurrentSessionId(db, r)
 
-		validBool := validateJWTToken(jwtSignKey, w, r)
+		validBool := validateJWTToken(jwtSignKey, r)
 		if !validBool || !allowOrDeny {
 			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
@@ -2442,9 +2442,9 @@ func main() {
 
 	changeUserSubscriptionToThreadHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, w, r)
+		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, r)
 
-		validBool := validateJWTToken(jwtSignKey, w, r)
+		validBool := validateJWTToken(jwtSignKey, r)
 		if !validBool || !allowOrDeny {
 			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
@@ -2471,9 +2471,9 @@ func main() {
 	}
 	createNewTimeCapsuleHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "multipart/form-data")
-		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, w, r)
+		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, r)
 
-		validBool := validateJWTToken(jwtSignKey, w, r)
+		validBool := validateJWTToken(jwtSignKey, r)
 		if !validBool || !allowOrDeny {
 			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
@@ -2552,12 +2552,12 @@ func main() {
 				return
 			}
 			totalFilesSize += int(fh.Size / 1024 / 1024)
-			if err != nil {
+			/*if err != nil {
 				activityStr := fmt.Sprintf("Open multipart file in createtimecapsulehandler - %s", usernameFromSession)
 				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", err, time.Now().In(nyLoc).Format(time.DateTime), activityStr))
 				w.WriteHeader(http.StatusUnsupportedMediaType)
 				return
-			}
+			}*/
 			f.Close()
 		}
 		zipWriter.Close()
@@ -2570,13 +2570,13 @@ func main() {
 			return
 		}
 
-		go uploadTimeCapsuleToS3(awskey, awskeysecret, tcFile, tcFileName, r)
+		go uploadTimeCapsuleToS3(tcFile, tcFileName)
 	}
 	initiateMyTCRestoreHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
+		allowOrDeny, _ := validateCurrentSessionId(db, r)
 
-		validBool := validateJWTToken(jwtSignKey, w, r)
+		validBool := validateJWTToken(jwtSignKey, r)
 		if !validBool || !allowOrDeny {
 			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
@@ -2679,9 +2679,9 @@ func main() {
 	}
 	availableTcWasDownloaded := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
+		allowOrDeny, _ := validateCurrentSessionId(db, r)
 
-		validBool := validateJWTToken(jwtSignKey, w, r)
+		validBool := validateJWTToken(jwtSignKey, r)
 		if !validBool || !allowOrDeny {
 			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
@@ -2702,9 +2702,9 @@ func main() {
 	}
 	getMyAvailableTimeCapsulesHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, w, r)
+		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, r)
 
-		validBool := validateJWTToken(jwtSignKey, w, r)
+		validBool := validateJWTToken(jwtSignKey, r)
 		if !validBool || !allowOrDeny {
 			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
@@ -2757,9 +2757,9 @@ func main() {
 	}
 	getMyNotYetPurchasedTimeCapsulesHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, w, r)
+		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, r)
 
-		validBool := validateJWTToken(jwtSignKey, w, r)
+		validBool := validateJWTToken(jwtSignKey, r)
 		if !validBool || !allowOrDeny {
 			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
@@ -2798,9 +2798,9 @@ func main() {
 
 	getMyPurchasedTimeCapsulesHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, w, r)
+		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, r)
 
-		validBool := validateJWTToken(jwtSignKey, w, r)
+		validBool := validateJWTToken(jwtSignKey, r)
 		if !validBool || !allowOrDeny {
 			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
@@ -2855,7 +2855,7 @@ func main() {
 	}
 	wixWebhookChangePlanHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		validBool := validateWebhookJWTToken(jwtSignKey, w, r)
+		validBool := validateWebhookJWTToken(jwtSignKey, r)
 		if !validBool {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -2889,7 +2889,7 @@ func main() {
 	}
 	wixWebhookTCInitialPurchaseHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		validBool := validateWebhookJWTToken(jwtSignKey, w, r)
+		validBool := validateWebhookJWTToken(jwtSignKey, r)
 		if !validBool {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -2941,7 +2941,7 @@ func main() {
 	}
 	wixWebhookEarlyAccessPaymentCompleteHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		validBool := validateWebhookJWTToken(jwtSignKey, w, r)
+		validBool := validateWebhookJWTToken(jwtSignKey, r)
 		if !validBool {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -2972,9 +2972,9 @@ func main() {
 
 	deleteMyTChandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, w, r)
+		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, r)
 
-		validBool := validateJWTToken(jwtSignKey, w, r)
+		validBool := validateJWTToken(jwtSignKey, r)
 		if !validBool || !allowOrDeny {
 			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
@@ -3007,13 +3007,13 @@ func main() {
 			return
 		}
 		deletename := strings.Split(selectedTc.createdon, "T")[0] + "_" + selectedTc.tcname + "_capsule_" + selectedTc.username + ".zip"
-		go deleteFileFromS3(awskey, awskeysecret, deletename, "timecapsules/")
+		go deleteFileFromS3(deletename, "timecapsules/")
 	}
 
 	validateJWTHandler := func(w http.ResponseWriter, r *http.Request) {
-		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
+		allowOrDeny, _ := validateCurrentSessionId(db, r)
 
-		validBool := validateJWTToken(jwtSignKey, w, r)
+		validBool := validateJWTToken(jwtSignKey, r)
 		if !validBool || !allowOrDeny {
 			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
@@ -3025,9 +3025,9 @@ func main() {
 	/* NOT USING THIS RIGHT NOW */
 	/*refreshTokenHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		allowOrDeny, _ := validateCurrentSessionId(db, w, r)
+		allowOrDeny, _ := validateCurrentSessionId(db, r)
 
-		validBool := validateJWTToken(jwtSignKey, w, r)
+		validBool := validateJWTToken(jwtSignKey, r)
 		if !validBool || !allowOrDeny {
 			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
@@ -3062,7 +3062,7 @@ func main() {
 
 	adminGetListOfUsersHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, w, r)
+		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, r)
 
 		var isAdmin bool
 
@@ -3070,7 +3070,7 @@ func main() {
 
 		rowRes.Scan(&isAdmin)
 
-		validBool := validateJWTToken(jwtSignKey, w, r)
+		validBool := validateJWTToken(jwtSignKey, r)
 		if !validBool || !allowOrDeny || !isAdmin {
 			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
@@ -3103,7 +3103,7 @@ func main() {
 	}
 	adminGetSubPackageHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, w, r)
+		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, r)
 
 		var isAdmin bool
 
@@ -3111,7 +3111,7 @@ func main() {
 
 		rowRes.Scan(&isAdmin)
 
-		validBool := validateJWTToken(jwtSignKey, w, r)
+		validBool := validateJWTToken(jwtSignKey, r)
 		if !validBool || !allowOrDeny || !isAdmin {
 			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
@@ -3136,7 +3136,7 @@ func main() {
 	}
 	adminGetAllTCHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, w, r)
+		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, r)
 
 		var isAdmin bool
 
@@ -3144,7 +3144,7 @@ func main() {
 
 		rowRes.Scan(&isAdmin)
 
-		validBool := validateJWTToken(jwtSignKey, w, r)
+		validBool := validateJWTToken(jwtSignKey, r)
 		if !validBool || !allowOrDeny || !isAdmin {
 			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
@@ -3180,7 +3180,7 @@ func main() {
 	}
 	adminDeleteUserHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, w, r)
+		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, r)
 
 		var isAdmin bool
 
@@ -3188,7 +3188,7 @@ func main() {
 
 		rowRes.Scan(&isAdmin)
 
-		validBool := validateJWTToken(jwtSignKey, w, r)
+		validBool := validateJWTToken(jwtSignKey, r)
 		if !validBool || !allowOrDeny || !isAdmin {
 			w.Header().Set("HX-Retarget", "window")
 			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
@@ -3253,8 +3253,8 @@ func main() {
 				fmt.Println("err: " + delErr.Error())
 			}
 		}
-		go deleteFileFromS3(awskey, awskeysecret, tcFileToDeleteTcname, "timecapsules/")
-		deleteFileFromS3(awskey, awskeysecret, pfpName, "pfp/")
+		go deleteFileFromS3(tcFileToDeleteTcname, "timecapsules/")
+		deleteFileFromS3(pfpName, "pfp/")
 		if postData.DeleteAllOpt == "yes" {
 			for postfileout.Next() {
 				var fileName string
@@ -3264,9 +3264,9 @@ func main() {
 					fmt.Println(scnerr)
 				}
 				if strings.Contains(fileType, "image") {
-					deleteFileFromS3(awskey, awskeysecret, fileName, "posts/images/")
+					deleteFileFromS3(fileName, "posts/images/")
 				} else {
-					go deleteFileFromS3(awskey, awskeysecret, fileName, "posts/videos/")
+					go deleteFileFromS3(fileName, "posts/videos/")
 				}
 			}
 			db.Exec(fmt.Sprintf("delete from tfldata.calendar where event_owner='%s';", postData.SelectedUser))
@@ -3301,9 +3301,9 @@ func main() {
 						fmt.Println(scnerr)
 					}
 					if strings.Contains(fileType, "image") {
-						deleteFileFromS3(awskey, awskeysecret, fileName, "posts/images/")
+						deleteFileFromS3(fileName, "posts/images/")
 					} else {
-						go deleteFileFromS3(awskey, awskeysecret, fileName, "posts/videos/")
+						go deleteFileFromS3(fileName, "posts/videos/")
 					}
 				}
 				db.Exec(fmt.Sprintf("delete from tfldata.posts where author='%s';", postData.SelectedUser))
@@ -3491,7 +3491,7 @@ func main() {
 	// log.Fatal(http.ListenAndServeTLS(":443", "../tflserver.crt", "../tflserver.key", nil))
 }
 
-func setLoginCookie(w http.ResponseWriter, db *sql.DB, userStr string, r *http.Request, acceptedTz string) {
+func setLoginCookie(w http.ResponseWriter, db *sql.DB, userStr string, acceptedTz string) {
 
 	sessionToken := uuid.NewString()
 	expiresAt := time.Now().Add(3600 * time.Hour)
@@ -3518,7 +3518,7 @@ func setLoginCookie(w http.ResponseWriter, db *sql.DB, userStr string, r *http.R
 	})
 
 }
-func uploadPfpToS3(k string, s string, f multipart.File, fn string, r *http.Request, formInputIdentifier string) string {
+func uploadPfpToS3(f multipart.File, fn string, r *http.Request, formInputIdentifier string) string {
 
 	defer f.Close()
 	ourfile, fileHeader, errfile := r.FormFile(formInputIdentifier)
@@ -3591,7 +3591,7 @@ func uploadPfpToS3(k string, s string, f multipart.File, fn string, r *http.Requ
 	}
 	return fn
 }
-func uploadFileToS3(k string, s string, bucketexists bool, f multipart.File, fn string, r *http.Request) string {
+func uploadFileToS3(f multipart.File, fn string, r *http.Request) string {
 
 	defer f.Close()
 	ourfile, fileHeader, errfile := r.FormFile("file_name")
@@ -3889,7 +3889,7 @@ func generateLoginJWT(username string, w http.ResponseWriter, jwtKey string) *jw
 	})
 	return token
 }
-func validateJWTToken(tokenKey string, w http.ResponseWriter, r *http.Request) bool {
+func validateJWTToken(tokenKey string, r *http.Request) bool {
 	jwtCookie, cookieErr := r.Cookie("backendauth")
 	if cookieErr != nil {
 		return false
@@ -3904,7 +3904,7 @@ func validateJWTToken(tokenKey string, w http.ResponseWriter, r *http.Request) b
 	}
 	return jwtToken.Valid
 }
-func validateWebhookJWTToken(tokenKey string, w http.ResponseWriter, r *http.Request) bool {
+func validateWebhookJWTToken(tokenKey string, r *http.Request) bool {
 	jwtHeaderVal := r.Header.Get("Authorization")
 	jwtToken, jwtValidateErr := jwt.Parse(jwtHeaderVal, func(jwtToken *jwt.Token) (interface{}, error) {
 		return []byte(tokenKey), nil
@@ -3915,7 +3915,7 @@ func validateWebhookJWTToken(tokenKey string, w http.ResponseWriter, r *http.Req
 	}
 	return jwtToken.Valid
 }
-func validateCurrentSessionId(db *sql.DB, w http.ResponseWriter, r *http.Request) (bool, string) {
+func validateCurrentSessionId(db *sql.DB, r *http.Request) (bool, string) {
 	session_token, seshErr := r.Cookie("session_id")
 	if seshErr != nil {
 		return false, "Please login"
@@ -3928,7 +3928,7 @@ func validateCurrentSessionId(db *sql.DB, w http.ResponseWriter, r *http.Request
 	return scnerr == nil, username
 
 }
-func uploadTimeCapsuleToS3(k string, s string, f *os.File, fn string, r *http.Request) {
+func uploadTimeCapsuleToS3(f *os.File, fn string) {
 	f.Seek(0, 0)
 
 	defer f.Close()
@@ -3949,7 +3949,7 @@ func uploadTimeCapsuleToS3(k string, s string, f *os.File, fn string, r *http.Re
 
 	defer os.Remove(fn)
 }
-func deleteFileFromS3(k string, s string, delname string, delPath string) {
+func deleteFileFromS3(delname string, delPath string) {
 
 	_, err := s3Client.DeleteObject(context.TODO(), &s3.DeleteObjectInput{
 		Bucket: aws.String(s3Domain),

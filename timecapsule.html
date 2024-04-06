@@ -90,6 +90,7 @@
         </form>
     </div>
     <div id="myCapsulesDiv" style="display: none;" name="My Capsules (Purchased)">
+        <h3 id="eapurchasebanner" style="display: none; color: white; text-align: center;">Purchase early access</h3>
         <div style="margin-top: 1%" id="getEleListOfTC" hx-get="/get-my-purchased-time-capsules"
             hx-target="#listOfTCDivList" hx-trigger="load, click from:#sortOrderPastOrPresentHeading"
             hx-vals="js:{'pastorpresent': pastOrPresentTC}">
@@ -98,8 +99,7 @@
                     <tr style="background-color: white; text-align: center">
                         <th style="font-size: 8pt;">Capsule Name</th>
                         <th style="font-size: 8pt;">Created on</th>
-                        <th style="font-size: 8pt;" id="sortOrderPastOrPresentHeading"
-                            onclick="pastOrPresentTC === '>' ? pastOrPresentTC = '<' : pastOrPresentTC = '>'">
+                        <th style="font-size: 8pt;" id="sortOrderPastOrPresentHeading" onclick="changePastOrPresent()">
                             Available On&nbsp;&nbsp;<i class="bi bi-filter toggleArrows"></i></th>
                         <th style="font-size: 8pt;">
                             delete
@@ -246,6 +246,13 @@
                 alert("File does not exist")
             else if (event.detail.xhr.status === 202)
                 alert("The file should be availble using the download link")
+        }
+        function changePastOrPresent() {
+            pastOrPresentTC === '>' ? pastOrPresentTC = '<' : pastOrPresentTC = '>'
+            if (pastOrPresentTC === '>')
+                window.eapurchasebanner.style.display = ""
+            else
+                window.eapurchasebanner.style.display = "none"
         }
         function initiateRestoreResp(event) {
 

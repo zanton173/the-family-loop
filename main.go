@@ -270,7 +270,7 @@ func main() {
 
 				w.Header().Set("HX-Trigger", "changeAdminPassword")
 				setLoginCookie(w, db, userStr, r, r.PostFormValue("mytz"))
-				generateLoginJWT(userStr, w, r, jwtSignKey)
+				generateLoginJWT(userStr, w, jwtSignKey)
 
 			} else {
 				err := bcrypt.CompareHashAndPassword([]byte(password), []byte(r.PostFormValue("passwordlogin")))
@@ -282,7 +282,7 @@ func main() {
 					return
 				} else if err == nil {
 
-					generateLoginJWT(userStr, w, r, jwtSignKey)
+					generateLoginJWT(userStr, w, jwtSignKey)
 					setLoginCookie(w, db, userStr, r, r.PostFormValue("mytz"))
 
 					w.Header().Set("HX-Refresh", "true")
@@ -301,7 +301,7 @@ func main() {
 				return
 			} else if err == nil {
 
-				generateLoginJWT(userStr, w, r, jwtSignKey)
+				generateLoginJWT(userStr, w, jwtSignKey)
 				setLoginCookie(w, db, userStr, r, r.PostFormValue("mytz"))
 
 				w.Header().Set("HX-Refresh", "true")
@@ -3869,7 +3869,7 @@ func sendNotificationToAllUsers(db *sql.DB, curUser string, fb_message_client *m
 	}
 }
 
-func generateLoginJWT(username string, w http.ResponseWriter, r *http.Request, jwtKey string) *jwt.Token {
+func generateLoginJWT(username string, w http.ResponseWriter, jwtKey string) *jwt.Token {
 	daysToExp := int64(7)
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"iss":  "backend-auth",

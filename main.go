@@ -270,6 +270,8 @@ func main() {
 
 				w.Header().Set("HX-Trigger", "changeAdminPassword")
 				setLoginCookie(w, db, userStr, r.PostFormValue("mytz"))
+				db.Exec(fmt.Sprintf("update tfldata.users set last_sign_on='%s' where username='%s';", time.Now().In(nyLoc).Format(time.DateTime), userStr))
+
 				generateLoginJWT(userStr, w, jwtSignKey)
 
 			} else {
@@ -284,6 +286,7 @@ func main() {
 
 					generateLoginJWT(userStr, w, jwtSignKey)
 					setLoginCookie(w, db, userStr, r.PostFormValue("mytz"))
+					db.Exec(fmt.Sprintf("update tfldata.users set last_sign_on='%s' where username='%s';", time.Now().In(nyLoc).Format(time.DateTime), userStr))
 
 					w.Header().Set("HX-Refresh", "true")
 				}
@@ -303,6 +306,7 @@ func main() {
 
 				generateLoginJWT(userStr, w, jwtSignKey)
 				setLoginCookie(w, db, userStr, r.PostFormValue("mytz"))
+				db.Exec(fmt.Sprintf("update tfldata.users set last_sign_on='%s' where username='%s';", time.Now().In(nyLoc).Format(time.DateTime), userStr))
 
 				w.Header().Set("HX-Refresh", "true")
 			}

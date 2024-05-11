@@ -1423,7 +1423,7 @@ func main() {
 			w.WriteHeader(http.StatusConflict)
 			return
 		}
-
+		fmt.Println("call the handler twice?")
 		_, inserr := db.Exec(fmt.Sprintf("insert into tfldata.gchat(\"chat\", \"author\", \"createdon\", \"thread\") values(E'%s', '%s', now(), '%s');", chatMessage, usernameFromSession, threadVal))
 		if inserr != nil {
 			fmt.Println("error here: " + inserr.Error())
@@ -1433,9 +1433,28 @@ func main() {
 		_, ttbleerr := db.Exec(fmt.Sprintf("insert into tfldata.threads(\"thread\", \"threadauthor\", \"createdon\") values(E'%s', '%s', now());", threadVal, usernameFromSession))
 		if ttbleerr != nil {
 			fmt.Println("We can ignore this error: " + ttbleerr.Error())
-		} else {
-			db.Exec("insert into tfldata.users_to_threads(\"username\") values select distinct(username) from tfldata.users;")
-			db.Exec(fmt.Sprintf("update tfldata.users_to_threads set is_subscribed=true, thread='%s' where is_subscribed is null and thread is null;", threadVal))
+
+			if strings.Contains(ttbleerr.Error(), "duplicate key") {
+				s := make([]string, 0)
+				s = append(s, "insert into tfldata.users_to_threads(username) select distinct(username) from tfldata.users;")
+				s = append(s, fmt.Sprintf("update tfldata.users_to_threads set is_subscribed=true, thread='%s' where is_subscribed is null and thread is null;", threadVal))
+				upAndInsUTT, txnerr := db.Begin()
+				if txnerr != nil {
+					fmt.Println(upAndInsUTT)
+					fmt.Println("This was a transaction error")
+				}
+				defer func() {
+					_ = upAndInsUTT.Rollback()
+				}()
+				for _, q := range s {
+					_, err := upAndInsUTT.Exec(q)
+
+					if err != nil {
+						fmt.Println(err)
+					}
+				}
+				upAndInsUTT.Commit()
+			}
 		}
 		var chatMessageNotificationOpts notificationOpts
 		chatMessageNotificationOpts.extraPayloadKey = "thread"
@@ -1481,9 +1500,27 @@ func main() {
 		if marsherr != nil {
 			fmt.Println(marsherr)
 		}
-		db.Exec(fmt.Sprintf("delete from tfldata.gchat where thread='%s';", postData.ThreadToDel))
-		db.Exec(fmt.Sprintf("delete from tfldata.threads where thread='%s';", postData.ThreadToDel))
-		db.Exec(fmt.Sprintf("delete from tfldata.users_to_threads where thread='%s' or thread is null;", postData.ThreadToDel))
+		s := make([]string, 0)
+		s = append(s, fmt.Sprintf("delete from tfldata.gchat where thread='%s';", postData.ThreadToDel))
+		s = append(s, fmt.Sprintf("delete from tfldata.threads where thread='%s';", postData.ThreadToDel))
+		s = append(s, fmt.Sprintf("delete from tfldata.users_to_threads where thread='%s' or thread is null;", postData.ThreadToDel))
+		delThreadDataTxn, txnerr := db.Begin()
+		if txnerr != nil {
+			fmt.Println(delThreadDataTxn)
+			fmt.Println("This was a transaction error")
+		}
+		defer func() {
+			_ = delThreadDataTxn.Rollback()
+		}()
+		for _, q := range s {
+			_, err := delThreadDataTxn.Exec(q)
+
+			if err != nil {
+				fmt.Println(err)
+			}
+		}
+		delThreadDataTxn.Commit()
+
 	}
 	changeGchatOrderOptHandler := func(w http.ResponseWriter, r *http.Request) {
 		bs, _ := io.ReadAll(r.Body)

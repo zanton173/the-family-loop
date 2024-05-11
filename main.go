@@ -1423,7 +1423,7 @@ func main() {
 			w.WriteHeader(http.StatusConflict)
 			return
 		}
-		fmt.Println("call the handler twice?")
+
 		_, inserr := db.Exec(fmt.Sprintf("insert into tfldata.gchat(\"chat\", \"author\", \"createdon\", \"thread\") values(E'%s', '%s', now(), '%s');", chatMessage, usernameFromSession, threadVal))
 		if inserr != nil {
 			fmt.Println("error here: " + inserr.Error())

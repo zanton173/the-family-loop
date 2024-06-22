@@ -709,15 +709,6 @@ func main() {
 
 		postFilesKey := uuid.NewString()
 
-		_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.posts(\"title\", \"description\", \"author\", \"post_files_key\", \"createdon\") values(E'%s', E'%s', '%s', '%s', now());", replacer.Replace(r.PostFormValue("title")), replacer.Replace(r.PostFormValue("description")), usernameFromSession, postFilesKey))
-
-		if errinsert != nil {
-			activityStr := "insert into posts table createPostHandler"
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", errinsert, time.Now().In(nyLoc).Format(time.DateTime), activityStr))
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-
 		parseerr := r.ParseMultipartForm(10 << 20)
 		if parseerr != nil {
 			// handle error
@@ -773,7 +764,12 @@ func main() {
 				fh.Filename = tmpFileName[len(tmpFileName)-35:]
 			}
 
-			filetype := uploadFileToS3(f, tmpFileName, r)
+			filetype := uploadFileToS3(f, tmpFileName, r, db)
+
+			if strings.ContainsAny(filetype, "Error") {
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
 
 			_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.postfiles(\"file_name\", \"file_type\", \"post_files_key\") values('%s', '%s', '%s');", fh.Filename, filetype, postFilesKey))
 
@@ -783,6 +779,14 @@ func main() {
 			}
 
 			defer f.Close()
+		}
+		_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.posts(\"title\", \"description\", \"author\", \"post_files_key\", \"createdon\") values(E'%s', E'%s', '%s', '%s', now());", replacer.Replace(r.PostFormValue("title")), replacer.Replace(r.PostFormValue("description")), usernameFromSession, postFilesKey))
+
+		if errinsert != nil {
+			activityStr := "insert into posts table createPostHandler"
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", errinsert, time.Now().In(nyLoc).Format(time.DateTime), activityStr))
+			w.WriteHeader(http.StatusBadRequest)
+			return
 		}
 		/*if errfile != nil {
 		  db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", err))
@@ -804,7 +808,7 @@ func main() {
 		chatMessageNotificationOpts.extraPayloadVal = "posts"
 		chatMessageNotificationOpts.notificationPage = "posts"
 
-		chatMessageNotificationOpts.notificationTitle = "Somebody just made a new post!"
+		chatMessageNotificationOpts.notificationTitle = fmt.Sprintf("%s just made a new post!", usernameFromSession)
 		chatMessageNotificationOpts.notificationBody = strings.ReplaceAll(r.PostFormValue("title"), "\\", "")
 
 		go sendNotificationToAllUsers(db, usernameFromSession, fb_message_client, &chatMessageNotificationOpts)
@@ -1432,9 +1436,10 @@ func main() {
 		}
 		_, ttbleerr := db.Exec(fmt.Sprintf("insert into tfldata.threads(\"thread\", \"threadauthor\", \"createdon\") values(E'%s', '%s', now());", threadVal, usernameFromSession))
 		if ttbleerr != nil {
-			fmt.Println("We can ignore this error: " + ttbleerr.Error())
+			fmt.Println("We shouldn't ignore this error: " + ttbleerr.Error())
 
 			if strings.Contains(ttbleerr.Error(), "duplicate key") {
+				fmt.Println("duplicate thread error can be ignored")
 				s := make([]string, 0)
 				s = append(s, "insert into tfldata.users_to_threads(username) select distinct(username) from tfldata.users;")
 				s = append(s, fmt.Sprintf("update tfldata.users_to_threads set is_subscribed=true, thread='%s' where is_subscribed is null and thread is null;", threadVal))
@@ -3632,7 +3637,7 @@ func uploadPfpToS3(f multipart.File, fn string, r *http.Request, formInputIdenti
 	}
 	return fn
 }
-func uploadFileToS3(f multipart.File, fn string, r *http.Request) string {
+func uploadFileToS3(f multipart.File, fn string, r *http.Request, db *sql.DB) string {
 
 	defer f.Close()
 	ourfile, fileHeader, errfile := r.FormFile("file_name")
@@ -3669,6 +3674,7 @@ func uploadFileToS3(f multipart.File, fn string, r *http.Request) string {
 			newimg, _, decerr := imagego.Decode(buf)
 			if decerr != nil {
 				fmt.Println("dec err: " + decerr.Error())
+				return "Error"
 			}
 			var compfile bytes.Buffer
 			encerr := jpeg.Encode(&compfile, newimg, &jpeg.Options{
@@ -3726,6 +3732,9 @@ func uploadFileToS3(f multipart.File, fn string, r *http.Request) string {
 			newimg, _, decerr := imagego.Decode(newbuf)
 			if decerr != nil {
 				log.Fatal("dec err: " + decerr.Error())
+				activityStr := "error on image decoding for uploadfiletos3"
+				db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage,activity,createdon) values (substr('%s',0,420), substr('%s',0,106), now());", decerr.Error(), activityStr))
+				return "Error"
 			}
 			var compfile bytes.Buffer
 			encerr := jpeg.Encode(&compfile, newimg, &jpeg.Options{

@@ -767,6 +767,8 @@ func main() {
 			filetype := uploadFileToS3(f, tmpFileName, r, db)
 
 			if strings.ContainsAny(filetype, "Error") {
+				activityStr := "error on image decoding for uploadfiletos3"
+				db.Exec(fmt.Sprintf("insert into tfldata.errlog(activity,createdon) values (substr('%s',0,106), now());", activityStr))
 				w.WriteHeader(http.StatusBadRequest)
 				return
 			}

@@ -726,38 +726,16 @@ func main() {
 
 			tmpFileName := fh.Filename
 
-			getout, geterr := s3Client.GetObjectAttributes(context.TODO(), &s3.GetObjectAttributesInput{
-				Bucket: aws.String(s3Domain),
-				Key:    aws.String("posts/images/" + tmpFileName),
-				ObjectAttributes: []types.ObjectAttributes{
-					"ObjectSize",
-				},
-			})
+			var countIfExists int16
+			countIfExistsOut := db.QueryRow(fmt.Sprintf("select count(*) from tfldata.postfiles where file_name = '%s';", fh.Filename))
 
-			if geterr != nil {
-				fmt.Println("We can ignore this image: " + geterr.Error())
-				getvidout, getviderr := s3Client.GetObjectAttributes(context.TODO(), &s3.GetObjectAttributesInput{
-					Bucket: aws.String(s3Domain),
-					Key:    aws.String("posts/videos/" + tmpFileName),
-					ObjectAttributes: []types.ObjectAttributes{
-						"ObjectSize",
-					},
-				})
+			countIfExistsOut.Scan(&countIfExists)
 
-				if getviderr != nil {
-					fmt.Println("We can ignore this video: " + getviderr.Error())
-				} else {
-					if *getvidout.ObjectSize > 1 {
-						tmpFileName = strings.ReplaceAll(strings.ReplaceAll(time.Now().Format(time.DateTime), " ", "_"), ":", "") + "_" + tmpFileName
-						fh.Filename = tmpFileName
-					}
-				}
+			if countIfExists > 0 {
+				tmpFileName = strings.ReplaceAll(strings.ReplaceAll(time.Now().Format(time.DateTime), " ", "_"), ":", "") + "_" + tmpFileName
+				fh.Filename = tmpFileName
 			} else {
-
-				if *getout.ObjectSize > 1 {
-					tmpFileName = strings.ReplaceAll(strings.ReplaceAll(time.Now().Format(time.DateTime), " ", "_"), ":", "") + "_" + tmpFileName
-					fh.Filename = tmpFileName
-				}
+				tmpFileName = fh.Filename
 			}
 
 			if len(tmpFileName) > 55 {

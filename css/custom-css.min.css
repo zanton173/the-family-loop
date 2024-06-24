@@ -183,7 +183,7 @@ button.btn.btn-primary {
     }
 }
 
-@media (min-width:1000px) {
+@media (min-width:1200px) {
     div>.card {
         width: 18%;
         margin: auto
@@ -225,6 +225,13 @@ button.btn.btn-primary {
     div>.card>.card-body>p:first-of-type {
         margin-bottom: 0;
         font-size: 8pt
+    }
+}
+
+@media (min-width:1200px) {
+    div>.card {
+        width: 30%;
+        margin: auto
     }
 }
 

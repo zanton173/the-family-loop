@@ -114,7 +114,7 @@ button.btn.btn-primary {
     padding-top: 1%;
     padding-bottom: 1%;
     margin: 1%;
-    background-color: rgba(25, 38, 175, .89);
+    background-color: rgb(38 38 38 / 63%);
     z-index: 3;
     border-radius: 3px;
     box-shadow: 1px 1px 3px
@@ -146,7 +146,7 @@ button.btn.btn-primary {
 }
 
 #searchBarDiv {
-    width: 90dvw;
+    width: 70dvw;
     margin-left: auto;
     margin-right: auto
 }
@@ -157,6 +157,28 @@ button.btn.btn-primary {
 
 .postarrows {
     padding-top: .5rem !important
+}
+
+::placeholder {
+    color: black;
+}
+
+button.btn.btn-primary {
+    background: darkslategray !important;
+    border-color: black;
+    box-shadow: 1px 1px 3px black;
+}
+
+button.btn.btn-outline-primary {
+    border-color: black !important;
+    color: white !important;
+    box-shadow: 1px 1px 3px black !important;
+}
+
+@media (min-width: 340px) {
+    #searchBarDiv {
+        width: 70dvw
+    }
 }
 
 @media (min-width:645px) {

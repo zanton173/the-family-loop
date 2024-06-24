@@ -9,7 +9,7 @@
     <title>The Family Loop</title>
 </head>
 
-<body style="background: linear-gradient(180deg, #00106e, #00ecff 55%); height: 100dvh">
+<body style="background: linear-gradient(rgb(11 8 0 / 76%), rgb(225, 225, 225) 55%); height: 100dvh">
 
 
     <div class="spinner-indicator" id="loadingspinner"
@@ -53,18 +53,18 @@
         <div id="notifydiv" style="display: none;">&nbsp;&nbsp;<button class="btn btn-outline-primary">Allow
                 notifications &nbsp; <i class="bi bi-bell-fill"></i></button></div>
 
-        <div id="searchBarDiv"
-            style='background-color: rgb(18 160 255 / 44%); height: 17px; margin-top: 2%; display: flex; align-items: center; padding-bottom: 0%; margin-bottom: -1%; justify-content: space-around; border-radius: 13px / 0px 12px 12px; box-shadow: 3px 3px 7px;'>
-            <i id="searchCollapsedCarrot" class="bi bi-caret-right-fill" style="margin-left: 3%; margin-right: auto;"
-                onclick="openAndShutSearchDiv()"></i>
-            <div style="display: inline;">
+        <div id="searchBarDiv" style=' display: flex;'>
+            <!--<i id="searchCollapsedCarrot" class="bi bi-caret-right-fill" style="margin-left: 3%; margin-right: auto;"
+                onclick="openAndShutSearchDiv()"></i>-->
+            <div
+                style="display: flex; align-items: center; padding: .3rem; background-color: rgb(255 255 255 / 51%); justify-content: space-around; border-radius: 13px / 0px 12px 12px; box-shadow: 3px 3px 7px; width: fit-content; margin-top: 3%; margin-bottom: -3%;">
                 <!--<select id="searchBySelector" style="display: none" class="mx-2" onchange="onChangeSearchByMethod()">
                     <option value="bydate">date</option>
                     <option selected value="bykeyword">keyword</option>
                 </select>-->
                 <input type="date" id="searchByDateInput" style="display: none;" class="mx-1" />
                 <input type="search" id="searchByKeywordInput"
-                    style="display: none; border-radius: 7px / 7px; border-style: solid; border-width: thin; border-color: gray; color: rgb(13 14 41); font-weight: 450; background: linear-gradient(90deg, #fff6f6e8, #001cff1a);"
+                    style="border-radius: 7px / 7px; border-style: solid; border-width: thin; border-color: gray; color: rgb(0 0 0); font-weight: 450; background: linear-gradient(90deg, #fff6f6e8, #0000000d);"
                     class="mx-1" placeholder="Search" hx-trigger="input" hx-get="/get-posts" hx-target="#post-items"
                     hx-vals="js:{'page': null, 'limit': limit, 'search': document.getElementById('searchByKeywordInput').value}" />
 
@@ -293,39 +293,39 @@
     }
 
 
-    function openAndShutSearchDiv() {
-
-        if (document.getElementById('searchBarDiv').style.height == "17px") {
-            document.getElementById('searchCollapsedCarrot').classList.add('openSearchArrow')
-            document.getElementById('searchByKeywordInput').style.display = ""
-            document.getElementById('searchByKeywordInput').classList.add('openSearchInput')
-            document.getElementById('searchBarDiv').classList.add('openSeachBar')
-            document.getElementById('searchBarDiv').addEventListener('animationend', () => {
-                document.getElementById('searchBarDiv').style.height = "45px"
-                document.getElementById('searchBarDiv').classList.remove('openSeachBar')
-                document.getElementById('searchByKeywordInput').classList.remove('openSearchInput')
-                document.getElementById('searchCollapsedCarrot').style.transform = "rotate(90deg)"
-                document.getElementById('searchCollapsedCarrot').classList.remove('openSearchArrow')
-                document.getElementById('searchByKeywordInput').style.display = ""
-            })
-
-        } else {
-
-            document.getElementById('searchCollapsedCarrot').classList.add('openSearchArrowReversed')
-            document.getElementById('searchByKeywordInput').classList.add('openSearchInputReversed')
-            document.getElementById('searchBarDiv').classList.add('openSeachBarReversed')
-            document.getElementById('searchBarDiv').addEventListener('animationend', () => {
-                document.getElementById('searchBarDiv').style.height = "17px"
-                document.getElementById('searchBarDiv').classList.remove('openSeachBarReversed')
-                document.getElementById('searchByKeywordInput').classList.remove('openSearchInputReversed')
-                document.getElementById('searchCollapsedCarrot').style.transform = "rotate(calc(0deg))"
-                document.getElementById('searchCollapsedCarrot').classList.remove('openSearchArrowReversed')
-                document.getElementById('searchByKeywordInput').style.display = "none"
-            })
-
-        }
-    }
-
+    /* function openAndShutSearchDiv() {
+ 
+         if (document.getElementById('searchBarDiv').style.height == "17px") {
+             document.getElementById('searchCollapsedCarrot').classList.add('openSearchArrow')
+             document.getElementById('searchByKeywordInput').style.display = ""
+             document.getElementById('searchByKeywordInput').classList.add('openSearchInput')
+             document.getElementById('searchBarDiv').classList.add('openSeachBar')
+             document.getElementById('searchBarDiv').addEventListener('animationend', () => {
+                 document.getElementById('searchBarDiv').style.height = "45px"
+                 document.getElementById('searchBarDiv').classList.remove('openSeachBar')
+                 document.getElementById('searchByKeywordInput').classList.remove('openSearchInput')
+                 document.getElementById('searchCollapsedCarrot').style.transform = "rotate(90deg)"
+                 document.getElementById('searchCollapsedCarrot').classList.remove('openSearchArrow')
+                 document.getElementById('searchByKeywordInput').style.display = ""
+             })
+ 
+         } else {
+ 
+             document.getElementById('searchCollapsedCarrot').classList.add('openSearchArrowReversed')
+             document.getElementById('searchByKeywordInput').classList.add('openSearchInputReversed')
+             document.getElementById('searchBarDiv').classList.add('openSeachBarReversed')
+             document.getElementById('searchBarDiv').addEventListener('animationend', () => {
+                 document.getElementById('searchBarDiv').style.height = "17px"
+                 document.getElementById('searchBarDiv').classList.remove('openSeachBarReversed')
+                 document.getElementById('searchByKeywordInput').classList.remove('openSearchInputReversed')
+                 document.getElementById('searchCollapsedCarrot').style.transform = "rotate(calc(0deg))"
+                 document.getElementById('searchCollapsedCarrot').classList.remove('openSearchArrowReversed')
+                 document.getElementById('searchByKeywordInput').style.display = "none"
+             })
+ 
+         }
+     }
+ */
     /* function onChangeSearchByMethod() {
          document.getElementById('searchByKeywordInput').style.display = "none"
          document.getElementById('searchByDateInput').style.display = "none"

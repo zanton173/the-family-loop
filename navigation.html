@@ -707,67 +707,12 @@
 
 </script>
 <script type="module">
-    import app from "/js/init-firebase.js"
-    import { getMessaging, getToken } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-messaging.js";
-    const messaging = getMessaging(app);
-
-    var notificationBody = {}
-    import { logoutFunction } from "/js/globalFunctions.js"
+    import { logoutFunction, getNotified } from "/js/globalFunctions.js"
 
     if (document.getElementById("logoutButtonOnNav"))
         document.getElementById("logoutButtonOnNav").addEventListener("click", logoutFunction)
     if (document.getElementById("notifydiv"))
-        document.getElementById("notifydiv").addEventListener("click", notifyMe)
-
-    async function notifyMe() {
-        const checkSubResp = await fetch(`/get-check-if-subscribed`, {
-            method: "GET",
-            headers: {
-                "Content-Type": "application/json"
-            }
-        }).then((data) => {
-
-            if (data.status == 202) {
-                if (!("Notification" in window)) {
-                    // Check if the browser supports notifications
-                    alert("This browser does not support desktop notification");
-                } else {
-
-                    Notification.requestPermission().then((res) => {
-
-                        if (Notification.permission == 'granted') {
-
-                            getToken(messaging, { vapidKey: "BJmKY269Mkqw_zRnXy0n1ncFOBsamgi7hSpli4hKGlAJ-OKTae7qj8scasqrO9dpdmntNXXgbsMK3okY0bpOBVQ" })
-                                .then((currentToken) => {
-
-                                    notificationBody = {
-                                        fcm_token: currentToken
-                                    }
-                                    fetch("/create-subscription", {
-                                        method: "POST",
-                                        headers: {
-                                            "Content-Type": "application/json"
-                                        },
-                                        body: JSON.stringify(notificationBody)
-                                    })
-                                        .then(() => {
-                                            return window.navigator.serviceWorker
-                                                .getRegistration('/firebase-cloud-messaging-push-scope')
-                                                .then((serviceWorker) => {
-                                                    if (serviceWorker) return serviceWorker;
-                                                    return window.navigator.serviceWorker.register('/firebase-messaging-sw.js', {
-                                                        scope: '/firebase-cloud-messaging-push-scope',
-                                                    });
-                                                });
-                                        })
-                                })
-                        }
-
-                    })
-                }
-            }
-        })
-    }
+        document.getElementById("notifydiv").addEventListener("click", getNotified)
 
     window.addEventListener("onUnauthorizedEvent", () => {
         logoutFunction()

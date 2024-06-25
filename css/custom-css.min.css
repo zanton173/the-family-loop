@@ -240,7 +240,8 @@ button.btn.btn-outline-secondary {
     }
 
     div>.card>.card-body {
-        padding-top: 0
+        padding-top: 0;
+        margin-top: 1rem;
     }
 
     #bannerimg {
@@ -253,7 +254,7 @@ button.btn.btn-outline-secondary {
     }
 
     #searchBarDiv {
-        width: 20dvw;
+        width: 23dvw;
         margin-top: 1% !important
     }
 

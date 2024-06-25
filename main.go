@@ -602,9 +602,9 @@ func main() {
 			} else {
 
 				if countOfImg > 1 {
-					dataStr = fmt.Sprintf("<div class='card my-4' style='background-color: rgb(109 109 109 / .34); border-radius: 20px 20px 20px 20px; box-shadow: 5px 4px 9px 3px rgb(0 0 0 / 52&percnt;);'>%s<video style='border-radius: 18px 18px; z-index: 6;' muted playsinline controls preload='auto' id='%s'><source src='https://%s/posts/videos/%s'></video><p class='createdontime' style='margin-bottom: -6%s; margin-left: 78%s;text-decoration: underline;color: #4e4c4c;'>%s</p><div class='postarrows' style='display: flex; justify-content: space-around;'><i onclick='nextLeftImage(`%s`)' class='bi bi-arrow-90deg-left'></i><i onclick='nextRightImage(`%s`)' class='bi bi-arrow-90deg-right'></i></div><div id='%d' class='card-body' style='text-align: left; padding-left: 1&percnt;;'><b>%s</b><br/><p style='margin-bottom: .2rem'>%s</p><p style='margin-bottom: .2rem' class='card-text'>%s</p><div style='display: flex; justify-content: end'>%s<button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' hx-swap='innerHTML' class='btn btn-primary' style='margin-bottom: -.1rem'>Comments (%s)</button>%s</div></div></div>", editElement, postrows.Postfileskey, cfdistro, firstImg.filename, "%", "%", strings.Split(postrows.Createdon, "T")[0], postrows.Postfileskey, postrows.Postfileskey, postrows.Id, postrows.Author, postrows.Title, postrows.Description, reactionEmojiBeforeComment, postrows.Id, postrows.Id, commentCount, reactionBtn)
+					dataStr = fmt.Sprintf("<div class='card my-4' style='background-color: rgb(109 109 109 / .34); border-radius: 20px 20px 20px 20px; box-shadow: 5px 4px 9px 3px rgb(0 0 0 / 52&percnt;);'>%s<video style='border-radius: 18px 18px; z-index: 4;' muted playsinline controls preload='auto' id='%s'><source src='https://%s/posts/videos/%s'></video><p class='createdontime' style='margin-bottom: -6%s; margin-left: 78%s;text-decoration: underline;color: #4e4c4c;'>%s</p><div class='postarrows' style='display: flex; justify-content: space-around;'><i onclick='nextLeftImage(`%s`)' class='bi bi-arrow-90deg-left'></i><i onclick='nextRightImage(`%s`)' class='bi bi-arrow-90deg-right'></i></div><div id='%d' class='card-body' style='text-align: left; padding-left: 1&percnt;;'><b>%s</b><br/><p style='margin-bottom: .2rem'>%s</p><p style='margin-bottom: .2rem' class='card-text'>%s</p><div style='display: flex; justify-content: end'>%s<button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' hx-swap='innerHTML' class='btn btn-primary' style='margin-bottom: -.1rem'>Comments (%s)</button>%s</div></div></div>", editElement, postrows.Postfileskey, cfdistro, firstImg.filename, "%", "%", strings.Split(postrows.Createdon, "T")[0], postrows.Postfileskey, postrows.Postfileskey, postrows.Id, postrows.Author, postrows.Title, postrows.Description, reactionEmojiBeforeComment, postrows.Id, postrows.Id, commentCount, reactionBtn)
 				} else if countOfImg == 1 {
-					dataStr = fmt.Sprintf("<div class='card my-4' style='background-color: rgb(109 109 109 / .34); border-radius: 20px 20px 20px 20px; box-shadow: 5px 4px 9px 3px rgb(0 0 0 / 52&percnt;);'>%s<video style='border-radius: 18px 18px; z-index: 6;' muted playsinline controls preload='auto' id='%s'><source src='https://%s/posts/videos/%s'></video><p class='createdontime' style='margin-bottom: -6%s; margin-left: 78%s;text-decoration: underline;color: #4e4c4c;'>%s</p><div id='%d' class='card-body' style='text-align: left; padding-left: 1&percnt;;'><b>%s</b><br/><p style='margin-bottom: .2rem'>%s</p><p style='margin-bottom: .2rem' class='card-text'>%s</p><div style='display: flex; justify-content: end'>%s<button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' hx-swap='innerHTML' class='btn btn-primary' style='margin-bottom: -.1rem'>Comments (%s)</button>%s</div></div></div>", editElement, postrows.Postfileskey, cfdistro, firstImg.filename, "%", "%", strings.Split(postrows.Createdon, "T")[0], postrows.Id, postrows.Author, postrows.Title, postrows.Description, reactionEmojiBeforeComment, postrows.Id, postrows.Id, commentCount, reactionBtn)
+					dataStr = fmt.Sprintf("<div class='card my-4' style='background-color: rgb(109 109 109 / .34); border-radius: 20px 20px 20px 20px; box-shadow: 5px 4px 9px 3px rgb(0 0 0 / 52&percnt;);'>%s<video style='border-radius: 18px 18px; z-index: 4;' muted playsinline controls preload='auto' id='%s'><source src='https://%s/posts/videos/%s'></video><p class='createdontime' style='margin-bottom: -6%s; margin-left: 78%s;text-decoration: underline;color: #4e4c4c;'>%s</p><div id='%d' class='card-body' style='text-align: left; padding-left: 1&percnt;;'><b>%s</b><br/><p style='margin-bottom: .2rem'>%s</p><p style='margin-bottom: .2rem' class='card-text'>%s</p><div style='display: flex; justify-content: end'>%s<button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' hx-swap='innerHTML' class='btn btn-primary' style='margin-bottom: -.1rem'>Comments (%s)</button>%s</div></div></div>", editElement, postrows.Postfileskey, cfdistro, firstImg.filename, "%", "%", strings.Split(postrows.Createdon, "T")[0], postrows.Id, postrows.Author, postrows.Title, postrows.Description, reactionEmojiBeforeComment, postrows.Id, postrows.Id, commentCount, reactionBtn)
 				}
 			}
 			postTmpl, tmerr = template.New("tem").Parse(dataStr)
@@ -717,13 +717,17 @@ func main() {
 			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('memory error multi file upload %s');", err))
 		}
 		// upload, filename, errfile := r.FormFile("file_name")
-		for _, fh := range r.MultipartForm.File["file_name"] {
 
+		//for _, fh := range r.MultipartForm.File["file_name"] {
+		for i := 0; i < len(r.MultipartForm.File["file_name"]); i++ {
+
+			fh := r.MultipartForm.File["file_name"][i]
 			f, err := fh.Open()
 			if err != nil {
 				activityStr := fmt.Sprintf("Open multipart file in createPostHandler - %s", usernameFromSession)
 				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", err, time.Now().In(nyLoc).Format(time.DateTime), activityStr))
 				w.WriteHeader(http.StatusBadRequest)
+				return
 			}
 
 			tmpFileName := fh.Filename
@@ -744,14 +748,15 @@ func main() {
 				fh.Filename = tmpFileName[len(tmpFileName)-35:]
 			}
 
-			filetype := uploadFileToS3(f, tmpFileName, r, db)
+			fileContents := make([]byte, fh.Size)
 
-			if strings.ContainsAny(filetype, "Error") {
-				activityStr := "error on image decoding for uploadfiletos3"
-				db.Exec(fmt.Sprintf("insert into tfldata.errlog(activity,createdon) values (substr('%s',0,106), now());", activityStr))
-				w.WriteHeader(http.StatusBadRequest)
-				return
-			}
+			f.Read(fileContents)
+
+			filetype := http.DetectContentType(fileContents)
+
+			f.Seek(0, 0)
+
+			uploadFileToS3(f, tmpFileName, db, filetype)
 
 			_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.postfiles(\"file_name\", \"file_type\", \"post_files_key\") values('%s', '%s', '%s');", fh.Filename, filetype, postFilesKey))
 
@@ -770,21 +775,7 @@ func main() {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		/*if errfile != nil {
-		  db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", err))
-		  w.WriteHeader(http.StatusBadRequest)
-		  }*/
-		/*
-		   // Returning a filetype from the createandupload function
-		   // somehow gets the right filetype
-		   filetype := uploadFileToS3(awskey, awskeysecret, false, upload, filename.Filename, r)
 
-		   _, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.posts(\"title\", \"description\", \"file_name\", \"file_type\", \"author\") values('%s', '%s', '%s', '%s', '%s');", r.PostFormValue("title"), r.PostFormValue("description"), filename.Filename, filetype, username))
-
-		   if errinsert != nil {
-		   db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", errinsert))
-		   }*/
-		//defer upload.Close()
 		var chatMessageNotificationOpts notificationOpts
 		chatMessageNotificationOpts.extraPayloadKey = "post"
 		chatMessageNotificationOpts.extraPayloadVal = "posts"
@@ -3624,22 +3615,10 @@ func uploadPfpToS3(f multipart.File, fn string, r *http.Request, formInputIdenti
 	}
 	return fn
 }
-func uploadFileToS3(f multipart.File, fn string, r *http.Request, db *sql.DB) string {
-
-	defer f.Close()
-	ourfile, fileHeader, errfile := r.FormFile("file_name")
-
-	if errfile != nil {
-		// log.Fatal(errfile)
-		fmt.Println(errfile)
-	}
-
-	fileContents := make([]byte, fileHeader.Size)
-
-	ourfile.Read(fileContents)
-	filetype := http.DetectContentType(fileContents)
+func uploadFileToS3(f multipart.File, fn string, db *sql.DB, filetype string) {
 
 	if strings.Contains(filetype, "image") {
+
 		f.Seek(0, 0)
 		var gettagerr error
 		var tag *tiff.Tag
@@ -3661,7 +3640,7 @@ func uploadFileToS3(f multipart.File, fn string, r *http.Request, db *sql.DB) st
 			newimg, _, decerr := imagego.Decode(buf)
 			if decerr != nil {
 				fmt.Println("dec err: " + decerr.Error())
-				return "Error"
+				// we can actually exit program here
 			}
 			var compfile bytes.Buffer
 			encerr := jpeg.Encode(&compfile, newimg, &jpeg.Options{
@@ -3682,8 +3661,7 @@ func uploadFileToS3(f multipart.File, fn string, r *http.Request, db *sql.DB) st
 				fmt.Println("error on upload")
 				fmt.Println(err4.Error())
 			}
-			defer ourfile.Close()
-			return filetype
+
 		} else {
 			f.Seek(0, 0)
 			imgtrn, _, err := imagego.Decode(f)
@@ -3718,10 +3696,10 @@ func uploadFileToS3(f multipart.File, fn string, r *http.Request, db *sql.DB) st
 
 			newimg, _, decerr := imagego.Decode(newbuf)
 			if decerr != nil {
-				log.Fatal("dec err: " + decerr.Error())
+
 				activityStr := "error on image decoding for uploadfiletos3"
 				db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage,activity,createdon) values (substr('%s',0,420), substr('%s',0,106), now());", decerr.Error(), activityStr))
-				return "Error"
+				return
 			}
 			var compfile bytes.Buffer
 			encerr := jpeg.Encode(&compfile, newimg, &jpeg.Options{
@@ -3743,8 +3721,7 @@ func uploadFileToS3(f multipart.File, fn string, r *http.Request, db *sql.DB) st
 				fmt.Println("error on upload")
 				fmt.Println(err4.Error())
 			}
-			defer ourfile.Close()
-			return filetype
+
 		}
 	} else {
 
@@ -3762,8 +3739,6 @@ func uploadFileToS3(f multipart.File, fn string, r *http.Request, db *sql.DB) st
 		}
 
 	}
-	defer ourfile.Close()
-	return filetype
 }
 
 func sendNotificationToSingleUser(db *sql.DB, fb_message_client *messaging.Client, sendingUser string, threadVal string, fcmToken string, notificationBody string) {

@@ -62,10 +62,10 @@
                     <option value="bydate">date</option>
                     <option selected value="bykeyword">keyword</option>
                 </select>-->
-                <input type="date" id="searchByDateInput" style="display: none;" class="mx-1" />
+
                 <input type="search" id="searchByKeywordInput"
-                    style="border-radius: 7px / 7px; border-style: solid; border-width: thin; border-color: gray; color: rgb(0 0 0); font-weight: 450; background: linear-gradient(90deg, #fff6f6e8, #0000000d);"
-                    class="mx-1" placeholder="Search" hx-trigger="input" hx-get="/get-posts" hx-target="#post-items"
+                    style="border-radius: 7px / 7px; border-style: hidden; color: rgb(0 0 0); font-weight: 450; background: linear-gradient(90deg, #fff6f6e8, #0000000d); padding: 0%; text-indent: .5rem;"
+                    placeholder="Search" hx-trigger="input" hx-get="/get-posts" hx-target="#post-items"
                     hx-vals="js:{'page': null, 'limit': limit, 'search': document.getElementById('searchByKeywordInput').value}" />
 
             </div>

@@ -134,20 +134,21 @@
         aria-hidden="true">
         <div class="modal-dialog">
             <div id="post-div" class="modal-content p-2"
-                style="border-radius: 15px / 15px; background-color: rgb(99 81 255 / 65%);">
+                style="border-radius: 15px / 15px; background-color: rgba(112, 111, 119, 0.65);">
 
                 <form id="createpostele" class="d-inline-grid" hx-post="/create-post" hx-encoding="multipart/form-data"
                     hx-swap="none" hx-indicator="#loadingspinner"
                     style="background-color: white; border-radius: 15px / 15px; padding: 5%">
-
-                    <input class="my-2 shadow-sm border-1 text-center" style="width: 100%" name="title" id="posttitle"
-                        type="text" placeholder="title your post" required maxlength="128" />
-                    <input class="my-2 shadow-sm border-1 text-center" style="width: 100%" name="description"
-                        id="postdesc" type="text" placeholder="describe the post" required maxlength="420" />
-                    <input id="postinput" class="my-2 shadow" oninput="checkValidityOfFiles()" multiple type="file"
-                        required style="box-shadow: 3px 6px 10px gray!important; border-radius: 15px / 15px;"
-                        name="file_name" accept="image/*,video/*" placeholder="Upload photos or video" />
-
+                    <div style="margin: auto; text-align: center; box-sizing: border-box;">
+                        <input class="my-2 shadow-sm border-1 text-center" style="width: 100%" name="title"
+                            id="posttitle" type="text" placeholder="title your post" required maxlength="128" />
+                        <input class="my-2 shadow-sm border-1 text-center" style="width: 100%" name="description"
+                            id="postdesc" type="text" placeholder="describe the post" required maxlength="420" />
+                        <input id="postinput" class="my-2 shadow" oninput="checkValidityOfFiles()" multiple type="file"
+                            required
+                            style="box-shadow: 3px 6px 10px gray!important; border-radius: 15px / 15px; width: 100%"
+                            name="file_name" accept="image/*,video/*" placeholder="Upload photos or video" />
+                    </div>
                 </form>
                 <div id="progressdiv" style="display: none; text-align: center;">
                     <p>Upload progress: </p><progress style="text-align: center;" id='progress' value='0' max='100'>

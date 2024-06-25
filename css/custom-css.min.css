@@ -175,6 +175,18 @@ button.btn.btn-outline-primary {
     box-shadow: 1px 1px 3px black !important;
 }
 
+button.btn.btn-secondary {
+    background: rgba(47, 79, 79, 0.852) !important;
+    border-color: black;
+    box-shadow: 1px 1px 3px black;
+}
+
+button.btn.btn-outline-secondary {
+    border-color: black !important;
+    color: rgb(83, 83, 83) !important;
+    box-shadow: 1px 1px 3px black !important;
+}
+
 @media (min-width: 340px) {
     #searchBarDiv {
         width: 70dvw
@@ -202,6 +214,22 @@ button.btn.btn-outline-primary {
 
     .gchatmessagecard {
         max-width: 65%
+    }
+
+    .navCustomItem {
+        padding: 0% !important;
+
+    }
+}
+
+@media (min-width: 750px) {
+    body>#calendarBodyTag {
+        height: 100%
+    }
+
+    .calendar-body {
+        width: 40dvw;
+        margin: auto;
     }
 }
 
@@ -248,12 +276,26 @@ button.btn.btn-outline-primary {
         margin-bottom: 0;
         font-size: 8pt
     }
+
+    #navbarText {
+        font-size: small !important;
+    }
+
+    .navCustomItem {
+        padding: 0% !important;
+        margin-bottom: 0% !important;
+    }
 }
 
 @media (min-width:1200px) {
     div>.card {
         width: 30%;
         margin: auto
+    }
+
+    .navCustomItem {
+        padding: 0% !important;
+        margin-bottom: 0% !important;
     }
 }
 

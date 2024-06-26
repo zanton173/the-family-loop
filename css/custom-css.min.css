@@ -209,7 +209,8 @@ button.btn.btn-outline-secondary {
     }
 
     #searchBarDiv {
-        width: 60dvw
+        width: 60dvw;
+        margin-bottom: 4%;
     }
 
     .gchatmessagecard {

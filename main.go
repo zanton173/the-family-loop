@@ -62,6 +62,7 @@ type Postjoin struct {
 }
 type seshStruct struct {
 	Username      string
+	PfpnameChk    sql.NullString
 	Pfpname       string
 	BGtheme       string
 	GchatOrderOpt bool
@@ -1680,7 +1681,7 @@ func main() {
 		var ourSeshStruct seshStruct
 
 		row := db.QueryRow(fmt.Sprintf("select username, gchat_bg_theme, gchat_order_option, is_admin, pfp_name, substr(fcm_registration_id,0,3) from tfldata.users where username='%s';", usernameFromSession))
-		scerr := row.Scan(&ourSeshStruct.Username, &ourSeshStruct.BGtheme, &ourSeshStruct.GchatOrderOpt, &ourSeshStruct.Isadmin, &ourSeshStruct.Pfpname, &ourSeshStruct.FcmkeyChk)
+		scerr := row.Scan(&ourSeshStruct.Username, &ourSeshStruct.BGtheme, &ourSeshStruct.GchatOrderOpt, &ourSeshStruct.Isadmin, &ourSeshStruct.PfpnameChk, &ourSeshStruct.FcmkeyChk)
 		if scerr != nil {
 			fmt.Println(scerr)
 		}
@@ -1688,8 +1689,12 @@ func main() {
 		if !ourSeshStruct.FcmkeyChk.Valid {
 			ourSeshStruct.FcmkeyChk.String = ""
 		}
+		if !ourSeshStruct.PfpnameChk.Valid {
+			ourSeshStruct.PfpnameChk.String = ""
+		}
 
 		ourSeshStruct.Fcmkey = ourSeshStruct.FcmkeyChk.String
+		ourSeshStruct.Pfpname = ourSeshStruct.PfpnameChk.String
 
 		ourSeshStruct.CFDomain = cfdistro
 

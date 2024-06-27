@@ -478,6 +478,7 @@
         }
         function submitCreateGChatMessage(event) {
             if (event.code.includes("Enter") || event.key.includes("Enter") || event.keyCode == 13) {
+                event.preventDefault()
                 document.getElementById("messageform").dispatchEvent(new Event('submit'))
             }
         }

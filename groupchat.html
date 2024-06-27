@@ -8,7 +8,7 @@
     <title>The Family Loop - Group Chat</title>
 </head>
 
-<body>
+<body style="height: 100%" id="gchatBody">
     <div class="spinner-indicator" id="loadingspinner"
         style="width: 100%; height: 100%; background-color: rgb(197, 197, 197);">
 
@@ -162,7 +162,8 @@
                             style="border-radius: 18px / 18px; width: 75%; box-shadow: 3px 3px 5px" name="gchatmessage"
                             id="gchatinput" role="text" rows="1"
                             oninput="{checkForTagging(); this.style.height = Math.min(this.scrollHeight, 75) + 'px';}"
-                            placeholder="Enter message" required maxlength="420"></textarea>
+                            placeholder="Enter message" required maxlength="420"
+                            onkeypress="submitCreateGChatMessage(event)"></textarea>
                         <button type="submit" class="col-2 mx-2 border-0 btn btn-success"
                             style="border-radius: 18px / 18px; box-shadow: 3px 3px 5px black;"><i
                                 class="bi bi-send"></i></button>
@@ -211,7 +212,7 @@
             if (event.detail.elt.children.length > 4)
                 document.body.style.height = ''
             else
-                document.body.style.height = '100dvh'
+                document.body.style.height = '100%'
         }
 
         var usersSubbedThreads = []
@@ -473,6 +474,11 @@
                 document.getElementById('loadGChathere').dispatchEvent(new Event('afterThreadSelectorLoadsEvent'))
             } else {
                 alert("Not a valid thread name")
+            }
+        }
+        function submitCreateGChatMessage(event) {
+            if (event.code.includes("Enter") || event.key.includes("Enter") || event.keyCode == 13) {
+                document.getElementById("messageform").dispatchEvent(new Event('submit'))
             }
         }
         htmx.on('#messageform', 'htmx:afterRequest', function (event) {

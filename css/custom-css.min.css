@@ -133,9 +133,23 @@ button.btn.btn-primary {
     -webkit-transform: translateX(-50%)
 }
 
-.gchatmessagecard {
+.gchatmessagecardme {
     margin-top: .5rem !important;
     margin-bottom: .5rem !important;
+    margin-left: 0%;
+    max-width: 100%;
+    background-color: rgb(22 53 255 / 13%);
+    border-width: thin;
+    border-style: solid;
+    box-shadow: 4px 4px 5px;
+    border-radius: 16px 5px 23px 3px;
+    padding-bottom: 3%
+}
+
+.gchatmessagecardfrom {
+    margin-top: .5rem !important;
+    margin-bottom: .5rem !important;
+    margin-right: 0%;
     max-width: 100%;
     background-color: rgb(22 53 255 / 13%);
     border-width: thin;
@@ -213,8 +227,14 @@ button.btn.btn-outline-secondary {
         margin-bottom: 4%;
     }
 
-    .gchatmessagecard {
-        max-width: 65%
+    .gchatmessagecardme {
+        max-width: 95dvw;
+        margin-left: 0%;
+    }
+
+    .gchatmessagecardfrom {
+        max-width: 95dvw;
+        margin-right: 0%;
     }
 
     .navCustomItem {
@@ -225,6 +245,10 @@ button.btn.btn-outline-secondary {
 
 @media (min-width: 750px) {
     body>#calendarBodyTag {
+        height: 100%
+    }
+
+    body>#gchatBody {
         height: 100%
     }
 
@@ -268,8 +292,15 @@ button.btn.btn-outline-secondary {
         margin-left: 70% !important
     }
 
-    .gchatmessagecard {
+    .gchatmessagecardme {
         max-width: 40%;
+        margin-left: 25%;
+        padding-bottom: 0;
+    }
+
+    .gchatmessagecardfrom {
+        max-width: 40%;
+        margin-right: 25%;
         padding-bottom: 0
     }
 

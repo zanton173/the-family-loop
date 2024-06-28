@@ -540,7 +540,7 @@ ALTER TABLE tfldata.timecapsule OWNER TO tfldbrole;
 --
 
 CREATE TABLE tfldata.users (
-    id integer,
+    id integer NOT NULL,
     username character varying(15),
     password character varying(4096),
     orgid character varying(256),
@@ -801,6 +801,22 @@ ALTER TABLE ONLY tfldata.threads
 
 
 --
+-- Name: users users_email_key; Type: CONSTRAINT; Schema: tfldata; Owner: tfldbrole
+--
+
+ALTER TABLE ONLY tfldata.users
+    ADD CONSTRAINT users_email_key UNIQUE (email);
+
+
+--
+-- Name: users users_pkey; Type: CONSTRAINT; Schema: tfldata; Owner: tfldbrole
+--
+
+ALTER TABLE ONLY tfldata.users
+    ADD CONSTRAINT users_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: users_to_threads users_to_threads_username_thread_key; Type: CONSTRAINT; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -814,6 +830,90 @@ ALTER TABLE ONLY tfldata.users_to_threads
 
 ALTER TABLE ONLY tfldata.users
     ADD CONSTRAINT users_username_key UNIQUE (username);
+
+
+--
+-- Name: calendar_rsvp_tbl_event_id_idx; Type: INDEX; Schema: tfldata; Owner: tfldbrole
+--
+
+CREATE INDEX calendar_rsvp_tbl_event_id_idx ON tfldata.calendar_rsvp USING btree (event_id);
+
+
+--
+-- Name: calendar_rsvp_tbl_username_idx; Type: INDEX; Schema: tfldata; Owner: tfldbrole
+--
+
+CREATE INDEX calendar_rsvp_tbl_username_idx ON tfldata.calendar_rsvp USING btree (username);
+
+
+--
+-- Name: comments_tbl_event_id_idx; Type: INDEX; Schema: tfldata; Owner: tfldbrole
+--
+
+CREATE INDEX comments_tbl_event_id_idx ON tfldata.comments USING btree (event_id);
+
+
+--
+-- Name: comments_tbl_post_id_idx; Type: INDEX; Schema: tfldata; Owner: tfldbrole
+--
+
+CREATE INDEX comments_tbl_post_id_idx ON tfldata.comments USING btree (post_id);
+
+
+--
+-- Name: gchat_tbl_author_idx; Type: INDEX; Schema: tfldata; Owner: tfldbrole
+--
+
+CREATE INDEX gchat_tbl_author_idx ON tfldata.gchat USING btree (author);
+
+
+--
+-- Name: gchat_tbl_thread_idx; Type: INDEX; Schema: tfldata; Owner: tfldbrole
+--
+
+CREATE INDEX gchat_tbl_thread_idx ON tfldata.gchat USING btree (thread);
+
+
+--
+-- Name: postfiles_tbl_post_files_key_idx; Type: INDEX; Schema: tfldata; Owner: tfldbrole
+--
+
+CREATE INDEX postfiles_tbl_post_files_key_idx ON tfldata.postfiles USING btree (post_files_key);
+
+
+--
+-- Name: posts_tbl_author_idx01; Type: INDEX; Schema: tfldata; Owner: tfldbrole
+--
+
+CREATE INDEX posts_tbl_author_idx01 ON tfldata.posts USING btree (author text_pattern_ops);
+
+
+--
+-- Name: posts_tbl_descr_idx01; Type: INDEX; Schema: tfldata; Owner: tfldbrole
+--
+
+CREATE INDEX posts_tbl_descr_idx01 ON tfldata.posts USING btree (description text_pattern_ops);
+
+
+--
+-- Name: posts_tbl_title_idx01; Type: INDEX; Schema: tfldata; Owner: tfldbrole
+--
+
+CREATE INDEX posts_tbl_title_idx01 ON tfldata.posts USING btree (title text_pattern_ops);
+
+
+--
+-- Name: users_tbl_username_idx01; Type: INDEX; Schema: tfldata; Owner: tfldbrole
+--
+
+CREATE INDEX users_tbl_username_idx01 ON tfldata.users USING btree (username);
+
+
+--
+-- Name: utt_tbl_thread_idx; Type: INDEX; Schema: tfldata; Owner: tfldbrole
+--
+
+CREATE INDEX utt_tbl_thread_idx ON tfldata.users_to_threads USING btree (thread);
 
 
 --

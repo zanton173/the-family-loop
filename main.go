@@ -334,10 +334,16 @@ func main() {
 		newAdminbytesOfPass, err := bcrypt.GenerateFromPassword(newadminpassbs, len(newadminpassbs))
 		if err != nil {
 			fmt.Println(err)
+			activityStr := "updating admin pass"
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage,activity,createdon) values (substr('%s',0,106), substr('%s',0,106), now());", err.Error(), activityStr))
+			return
 		}
 		_, uperr := db.Exec(fmt.Sprintf("update tfldata.users set password='%s' where username='%s';", newAdminbytesOfPass, postData.Username))
 		if uperr != nil {
 			fmt.Println(uperr)
+			activityStr := "updating admin pass"
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage,activity,createdon) values (substr('%s',0,106), substr('%s',0,106), now());", uperr.Error(), activityStr))
+			return
 		}
 
 		w.Header().Set("HX-Refresh", "true")
@@ -992,91 +998,92 @@ func main() {
 			fmt.Println(err)
 		}
 		commentTmpl.Execute(w, nil)
+		go func() {
+			var fcmToken string
+			fcmrow := db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where username = (select author from tfldata.posts where id=%d) and username != (select username from tfldata.users where username='%s') and fcm_registration_id is not null;", postData.SelectedPostId, usernameFromSession))
+			scnerr := fcmrow.Scan(&fcmToken)
+			if scnerr == nil {
 
-		var fcmToken string
-		fcmrow := db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where username = (select author from tfldata.posts where id=%d) and username != (select username from tfldata.users where username='%s') and fcm_registration_id is not null;", postData.SelectedPostId, usernameFromSession))
-		scnerr := fcmrow.Scan(&fcmToken)
-		if scnerr == nil {
+				//fb_message_client, _ := app.Messaging(context.TODO())
+				typePayload := make(map[string]string)
+				typePayload["type"] = "posts"
+				sentRes, sendErr := fb_message_client.Send(context.TODO(), &messaging.Message{
+					Token: fcmToken,
+					Data:  typePayload,
+					Notification: &messaging.Notification{
+						Title:    author + " commented on your post!",
+						Body:     "\"" + postData.Comment + "\"",
+						ImageURL: "/assets/icon-180x180.jpg",
+					},
 
-			//fb_message_client, _ := app.Messaging(context.TODO())
-			typePayload := make(map[string]string)
-			typePayload["type"] = "posts"
-			sentRes, sendErr := fb_message_client.Send(context.TODO(), &messaging.Message{
-				Token: fcmToken,
-				Data:  typePayload,
-				Notification: &messaging.Notification{
-					Title:    author + " commented on your post!",
-					Body:     "\"" + postData.Comment + "\"",
-					ImageURL: "/assets/icon-180x180.jpg",
-				},
-
-				Webpush: &messaging.WebpushConfig{
-					Notification: &messaging.WebpushNotification{
-						Title: author + " commented on your post!",
-						Body:  "\"" + postData.Comment + "\"",
-						Data:  typePayload,
-						Image: "/assets/icon-180x180.jpg",
-						Icon:  "/assets/icon-96x96.jpg",
-						Actions: []*messaging.WebpushNotificationAction{
-							{
-								Action: typePayload["type"],
-								Title:  author + " commented on your post!",
-								Icon:   "/assets/icon-96x96.png",
-							},
-							{
-								Action: typePayload["type"],
-								Title:  "NA",
-								Icon:   "/assets/icon-96x96.png",
+					Webpush: &messaging.WebpushConfig{
+						Notification: &messaging.WebpushNotification{
+							Title: author + " commented on your post!",
+							Body:  "\"" + postData.Comment + "\"",
+							Data:  typePayload,
+							Image: "/assets/icon-180x180.jpg",
+							Icon:  "/assets/icon-96x96.jpg",
+							Actions: []*messaging.WebpushNotificationAction{
+								{
+									Action: typePayload["type"],
+									Title:  author + " commented on your post!",
+									Icon:   "/assets/icon-96x96.png",
+								},
+								{
+									Action: typePayload["type"],
+									Title:  "NA",
+									Icon:   "/assets/icon-96x96.png",
+								},
 							},
 						},
 					},
-				},
-			})
-			if sendErr != nil {
-				fmt.Print(sendErr)
-			}
-			db.Exec(fmt.Sprintf("insert into tfldata.sent_notification_log(\"notification_result\", \"createdon\") values('%s', '%s');", sentRes, time.Now().In(nyLoc).Local().Format(time.DateTime)))
-		}
-		if len(postData.Taggedusers) > 0 {
-			var usersPost string
-			row := db.QueryRow(fmt.Sprintf("select author from tfldata.posts where id=%d", postData.SelectedPostId))
-			row.Scan(&usersPost)
-
-			for _, userTagged := range postData.Taggedusers {
-				var fcmToken string
-				fcmrow := db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where username = '%s' and username != (select username from tfldata.users where username='%s') and fcm_registration_id is not null;", userTagged, usernameFromSession))
-				scnerr := fcmrow.Scan(&fcmToken)
-				if scnerr == nil {
-
-					//fb_message_client, _ := app.Messaging(context.TODO())
-					typePayload := make(map[string]string)
-					typePayload["type"] = "posts"
-					sentRes, sendErr := fb_message_client.Send(context.TODO(), &messaging.Message{
-						Token: fcmToken,
-						Notification: &messaging.Notification{
-							Title:    usernameFromSession + " tagged you on " + usersPost + "'s post",
-							Body:     "\"" + postData.Comment + "\"",
-							ImageURL: "/assets/icon-180x180.jpg",
-						},
-
-						Webpush: &messaging.WebpushConfig{
-							Notification: &messaging.WebpushNotification{
-								Title: usernameFromSession + " tagged you on " + usersPost + "'s post",
-								Body:  "\"" + postData.Comment + "\"",
-								Data:  typePayload,
-								Image: "/assets/icon-180x180.jpg",
-								Icon:  "/assets/icon-96x96.jpg",
-							},
-						},
-					})
-					if sendErr != nil {
-						fmt.Print(sendErr)
-					}
-					db.Exec(fmt.Sprintf("insert into tfldata.sent_notification_log(\"notification_result\", \"createdon\") values('%s', '%s');", sentRes, time.Now().In(nyLoc).Local().Format(time.DateTime)))
+				})
+				if sendErr != nil {
+					fmt.Print(sendErr)
 				}
-
+				db.Exec(fmt.Sprintf("insert into tfldata.sent_notification_log(\"notification_result\", \"createdon\") values('%s', '%s');", sentRes, time.Now().In(nyLoc).Local().Format(time.DateTime)))
 			}
-		}
+			if len(postData.Taggedusers) > 0 {
+				var usersPost string
+				row := db.QueryRow(fmt.Sprintf("select author from tfldata.posts where id=%d", postData.SelectedPostId))
+				row.Scan(&usersPost)
+
+				for _, userTagged := range postData.Taggedusers {
+					var fcmToken string
+					fcmrow := db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where username = '%s' and username != (select username from tfldata.users where username='%s') and fcm_registration_id is not null;", userTagged, usernameFromSession))
+					scnerr := fcmrow.Scan(&fcmToken)
+					if scnerr == nil {
+
+						//fb_message_client, _ := app.Messaging(context.TODO())
+						typePayload := make(map[string]string)
+						typePayload["type"] = "posts"
+						sentRes, sendErr := fb_message_client.Send(context.TODO(), &messaging.Message{
+							Token: fcmToken,
+							Notification: &messaging.Notification{
+								Title:    usernameFromSession + " tagged you on " + usersPost + "'s post",
+								Body:     "\"" + postData.Comment + "\"",
+								ImageURL: "/assets/icon-180x180.jpg",
+							},
+
+							Webpush: &messaging.WebpushConfig{
+								Notification: &messaging.WebpushNotification{
+									Title: usernameFromSession + " tagged you on " + usersPost + "'s post",
+									Body:  "\"" + postData.Comment + "\"",
+									Data:  typePayload,
+									Image: "/assets/icon-180x180.jpg",
+									Icon:  "/assets/icon-96x96.jpg",
+								},
+							},
+						})
+						if sendErr != nil {
+							fmt.Print(sendErr)
+						}
+						db.Exec(fmt.Sprintf("insert into tfldata.sent_notification_log(\"notification_result\", \"createdon\") values('%s', '%s');", sentRes, time.Now().In(nyLoc).Local().Format(time.DateTime)))
+					}
+
+				}
+			}
+		}()
 	}
 	getEventsHandler := func(w http.ResponseWriter, r *http.Request) {
 
@@ -1410,8 +1417,6 @@ func main() {
 		}
 		_, ttbleerr := db.Exec(fmt.Sprintf("insert into tfldata.threads(\"thread\", \"threadauthor\", \"createdon\") values(E'%s', '%s', now());", threadVal, usernameFromSession))
 		if ttbleerr != nil {
-			fmt.Println("We shouldn't ignore this error: " + ttbleerr.Error())
-
 			if strings.Contains(ttbleerr.Error(), "duplicate key") {
 				fmt.Println("duplicate thread error can be ignored")
 				s := make([]string, 0)
@@ -1433,6 +1438,8 @@ func main() {
 					}
 				}
 				upAndInsUTT.Commit()
+			} else {
+				fmt.Println("We shouldn't ignore this error: " + ttbleerr.Error())
 			}
 		}
 		var chatMessageNotificationOpts notificationOpts

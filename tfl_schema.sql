@@ -36,7 +36,7 @@ SET default_table_access_method = heap;
 CREATE TABLE tfldata.calendar (
     id integer NOT NULL,
     start_date date,
-    event_owner character varying(32),
+    event_owner character varying(15),
     event_details character varying(220),
     event_title character varying(42),
     end_date date
@@ -73,7 +73,7 @@ ALTER SEQUENCE tfldata.calendar_event_date_id_seq OWNED BY tfldata.calendar.id;
 
 CREATE TABLE tfldata.calendar_rsvp (
     id integer NOT NULL,
-    username character varying(128),
+    username character varying(15),
     event_id integer,
     status character varying(5)
 );
@@ -109,7 +109,7 @@ ALTER SEQUENCE tfldata.calendar_rsvp_id_seq OWNED BY tfldata.calendar_rsvp.id;
 
 CREATE TABLE tfldata.catchitleaderboard (
     id integer NOT NULL,
-    username character varying(128),
+    username character varying(15),
     score integer,
     createdon timestamp without time zone
 );
@@ -146,7 +146,7 @@ ALTER SEQUENCE tfldata.catchitleaderboard_id_seq OWNED BY tfldata.catchitleaderb
 CREATE TABLE tfldata.comments (
     post_id integer,
     comment character varying(280),
-    author character varying(32),
+    author character varying(15),
     id integer NOT NULL,
     event_id integer
 );
@@ -219,8 +219,8 @@ ALTER SEQUENCE tfldata.errlog_id_seq OWNED BY tfldata.errlog.id;
 CREATE TABLE tfldata.gchat (
     id integer NOT NULL,
     chat character varying(420),
-    author character varying(128),
-    createdon timestamp without time zone,
+    author character varying(15),
+    createdon timestamp with time zone,
     thread character varying(32)
 );
 
@@ -327,29 +327,13 @@ CREATE TABLE tfldata.posts (
     id integer NOT NULL,
     title character varying(128),
     description character varying(420),
-    author character varying(32),
+    author character varying(15),
     post_files_key uuid,
     createdon timestamp without time zone
 );
 
 
 ALTER TABLE tfldata.posts OWNER TO tfldbrole;
-
---
--- Name: posts_bkp; Type: TABLE; Schema: tfldata; Owner: tfldbrole
---
-
-CREATE TABLE tfldata.posts_bkp (
-    id integer,
-    title character varying(128),
-    description character varying(420),
-    file_name character varying(64),
-    file_type character varying(64),
-    author character varying(32)
-);
-
-
-ALTER TABLE tfldata.posts_bkp OWNER TO tfldbrole;
 
 --
 -- Name: posts_id_seq; Type: SEQUENCE; Schema: tfldata; Owner: tfldbrole
@@ -381,7 +365,7 @@ CREATE TABLE tfldata.reactions (
     id integer NOT NULL,
     post_id integer,
     gchat_id integer,
-    author character varying(128),
+    author character varying(15),
     reaction character varying(9)
 );
 
@@ -451,7 +435,7 @@ ALTER SEQUENCE tfldata.sent_notification_log_id_seq OWNED BY tfldata.sent_notifi
 
 CREATE TABLE tfldata.ss_leaderboard (
     id integer NOT NULL,
-    username character varying(128),
+    username character varying(15),
     score integer,
     createdon timestamp without time zone
 );
@@ -487,7 +471,7 @@ ALTER SEQUENCE tfldata.ss_leaderboard_id_seq OWNED BY tfldata.ss_leaderboard.id;
 
 CREATE TABLE tfldata.stack_leaderboard (
     id integer NOT NULL,
-    username character varying(128),
+    username character varying(15),
     bonus_points integer,
     level integer,
     createdon timestamp without time zone
@@ -524,7 +508,7 @@ ALTER SEQUENCE tfldata.stack_leaderboard_id_seq OWNED BY tfldata.stack_leaderboa
 
 CREATE TABLE tfldata.threads (
     thread character varying(32) NOT NULL,
-    threadauthor character varying(128),
+    threadauthor character varying(15),
     createdon timestamp without time zone
 );
 
@@ -532,70 +516,49 @@ CREATE TABLE tfldata.threads (
 ALTER TABLE tfldata.threads OWNER TO tfldbrole;
 
 --
+-- Name: timecapsule; Type: TABLE; Schema: tfldata; Owner: tfldbrole
+--
+
+CREATE TABLE tfldata.timecapsule (
+    username character varying(15),
+    available_on date,
+    tcname character varying(18),
+    createdon date,
+    tcfilename character varying(59),
+    waspurchased boolean,
+    wasearlyaccesspurchased boolean,
+    yearstostore integer,
+    wasrequested boolean,
+    wasdownloaded boolean
+);
+
+
+ALTER TABLE tfldata.timecapsule OWNER TO tfldbrole;
+
+--
 -- Name: users; Type: TABLE; Schema: tfldata; Owner: tfldbrole
 --
 
 CREATE TABLE tfldata.users (
-    id integer NOT NULL,
-    username character varying(32) NOT NULL,
-    password character varying(4096) NOT NULL,
+    id integer,
+    username character varying(15),
+    password character varying(4096),
     orgid character varying(256),
     pfp_name character varying(128),
     session_token uuid,
     email character varying(64),
-    firebase_user_uid character varying(64),
     fcm_registration_id character varying(168),
     gchat_bg_theme character varying(65),
     last_sign_on timestamp without time zone,
     gchat_order_option boolean,
     cf_domain_name character varying(30),
     is_admin boolean,
-    last_pass_reset timestamp without time zone
+    last_pass_reset timestamp without time zone,
+    mytz character varying(30)
 );
 
 
 ALTER TABLE tfldata.users OWNER TO tfldbrole;
-
---
--- Name: users_bkp; Type: TABLE; Schema: tfldata; Owner: tfldbrole
---
-
-CREATE TABLE tfldata.users_bkp (
-    id integer,
-    username character varying(32),
-    password character varying(4096),
-    orgid character varying(256),
-    pfp_name character varying(128),
-    session_token uuid,
-    email character varying(64),
-    firebase_user_uid character varying(64),
-    fcm_registration_id character varying(168)
-);
-
-
-ALTER TABLE tfldata.users_bkp OWNER TO tfldbrole;
-
---
--- Name: users_id_seq; Type: SEQUENCE; Schema: tfldata; Owner: tfldbrole
---
-
-CREATE SEQUENCE tfldata.users_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER TABLE tfldata.users_id_seq OWNER TO tfldbrole;
-
---
--- Name: users_id_seq; Type: SEQUENCE OWNED BY; Schema: tfldata; Owner: tfldbrole
---
-
-ALTER SEQUENCE tfldata.users_id_seq OWNED BY tfldata.users.id;
-
 
 --
 -- Name: users_to_threads; Type: TABLE; Schema: tfldata; Owner: tfldbrole
@@ -699,13 +662,6 @@ ALTER TABLE ONLY tfldata.ss_leaderboard ALTER COLUMN id SET DEFAULT nextval('tfl
 --
 
 ALTER TABLE ONLY tfldata.stack_leaderboard ALTER COLUMN id SET DEFAULT nextval('tfldata.stack_leaderboard_id_seq'::regclass);
-
-
---
--- Name: users id; Type: DEFAULT; Schema: tfldata; Owner: tfldbrole
---
-
-ALTER TABLE ONLY tfldata.users ALTER COLUMN id SET DEFAULT nextval('tfldata.users_id_seq'::regclass);
 
 
 --
@@ -845,27 +801,19 @@ ALTER TABLE ONLY tfldata.threads
 
 
 --
--- Name: users users_email_key; Type: CONSTRAINT; Schema: tfldata; Owner: tfldbrole
---
-
-ALTER TABLE ONLY tfldata.users
-    ADD CONSTRAINT users_email_key UNIQUE (email);
-
-
---
--- Name: users users_pkey; Type: CONSTRAINT; Schema: tfldata; Owner: tfldbrole
---
-
-ALTER TABLE ONLY tfldata.users
-    ADD CONSTRAINT users_pkey PRIMARY KEY (id);
-
-
---
 -- Name: users_to_threads users_to_threads_username_thread_key; Type: CONSTRAINT; Schema: tfldata; Owner: tfldbrole
 --
 
 ALTER TABLE ONLY tfldata.users_to_threads
     ADD CONSTRAINT users_to_threads_username_thread_key UNIQUE (username, thread);
+
+
+--
+-- Name: users users_username_key; Type: CONSTRAINT; Schema: tfldata; Owner: tfldbrole
+--
+
+ALTER TABLE ONLY tfldata.users
+    ADD CONSTRAINT users_username_key UNIQUE (username);
 
 
 --

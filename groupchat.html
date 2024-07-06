@@ -274,6 +274,9 @@
             el.style.position = "relative"
             el.append(document.getElementById('reactionsdiv'))
             pchatreactid = el.id.split('_')[1]
+            /*document.getElementById('loadPChatHere').setAttribute('hx-trigger', 'load, loadFromThread')
+            htmx.process('#loadPChatHere')*/
+
             setTimeout(() => {
                 document.getElementById('reactionsdiv').style.display = 'flex'
             }, 150)
@@ -285,6 +288,8 @@
                 document.getElementById('reactionsdiv').style.display = 'none'
                 el.style.zIndex = ""
                 el.style.position = ""
+                /*document.getElementById('loadPChatHere').setAttribute('hx-trigger', 'load, every 3s, loadFromThread')
+                htmx.process('#loadPChatHere')*/
                 pchatreactid = null
             })
         }
@@ -543,13 +548,14 @@
                 document.getElementById('threadSelector').value = ''
                 document.getElementById('dmchatonlydiv').style.display = ""
                 document.getElementById('loadPChatHere').setAttribute('style', 'text-align: center; border-radius: 1%;')
-                document.getElementById('loadPChatHere').setAttribute('hx-trigger', 'load, every 3s, loadFromThread')
+                //document.getElementById('loadPChatHere').setAttribute('hx-trigger', 'load, loadFromThread')
 
                 document.getElementById('loadGChathere').setAttribute('hx-trigger', 'afterThreadSelectorLoadsEvent, success-send from:#messageform, limitChange')
-                htmx.process("#loadPChatHere")
+                //htmx.process("#loadPChatHere")
                 htmx.process("#loadGChathere")
                 document.getElementById('subscribeCheckbox').style.display = "none"
                 document.getElementById('loadGChathere').dispatchEvent(new Event('afterThreadSelectorLoadsEvent'))
+                document.getElementById('loadPChatHere').dispatchEvent(new Event('loadFromThread'))
 
             } else if (currentChatMethod.innerText.includes('Group')) {
                 currentChatMethod.innerHTML = "Direct Chats"
@@ -560,12 +566,12 @@
                 document.getElementById('threadSelector').value = currentlySelectedThread
                 document.getElementById('loadGChathere').setAttribute('hx-trigger', 'afterThreadSelectorLoadsEvent, every 3s, success-send from:#messageform, limitChange')
 
-                document.getElementById('loadPChatHere').setAttribute('hx-trigger', 'load, loadFromThread')
+                //document.getElementById('loadPChatHere').setAttribute('hx-trigger', 'load, loadFromThread')
                 document.getElementById('loadPChatHere').setAttribute('style', 'display: none !important;')
                 document.getElementById('loadPChatHere').innerHTML = ""
                 document.getElementById('subscribeCheckbox').style.display = ""
                 htmx.process("#loadGChathere")
-                htmx.process("#loadPChatHere")
+                //htmx.process("#loadPChatHere")
                 document.getElementById('loadGChathere').dispatchEvent(new Event('afterThreadSelectorLoadsEvent'))
                 document.getElementById('threadSelector').childNodes.forEach((val) => {
                     if (val.innerText == curUserDataLastViewedThread) {

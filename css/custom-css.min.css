@@ -351,12 +351,14 @@ button.btn.btn-outline-secondary {
 @keyframes animateBlur {
     from {
         backdrop-filter: blur(0px);
+        -webkit-backdrop-filter: blur(0px);
         position: absolute;
         z-index: -5;
     }
 
     to {
         backdrop-filter: blur(3px);
+        -webkit-backdrop-filter: blur(3px);
         position: fixed;
         z-index: 6;
     }
@@ -365,12 +367,14 @@ button.btn.btn-outline-secondary {
 @-webkit-keyframes animateBlur {
     from {
         backdrop-filter: blur(0px);
+        -webkit-backdrop-filter: blur(0px);
         position: absolute;
         z-index: -5;
     }
 
     to {
         backdrop-filter: blur(3px);
+        -webkit-backdrop-filter: blur(3px);
         position: fixed;
         z-index: 6;
     }

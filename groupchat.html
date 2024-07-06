@@ -76,9 +76,9 @@
             style="box-shadow: 3px 3px 6px;">Change Theme</button>
 
         <button id="changeChatOrderOptBtn" type="button" hx-ext="json-enc" hx-post="/change-gchat-order-opt"
-            hx-vals="js:{'order_option': !gchatOrderOpt, 'username': username}"
-            hx-on::after-request="document.dispatchEvent(new Event('DOMContentLoaded'))" hx-swap="none"
-            hx-trigger="click" class="btn btn-dark border-0 btn-sm" style="box-shadow: 3px 3px 6px;"><i
+            hx-vals="js:{'order_option': !gchatOrderOpt, 'username': username}" hx-swap="none" hx-trigger="click"
+            hx-on::after-request="document.dispatchEvent(new Event('DOMContentLoaded'))"
+            class="btn btn-dark border-0 btn-sm" style="box-shadow: 3px 3px 6px;"><i
                 class="bi bi-arrow-down-circle"></i></button>
         <form hx-post="/change-if-notified-for-thread"
             hx-vals="js:{'username': username, 'curThread': document.getElementById('threadSelector').value, 'currentlyNotifiedVal': !isCurUserSubbed}"
@@ -128,14 +128,14 @@
         hx-vals="js:{'threadval': document.getElementById('threadSelector').value, 'order_option': gchatOrderOpt, 'limit': limitVal}"
         hx-on::after-request="countOfMessages(event)"
         hx-trigger="afterThreadSelectorLoadsEvent, every 3s, success-send from:#messageform, limitChange"
-        class="border-1 d-block m-2" style="justify-content: center; text-align: center; border-radius: 1%;">
+        class="border-1 m-2" style="display: block; justify-content: center; text-align: center; border-radius: 1%;">
 
     </div>
     <div id="loadPChatHere" hx-get="/private-chat-messages" hx-target="this" hx-on::after-request="loadHandleClickOp()"
         hx-vals="js:{'userToSendTo': document.getElementById('privateThreadSelector').value, 'order_option': gchatOrderOpt, 'limit': limitVal}"
-        hx-trigger="load, loadFromThread" hx-on::after-request="countOfMessages(event)" class="border-1 d-block m-2"
-        style="justify-content: center; text-align: center; border-radius: 1%;">
-        click me
+        hx-trigger="loadFromThread" hx-on::after-request="countOfMessages(event)" class="border-1 m-2"
+        style="display: block; justify-content: center; text-align: center; border-radius: 1%;">
+
     </div>
     <div id="appendhere">
         <div style="display: inline-flex; justify-content: center; width: 100dvw"><button id="loadMoreBtnFalse"
@@ -204,7 +204,7 @@
 
             </select>
             <form hx-post="/create-a-private-chat-message" hx-swap="afterend" hx-target="this" id="privatemessageform"
-                hx-on::after-request="clearPrivateFormGetMessages()"
+                hx-on::after-request="{clearPrivateFormGetMessages(); document.getElementById('loadPChatHere').dispatchEvent(new Event('loadFromThread'))}"
                 hx-vals="js:{'user_to': document.getElementById('privateThreadSelector').value}">
                 <div class="d-flex" style="justify-content: center;">
                     <div class="container border-1">
@@ -257,6 +257,9 @@
         var curUserDataLastViewedThread = ""
         var pchatreactid = null
         var listOfPChatReactionEle = []
+        var finalReactionList = []
+        var currentReactionResponse = []
+        var currentReactionResponseDelta = []
 
         function handleClickHold(el, timeout, callback) {
             let startTime;
@@ -269,28 +272,29 @@
         const timeout = 200
         const callback = (ms, el) => {
 
+            document.getElementById('loadPChatHere').setAttribute('hx-disable', "")
+            htmx.process('#loadPChatHere')
             document.getElementById('blurredback').style.animation = 'animateBlur ease-in 200ms forwards'
             el.style.zIndex = "7"
-            el.style.position = "relative"
-            el.append(document.getElementById('reactionsdiv'))
-            pchatreactid = el.id.split('_')[1]
-            /*document.getElementById('loadPChatHere').setAttribute('hx-trigger', 'load, loadFromThread')
-            htmx.process('#loadPChatHere')*/
 
+            el.style.position = "relative"
             setTimeout(() => {
+                el.append(document.getElementById('reactionsdiv'))
+                pchatreactid = el.id.split('_')[1]
                 document.getElementById('reactionsdiv').style.display = 'flex'
-            }, 150)
+            }, 75)
+
             document.getElementById('blurredback').addEventListener('click', () => {
+                document.getElementById('loadPChatHere').removeAttribute('hx-disable')
+                htmx.process('#loadPChatHere')
                 document.getElementById('blurredback').style.backdropFilter = "blur(0px)"
                 document.getElementById('blurredback').style.position = 'absolute'
                 document.getElementById('blurredback').style.zIndex = '-5'
                 document.getElementById('blurredback').style.animation = ""
+                document.body.append(document.getElementById('reactionsdiv'))
                 document.getElementById('reactionsdiv').style.display = 'none'
                 el.style.zIndex = ""
                 el.style.position = ""
-                /*document.getElementById('loadPChatHere').setAttribute('hx-trigger', 'load, every 3s, loadFromThread')
-                htmx.process('#loadPChatHere')*/
-                pchatreactid = null
             })
         }
 
@@ -304,10 +308,13 @@
                 body: JSON.stringify({ 'reaction_str': event.target.innerHTML, 'chat_id': localpchatreactid })
             }).then((respdata) => {
                 if (respdata.status == 200) {
+                    document.getElementById('loadPChatHere').removeAttribute('hx-disable')
+                    htmx.process('#loadPChatHere')
                     document.getElementById('blurredback').style.backdropFilter = "blur(0px)"
                     document.getElementById('blurredback').style.position = 'absolute'
                     document.getElementById('blurredback').style.zIndex = '-5'
                     document.getElementById('blurredback').style.animation = ""
+                    document.body.append(document.getElementById('reactionsdiv'))
                     document.getElementById('reactionsdiv').style.display = 'none'
                     document.getElementById('pchatid_' + localpchatreactid).style.zIndex = ""
                     document.getElementById('pchatid_' + localpchatreactid).style.position = ""
@@ -324,7 +331,7 @@
                 }
 
             }).catch((resp) => console.log(JSON.stringify("Err:" + resp)))
-            pchatreactid = null
+
         }
 
         const editOrDeleteModal = new bootstrap.Modal(document.getElementById('editOrDeleteModal'), {})
@@ -428,9 +435,9 @@
                     checkIfSubbed()
                 }
 
+                currentlySelectedThread = document.getElementById('threadSelector').value
             }, 300)
-            document.getElementById("loadGChathere").dispatchEvent(new Event("afterThreadSelectorLoadsEvent"))
-            currentlySelectedThread = document.getElementById('threadSelector').value
+
 
         })
         function loadHandleClickOp() {
@@ -440,34 +447,57 @@
                 handleClickHold(ele, timeout, callback)
             })
         }
-        htmx.on("#loadPChatHere", "htmx:afterSettle", async () => {
-            if (document.getElementById('toggleDirectOrThreads').innerText.includes("Group")) {
-                var curReactionElements = document.querySelectorAll("[id^='reactionid_']")
-                var nodeListInArr = [...curReactionElements].map(n => n.id.split("_")[1])
 
-                var newLocalList = nodeListInArr.filter((value) => ![...listOfPChatReactionEle].map(n => n).includes(value))
+        /*htmx.on("#loadPChatHere", "htmx:afterSettle", async () => {
 
-                const allReactions = await fetch("/all-current-pchat-reaction?touser=" + document.getElementById('privateThreadSelector').value, {
-                    method: "GET",
-                    headers: {
-                        "Content-Type": "application/json"
-                    }
-                }).then(async (respdata) => {
-                    const curResp = await respdata.json()
-
-                    var curRespArr = [...curResp].map(d => d.id)
-                    var finalList = nodeListInArr.filter((val) => curRespArr.includes(val))
-                    for (var i = 0; i < finalList.length; i++) {
-
-                        document.getElementById('reactionid_' + finalList[i]).innerHTML = curResp.filter((val) => val.id === finalList[i])[0].reaction.String
-
-                    }
-
-                }).catch((err) => console.log(JSON.stringify("Err getting: " + err)))
+            if (JSON.stringify(currentReactionResponse) != JSON.stringify(currentReactionResponseDelta) && (currentReactionResponse.length != 0 && currentReactionResponseDelta.length != 0)) {
+                for (var i = 0; i < finalReactionList.length; i++) {
+                    document.getElementById('reactionid_' + finalReactionList[i]).innerHTML = currentReactionResponse.filter((val) => val.id === finalReactionList[i])[0].reaction.String
+                }
             }
-
+            checkForPChatReactionChange()
         })
+        async function checkForPChatReactionChange() {
+            const allReactions = await fetch("/all-current-pchat-reaction?touser=" + document.getElementById('privateThreadSelector').value, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            }).then(async (respdata) => {
+                const curResp = await respdata.json()
+                var curRespArr = [...curResp].map(d => d.id)
+                currentReactionResponseDelta = curResp
 
+            }).catch((err) => console.log(JSON.stringify("Err getting: " + err)))
+        }
+        async function getPChatReactions() {
+            var curReactionElements = document.querySelectorAll("[id^='reactionid_']")
+            var nodeListInArr = [...curReactionElements].map(n => n.id.split("_")[1])
+
+            var newLocalList = nodeListInArr.filter((value) => ![...listOfPChatReactionEle].map(n => n).includes(value))
+
+            const allReactions = await fetch("/all-current-pchat-reaction?touser=" + document.getElementById('privateThreadSelector').value, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            }).then(async (respdata) => {
+                const curResp = await respdata.json()
+
+                var curRespArr = [...curResp].map(d => d.id)
+                currentReactionResponse = curResp
+                finalReactionList = nodeListInArr.filter((val) => curRespArr.includes(val))
+                for (var i = 0; i < finalReactionList.length; i++) {
+
+                    document.getElementById('reactionid_' + finalReactionList[i]).innerHTML = curResp.filter((val) => val.id === finalReactionList[i])[0].reaction.String
+
+                }
+
+            }).catch((err) => console.log(JSON.stringify("Err getting: " + err)))
+
+
+
+        }*/
 
         htmx.on("#loadGChathere", "htmx:afterRequest", checkNotified = () => checkIfLoadedFromNotification(event))
         function checkIfLoadedFromNotification(event) {
@@ -480,7 +510,7 @@
                         if (document.getElementById('threadSelector').children[i].value == param.get('thread')) {
 
                             document.getElementById('threadSelector').children[i].selected = true
-                            document.getElementById('loadGChathere').dispatchEvent(new Event('afterThreadSelectorLoadsEvent'))
+                            //document.getElementById('loadGChathere').dispatchEvent(new Event('afterThreadSelectorLoadsEvent'))
                             window.history.pushState({}, document.title, "/" + "groupchat")
                             document.getElementById('loadGChathere').removeEventListener("htmx:afterRequest", checkNotified)
                             //document.getElementById('threadSelector').children[i].dispatchEvent(new Event("onchange"))
@@ -535,50 +565,53 @@
             if (currentChatMethod.innerText.includes('Direct')) {
 
                 document.getElementById('privateThreadSelector').childNodes.forEach((val) => {
-                    if (val.innerText == curUserDataLastViewed) {
+                    if (val.innerText == curUserDataLastViewed)
                         val.setAttribute('selected', 'true')
-                        document.getElementById('loadPChatHere').dispatchEvent(new Event('load'))
-                    }
                 })
 
                 currentChatMethod.innerHTML = "Group Chats"
+
                 document.getElementById('groupchatonlydiv').style.display = "none"
+                document.getElementById('loadGChathere').style.display = "none"
+
                 document.getElementById('addDelThreadBtn').style.display = "none"
                 currentlySelectedThread = document.getElementById('threadSelector').value
                 document.getElementById('threadSelector').value = ''
                 document.getElementById('dmchatonlydiv').style.display = ""
                 document.getElementById('loadPChatHere').setAttribute('style', 'text-align: center; border-radius: 1%;')
-                //document.getElementById('loadPChatHere').setAttribute('hx-trigger', 'load, loadFromThread')
+                document.getElementById('loadPChatHere').setAttribute('hx-trigger', 'every 3s, loadFromThread')
 
                 document.getElementById('loadGChathere').setAttribute('hx-trigger', 'afterThreadSelectorLoadsEvent, success-send from:#messageform, limitChange')
-                //htmx.process("#loadPChatHere")
-                htmx.process("#loadGChathere")
                 document.getElementById('subscribeCheckbox').style.display = "none"
-                document.getElementById('loadGChathere').dispatchEvent(new Event('afterThreadSelectorLoadsEvent'))
+                //document.getElementById('loadGChathere').dispatchEvent(new Event('afterThreadSelectorLoadsEvent'))
                 document.getElementById('loadPChatHere').dispatchEvent(new Event('loadFromThread'))
+                htmx.process("#loadPChatHere")
+                htmx.process("#loadGChathere")
+
 
             } else if (currentChatMethod.innerText.includes('Group')) {
                 currentChatMethod.innerHTML = "Direct Chats"
 
                 document.getElementById('groupchatonlydiv').style.display = ""
+                document.getElementById('loadGChathere').style.display = "block"
                 document.getElementById('addDelThreadBtn').style.display = ""
                 document.getElementById('dmchatonlydiv').style.display = "none"
                 document.getElementById('threadSelector').value = currentlySelectedThread
                 document.getElementById('loadGChathere').setAttribute('hx-trigger', 'afterThreadSelectorLoadsEvent, every 3s, success-send from:#messageform, limitChange')
 
-                //document.getElementById('loadPChatHere').setAttribute('hx-trigger', 'load, loadFromThread')
-                document.getElementById('loadPChatHere').setAttribute('style', 'display: none !important;')
+                document.getElementById('loadPChatHere').setAttribute('hx-trigger', 'loadFromThread')
+                document.getElementById('loadPChatHere').style.display = "none"
                 document.getElementById('loadPChatHere').innerHTML = ""
                 document.getElementById('subscribeCheckbox').style.display = ""
-                htmx.process("#loadGChathere")
-                //htmx.process("#loadPChatHere")
-                document.getElementById('loadGChathere').dispatchEvent(new Event('afterThreadSelectorLoadsEvent'))
+                //document.getElementById('loadGChathere').dispatchEvent(new Event('afterThreadSelectorLoadsEvent'))
                 document.getElementById('threadSelector').childNodes.forEach((val) => {
                     if (val.innerText == curUserDataLastViewedThread) {
                         val.setAttribute('selected', 'true')
                         document.getElementById('loadGChathere').dispatchEvent(new Event('afterThreadSelectorLoadsEvent'))
                     }
                 })
+                htmx.process("#loadGChathere")
+                htmx.process("#loadPChatHere")
             }
         }
         function checkIfDeletable() {
@@ -607,7 +640,6 @@
 
 
         async function setLastOpenedChat() {
-
             document.getElementById('loadPChatHere').dispatchEvent(new Event('loadFromThread'))
             await fetch("/update-last-viewed-direct", {
                 method: "POST",

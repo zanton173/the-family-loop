@@ -127,7 +127,7 @@
     <div id="loadGChathere" hx-get="/group-chat-messages"
         hx-vals="js:{'threadval': document.getElementById('threadSelector').value, 'order_option': gchatOrderOpt, 'limit': limitVal}"
         hx-on::after-request="countOfMessages(event)"
-        hx-trigger="afterThreadSelectorLoadsEvent, success-send from:#messageform, limitChange"
+        hx-trigger="afterThreadSelectorLoadsEvent, every 3s, success-send from:#messageform, limitChange"
         class="border-1 d-block m-2" style="justify-content: center; text-align: center; border-radius: 1%;">
 
     </div>
@@ -543,8 +543,8 @@
                 document.getElementById('threadSelector').value = ''
                 document.getElementById('dmchatonlydiv').style.display = ""
                 document.getElementById('loadPChatHere').setAttribute('style', 'text-align: center; border-radius: 1%;')
-                //document.getElementById('loadPChatHere').setAttribute('hx-trigger', 'load, every 3s, loadFromThread')
-                document.getElementById('loadPChatHere').setAttribute('hx-trigger', 'load, loadFromThread')
+                document.getElementById('loadPChatHere').setAttribute('hx-trigger', 'load, every 3s, loadFromThread')
+
                 document.getElementById('loadGChathere').setAttribute('hx-trigger', 'afterThreadSelectorLoadsEvent, success-send from:#messageform, limitChange')
                 htmx.process("#loadPChatHere")
                 htmx.process("#loadGChathere")
@@ -558,8 +558,8 @@
                 document.getElementById('addDelThreadBtn').style.display = ""
                 document.getElementById('dmchatonlydiv').style.display = "none"
                 document.getElementById('threadSelector').value = currentlySelectedThread
-                //document.getElementById('loadGChathere').setAttribute('hx-trigger', 'afterThreadSelectorLoadsEvent, every 3s, success-send from:#messageform, limitChange')
-                document.getElementById('loadGChathere').setAttribute('hx-trigger', 'afterThreadSelectorLoadsEvent, success-send from:#messageform, limitChange')
+                document.getElementById('loadGChathere').setAttribute('hx-trigger', 'afterThreadSelectorLoadsEvent, every 3s, success-send from:#messageform, limitChange')
+
                 document.getElementById('loadPChatHere').setAttribute('hx-trigger', 'load, loadFromThread')
                 document.getElementById('loadPChatHere').setAttribute('style', 'display: none !important;')
                 document.getElementById('loadPChatHere').innerHTML = ""

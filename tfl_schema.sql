@@ -284,6 +284,44 @@ ALTER SEQUENCE tfldata.inclog_id_seq OWNED BY tfldata.inclog.id;
 
 
 --
+-- Name: pchat; Type: TABLE; Schema: tfldata; Owner: tfldbrole
+--
+
+CREATE TABLE tfldata.pchat (
+    id integer NOT NULL,
+    message character varying(420),
+    from_user character varying(15),
+    to_user character varying(15),
+    reaction character varying(9),
+    createdon timestamp with time zone
+);
+
+
+ALTER TABLE tfldata.pchat OWNER TO tfldbrole;
+
+--
+-- Name: pchat_id_seq; Type: SEQUENCE; Schema: tfldata; Owner: tfldbrole
+--
+
+CREATE SEQUENCE tfldata.pchat_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE tfldata.pchat_id_seq OWNER TO tfldbrole;
+
+--
+-- Name: pchat_id_seq; Type: SEQUENCE OWNED BY; Schema: tfldata; Owner: tfldbrole
+--
+
+ALTER SEQUENCE tfldata.pchat_id_seq OWNED BY tfldata.pchat.id;
+
+
+--
 -- Name: postfiles; Type: TABLE; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -554,7 +592,10 @@ CREATE TABLE tfldata.users (
     cf_domain_name character varying(30),
     is_admin boolean,
     last_pass_reset timestamp without time zone,
-    mytz character varying(30)
+    mytz character varying(30),
+    last_viewed_pchat character varying(15),
+    last_viewed_gchat character varying(32),
+    is_paying_subscriber boolean
 );
 
 
@@ -620,6 +661,13 @@ ALTER TABLE ONLY tfldata.gchat ALTER COLUMN id SET DEFAULT nextval('tfldata.gcha
 --
 
 ALTER TABLE ONLY tfldata.inclog ALTER COLUMN id SET DEFAULT nextval('tfldata.inclog_id_seq'::regclass);
+
+
+--
+-- Name: pchat id; Type: DEFAULT; Schema: tfldata; Owner: tfldbrole
+--
+
+ALTER TABLE ONLY tfldata.pchat ALTER COLUMN id SET DEFAULT nextval('tfldata.pchat_id_seq'::regclass);
 
 
 --
@@ -726,6 +774,14 @@ ALTER TABLE ONLY tfldata.gchat
 
 ALTER TABLE ONLY tfldata.inclog
     ADD CONSTRAINT inclog_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: pchat pchat_pkey; Type: CONSTRAINT; Schema: tfldata; Owner: tfldbrole
+--
+
+ALTER TABLE ONLY tfldata.pchat
+    ADD CONSTRAINT pchat_pkey PRIMARY KEY (id);
 
 
 --
@@ -872,6 +928,20 @@ CREATE INDEX gchat_tbl_author_idx ON tfldata.gchat USING btree (author);
 --
 
 CREATE INDEX gchat_tbl_thread_idx ON tfldata.gchat USING btree (thread);
+
+
+--
+-- Name: pchat_tbl_from_user_idx; Type: INDEX; Schema: tfldata; Owner: tfldbrole
+--
+
+CREATE INDEX pchat_tbl_from_user_idx ON tfldata.pchat USING btree (from_user);
+
+
+--
+-- Name: pchat_tbl_to_user_idx; Type: INDEX; Schema: tfldata; Owner: tfldbrole
+--
+
+CREATE INDEX pchat_tbl_to_user_idx ON tfldata.pchat USING btree (to_user);
 
 
 --

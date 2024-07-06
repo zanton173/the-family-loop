@@ -61,15 +61,15 @@ type Postjoin struct {
 	Postfileskey string
 }
 type seshStruct struct {
-	Username      string
-	PfpnameChk    sql.NullString
-	Pfpname       string
-	BGtheme       string
-	GchatOrderOpt bool
-	CFDomain      string
-	Isadmin       bool
-	FcmkeyChk     sql.NullString
-	Fcmkey        string
+	Username         string
+	Pfpname          sql.NullString
+	BGtheme          string
+	GchatOrderOpt    bool
+	CFDomain         string
+	Isadmin          bool
+	Fcmkey           sql.NullString
+	LastViewedPChat  sql.NullString
+	LastViewedThread sql.NullString
 }
 type notificationOpts struct {
 	notificationPage  string
@@ -815,6 +815,7 @@ func main() {
 		marsherr := json.Unmarshal(bs, &postData)
 		if marsherr != nil {
 			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s');", marsherr, time.Now().In(nyLoc).Format(time.DateTime)))
+			return
 		}
 		_, inserr := db.Exec(fmt.Sprintf("insert into tfldata.reactions(\"post_id\", \"author\", \"reaction\") values(%d, '%s', '%s') on conflict(post_id,author) do update set reaction='%s';", postData.Postid, postData.Username, postData.ReactionToPost, postData.ReactionToPost))
 		if inserr != nil {
@@ -823,6 +824,86 @@ func main() {
 			w.WriteHeader(http.StatusBadRequest)
 		}
 
+	}
+	updatePChatReactionHandler := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		allowOrDeny, _ := validateCurrentSessionId(db, r)
+
+		validBool := validateJWTToken(jwtSignKey, r)
+		if !validBool || !allowOrDeny {
+			w.Header().Set("HX-Retarget", "window")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		type postBody struct {
+			ReactionToPost string `json:"reaction_str"`
+			Chatid         string `json:"chat_id"`
+		}
+		var postData postBody
+		bs, _ := io.ReadAll(r.Body)
+		marsherr := json.Unmarshal(bs, &postData)
+		if marsherr != nil {
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s');", marsherr, time.Now().In(nyLoc).Format(time.DateTime)))
+			return
+		}
+		var chatreactionfromDB sql.NullString
+		curEmojRow := db.QueryRow(fmt.Sprintf("select reaction from tfldata.pchat where id='%s'", postData.Chatid))
+		curEmojRow.Scan(&chatreactionfromDB)
+		if !chatreactionfromDB.Valid {
+			chatreactionfromDB.String = ""
+		}
+
+		if chatreactionfromDB.String != postData.ReactionToPost {
+			_, uperr := db.Exec(fmt.Sprintf("update tfldata.pchat set reaction = '%s' where id = '%s';", postData.ReactionToPost, postData.Chatid))
+			if uperr != nil {
+				activityStr := "updating pchat reaction"
+				db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage,activity,createdon) values(substr('%s',0,106),substr('%s',0,105),now());", uperr.Error(), activityStr))
+			}
+		} else {
+			db.Exec(fmt.Sprintf("update tfldata.pchat set reaction = null where id = '%s';", postData.Chatid))
+		}
+
+	}
+	getCurrentPChatReactionHandler := func(w http.ResponseWriter, r *http.Request) {
+		var reactionStr sql.NullString
+		reactionRow := db.QueryRow(fmt.Sprintf("select reaction from tfldata.pchat where id='%s';", r.URL.Query().Get("chatid")))
+		reactionRow.Scan(&reactionStr)
+		if reactionStr.Valid {
+			w.Write([]byte(reactionStr.String))
+		} else {
+			return
+		}
+	}
+	getAllPChatReactionsHandler := func(w http.ResponseWriter, r *http.Request) {
+		_, usernameFromSession := validateCurrentSessionId(db, r)
+		type reactionData struct {
+			Id       string         `json:"id"`
+			Reaction sql.NullString `json:"reaction"`
+		}
+		var pageReactions []reactionData
+
+		reactionRows, sqlErr := db.Query(fmt.Sprintf("select id,reaction from tfldata.pchat where (from_user='%s' or to_user='%s') and (from_user='%s' or to_user='%s');", usernameFromSession, usernameFromSession, r.URL.Query().Get("touser"), r.URL.Query().Get("touser")))
+
+		if sqlErr != nil {
+			fmt.Println(sqlErr)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		defer reactionRows.Close()
+		for reactionRows.Next() {
+			var tempReactionData reactionData
+			reactionRows.Scan(&tempReactionData.Id, &tempReactionData.Reaction)
+			if tempReactionData.Reaction.Valid {
+				pageReactions = append(pageReactions, tempReactionData)
+			}
+		}
+		bs, marsherr := json.Marshal(pageReactions)
+		if marsherr != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		w.Write(bs)
 	}
 
 	getSelectedPostsComments := func(w http.ResponseWriter, r *http.Request) {
@@ -1126,6 +1207,7 @@ func main() {
 		if marshErr != nil {
 			fmt.Println(marshErr)
 			w.WriteHeader(http.StatusBadRequest)
+			return
 		}
 		w.Write(data)
 	}
@@ -1449,6 +1531,13 @@ func main() {
 		chatMessageNotificationOpts.notificationTitle = "message in: " + threadVal
 		chatMessageNotificationOpts.notificationBody = strings.ReplaceAll(chatMessage, "\\", "")
 
+		var singleUserChatMessageNotificationOpts notificationOpts
+		singleUserChatMessageNotificationOpts.extraPayloadKey = "thread"
+		singleUserChatMessageNotificationOpts.extraPayloadVal = threadVal
+		singleUserChatMessageNotificationOpts.notificationPage = "groupchat"
+		singleUserChatMessageNotificationOpts.notificationTitle = usernameFromSession + " just tagged you in : " + threadVal
+		singleUserChatMessageNotificationOpts.notificationBody = chatMessage
+
 		go sendNotificationToAllUsers(db, usernameFromSession, fb_message_client, &chatMessageNotificationOpts)
 
 		if len(listOfUsersTagged[0]) > 0 {
@@ -1458,7 +1547,7 @@ func main() {
 
 				scnerr := row.Scan(&fcmToken)
 				if scnerr == nil {
-					go sendNotificationToSingleUser(db, fb_message_client, usernameFromSession, threadVal, fcmToken, chatMessage)
+					go sendNotificationToSingleUser(db, fb_message_client, fcmToken, singleUserChatMessageNotificationOpts)
 				}
 
 			}
@@ -1547,7 +1636,6 @@ func main() {
 		}
 		limitVal, _ := strconv.Atoi(r.URL.Query().Get("limit"))
 		output, err := db.Query(fmt.Sprintf("select id, chat, author, createdon at time zone (select mytz from tfldata.users where username='%s') from (select * from tfldata.gchat where thread='%s' order by createdon DESC limit %d) as tmp order by createdon %s;", currentUserFromSession, r.URL.Query().Get("threadval"), limitVal, orderAscOrDesc))
-		//output, err := db.Query(fmt.Sprintf("select id, chat, author, createdon from tfldata.gchat where thread='%s' order by createdon %s limit %d;", r.URL.Query().Get("threadval"), orderAscOrDesc, limitVal))
 
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
@@ -1564,6 +1652,7 @@ func main() {
 			var pfpImg string
 
 			output.Scan(&gchatid, &message, &author, &createdat)
+
 			row := db.QueryRow(fmt.Sprintf("select pfp_name from tfldata.users where username='%s';", author))
 			pfpscnerr := row.Scan(&pfpImg)
 			if pfpscnerr != nil {
@@ -1596,6 +1685,188 @@ func main() {
 			}
 			chattmp.Execute(w, nil)
 
+		}
+	}
+	getPrivateChatMessagesHandler := func(w http.ResponseWriter, r *http.Request) {
+		allowOrDeny, currentUserFromSession := validateCurrentSessionId(db, r)
+
+		validBool := validateJWTToken(jwtSignKey, r)
+		if !validBool || !allowOrDeny {
+			w.Header().Set("HX-Retarget", "window")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		type pchatResponseStruct struct {
+			id                  int
+			chatMessage         string
+			fromUser            string
+			toUser              string
+			reaction            sql.NullString
+			createdOn           time.Time
+			formatCreatedOnTime string
+		}
+		orderAscOrDesc := "asc"
+		if r.URL.Query().Get("order_option") == "true" {
+			orderAscOrDesc = "asc"
+		} else {
+			orderAscOrDesc = "desc"
+		}
+
+		limitVal, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+		output, err := db.Query(fmt.Sprintf("select id,message,from_user,to_user,reaction,createdon at time zone (select mytz from tfldata.users where username='%s') from (select * from tfldata.pchat where (from_user='%s' and to_user='%s') or (from_user='%s' and to_user='%s') order by createdon DESC limit %d) as tmp order by createdon %s;", currentUserFromSession, r.URL.Query().Get("userToSendTo"), currentUserFromSession, currentUserFromSession, r.URL.Query().Get("userToSendTo"), limitVal, orderAscOrDesc))
+
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Println(err.Error())
+			return
+		}
+
+		defer output.Close()
+		var pChatRow pchatResponseStruct
+		for output.Next() {
+			var pfpimg string
+			scnerr := output.Scan(&pChatRow.id, &pChatRow.chatMessage, &pChatRow.fromUser, &pChatRow.toUser, &pChatRow.reaction, &pChatRow.createdOn)
+			if scnerr != nil {
+				fmt.Println(scnerr)
+			}
+			if !pChatRow.reaction.Valid {
+				pChatRow.reaction.String = ""
+			}
+
+			pfprow := db.QueryRow(fmt.Sprintf("select pfp_name from tfldata.users where username='%s';", pChatRow.fromUser))
+
+			pfpscnerr := pfprow.Scan(&pfpimg)
+			if pfpscnerr != nil {
+				pfpimg = "assets/96x96/ZCAN2301 The Family Loop Favicon_W_96 x 96.png"
+			} else {
+				pfpimg = "https://" + cfdistro + "/pfp/" + pfpimg
+			}
+			if time.Now().UTC().Sub(pChatRow.createdOn) > (72 * time.Hour) {
+				pChatRow.formatCreatedOnTime = time.DateOnly
+
+			} else if time.Now().UTC().Sub(pChatRow.createdOn) > (24 * time.Hour) {
+				pChatRow.formatCreatedOnTime = time.ANSIC
+				pChatRow.formatCreatedOnTime = strings.Split(pChatRow.formatCreatedOnTime, " ")[0]
+			} else {
+				pChatRow.formatCreatedOnTime = time.Kitchen
+			}
+			editDelBtn := ""
+			if pChatRow.fromUser == currentUserFromSession {
+				editDelBtn = fmt.Sprintf("<i class='bi bi-three-dots-vertical px-1' onclick='editOrDeletePChat(`%d`)'></i>", pChatRow.id)
+			}
+			dataStr := ""
+
+			if pChatRow.toUser == currentUserFromSession {
+				dataStr = "<div id='pchatid_" + fmt.Sprint(pChatRow.id) + "'class='container gchatmessagecardfrom' style='width: 95&percnt;;'><div class='row'><b class='col-2 px-1'>" + pChatRow.fromUser + "</b><div class='row'><img style='width: 15%; position: sticky;' class='col-2 px-2 my-1' src='" + pfpimg + "' alt='tfl pfp' /></div><p class='col-10' style='position: relative; left: 13%; margin-bottom: 1%; margin-top: -15%; overflow-wrap: anywhere; padding-right: 0%;'>" + pChatRow.chatMessage + "</p></div><div class='row'><div class='col' style='position: relative; margin-right: 0&percnt;; width: auto; display: flex; justify-content: flex-start' id='reactionid_" + fmt.Sprint(pChatRow.id) + "'></div><p class='col' style='margin-left: 60%; font-size: smaller; margin-bottom: 0%'>" + pChatRow.createdOn.Format(pChatRow.formatCreatedOnTime) + editDelBtn + "</p></div></div>"
+			} else {
+				dataStr = "<div class='container gchatmessagecardme' style='width: 95&percnt;;'><div class='row'><div class='row'><b class='col-2 px-1'>" + pChatRow.fromUser + "</b><div class='row'><img style='width: 15%; position: sticky;' class='col-2 px-2 my-1' src='" + pfpimg + "' alt='tfl pfp' /></div><p class='col-10' style='position: relative; left: 13%; margin-bottom: 1%; margin-top: -15%; overflow-wrap: anywhere; padding-right: 0%;'>" + pChatRow.chatMessage + "</p></div><div class='col' style='position: relative; margin-right: 0&percnt;; width: auto; display: flex; justify-content: flex-start' id='reactionid_" + fmt.Sprint(pChatRow.id) + "'></div><p class='col' style='margin-left: 60%; font-size: smaller; margin-bottom: 0%'>" + pChatRow.createdOn.Format(pChatRow.formatCreatedOnTime) + editDelBtn + "</p></div></div>"
+			}
+			chattmp, tmperr := template.New("pchat").Parse(dataStr)
+			if tmperr != nil {
+				fmt.Println(tmperr)
+			}
+			chattmp.Execute(w, nil)
+
+		}
+	}
+	createPrivatePChatMessageHandler := func(w http.ResponseWriter, r *http.Request) {
+		allowOrDeny, currentUserFromSession := validateCurrentSessionId(db, r)
+
+		validBool := validateJWTToken(jwtSignKey, r)
+		if !validBool || !allowOrDeny {
+			w.Header().Set("HX-Retarget", "window")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		userTo := r.PostFormValue("user_to")
+		message := r.PostFormValue("privatechatmessage")
+
+		_, dbinserr := db.Exec(fmt.Sprintf("insert into tfldata.pchat(message, from_user, to_user, createdon) values (substr('%s',0,420), '%s', '%s', now());", message, currentUserFromSession, userTo))
+		if dbinserr != nil {
+			activityStr := "insert into pchat table"
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, createdon, activity) values (substr('%s',0,106), now(), substr('%s',0,105));", dbinserr.Error(), activityStr))
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		var fcmTokenToUser sql.NullString
+
+		fcmRes := db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where username = '%s';", userTo))
+
+		fcmRes.Scan(&fcmTokenToUser)
+
+		if fcmTokenToUser.Valid {
+
+			var chatMessageNotificationOpts notificationOpts
+			chatMessageNotificationOpts.extraPayloadKey = "direct"
+			chatMessageNotificationOpts.extraPayloadVal = "groupchat"
+			chatMessageNotificationOpts.notificationPage = "groupchat"
+			chatMessageNotificationOpts.notificationTitle = "message from: " + currentUserFromSession
+			chatMessageNotificationOpts.notificationBody = strings.ReplaceAll(message, "\\", "")
+
+			go sendNotificationToSingleUser(db, fb_message_client, fcmTokenToUser.String, chatMessageNotificationOpts)
+		}
+	}
+	updateLastViewedPChatHandler := func(w http.ResponseWriter, r *http.Request) {
+		allowOrDeny, currentUserFromSession := validateCurrentSessionId(db, r)
+
+		validBool := validateJWTToken(jwtSignKey, r)
+		if !validBool || !allowOrDeny {
+			w.Header().Set("HX-Retarget", "window")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		type postBody struct {
+			LastViewed string `json:"last_viewed"`
+		}
+		var postData postBody
+		bs, _ := io.ReadAll(r.Body)
+		marsherr := json.Unmarshal(bs, &postData)
+		if marsherr != nil {
+			activityStr := "marsh json updatelastviewed function"
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage,activity,createdon) values(substr('%s',0,105),substr('%s',0,106), now());", marsherr.Error(), activityStr))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		_, uperr := db.Exec(fmt.Sprintf("update tfldata.users set last_viewed_pchat = '%s' where username = '%s';", postData.LastViewed, currentUserFromSession))
+		if uperr != nil {
+			activityStr := "update error updatelastviewed function"
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage,activity,createdon) values(substr('%s',0,105),substr('%s',0,106), now());", uperr.Error(), activityStr))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+	}
+	updateLastViewedThreadHandler := func(w http.ResponseWriter, r *http.Request) {
+		allowOrDeny, currentUserFromSession := validateCurrentSessionId(db, r)
+
+		validBool := validateJWTToken(jwtSignKey, r)
+		if !validBool || !allowOrDeny {
+			w.Header().Set("HX-Retarget", "window")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		type postBody struct {
+			LastViewed string `json:"last_viewed"`
+		}
+		var postData postBody
+		bs, _ := io.ReadAll(r.Body)
+		marsherr := json.Unmarshal(bs, &postData)
+		if marsherr != nil {
+			activityStr := "marsh json updatelastviewedthread function"
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage,activity,createdon) values(substr('%s',0,105),substr('%s',0,106), now());", marsherr.Error(), activityStr))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		_, uperr := db.Exec(fmt.Sprintf("update tfldata.users set last_viewed_gchat = '%s' where username = '%s';", postData.LastViewed, currentUserFromSession))
+		if uperr != nil {
+			activityStr := "update error updatelastviewedthread function"
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage,activity,createdon) values(substr('%s',0,105),substr('%s',0,106), now());", uperr.Error(), activityStr))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
 		}
 	}
 	getUsernamesToTagHandler := func(w http.ResponseWriter, r *http.Request) {
@@ -1687,21 +1958,24 @@ func main() {
 
 		var ourSeshStruct seshStruct
 
-		row := db.QueryRow(fmt.Sprintf("select username, gchat_bg_theme, gchat_order_option, is_admin, pfp_name, substr(fcm_registration_id,0,3) from tfldata.users where username='%s';", usernameFromSession))
-		scerr := row.Scan(&ourSeshStruct.Username, &ourSeshStruct.BGtheme, &ourSeshStruct.GchatOrderOpt, &ourSeshStruct.Isadmin, &ourSeshStruct.PfpnameChk, &ourSeshStruct.FcmkeyChk)
+		row := db.QueryRow(fmt.Sprintf("select username, gchat_bg_theme, gchat_order_option, is_admin, pfp_name, fcm_registration_id, last_viewed_pchat, last_viewed_gchat from tfldata.users where username='%s';", usernameFromSession))
+		scerr := row.Scan(&ourSeshStruct.Username, &ourSeshStruct.BGtheme, &ourSeshStruct.GchatOrderOpt, &ourSeshStruct.Isadmin, &ourSeshStruct.Pfpname, &ourSeshStruct.Fcmkey, &ourSeshStruct.LastViewedPChat, &ourSeshStruct.LastViewedThread)
 		if scerr != nil {
 			fmt.Println(scerr)
 		}
 
-		if !ourSeshStruct.FcmkeyChk.Valid {
-			ourSeshStruct.FcmkeyChk.String = ""
+		if !ourSeshStruct.Fcmkey.Valid {
+			ourSeshStruct.Fcmkey.String = ""
 		}
-		if !ourSeshStruct.PfpnameChk.Valid {
-			ourSeshStruct.PfpnameChk.String = ""
+		if !ourSeshStruct.Pfpname.Valid {
+			ourSeshStruct.Pfpname.String = ""
 		}
-
-		ourSeshStruct.Fcmkey = ourSeshStruct.FcmkeyChk.String
-		ourSeshStruct.Pfpname = ourSeshStruct.PfpnameChk.String
+		if !ourSeshStruct.LastViewedPChat.Valid {
+			ourSeshStruct.LastViewedPChat.String = ""
+		}
+		if !ourSeshStruct.LastViewedThread.Valid {
+			ourSeshStruct.LastViewedThread.String = ""
+		}
 
 		ourSeshStruct.CFDomain = cfdistro
 
@@ -1817,6 +2091,59 @@ func main() {
 			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", uperr, time.Now().In(nyLoc).Format(time.DateTime), activityStr))
 		}
 	}
+	deleteSelectedPChatHandler := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, r)
+
+		validBool := validateJWTToken(jwtSignKey, r)
+		if !validBool || !allowOrDeny {
+			w.Header().Set("HX-Retarget", "window")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		type postBody struct {
+			SelectedChatId string `json:"selectedChatId"`
+		}
+		var postData postBody
+		bs, _ := io.ReadAll(r.Body)
+		marsherr := json.Unmarshal(bs, &postData)
+		if marsherr != nil {
+			fmt.Println(marsherr)
+		}
+		_, delerr := db.Exec(fmt.Sprintf("delete from tfldata.pchat where id='%s';", postData.SelectedChatId))
+		if delerr != nil {
+			activityStr := fmt.Sprintf("%s could not deleteSelectedPChat", usernameFromSession)
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", delerr, time.Now().In(nyLoc).Format(time.DateTime), activityStr))
+		}
+	}
+	updateSelectedPChatHandler := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, r)
+
+		validBool := validateJWTToken(jwtSignKey, r)
+		if !validBool || !allowOrDeny {
+			w.Header().Set("HX-Retarget", "window")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		type postBody struct {
+			ChatMessage    string `json:"newMessage"`
+			SelectedChatId string `json:"selectedChatId"`
+		}
+		var postData postBody
+		bs, _ := io.ReadAll(r.Body)
+		marsherr := json.Unmarshal(bs, &postData)
+		if marsherr != nil {
+			fmt.Println(marsherr)
+		}
+		_, uperr := db.Exec(fmt.Sprintf("update tfldata.pchat set message='%s' where id='%s';", postData.ChatMessage, postData.SelectedChatId))
+		if uperr != nil {
+			activityStr := fmt.Sprintf("%s could not edit the Pchat message %s", usernameFromSession, postData.SelectedChatId)
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", uperr, time.Now().In(nyLoc).Format(time.DateTime), activityStr))
+		}
+	}
 	getSelectedChatHandler := func(w http.ResponseWriter, r *http.Request) {
 		allowOrDeny, _ := validateCurrentSessionId(db, r)
 
@@ -1829,6 +2156,25 @@ func main() {
 		}
 		var ChatVal string
 		row := db.QueryRow(fmt.Sprintf("select chat from tfldata.gchat where id='%s';", r.URL.Query().Get("chatid")))
+		row.Scan(&ChatVal)
+		marshbs, marsherr := json.Marshal(ChatVal)
+		if marsherr != nil {
+			fmt.Println(marsherr)
+		}
+		w.Write(marshbs)
+	}
+	getSelectedPChatHandler := func(w http.ResponseWriter, r *http.Request) {
+		allowOrDeny, _ := validateCurrentSessionId(db, r)
+
+		validBool := validateJWTToken(jwtSignKey, r)
+		if !validBool || !allowOrDeny {
+			w.Header().Set("HX-Retarget", "window")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		var ChatVal string
+		row := db.QueryRow(fmt.Sprintf("select message from tfldata.pchat where id='%s';", r.URL.Query().Get("chatid")))
 		row.Scan(&ChatVal)
 		marshbs, marsherr := json.Marshal(ChatVal)
 		if marsherr != nil {
@@ -2433,7 +2779,7 @@ func main() {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
-		distinctThreadsOutput, queryErr := db.Query("select thread,threadauthor from tfldata.threads order by createdon asc;")
+		distinctThreadsOutput, queryErr := db.Query("select thread,threadauthor from tfldata.threads order by createdon desc;")
 		if queryErr != nil {
 			fmt.Println(queryErr)
 		}
@@ -2446,6 +2792,32 @@ func main() {
 				fmt.Print("scan error: " + scnerr.Error())
 			}
 			dataStr := fmt.Sprintf("<option id='%s' value='%s'>%s</option>", threadAuthor, thread, thread)
+
+			w.Write([]byte(dataStr))
+		}
+	}
+	getUsersToChatToHandler := func(w http.ResponseWriter, r *http.Request) {
+		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, r)
+
+		validBool := validateJWTToken(jwtSignKey, r)
+		if !validBool || !allowOrDeny {
+			w.Header().Set("HX-Retarget", "window")
+			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		distinctUsersOutput, queryErr := db.Query(fmt.Sprintf("select distinct(username) from tfldata.users where username != '%s';", usernameFromSession))
+		if queryErr != nil {
+			fmt.Println(queryErr)
+		}
+		defer distinctUsersOutput.Close()
+		for distinctUsersOutput.Next() {
+			var user string
+			scnerr := distinctUsersOutput.Scan(&user)
+			if scnerr != nil {
+				fmt.Print("scan error: " + scnerr.Error())
+			}
+			dataStr := fmt.Sprintf("<option value='%s'>%s</option>", user, user)
 
 			w.Write([]byte(dataStr))
 		}
@@ -3435,6 +3807,7 @@ func main() {
 	http.HandleFunc("/get-event-comments", getSelectedEventsComments)
 
 	http.HandleFunc("/get-selected-chat", getSelectedChatHandler)
+	http.HandleFunc("/get-selected-pchat", getSelectedPChatHandler)
 
 	http.HandleFunc("/get-post-images", getPostImagesHandler)
 
@@ -3457,6 +3830,15 @@ func main() {
 
 	http.HandleFunc("/change-gchat-order-opt", changeGchatOrderOptHandler)
 
+	http.HandleFunc("/private-chat-messages", getPrivateChatMessagesHandler)
+	http.HandleFunc("/create-a-private-chat-message", createPrivatePChatMessageHandler)
+	http.HandleFunc("/update-last-viewed-direct", updateLastViewedPChatHandler)
+	http.HandleFunc("/update-last-viewed-thread", updateLastViewedThreadHandler)
+
+	http.HandleFunc("/update-pchat-reaction", updatePChatReactionHandler)
+	http.HandleFunc("/current-pchat-reaction", getCurrentPChatReactionHandler)
+	http.HandleFunc("/all-current-pchat-reaction", getAllPChatReactionsHandler)
+
 	http.HandleFunc("/create-subscription", subscriptionHandler)
 
 	http.HandleFunc("/update-pfp", updatePfpHandler)
@@ -3464,6 +3846,9 @@ func main() {
 
 	http.HandleFunc("/update-selected-chat", updateSelectedChatHandler)
 	http.HandleFunc("/delete-selected-chat", deleteSelectedChatHandler)
+
+	http.HandleFunc("/update-selected-pchat", updateSelectedPChatHandler)
+	http.HandleFunc("/delete-selected-pchat", deleteSelectedPChatHandler)
 
 	http.HandleFunc("/create-issue", createIssueHandler)
 
@@ -3478,6 +3863,7 @@ func main() {
 	http.HandleFunc("/update-catchit-score", updateCatchitScoreHandler)
 
 	http.HandleFunc("/get-open-threads", getOpenThreadsHandler)
+	http.HandleFunc("/get-users-chat", getUsersToChatToHandler)
 
 	http.HandleFunc("/get-users-subscribed-threads", getUsersSubscribedThreadsHandler)
 	http.HandleFunc("/change-if-notified-for-thread", changeUserSubscriptionToThreadHandler)
@@ -3753,28 +4139,28 @@ func uploadFileToS3(f multipart.File, fn string, db *sql.DB, filetype string) {
 	}
 }
 
-func sendNotificationToSingleUser(db *sql.DB, fb_message_client *messaging.Client, sendingUser string, threadVal string, fcmToken string, notificationBody string) {
+func sendNotificationToSingleUser(db *sql.DB, fb_message_client *messaging.Client, fcmToken string, opts notificationOpts) {
 	typePayload := make(map[string]string)
-	typePayload["type"] = "groupchat"
+	typePayload["type"] = opts.extraPayloadVal
 	sentRes, sendErr := fb_message_client.Send(context.TODO(), &messaging.Message{
 		Token: fcmToken,
 		Notification: &messaging.Notification{
-			Title:    sendingUser + " just tagged you on in the " + threadVal + " thread",
-			Body:     strings.ReplaceAll(notificationBody, "\\", ""),
+			Title:    opts.notificationTitle,
+			Body:     strings.ReplaceAll(opts.notificationBody, "\\", ""),
 			ImageURL: "/assets/icon-180x180.jpg",
 		},
 
 		Webpush: &messaging.WebpushConfig{
 			Notification: &messaging.WebpushNotification{
-				Title: sendingUser + " just tagged you on in the " + threadVal + " thread",
-				Body:  strings.ReplaceAll(notificationBody, "\\", ""),
+				Title: opts.notificationTitle,
+				Body:  strings.ReplaceAll(opts.notificationBody, "\\", ""),
 				Data:  typePayload,
 				Image: "/assets/icon-180x180.jpg",
 				Icon:  "/assets/icon-96x96.jpg",
 				Actions: []*messaging.WebpushNotificationAction{
 					{
 						Action: typePayload["type"],
-						Title:  sendingUser + " just tagged you on in the " + threadVal + " thread",
+						Title:  opts.notificationTitle,
 						Icon:   "/assets/icon-96x96.png",
 					},
 					{
@@ -3805,7 +4191,7 @@ func sendNotificationToAllUsers(db *sql.DB, curUser string, fb_message_client *m
 	for usersNotInUtT.Next() {
 		var user string
 		usersNotInUtT.Scan(&user)
-		db.Exec(fmt.Sprintf("insert into tfldata.users_to_threads(\"username\",\"thread\",\"is_subscribed\") values('%s', '%s', true);", user, opts.extraPayloadVal))
+		db.Exec(fmt.Sprintf("insert into tfldata.users_to_threads(\"username\",\"thread\",\"is_subscribed\") values('%s', '%s', true) on conflict(username,thread) do nothing;", user, opts.extraPayloadVal))
 	}
 
 	var output *sql.Rows
@@ -3831,59 +4217,61 @@ func sendNotificationToAllUsers(db *sql.DB, curUser string, fb_message_client *m
 		usrToSendScnErr := output.Scan(&userToSend)
 
 		if usrToSendScnErr == nil {
-			var fcmToken string
+			var fcmToken sql.NullString
 			var sendErr error
 			tokenRow := db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where username='%s';", userToSend))
 			scnerr := tokenRow.Scan(&fcmToken)
-
 			if scnerr == nil {
-				_, sendErr = fb_message_client.Send(context.TODO(), &messaging.Message{
+				if fcmToken.Valid {
 
-					Token: fcmToken,
-					Data:  typePayload,
-					Notification: &messaging.Notification{
-						Title:    opts.notificationTitle,
-						Body:     opts.notificationBody,
-						ImageURL: "/assets/icon-180x180.jpg",
-					},
-					Webpush: &messaging.WebpushConfig{
-						Notification: &messaging.WebpushNotification{
-							Title: opts.notificationTitle,
-							Body:  opts.notificationBody,
-							Data:  typePayload,
-							Image: "/assets/icon-180x180.jpg",
-							Icon:  "/assets/icon-96x96.png",
-							Actions: []*messaging.WebpushNotificationAction{
-								{
-									Action: typePayload["type"],
-									Title:  opts.notificationTitle,
-									Icon:   "/assets/icon-96x96.png",
-								},
-								{
-									Action: typePayload[opts.extraPayloadKey],
-									Title:  "NA",
-									Icon:   "/assets/icon-96x96.png",
-								},
-							},
-						},
-					},
-					Android: &messaging.AndroidConfig{
-						Notification: &messaging.AndroidNotification{
+					_, sendErr = fb_message_client.Send(context.TODO(), &messaging.Message{
+
+						Token: fcmToken.String,
+						Data:  typePayload,
+						Notification: &messaging.Notification{
 							Title:    opts.notificationTitle,
 							Body:     opts.notificationBody,
 							ImageURL: "/assets/icon-180x180.jpg",
-							Icon:     "/assets/icon-96x96.png",
 						},
-					},
-				})
+						Webpush: &messaging.WebpushConfig{
+							Notification: &messaging.WebpushNotification{
+								Title: opts.notificationTitle,
+								Body:  opts.notificationBody,
+								Data:  typePayload,
+								Image: "/assets/icon-180x180.jpg",
+								Icon:  "/assets/icon-96x96.png",
+								Actions: []*messaging.WebpushNotificationAction{
+									{
+										Action: typePayload["type"],
+										Title:  opts.notificationTitle,
+										Icon:   "/assets/icon-96x96.png",
+									},
+									{
+										Action: typePayload[opts.extraPayloadKey],
+										Title:  "NA",
+										Icon:   "/assets/icon-96x96.png",
+									},
+								},
+							},
+						},
+						Android: &messaging.AndroidConfig{
+							Notification: &messaging.AndroidNotification{
+								Title:    opts.notificationTitle,
+								Body:     opts.notificationBody,
+								ImageURL: "/assets/icon-180x180.jpg",
+								Icon:     "/assets/icon-96x96.png",
+							},
+						},
+					})
 
-				if sendErr != nil {
-					activityStr := "Error sending notificationtoallusers"
-					db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", sendErr.Error(), time.Now().In(nyLoc).Format(time.DateTime), activityStr))
-					// fmt.Print(sendErr.Error() + " for user: " + userToSend)
-					if strings.Contains(sendErr.Error(), "404") {
-						db.Exec(fmt.Sprintf("update tfldata.users set fcm_registration_id=null where username='%s';", userToSend))
-						fmt.Println("updated " + userToSend + "'s fcm token")
+					if sendErr != nil {
+						activityStr := "Error sending notificationtoallusers"
+						db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", sendErr.Error(), time.Now().In(nyLoc).Format(time.DateTime), activityStr))
+						// fmt.Print(sendErr.Error() + " for user: " + userToSend)
+						if strings.Contains(sendErr.Error(), "404") {
+							db.Exec(fmt.Sprintf("update tfldata.users set fcm_registration_id=null where username='%s';", userToSend))
+							fmt.Println("updated " + userToSend + "'s fcm token")
+						}
 					}
 				}
 			}

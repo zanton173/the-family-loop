@@ -348,6 +348,34 @@ button.btn.btn-outline-secondary {
     }
 }
 
+@keyframes animateBlur {
+    from {
+        backdrop-filter: blur(0px);
+        position: absolute;
+        z-index: -5;
+    }
+
+    to {
+        backdrop-filter: blur(3px);
+        position: fixed;
+        z-index: 6;
+    }
+}
+
+@-webkit-keyframes animateBlur {
+    from {
+        backdrop-filter: blur(0px);
+        position: absolute;
+        z-index: -5;
+    }
+
+    to {
+        backdrop-filter: blur(3px);
+        position: fixed;
+        z-index: 6;
+    }
+}
+
 @-webkit-keyframes animateInFromTop {
     0% {
         top: -12%
@@ -501,71 +529,6 @@ button.btn.btn-outline-secondary {
 
     50% {
         left: calc(100dvw - var(--game-lvl-width))
-    }
-}
-
-@keyframes expandSearchArrow {
-    0% {
-        transform: rotate(0);
-        -webkit-transform: rotate(0)
-    }
-
-    100% {
-        transform: rotate(90deg);
-        -webkit-transform: rotate(90deg)
-    }
-}
-
-@keyframes expandSearchInput {
-    65% {
-        opacity: 0%
-    }
-
-    100% {
-        opacity: 100%
-    }
-}
-
-@keyframes expandSearch {
-    0% {
-        height: 17px
-    }
-
-    100% {
-        height: 45px
-    }
-}
-
-@keyframes expandSearchArrowReverse {
-    0% {
-        transform: rotate(90deg);
-        -webkit-transform: rotate(90deg)
-    }
-
-    100% {
-        transform: rotate(calc(0deg));
-        -webkit-transform: rotate(calc(0deg))
-    }
-}
-
-@keyframes expandSearchInputReverse {
-    0% {
-        opacity: 100%
-    }
-
-    100%,
-    70% {
-        opacity: 0%
-    }
-}
-
-@keyframes expandSearchReverse {
-    0% {
-        height: 45px
-    }
-
-    100% {
-        height: 15px
     }
 }
 

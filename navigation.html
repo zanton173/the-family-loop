@@ -421,7 +421,7 @@
         gchatOrderOpt = text.GchatOrderOpt
         cfDomain = text.CFDomain
         isAdmin = text.Isadmin
-        fcmKey = text.Fcmkey
+        fcmKey = text.Fcmkey.String
 
         if (window.location.path === "/admin-dashboard" && (isAdmin != null || isAdmin != undefined))
             isAdmin = text.Isadmin
@@ -433,9 +433,9 @@
         text.Username.length < 1
             ? window.dispatchEvent(new Event("onUnauthorizedEvent"))
             :
-            cfDomain <= "" || text.Pfpname <= "" ?
+            cfDomain <= "" || text.Pfpname.String <= "" ?
                 navItemWelcomeAvatar.setAttribute("src", "assets/apple-touch-icon.jpg")
-                : navItemWelcomeAvatar.setAttribute("src", "https://" + cfDomain + "/pfp/" + text.Pfpname)
+                : navItemWelcomeAvatar.setAttribute("src", "https://" + cfDomain + "/pfp/" + text.Pfpname.String)
 
         if (document.getElementById('notifydiv')) {
             Notification.permission !== 'granted' || fcmKey.length < 1 ?

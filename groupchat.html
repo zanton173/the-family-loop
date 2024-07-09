@@ -448,57 +448,6 @@
             })
         }
 
-        /*htmx.on("#loadPChatHere", "htmx:afterSettle", async () => {
-
-            if (JSON.stringify(currentReactionResponse) != JSON.stringify(currentReactionResponseDelta) && (currentReactionResponse.length != 0 && currentReactionResponseDelta.length != 0)) {
-                for (var i = 0; i < finalReactionList.length; i++) {
-                    document.getElementById('reactionid_' + finalReactionList[i]).innerHTML = currentReactionResponse.filter((val) => val.id === finalReactionList[i])[0].reaction.String
-                }
-            }
-            checkForPChatReactionChange()
-        })
-        async function checkForPChatReactionChange() {
-            const allReactions = await fetch("/all-current-pchat-reaction?touser=" + document.getElementById('privateThreadSelector').value, {
-                method: "GET",
-                headers: {
-                    "Content-Type": "application/json"
-                }
-            }).then(async (respdata) => {
-                const curResp = await respdata.json()
-                var curRespArr = [...curResp].map(d => d.id)
-                currentReactionResponseDelta = curResp
-
-            }).catch((err) => console.log(JSON.stringify("Err getting: " + err)))
-        }
-        async function getPChatReactions() {
-            var curReactionElements = document.querySelectorAll("[id^='reactionid_']")
-            var nodeListInArr = [...curReactionElements].map(n => n.id.split("_")[1])
-
-            var newLocalList = nodeListInArr.filter((value) => ![...listOfPChatReactionEle].map(n => n).includes(value))
-
-            const allReactions = await fetch("/all-current-pchat-reaction?touser=" + document.getElementById('privateThreadSelector').value, {
-                method: "GET",
-                headers: {
-                    "Content-Type": "application/json"
-                }
-            }).then(async (respdata) => {
-                const curResp = await respdata.json()
-
-                var curRespArr = [...curResp].map(d => d.id)
-                currentReactionResponse = curResp
-                finalReactionList = nodeListInArr.filter((val) => curRespArr.includes(val))
-                for (var i = 0; i < finalReactionList.length; i++) {
-
-                    document.getElementById('reactionid_' + finalReactionList[i]).innerHTML = curResp.filter((val) => val.id === finalReactionList[i])[0].reaction.String
-
-                }
-
-            }).catch((err) => console.log(JSON.stringify("Err getting: " + err)))
-
-
-
-        }*/
-
         htmx.on("#loadGChathere", "htmx:afterRequest", checkNotified = () => checkIfLoadedFromNotification(event))
         function checkIfLoadedFromNotification(event) {
 

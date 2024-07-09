@@ -875,36 +875,6 @@ func main() {
 			return
 		}
 	}
-	getAllPChatReactionsHandler := func(w http.ResponseWriter, r *http.Request) {
-		_, usernameFromSession := validateCurrentSessionId(db, r)
-		type reactionData struct {
-			Id       string         `json:"id"`
-			Reaction sql.NullString `json:"reaction"`
-		}
-		var pageReactions []reactionData
-
-		reactionRows, sqlErr := db.Query(fmt.Sprintf("select id,reaction from tfldata.pchat where (from_user='%s' or to_user='%s') and (from_user='%s' or to_user='%s');", usernameFromSession, usernameFromSession, r.URL.Query().Get("touser"), r.URL.Query().Get("touser")))
-
-		if sqlErr != nil {
-			fmt.Println(sqlErr)
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-		defer reactionRows.Close()
-		for reactionRows.Next() {
-			var tempReactionData reactionData
-			reactionRows.Scan(&tempReactionData.Id, &tempReactionData.Reaction)
-			if tempReactionData.Reaction.Valid {
-				pageReactions = append(pageReactions, tempReactionData)
-			}
-		}
-		bs, marsherr := json.Marshal(pageReactions)
-		if marsherr != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-		w.Write(bs)
-	}
 
 	getSelectedPostsComments := func(w http.ResponseWriter, r *http.Request) {
 		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, r)
@@ -3377,7 +3347,19 @@ func main() {
 		fmt.Println(postData)
 
 	}
-
+	validateEndpointForWixHandler := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		validBool := validateWebhookJWTToken(jwtSignKey, r)
+		if !validBool {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		if orgId != r.URL.Query().Get("orgid") {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		w.Write([]byte("true"))
+	}
 	deleteMyTChandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		allowOrDeny, usernameFromSession := validateCurrentSessionId(db, r)
@@ -3837,7 +3819,6 @@ func main() {
 
 	http.HandleFunc("/update-pchat-reaction", updatePChatReactionHandler)
 	http.HandleFunc("/current-pchat-reaction", getCurrentPChatReactionHandler)
-	http.HandleFunc("/all-current-pchat-reaction", getAllPChatReactionsHandler)
 
 	http.HandleFunc("/create-subscription", subscriptionHandler)
 
@@ -3897,6 +3878,7 @@ func main() {
 	http.HandleFunc("/update-admin-pass", updateAdminPassHandler)
 
 	http.HandleFunc("/healthy-me-checky", healthCheckHandler)
+	http.HandleFunc("/validate-endpoint-from-wix", validateEndpointForWixHandler)
 
 	http.HandleFunc("/jwt-validation-endpoint", validateJWTHandler)
 	// NOT USING THIS RIGHT NOW

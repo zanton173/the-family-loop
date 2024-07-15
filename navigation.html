@@ -436,12 +436,12 @@
             return
         } else if (resp.status == 302) {
 
-            var loopfullurl = window.location.href.replace('https://', '').replace('/', '')
             window.history.pushState("", "", "/")
             if (loopfullurl.includes(':'))
                 loopfullurl = loopfullurl.split(":")[0]
 
-            loopfullurl = loopfullurl.replace("/posts", "")
+            loopfullurl = loopfullurl.replace(window.location.pathname, "")
+            var loopfullurl = window.location.href.replace('https://', '').replace('/', '')
             var respdata = await resp.json()
 
             document.getElementById('linktopay').setAttribute("href", `https://the-family-loop.com/plans/regular-user-plan?orgid=${respdata.orgid}&fullloopurl=https://${loopfullurl}&username=${respdata.username}`)

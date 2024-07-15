@@ -4421,6 +4421,10 @@ func validateCurrentSessionId(db *sql.DB, r *http.Request) (bool, string, string
 
 	var username string
 	var currentlypaying sql.NullBool
+	if len(strings.Split(session_token.Value, "session_id=")[0]) == 0 {
+		handlerForLogin = "onUnauthorizedEvent"
+		return false, "Please login", handlerForLogin
+	}
 	row := db.QueryRow(fmt.Sprintf("select username, is_paying_subscriber from tfldata.users where session_token='%s';", strings.Split(session_token.Value, "session_id=")[0]))
 	scnerr := row.Scan(&username, &currentlypaying)
 

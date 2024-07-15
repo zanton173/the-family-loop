@@ -17,8 +17,8 @@
                 </li>
                 <li class="nav-item navCustomItem"><a class="nav-link" href="/posts"
                         style="color: rgb(200, 210, 230)">posts</a></li>
-                <li class="nav-item navCustomItem"><a class="nav-link" href="/time-capsule"
-                        style="color: rgb(200, 210, 230)">time capsule</a></li>
+                <!--<li class="nav-item navCustomItem"><a class="nav-link" href="/time-capsule"
+                        style="color: rgb(200, 210, 230)">time capsule</a></li>-->
                 <li class="nav-item navCustomItem"><a class="nav-link dropdown-toggle" href="#" role="button"
                         data-bs-toggle="dropdown" aria-expanded="false" style="color: rgb(200, 210, 230)">
                         games
@@ -69,6 +69,27 @@
         </div>
     </div>
 </div>
+
+<div class="modal customModalTrans" data-bs-backdrop="static" tabindex="-1" id="pay-regular-subscriber-modal">
+    <div class="modal-dialog">
+        <div class="modal-content border-2"
+            style="background-color: rgb(255 255 255 / 90%); border-radius: 15px / 15px; box-shadow: 2px 2px 6px 0px;">
+            <div class="modal-header" id="pay-regular-subscriber-modal-header" style="display: block;">
+                <h4 class="modal-title" style="text-align: center;">Pay for regular user subscription</h4>
+            </div>
+            <div class="modal-body">
+
+                <div style="display: block; text-align: center;">
+                    <p>You must pay for the $1.99 regular user subscription before taking part in this loop.</p>
+                    <p style="font-size: smaller;">You will be navigated to the-family-loop.com landing page where you
+                        will need to open an account (only a username & email are needed) in order to subscribe</p>
+                    <a target="_self" id="linktopay">Pay here!</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="modal customModalTrans" data-bs-backdrop="static" tabindex="-1" id="login-modal">
     <div class="modal-dialog">
         <div class="modal-content border-2"
@@ -351,6 +372,7 @@
     let confirmpasswordsignupinput = document.getElementById('confirmpasswordsignupinput')
 
     var loginModal = new bootstrap.Modal(document.getElementById('login-modal'), {});
+    var payLinkModal = new bootstrap.Modal(document.getElementById('pay-regular-subscriber-modal'), {});
     var tandcModal = new bootstrap.Modal(document.getElementById('tcmodal'), {});
 
     var pfpChangeInput = document.getElementById('pfpchangeinput')
@@ -411,6 +433,18 @@
             window.history.pushState("", "", "/")
             loginModal.show()
             showLoginForm()
+            return
+        } else if (resp.status == 302) {
+
+            var loopfullurl = window.location.href.replace('https://', '').replace('/', '')
+            window.history.pushState("", "", "/")
+            if (loopfullurl.includes(':'))
+                loopfullurl = loopfullurl.split(":")[0]
+
+            var respdata = await resp.json()
+
+            document.getElementById('linktopay').setAttribute("href", `https://the-family-loop.com/plans/regular-user-plan?orgid=${respdata.orgid}&fullloopurl=https://${loopfullurl}&username=${respdata.username}`)
+            payLinkModal.show()
             return
         }
 
@@ -667,10 +701,10 @@
             showSignUpForm()
 
         } else if (event.detail.xhr.status == 200) {
-            alert('Sign up Successful! You can now login');
+            alert('Sign up Successful! You can now login. You will receive an email to set a password for your tfl payments account');
             loginModal.toggle();
             showLoginForm();
-        } else if (event.detail.xhr.status == 400) {
+        } else if (event.detail.xhr.status == 500) {
             alert("Something was wrong with the picture you provided. Try a different one")
         } else if (event.detail.xhr.status == 409) {
             alert("That email already exists")
@@ -716,6 +750,9 @@
 
     window.addEventListener("onUnauthorizedEvent", () => {
         logoutFunction()
+    })
+    window.addEventListener("onRevealedYouHaveNotPurchasedRegularUserSubscriptionPlan", () => {
+        console.log('you have not purchased :(')
     })
 
 </script>

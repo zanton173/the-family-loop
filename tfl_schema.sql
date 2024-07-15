@@ -595,11 +595,62 @@ CREATE TABLE tfldata.users (
     mytz character varying(30),
     last_viewed_pchat character varying(15),
     last_viewed_gchat character varying(32),
-    is_paying_subscriber boolean
+    is_paying_subscriber boolean,
+    wix_member_id character varying(40)
 );
 
 
 ALTER TABLE tfldata.users OWNER TO tfldbrole;
+
+--
+-- Name: users_id_seq; Type: SEQUENCE; Schema: tfldata; Owner: tfldbrole
+--
+
+CREATE SEQUENCE tfldata.users_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE tfldata.users_id_seq OWNER TO tfldbrole;
+
+--
+-- Name: users_id_seq; Type: SEQUENCE OWNED BY; Schema: tfldata; Owner: tfldbrole
+--
+
+ALTER SEQUENCE tfldata.users_id_seq OWNED BY tfldata.users.id;
+
+
+--
+-- Name: users_pk_issue; Type: TABLE; Schema: tfldata; Owner: tfldbrole
+--
+
+CREATE TABLE tfldata.users_pk_issue (
+    id integer,
+    username character varying(15),
+    password character varying(4096),
+    orgid character varying(256),
+    pfp_name character varying(128),
+    session_token uuid,
+    email character varying(64),
+    fcm_registration_id character varying(168),
+    gchat_bg_theme character varying(65),
+    last_sign_on timestamp without time zone,
+    gchat_order_option boolean,
+    cf_domain_name character varying(30),
+    is_admin boolean,
+    last_pass_reset timestamp without time zone,
+    mytz character varying(30),
+    last_viewed_pchat character varying(15),
+    last_viewed_gchat character varying(32),
+    is_paying_subscriber boolean
+);
+
+
+ALTER TABLE tfldata.users_pk_issue OWNER TO tfldbrole;
 
 --
 -- Name: users_to_threads; Type: TABLE; Schema: tfldata; Owner: tfldbrole
@@ -710,6 +761,13 @@ ALTER TABLE ONLY tfldata.ss_leaderboard ALTER COLUMN id SET DEFAULT nextval('tfl
 --
 
 ALTER TABLE ONLY tfldata.stack_leaderboard ALTER COLUMN id SET DEFAULT nextval('tfldata.stack_leaderboard_id_seq'::regclass);
+
+
+--
+-- Name: users id; Type: DEFAULT; Schema: tfldata; Owner: tfldbrole
+--
+
+ALTER TABLE ONLY tfldata.users ALTER COLUMN id SET DEFAULT nextval('tfldata.users_id_seq'::regclass);
 
 
 --
@@ -970,13 +1028,6 @@ CREATE INDEX posts_tbl_descr_idx01 ON tfldata.posts USING btree (description tex
 --
 
 CREATE INDEX posts_tbl_title_idx01 ON tfldata.posts USING btree (title text_pattern_ops);
-
-
---
--- Name: users_tbl_username_idx01; Type: INDEX; Schema: tfldata; Owner: tfldbrole
---
-
-CREATE INDEX users_tbl_username_idx01 ON tfldata.users USING btree (username);
 
 
 --

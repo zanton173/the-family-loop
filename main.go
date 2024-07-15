@@ -4419,14 +4419,20 @@ func validateCurrentSessionId(db *sql.DB, r *http.Request) (bool, string, string
 		return false, "Please login", handlerForLogin
 	}
 
-	var username string
+	var username sql.NullString
 	var currentlypaying sql.NullBool
-	if len(strings.Split(session_token.Value, "session_id=")[0]) == 0 {
+	var currentSessionToken sql.NullString
+	row := db.QueryRow(fmt.Sprintf("select username, is_paying_subscriber, session_token from tfldata.users where session_token='%s';", strings.Split(session_token.Value, "session_id=")[0]))
+	scnerr := row.Scan(&username, &currentlypaying, &currentSessionToken)
+	if scnerr != nil {
 		handlerForLogin = "onUnauthorizedEvent"
 		return false, "Please login", handlerForLogin
 	}
-	row := db.QueryRow(fmt.Sprintf("select username, is_paying_subscriber from tfldata.users where session_token='%s';", strings.Split(session_token.Value, "session_id=")[0]))
-	scnerr := row.Scan(&username, &currentlypaying)
+
+	if currentSessionToken.Valid && currentSessionToken.String != strings.Split(session_token.Value, "session_id=")[0] {
+		handlerForLogin = "onUnauthorizedEvent"
+		return false, "Please login", handlerForLogin
+	}
 
 	if !currentlypaying.Valid {
 		currentlypaying.Bool = false
@@ -4434,10 +4440,10 @@ func validateCurrentSessionId(db *sql.DB, r *http.Request) (bool, string, string
 	}
 	if !currentlypaying.Bool {
 		handlerForLogin = "onRevealedYouHaveNotPurchasedRegularUserSubscriptionPlan"
-		return false, username, handlerForLogin
+		return false, username.String, handlerForLogin
 	}
 
-	return scnerr == nil, username, handlerForLogin
+	return scnerr == nil, username.String, handlerForLogin
 
 }
 func uploadTimeCapsuleToS3(f *os.File, fn string) {

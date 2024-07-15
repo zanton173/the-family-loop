@@ -441,6 +441,7 @@
             if (loopfullurl.includes(':'))
                 loopfullurl = loopfullurl.split(":")[0]
 
+            loopfullurl = loopfullurl.replace("/posts", "")
             var respdata = await resp.json()
 
             document.getElementById('linktopay').setAttribute("href", `https://the-family-loop.com/plans/regular-user-plan?orgid=${respdata.orgid}&fullloopurl=https://${loopfullurl}&username=${respdata.username}`)

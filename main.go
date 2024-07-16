@@ -3294,7 +3294,7 @@ func main() {
 
 			output.Scan(&myTcOut.tcname, &myTcOut.createdon, &myTcOut.availableOn, &myTcOut.tcfilename)
 
-			w.Write([]byte(fmt.Sprintf("<tr><td class='toggleArrows' onclick='openInStore(`%s`, `%s`, `%s`, `c56248d5-dabf-a970-6dc6-9ee1d8e3a6e0`, `notyetpurchased`)' style='background-color: %s'>%s&nbsp;&nbsp;<span class='glyphicon glyphicon-new-window'></span></td><td style='background-color: %s; text-align: center'>%s</td><td style='background-color: %s; text-align: center'>%s</td><td  style='background-color: %s; text-align: center; font-size: larger; color: red;' class='toggleArrows' hx-swap='none' hx-post='/delete-my-tc' hx-ext='json-enc' hx-vals='{%s: %s}' hx-confirm='This will delete the time capsule forever and it will be unretrievable. Are you sure you want to continue?'>X</td></tr>", myTcOut.tcfilename, strings.Split(orgId, "_")[1], strings.Split(orgId, "_")[0], bgColor, myTcOut.tcname, bgColor, strings.Split(myTcOut.createdon, "T")[0], bgColor, strings.Split(myTcOut.availableOn, "T")[0], bgColor, "\"myTCName\"", "\""+myTcOut.tcname+"\"")))
+			w.Write([]byte(fmt.Sprintf("<tr><td class='toggleArrows' onclick='openInStore(`%s`, `%s`, `%s`, `b4c9da54-cdd2-b747-a2bf-2db7bb015cd2`, `notyetpurchased`)' style='background-color: %s'>%s&nbsp;&nbsp;<span class='glyphicon glyphicon-new-window'></span></td><td style='background-color: %s; text-align: center'>%s</td><td style='background-color: %s; text-align: center'>%s</td><td  style='background-color: %s; text-align: center; font-size: larger; color: red;' class='toggleArrows' hx-swap='none' hx-post='/delete-my-tc' hx-ext='json-enc' hx-vals='{%s: %s}' hx-confirm='This will delete the time capsule forever and it will be unretrievable. Are you sure you want to continue?'>X</td></tr>", myTcOut.tcfilename, orgId, strings.Split(orgId, "_")[0], bgColor, myTcOut.tcname, bgColor, strings.Split(myTcOut.createdon, "T")[0], bgColor, strings.Split(myTcOut.availableOn, "T")[0], bgColor, "\"myTCName\"", "\""+myTcOut.tcname+"\"")))
 			iter++
 		}
 	}
@@ -3349,7 +3349,7 @@ func main() {
 				openinstorestr = ""
 				openinnewwindowstr = ""
 			} else {
-				openinstorestr = fmt.Sprintf("class='toggleArrows' onclick='openInStore(`%s`, `%s`, `%s`, `df19c1f7-07d8-a265-42f8-e8dfa824cc6e`)'", myTcOut.tcfilename, strings.Split(orgId, "_")[1], strings.Split(orgId, "_")[0])
+				openinstorestr = fmt.Sprintf("class='toggleArrows' onclick='openInStore(`%s`, `%s`, `%s`, `3452d556-4cc6-b5ba-9d8d-e5382a7c97b1`, `purchasedAndWantEarly`)'", myTcOut.tcfilename, orgId, strings.Split(orgId, "_")[0])
 				openinnewwindowstr = "&nbsp;&nbsp;<span class='glyphicon glyphicon-new-window'></span>"
 			}
 			w.Write([]byte(fmt.Sprintf("<tr><td %s style='background-color: %s'>%s%s</td><td style='background-color: %s; text-align: center'>%s</td><td style='background-color: %s; text-align: center'>%s</td><td class='toggleArrows' style='background-color: %s; text-align: center; font-size: larger; color: red;' hx-swap='none' hx-post='/delete-my-tc' hx-ext='json-enc' hx-vals='{%s: %s}' hx-confirm='This will delete the time capsule forever and it will be unretrievable. Are you sure you want to continue?'>X</td></tr>", openinstorestr, bgColor, myTcOut.tcname, openinnewwindowstr, bgColor, strings.Split(myTcOut.createdon, "T")[0], bgColor, strings.Split(myTcOut.availableOn, "T")[0], bgColor, "\"myTCName\"", "\""+myTcOut.tcname+"\"")))
@@ -3425,8 +3425,8 @@ func main() {
 			return
 		}
 		type postBody struct {
-			Family      string `json:"family"`
-			Orgcode     string `json:"orgcode"`
+			/*Family      string `json:"family"`
+			Orgcode     string `json:"orgcode"`*/
 			Capsulename string `json:"capsule"`
 			Route       string `json:"route"`
 		}
@@ -3477,8 +3477,8 @@ func main() {
 			return
 		}
 		type postBody struct {
-			Family      string `json:"family"`
-			Orgcode     string `json:"orgcode"`
+			/*Family      string `json:"family"`
+			Orgcode     string `json:"orgcode"`*/
 			Capsulename string `json:"capsule"`
 			Route       string `json:"route"`
 		}

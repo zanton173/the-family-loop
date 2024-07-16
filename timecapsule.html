@@ -35,10 +35,12 @@
     </header>
     <div id="pageSelectionBanner"
         style="text-align: center; height: 35px; width: 100dvw; display: flex; justify-content: space-around; background-color: rgb(255 255 255 / 9%); border-width: thin; box-shadow: 1px 1px 3px black; align-content: center; flex-wrap: wrap;">
-        <p class="toggleArrows" onclick="togglePanesLeft()" style="margin-bottom: 0%">&lt;</p>
-        <p id="currentPageSelector" style="margin-bottom: 0%; font-weight: 600;">
+        <p class="toggleArrows" onclick="togglePanesLeft()"
+            style="margin-bottom: 0%; padding-left: 8%; padding-right: 8%">&lt;</p>
+        <p id="currentPageSelector" style="margin-bottom: 0%; font-weight: 600">
             Create a New Capsule!</p>
-        <p class="toggleArrows" onclick="togglePanesRight()" style="margin-bottom: 0%">&gt;</p>
+        <p class="toggleArrows" onclick="togglePanesRight()"
+            style="margin-bottom: 0%; padding-left: 8%; padding-right: 8%">&gt;</p>
     </div>
     <div id="createNewCapsuleDiv" name="Create a New Capsule!" style="display: flex; justify-content: center;">
 
@@ -171,7 +173,7 @@
                         file and see what you put inside.
                         <br><br>
                         <button
-                            style="display: flex; justify-content: center; width: 80dvw; margin-left: auto; margin-right: auto;"
+                            style="display: flex; justify-content: center; width: 50%; margin-left: auto; margin-right: auto;"
                             onclick="tcHowItWorksModalObj.hide()" class="btn btn-secondary">close</button>
                     </div>
                 </div>
@@ -212,7 +214,11 @@
                         paneIter = 0
                 }
             })
-            document.getElementById(listOfPanes[paneIter]).style.display = ""
+
+            if (listOfPanes[paneIter] == "createNewCapsuleDiv")
+                document.getElementById(listOfPanes[paneIter]).style.display = "flex"
+            else
+                document.getElementById(listOfPanes[paneIter]).style.display = ""
             changeHeader(document.getElementById(listOfPanes[paneIter]).id)
         }
         function togglePanesLeft() {
@@ -225,7 +231,10 @@
                         paneIter--
                 }
             })
-            document.getElementById(listOfPanes[paneIter]).style.display = ""
+            if (listOfPanes[paneIter] == "createNewCapsuleDiv")
+                document.getElementById(listOfPanes[paneIter]).style.display = "flex"
+            else
+                document.getElementById(listOfPanes[paneIter]).style.display = ""
             changeHeader(document.getElementById(listOfPanes[paneIter]).id)
         }
         function changeHeader(paneid) {
@@ -245,7 +254,7 @@
             } else if (event.detail.xhr.status === 400)
                 alert("File does not exist")
             else if (event.detail.xhr.status === 202)
-                alert("The file should be availble using the download link")
+                alert("The file should be available using the download link")
         }
         function changePastOrPresent() {
             pastOrPresentTC === '>' ? pastOrPresentTC = '<' : pastOrPresentTC = '>'
@@ -288,12 +297,15 @@
             else
                 alert(event.detail.xhr.responseText)
         }
-        function openInStore(capsulename, orgid, familyName, productid) {
+        function openInStore(capsulename, orgid, familyName, productid, productType) {
 
-            if (pastOrPresentTC === ">") {
+            if (productType === "notyetpurchased")
+                window.open(`https://www.the-family-loop.com/product-page?tcname=${capsulename}&orgname=${orgid}&route=${window.location.href.replace(window.location.pathname, "")}&productid=${productid}`)
+            //window.open(`https://www.the-family-loop.com/product-page?tcname=${capsulename}&orgname=${orgid}&famname=${familyName}&route=${window.location.host.split(".")[0]}&productid=${productid}`)
+            if (pastOrPresentTC === ">" && productType != "notyetpurchased") {
                 // Early access
                 if (confirm("Would you like to purchase this time capsule early? You will have to pay a fee to unlock the capsule early."))
-                    window.open(`https://www.the-family-loop.com/product-page?tcname=${capsulename}&orgname=${orgid}&famname=${familyName}&route=${window.location.host.split(".")[0]}&productid=${productid}`)
+                    window.open(`https://www.the-family-loop.com/product-page?tcname=${capsulename}&orgname=${orgid}&route=${window.location.href.replace(window.location.pathname, "")}&productid=${productid}`)
 
             } else if (pastOrPresentTC === "<") {
                 // Available for download

@@ -37,6 +37,10 @@ img.spinner-indicator {
     content: "\e164"
 }
 
+#anchor {
+    margin-bottom: 1%;
+}
+
 #pwafooter {
     bottom: 0;
     height: 85px;

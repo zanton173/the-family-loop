@@ -25,7 +25,7 @@
         <div style="height: inherit;">
             <div class="col h-100">
                 <div class="row-gap-lg-5"
-                    style="font-size: xx-large; margin-top: 25%; height: 15dvh; font-weight: bolder; font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif">
+                    style="font-size: xx-large; margin-top: 20%; height: 15dvh; font-weight: bolder; font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif">
                     Stackerz
                 </div>
                 <div class="row-gap-5 w-35 my-5 h-20">
@@ -50,11 +50,16 @@
     <div id="gameWindow" style="width: 100dvw; height: 100dvh; overflow: hidden; --game-lvl-width: 200px; text-align: center; background-image: linear-gradient(to bottom,
             hsl(264deg 45.29% 56.16%),
             hsl(31, 100%, 40%))">
-
+        <div id="nextRoundDiv"
+            style="position: absolute; background: rgba(255, 160, 109, 0.648); width: 100%; height: 100%; z-index: 15; display: none; align-items: center; justify-content: center; font-size: xxx-large">
+        </div>
         <button class="btn btn-primary m-1" onclick="showMenuWindow()"
             style="position: absolute; top: 0; left: 0; z-index: 11;">home</button>
         <div style="width: 100dvw; z-index: 10; position: absolute;">
-            <p id="levelCount" style="text-align: center; font-size: xx-large; margin-bottom: 0%;">Level: 0</p>
+            <p id="levelCount" style="text-align: center; font-size: xx-large; margin-bottom: 0%; display: none;">Level:
+                0</p>
+            <p id="gameRoundEle" style="text-align: center; font-size: xx-large; margin-bottom: 0%;">
+                Round: 0</p>
             <p id="bonusPoints" style="text-align: center; font-size: larger;">Bonus: 0</p>
         </div>
         <div id="stopButton" onclick="stopGameObj()"
@@ -195,6 +200,7 @@
 
         var gameLevel = 1
         var bonusPointsCounter = 0
+        var gameRoundCounter = 0
         var curGameObj = document.getElementById('stGameObj')
         const gameWindow = document.getElementById('gameWindow')
         const menuWindow = document.getElementById('homeScreen')
@@ -202,6 +208,7 @@
         const gameObj = document.getElementById("stGameObj")
         const levelCount = document.getElementById('levelCount')
         const bonusPoints = document.getElementById('bonusPoints')
+        const gameRound = document.getElementById('gameRoundEle')
 
         if (menuWindow.style.display != "none") {
             gameWindow.style.display = "none"
@@ -216,6 +223,7 @@
         function stopGameObj() {
 
             levelCount.innerHTML = "Level: " + gameLevel
+            gameRound.innerText = "Round: " + gameRoundCounter.toString()
             if (gameLevel > 1) {
                 if (Number(window.innerWidth - curGameObj.getBoundingClientRect().x) <= lastStopLeftSide && Number(curGameObj.getBoundingClientRect().x + Number(curGameObj.style.width.replace("px", ""))) <= lastStopRightSide) {
                     bonusPointsCounter += 25
@@ -225,18 +233,39 @@
                     && Math.abs(Number(curGameObj.getBoundingClientRect().x + Number(curGameObj.style.width.replace("px", ""))) - lastStopRightSide) > Number(curGameObj.style.width.replace("px", ""))
                 ) {
                     // Game over
-                    levelCount.innerHTML = "Level: " + (gameLevel - 1)
-                    document.getElementById(`gameobj_${gameLevel}`).style.display = "none"
-                    document.getElementById('stopButton').style.display = "none"
-                    document.getElementById('gameOverDiv').style.display = "flex"
-                    return
+                    console.log(gameRoundCounter)
+                    if (gameRoundCounter != 0) {
+                        levelCount.innerHTML = "Level: " + (gameLevel - 1)
+                        document.getElementById(`gameobj_${gameLevel}`).style.display = "none"
+                        document.getElementById('stopButton').style.display = "none"
+                        document.getElementById('gameOverDiv').style.display = "flex"
+                        enterScore()
+                        alert("Your score was added to the leaderboard!")
+                        showLeaderboardWindow()
+                        gameRound.innerText = "Round: 0"
+                        setTimeout(() => {
+                            gameRoundCounter = 0
+                            bonusPointsCounter = 0
+                        }, 700)
+                        return
+                    } else {
+                        showLeaderboardWindow()
+                        return
+                    }
                 } else if (curGameObj.getBoundingClientRect().y < document.getElementById('winBanner').getBoundingClientRect().y + 35) {
                     curGameObj.style.animationPlayState = "paused"
+                    curGameObj.style.animationPlayState = "paused"
                     document.getElementById(`gameobj_${gameLevel}`).style.animationPlayState = "paused"
-                    alert("You win")
-                    enterScore()
-                    showLeaderboardWindow()
-                    return
+                    gameRoundCounter += 1
+                    gameRound.innerText = "Round: " + gameRoundCounter.toString()
+                    document.getElementById("nextRoundDiv").innerText = "Next Round"
+                    document.getElementById("nextRoundDiv").style.display = "flex"
+                    setTimeout(() => {
+                        document.getElementById("nextRoundDiv").innerText = ""
+                        document.getElementById("nextRoundDiv").style.display = "none"
+                        restartGame()
+                        return
+                    }, 2100);
                 }
 
             }
@@ -252,7 +281,7 @@
                 speed = Math.floor(Math.random() * (1450 - 750) + 750)
                 newGameObjWidth = 75
             } if (gameLevel > 16) {
-                speed = Math.floor(Math.random() * (900 - 300) + 300)
+                speed = Math.floor(Math.random() * (1200 - 300) + 300)
                 newGameObjWidth = 50
             }
             curGameObj.style.animationPlayState = "paused"
@@ -271,7 +300,8 @@
             }
             newGameObj = document.createElement("div")
             gameLevel = 1
-            bonusPointsCounter = 0
+            //bonusPointsCounter = 0
+
             levelCount.innerHTML = "Level: " + gameLevel
             bonusPoints.innerHTML = "Bonus: " + bonusPointsCounter
             speed = 1500
@@ -312,12 +342,13 @@
         }
         async function enterScore() {
             var curUser = await getCurrentUsername()
+
             const resp = await fetch("/update-stackerz-score", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({ bonus_points: bonusPointsCounter, username: curUser, level: gameLevel })
+                body: JSON.stringify({ bonus_points: bonusPointsCounter, username: curUser, level: gameRoundCounter })
             }).then(() => {
                 leaderboardWindow.dispatchEvent(new Event('leaderboardOpenedEvent'))
             })

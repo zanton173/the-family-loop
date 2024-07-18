@@ -193,6 +193,14 @@ button.btn.btn-outline-primary {
     box-shadow: 1px 1px 3px black !important;
 }
 
+i#settingsBtn:hover {
+    cursor: pointer;
+}
+
+p#linkToCancel:hover {
+    cursor: pointer;
+}
+
 button.btn.btn-secondary {
     background: rgba(47, 79, 79, 0.852) !important;
     border-color: black;

@@ -37,23 +37,82 @@
                         href="/admin-dashboard" style="color: rgb(200, 210, 230)">Admin Portal</a></li>
                 <li class="nav-item navCustomItem"><a class="nav-link" href="/bugreport"
                         style="color: rgb(200, 210, 230)">Customer Support</a></li>
-                <!--<li><button onclick="sendMessageToWorker()">Testme</button></li>-->
                 <li class="nav-item" id="navitemforwelcome"><button id="loginlogoutnav" class="nav-link"
                         onclick='{loginModal.toggle(); showLoginForm()}'>login</button>
                 </li>
+                <li><i onclick="userSettingsModal.toggle()" id="settingsBtn" class="bi bi-gear"></i></li>
             </ul>
         </div>
-        <!--<p onclick='scrollToTop()' class="btn" hx-get="/get-posts" style="display: contents;" hx-trigger="click"
-            hx-target="#post-items" style="color: blue;" id="notification"></p>-->
     </div>
 </nav>
+<div class="modal customModalTrans" tabindex="-1" id="userSettingsModal" aria-labelledby="onchangeusersettings"
+    aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content p-3"
+            style="border-radius: 15px / 15px; background-color: rgba(217, 216, 216, 0.923);">
+
+            <div class="modal-header p-2 my-1" id="changepfpheader" style="display: block;">
+                <h2 class="modal-title" style="text-align: center;">User Settings</h2>
+            </div>
+            <div id="wixSubDivContent" hx-get="/current-user-wix-subscription" hx-trigger="click from:#settingsBtn"
+                hx-swap="none" hx-on::after-request="checkStatusOfCurrentWixUser(event)" hx-target="#wixCurrentPlanDiv">
+
+                <div id="wixUserNotFoundDiv"
+                    style="display: none; width: 75%; text-align: center; justify-content: center; margin: auto">
+                    <form hx-ext="json-enc" class="form modal-content border-0" hx-post="/send-reset-pass-wix-user"
+                        hx-indicator="#loadingspinner" hx-swap="none"
+                        hx-vals="{'currentemail': document.getElementById('currentUserEmail')}"
+                        id="updateEmailSendResetForm" style="padding: 5%; border-radius: 15px / 15px;">
+                        <h5>Please verify that this your current email. You will need to submit any changes here then
+                            reset your password via email for the payments portal</h5><br />
+                        <input id="currentUserEmail" name="emailsignupresetpass"
+                            placeholder="your.email@example.com" /><br />
+                        <button type="submit" class="btn btn-primary">Submit</button><br />
+                    </form>
+                </div>
+                <div id="wixCurrentPlanDiv" style="display: inline; text-align: center; margin: auto">
+
+                    <h3 id="planTitle">Loading...</h3>
+                    <h6 id="planDesc">Loading...</h6>
+                    <br />
+                    <p id="planStarted">Loading...</p><br />
+
+                    <p id="monthOrYear">Loading...</p><br />
+                    <p id="planStatusText">Loading...</p><br />
+                    <div id="displayIfNotCancelled" style="display: none; font-size: small;">
+                        <!--<div class="form-check">
+                            <label class="form-check-label" for="cancelLater">
+                                <input class="form-check-input" type="radio" value="later" name="label" checked
+                                    id="cancelLater">
+                                Cancel at the end of Subscription
+                            </label>
+                        </div>
+
+                        <div class="form-check">
+
+                            <label class="form-check-label" for="cancelImmediately">
+                                <input class="form-check-input" type="radio" value="immediate" name="label"
+                                    id="cancelImmediately">
+                                Cancel Immediately
+                            </label>
+                        </div>-->
+
+                        <a class="btn-link link" target="_blank" id="linkToCancel">Loading...</a>
+
+                    </div>
+                </div>
+                <div id="couldNotGetSub" style="display: none; text-align: center; margin: auto">
+                    <p>Subscription not found</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
 <div class="modal customModalTrans" tabindex="-1" id="changepfpmodal" aria-labelledby="openchangepfpmodal"
     aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content p-3" style="border-radius: 15px / 15px; background-color: rgb(99 81 255 / 65%);">
-
-
-
             <form hx-encoding="multipart/form-data" class="form modal-content border-0" hx-post="/update-pfp"
                 hx-swap="none" id="updatepfpform" style="padding: 5%; border-radius: 15px / 15px;">
                 <div class="modal-header p-2 my-1" id="changepfpheader" style="display: block;">
@@ -80,7 +139,8 @@
 
                 <div style="display: block; text-align: center;">
                     <p>You must pay for the $1.99 regular user subscription before taking part in this loop.</p>
-                    <p style="font-size: smaller;">You will be navigated to the-family-loop.com landing page where you
+                    <p style="font-size: smaller;">You will be navigated to the-family-loop.com landing page where
+                        you
                         will need to open an account (only a username & email are needed) in order to subscribe</p>
                     <a target="_self" id="linktopay">Pay here!</a>
                 </div>
@@ -261,17 +321,22 @@
 
                 **1. Subscription Agreement** <br /><br />
 
-                By subscribing to The Family Loop, you agree to abide by the terms and conditions outlined herein. This
-                agreement is entered into between you (the "Subscriber") and zantonwebsolutions, the administrator of
+                By subscribing to The Family Loop, you agree to abide by the terms and conditions outlined herein.
+                This
+                agreement is entered into between you (the "Subscriber") and zantonwebsolutions, the administrator
+                of
                 The Family Loop. <br /><br />
 
                 **2. Subscription Billing**<br /><br />
 
-                a. **Monthly Billing:** Subscribers will be billed on a monthly basis for the use of The Family Loop.
+                a. **Monthly Billing:** Subscribers will be billed on a monthly basis for the use of The Family
+                Loop.
                 The billing cycle will commence upon subscription activation.<br /><br />
 
-                b. **Cancellation:** Subscribers can cancel their subscription at any time. Cancellation requests can be
-                made through The Family Loop admin portal or by contacting the owner directly. Once canceled, no further
+                b. **Cancellation:** Subscribers can cancel their subscription at any time. Cancellation requests
+                can be
+                made through The Family Loop admin portal or by contacting the owner directly. Once canceled, no
+                further
                 charges will be applied.<br /><br />
 
                 **3. Data Privacy**<br /><br />
@@ -279,8 +344,10 @@
                 a. **User Credentials:** zantonwebsolutions will not share, sell, or disclose Subscriber emails,
                 passwords, or any other account credentials.<br /><br />
 
-                b. **Social Media Data:** zantonwebsolutions will not access or log into any Subscriber's social media
-                personal apps unless required for diagnosing or troubleshooting issues related to the functionality of
+                b. **Social Media Data:** zantonwebsolutions will not access or log into any Subscriber's social
+                media
+                personal apps unless required for diagnosing or troubleshooting issues related to the functionality
+                of
                 The Family Loop.<br /><br />
 
                 **4. Data Security**<br /><br />
@@ -289,7 +356,8 @@
                 personal and social media-related information is securely stored and will only be used in accordance
                 with our Privacy Policy.<br /><br />
 
-                b. **Security Measures:** zantonwebsolutions employs industry-standard security measures to safeguard
+                b. **Security Measures:** zantonwebsolutions employs industry-standard security measures to
+                safeguard
                 Subscriber data against unauthorized access, disclosure, alteration, and destruction.<br /><br />
 
                 **5. Subscriber Responsibilities**<br /><br />
@@ -297,7 +365,8 @@
                 a. **Accurate Information:** Subscribers are responsible for providing accurate and up-to-date
                 information during the registration process.<br /><br />
 
-                b. **Security Awareness:** Subscribers are encouraged to maintain the confidentiality of their account
+                b. **Security Awareness:** Subscribers are encouraged to maintain the confidentiality of their
+                account
                 credentials and report any unauthorized access immediately.<br /><br />
 
                 **6. Limitation of Liability**<br /><br />
@@ -308,16 +377,20 @@
 
                 **7. Modifications to Terms and Conditions**<br /><br />
 
-                zantonwebsolutions reserves the right to modify these terms and conditions at any time. Subscribers will
+                zantonwebsolutions reserves the right to modify these terms and conditions at any time. Subscribers
+                will
                 be notified of any changes through email or through the The Family Loop platform.<br /><br />
 
                 **8. Governing Law**<br /><br />
 
-                This agreement is governed by the laws of the United States of America. Any disputes arising from this
+                This agreement is governed by the laws of the United States of America. Any disputes arising from
+                this
                 agreement shall be resolved in the courts of the United States of America.<br /><br />
 
-                By subscribing to The Family Loop, you acknowledge that you have read, understood, and agreed to these
-                terms and conditions. If you do not agree with any part of this agreement, you should not proceed with
+                By subscribing to The Family Loop, you acknowledge that you have read, understood, and agreed to
+                these
+                terms and conditions. If you do not agree with any part of this agreement, you should not proceed
+                with
                 the subscription.<br /><br />
                 <button class="btn btn-primary" type="button" onclick="tandcModal.hide()">close</button>
             </div>
@@ -327,6 +400,7 @@
 
 <script>
     var changePfpModal = new bootstrap.Modal(document.getElementById('changepfpmodal'), {});
+    const userSettingsModal = new bootstrap.Modal(document.getElementById('userSettingsModal'), {});
     let p = document.getElementById('anchor')
     let c = document.getElementById('ournav')
 
@@ -402,7 +476,8 @@
     const navItemWelcome = document.createElement('li')
     const divToStickNav = document.createElement('div')
     divToStickNav.setAttribute("style", "display: contents;")
-
+    const settingsButton = document.getElementById('settingsBtn')
+    divToStickNav.append(settingsButton)
     navItemWelcome.setAttribute("class", "nav-item")
 
     const navItemWelcomeAvatar = document.createElement('img')
@@ -480,7 +555,49 @@
         return text
     }
 
+    async function checkStatusOfCurrentWixUser(event) {
 
+        if (event.detail.xhr.status === 424) {
+
+            document.getElementById('wixUserNotFoundDiv').style.display = "flex"
+            document.getElementById('currentUserEmail').setAttribute("value", event.detail.xhr.response)
+        } else if (event.detail.xhr.status === 200) {
+
+            document.getElementById('wixUserNotFoundDiv').style.display = "none"
+            document.getElementById("couldNotGetSub").style.display = "none"
+            const resp = await event.detail.xhr.response
+            var parsedResp = JSON.parse(resp)
+
+            document.getElementById('planDesc').innerText = parsedResp.order.planDescription
+            document.getElementById('planTitle').innerText = parsedResp.order.planName
+            document.getElementById('planStarted').innerText = "Plan was started on: " + new Date(parsedResp.order.startDate).toDateString()
+
+            document.getElementById('monthOrYear').innerText = "You are currently paying $" + parsedResp.order.planPrice + " per " + parsedResp.order.pricing.subscription.cycleDuration.unit.toString().toLowerCase()
+            document.getElementById('planStatusText').innerText = "Order status: " + parsedResp.order.statusNew.toString().toLowerCase()
+            if (parsedResp.order.statusNew.toString().toLowerCase() === "canceled") {
+                document.getElementById('displayIfNotCancelled').style.display = "none"
+
+            } else {
+
+                document.getElementById('displayIfNotCancelled').style.display = "block"
+                document.getElementById('linkToCancel').innerText = "Cancel Plan"
+                document.getElementById('linkToCancel').setAttribute("href", `https://www.the-family-loop.com/regular-user-subscriptions/${parsedResp.order.buyer.memberId}/${parsedResp.order.id}/${parsedResp.order.orgId}?nextPaymentDate=${new Date(parsedResp.order.currentCycle.endedDate).toDateString()}`)
+                /*
+                document.getElementById('linkToCancel').setAttribute("hx-post", "/cancel-current-sub-regular-user")
+                document.getElementById('linkToCancel').setAttribute("hx-ext", "json-enc")
+                document.getElementById('linkToCancel').setAttribute("hx-vals", `js:{'orderid': '${parsedResp.order.id}', 'radionow': document.getElementById('cancelImmediately').checked, 'radiolater': document.getElementById('cancelLater').checked}`)
+                document.getElementById('linkToCancel').setAttribute("hx-confirm", "Are you sure you would like to cancel your plan?")
+                htmx.process("#linkToCancel")*/
+
+            }
+
+
+        } else if (event.detail.xhr.status === 400) {
+            document.getElementById("couldNotGetSub").style.display = "inline-flex"
+            document.getElementById("wixCurrentPlanDiv").style.display = "none"
+            alert("We have trouble retrieving your subscription information. Please try logging out and in again. If you continue to experience issues, please visit the customer support page")
+        }
+    }
     navItemWelcomeAvatar.addEventListener('click', showPfpModal = async (event) => {
         changePfpModal.show()
     })

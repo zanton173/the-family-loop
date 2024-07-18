@@ -243,13 +243,6 @@ func main() {
 
 		_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.users(\"username\", \"password\", \"pfp_name\", \"email\", \"gchat_bg_theme\", \"gchat_order_option\", \"cf_domain_name\", \"orgid\", \"is_admin\", \"mytz\") values('%s', '%s', '%s', '%s', '%s', %t, '%s', '%s', %t, '%s');", strings.ToLower(r.PostFormValue("usernamesignup")), bytesOfPass, fn, strings.ToLower(r.PostFormValue("emailsignup")), "background: linear-gradient(142deg, #00009f, #3dc9ff 26%)", true, cfdistro, orgId, false, r.PostFormValue("mytz")))
 
-		type memberChildrenObj struct {
-			LoginEmail string `json:"loginEmail"`
-		}
-		type memberObj struct {
-			MemChild memberChildrenObj `json:"member"`
-		}
-
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -265,6 +258,12 @@ func main() {
 		if errutterr != nil {
 			activityStr := fmt.Sprintf("user %s will not be subscribed to new posts as of now", strings.ToLower(r.PostFormValue("usernamesignup")))
 			db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values(substr('%s',0,106), substr('%s',0,106), now());", errutterr.Error(), activityStr))
+		}
+		type memberChildrenObj struct {
+			LoginEmail string `json:"loginEmail"`
+		}
+		type memberObj struct {
+			MemChild memberChildrenObj `json:"member"`
 		}
 		postReqBody := memberObj{
 			MemChild: memberChildrenObj{
@@ -3073,7 +3072,7 @@ func main() {
 			return
 		}
 
-		go uploadTimeCapsuleToS3(tcFile, tcFileName)
+		go uploadTimeCapsuleToS3(tcFile, tcFileName, fmt.Sprint(yearsfordb))
 	}
 	initiateMyTCRestoreHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -3390,6 +3389,380 @@ func main() {
 		}
 		subLevel = strings.ToLower(postData.Plan)
 	}
+	getCurrentUserSubPlan := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		allowOrDeny, currentUserFromSession, h := validateCurrentSessionId(db, r)
+
+		validBool := validateJWTToken(jwtSignKey, r)
+		if !validBool || !allowOrDeny {
+			w.Header().Set("HX-Retarget", "window")
+			w.Header().Set("HX-Trigger", h)
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		var wixMemberId sql.NullString
+		var userEmail string
+		sqlrow := db.QueryRow(fmt.Sprintf("select wix_member_id, email from tfldata.users where username='%s';", currentUserFromSession))
+		sqlrow.Scan(&wixMemberId, &userEmail)
+		if !wixMemberId.Valid {
+			w.WriteHeader(http.StatusFailedDependency)
+			w.Write([]byte(userEmail))
+			return
+		}
+		type operatorDataType string
+		type titleObj struct {
+			Oper operatorDataType `json:"$eq"`
+		}
+		type orgidObj struct {
+			Oper operatorDataType `json:"$eq"`
+		}
+		type usernameObj struct {
+			Oper operatorDataType `json:"$eq"`
+		}
+
+		type filterTitleObj struct {
+			Title    titleObj    `json:"title"`
+			OrgId    orgidObj    `json:"orgid"`
+			Username usernameObj `json:"username"`
+		}
+
+		type postReqQueryObj struct {
+			Filter filterTitleObj `json:"filter"`
+			Fields []string       `json:"fields"`
+		}
+		type postReqObj struct {
+			DataCollectionId string          `json:"dataCollectionId"`
+			Query            postReqQueryObj `json:"query"`
+		}
+
+		postReqBody := postReqObj{
+			DataCollectionId: "regular-user-subscriptions",
+			Query: postReqQueryObj{
+				Filter: filterTitleObj{
+					Title: titleObj{
+						Oper: operatorDataType(wixMemberId.String),
+					},
+					OrgId: orgidObj{
+						Oper: operatorDataType(orgId),
+					},
+					Username: usernameObj{
+						Oper: operatorDataType(currentUserFromSession),
+					},
+				},
+				Fields: []string{"orderid"},
+			},
+		}
+		type collBody struct {
+			Orderid string `json:"orderid,omitempty"`
+		}
+		type dataItems []struct {
+			Id           string   `json:"id,omitempty"`
+			CollBodyData collBody `json:"data"`
+		}
+
+		type clientListStruct struct {
+			Dataitems dataItems `json:"dataItems"`
+		}
+		var respObj clientListStruct
+
+		jsonMarshed, errMarsh := json.Marshal(&postReqBody)
+		if errMarsh != nil {
+			fmt.Println(errMarsh)
+		}
+
+		req, reqerr := http.NewRequest("POST", "https://www.wixapis.com/wix-data/v2/items/query", bytes.NewReader(jsonMarshed))
+		if reqerr != nil {
+			fmt.Println(reqerr)
+			return
+		}
+
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", wixapikey)
+		req.Header.Set("wix-account-id", "1c983d62-821d-4336-b87a-a66679cdf547")
+		req.Header.Set("wix-site-id", "505f68a9-540d-40a7-abba-8ae650fa3252")
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		bs, readerr := io.ReadAll(resp.Body)
+		if readerr != nil {
+			fmt.Println(readerr)
+			return
+		}
+
+		marsherr := json.Unmarshal(bs, &respObj)
+		if marsherr != nil {
+			fmt.Println(marsherr)
+			return
+		}
+		if len(respObj.Dataitems) > 0 {
+			orderID := respObj.Dataitems[0].CollBodyData.Orderid
+
+			orderreq, orderreqerr := http.NewRequest("GET", "https://www.wixapis.com/pricing-plans/v2/orders/"+orderID, nil)
+			orderreq.Header.Set("Content-Type", "application/json")
+			orderreq.Header.Set("Authorization", wixapikey)
+			orderreq.Header.Set("wix-account-id", "1c983d62-821d-4336-b87a-a66679cdf547")
+			orderreq.Header.Set("wix-site-id", "505f68a9-540d-40a7-abba-8ae650fa3252")
+			if orderreqerr != nil {
+				fmt.Println(orderreqerr)
+				return
+			}
+			orderdataResp, orderDataRespErr := client.Do(orderreq)
+			if orderDataRespErr != nil {
+				fmt.Println(orderDataRespErr)
+				return
+			}
+			type innerCycleObj struct {
+				Index       int    `json:"index"`
+				StartedDate string `json:"startedDate"`
+				EndedDate   string `json:"endedDate"`
+			}
+
+			type cycleDurObj struct {
+				Count int    `json:"count"`
+				Unit  string `json:"unit"`
+			}
+			type subscObj struct {
+				CycleDuration cycleDurObj `json:"cycleDuration"`
+				CycleCount    int         `json:"cycleCount"`
+			}
+			type pricingObj struct {
+				Subscription subscObj `json:"subscription"`
+			}
+			type buyerObj struct {
+				MemberId  string `json:"memberId"`
+				ContactId string `json:"contactId"`
+			}
+			type orderObj struct {
+				Id             string        `json:"id"`
+				PlanId         string        `json:"planId"`
+				SubscriptionId string        `json:"subscriptionId"`
+				Buyer          buyerObj      `json:"buyer"`
+				Status         string        `json:"status"`
+				StatusNew      string        `json:"statusNew"`
+				StartDate      string        `json:"startDate"`
+				PlanName       string        `json:"planName"`
+				PlanDesc       string        `json:"planDescription"`
+				PlanPrice      string        `json:"planPrice"`
+				WixPayOrderId  string        `json:"wixPayOrderId"`
+				PricingData    pricingObj    `json:"pricing"`
+				CurrentCycle   innerCycleObj `json:"currentCycle"`
+				OrgID          string        `json:"orgId"`
+			}
+			type outerRespObj struct {
+				Order orderObj `json:"order"`
+			}
+			var currentOrderData outerRespObj
+			orderRespBody, readerr := io.ReadAll(orderdataResp.Body)
+			if readerr != nil {
+				fmt.Println(readerr.Error())
+				return
+			}
+
+			unmarsherr := json.Unmarshal(orderRespBody, &currentOrderData)
+			if unmarsherr != nil {
+				fmt.Println(unmarsherr.Error())
+				return
+			}
+			currentOrderData.Order.OrgID = orgId
+			marshedObj, marsherr := json.Marshal(currentOrderData)
+			if marsherr != nil {
+				fmt.Println(marsherr)
+				return
+			}
+			w.Write(marshedObj)
+			defer req.Body.Close()
+		} else {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+	}
+	cancelCurrentSubRegUserHandler := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		allowOrDeny, _, h := validateCurrentSessionId(db, r)
+
+		validBool := validateJWTToken(jwtSignKey, r)
+		if !validBool || !allowOrDeny {
+			w.Header().Set("HX-Retarget", "window")
+			w.Header().Set("HX-Trigger", h)
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		type postBody struct {
+			Orderid     string `json:"orderid"`
+			CancelNow   bool   `json:"radionow"`
+			CancelLater bool   `json:"radiolater"`
+		}
+		var postData postBody
+		bs, _ := io.ReadAll(r.Body)
+
+		marsherr := json.Unmarshal(bs, &postData)
+		if marsherr != nil {
+			fmt.Println(marsherr)
+
+		}
+		var effectiveAt string
+		if postData.CancelLater && !postData.CancelNow {
+			effectiveAt = "NEXT_PAYMENT_DATE"
+		} else if !postData.CancelLater && postData.CancelNow {
+			effectiveAt = "IMMEDIATELY"
+		}
+		type sendPostBody struct {
+			EffectiveAt string `json:"effectiveAt"`
+		}
+		var sendPostData sendPostBody
+		sendPostData.EffectiveAt = effectiveAt
+		jsonMarshed, marshlingerr := json.Marshal(sendPostData)
+		if marshlingerr != nil {
+			fmt.Println(marshlingerr)
+			return
+		}
+
+		req, reqerr := http.NewRequest("POST", "https://www.wixapis.com/pricing-plans/v2/orders/"+postData.Orderid+"/cancel", bytes.NewReader(jsonMarshed))
+		if reqerr != nil {
+			activityStr := "error posting to wix cancel order handler"
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values(substr('%s',0,105), substr('%s',0,105), now());", reqerr.Error(), activityStr))
+			return
+		}
+
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", wixapikey)
+		req.Header.Set("wix-account-id", "1c983d62-821d-4336-b87a-a66679cdf547")
+		req.Header.Set("wix-site-id", "505f68a9-540d-40a7-abba-8ae650fa3252")
+		client := &http.Client{}
+		_, clientdoerr := client.Do(req)
+		if clientdoerr != nil {
+			activityStr := "client error for wix members reset pass only"
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values(substr('%s',0,105), substr('%s',0,105), now());", clientdoerr.Error(), activityStr))
+			return
+		}
+
+		defer client.CloseIdleConnections()
+
+	}
+	sendResetPassOnlyHandler := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		allowOrDeny, currentUserFromSession, h := validateCurrentSessionId(db, r)
+
+		validBool := validateJWTToken(jwtSignKey, r)
+		if !validBool || !allowOrDeny {
+			w.Header().Set("HX-Retarget", "window")
+			w.Header().Set("HX-Trigger", h)
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		bs, _ := io.ReadAll(r.Body)
+		type formPostBody struct {
+			Email string `json:"currentemail"`
+		}
+		var formData formPostBody
+		json.Unmarshal(bs, &formData)
+		type memberChildrenObj struct {
+			LoginEmail string `json:"loginEmail"`
+		}
+		type memberObj struct {
+			MemChild memberChildrenObj `json:"member"`
+		}
+
+		postReqBody := memberObj{
+			MemChild: memberChildrenObj{
+				LoginEmail: strings.ToLower(formData.Email),
+			},
+		}
+		jsonMarshed, errMarsh := json.Marshal(&postReqBody)
+		if errMarsh != nil {
+			activityStr := "error marshing Json body for members reset pass only"
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values(substr('%s',0,105), substr('%s',0,105), now());", errMarsh.Error(), activityStr))
+			return
+		}
+
+		req, reqerr := http.NewRequest("POST", "https://www.wixapis.com/members/v1/members", bytes.NewReader(jsonMarshed))
+		if reqerr != nil {
+			activityStr := "error posting to wix members sign up / reset pass only handler"
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values(substr('%s',0,105), substr('%s',0,105), now());", reqerr.Error(), activityStr))
+			return
+		}
+
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", wixapikey)
+		req.Header.Set("wix-account-id", "1c983d62-821d-4336-b87a-a66679cdf547")
+		req.Header.Set("wix-site-id", "505f68a9-540d-40a7-abba-8ae650fa3252")
+		client := &http.Client{}
+		createresp, clientdoerr := client.Do(req)
+		if clientdoerr != nil {
+			activityStr := "client error for wix members reset pass only"
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values(substr('%s',0,105), substr('%s',0,105), now());", clientdoerr.Error(), activityStr))
+			return
+		}
+
+		defer client.CloseIdleConnections()
+		type redirectObj struct {
+			Url string `json:"url"`
+		}
+
+		type sendReset struct {
+			Email       string `json:"email"`
+			Lang        string `json:"language"`
+			RedirectObj redirectObj
+		}
+		postBody := sendReset{
+			Email: strings.ToLower(formData.Email),
+			Lang:  "en",
+			RedirectObj: redirectObj{
+				Url: "https://the-family-loop.com",
+			},
+		}
+		sendjsonMarshed, senderrMarsh := json.Marshal(&postBody)
+		if senderrMarsh != nil {
+			activityStr := "error marshing Json body for members sign up reset pass only"
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values(substr('%s',0,105), substr('%s',0,105), now());", senderrMarsh.Error(), activityStr))
+			return
+		}
+		setpassreq, setpassreqerr := http.NewRequest("POST", "https://www.wixapis.com/_api/iam/recovery/v1/send-email", bytes.NewReader(sendjsonMarshed))
+		if setpassreqerr != nil {
+			activityStr := "error sending set pass wix members sign up reset pass only"
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values(substr('%s',0,105), substr('%s',0,105), now());", setpassreqerr.Error(), activityStr))
+			return
+		}
+		setpassreq.Header.Set("Content-Type", "application/json")
+		setpassreq.Header.Set("Authorization", wixapikey)
+		setpassreq.Header.Set("wix-account-id", "1c983d62-821d-4336-b87a-a66679cdf547")
+		setpassreq.Header.Set("wix-site-id", "505f68a9-540d-40a7-abba-8ae650fa3252")
+		sendclient := &http.Client{}
+		_, sendclientdoerr := sendclient.Do(setpassreq)
+		if sendclientdoerr != nil {
+			activityStr := "client error for wix members sign up"
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values(substr('%s',0,105), substr('%s',0,105), now());", sendclientdoerr.Error(), activityStr))
+			return
+		}
+		defer sendclient.CloseIdleConnections()
+		if createresp.StatusCode == 200 {
+			type memberobj struct {
+				Id string `json:"id"`
+			}
+			type memberResponseObj struct {
+				Memberstruct memberobj `json:"member"`
+			}
+			var responseData memberResponseObj
+			bs, bserr := io.ReadAll(createresp.Body)
+
+			if bserr != nil {
+				db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values (substr('%s',0,105), substr('%s',0,105), now());", bserr.Error(), "creating bs for wix create site member response"))
+			}
+
+			unmarsherr := json.Unmarshal(bs, &responseData)
+			if unmarsherr != nil {
+				db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values (substr('%s',0,105), substr('%s',0,105), now());", unmarsherr.Error(), "unmarshal wix create site member response"))
+			}
+			_, uperr := db.Exec(fmt.Sprintf("update tfldata.users set wix_member_id = '%s' where username = '%s';", responseData.Memberstruct.Id, currentUserFromSession))
+			if uperr != nil {
+				db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values (substr('%s',0,106), substr('%s',0,105), now());", uperr.Error(), "Err updating users table with wix id"))
+			}
+		}
+		defer createresp.Body.Close()
+	}
 	regUserPaidForPlanHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		validBool := validateWebhookJWTToken(jwtSignKey, r)
@@ -3442,7 +3815,7 @@ func main() {
 		if uperr != nil {
 			fmt.Println("something went wrong")
 		}
-		var yearstostore string
+		/*var yearstostore string
 		row := db.QueryRow(fmt.Sprintf("select yearstostore from tfldata.timecapsule where tcfilename='%s';", postData.Capsulename))
 		sner := row.Scan(&yearstostore)
 		if sner != nil {
@@ -3467,7 +3840,7 @@ func main() {
 					},
 				},
 			},
-		})
+		})*/
 	}
 	wixWebhookEarlyAccessPaymentCompleteHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -3966,6 +4339,10 @@ func main() {
 
 	http.HandleFunc("/wix-webhook-update-reg-user-paid-plan", regUserPaidForPlanHandler)
 
+	http.HandleFunc("/current-user-wix-subscription", getCurrentUserSubPlan)
+	http.HandleFunc("/send-reset-pass-wix-user", sendResetPassOnlyHandler)
+	http.HandleFunc("/cancel-current-sub-regular-user", cancelCurrentSubRegUserHandler)
+
 	http.HandleFunc("/delete-my-tc", deleteMyTChandler)
 
 	http.HandleFunc("/admin-list-of-users", adminGetListOfUsersHandler)
@@ -4446,7 +4823,7 @@ func validateCurrentSessionId(db *sql.DB, r *http.Request) (bool, string, string
 	return scnerr == nil, username.String, handlerForLogin
 
 }
-func uploadTimeCapsuleToS3(f *os.File, fn string) {
+func uploadTimeCapsuleToS3(f *os.File, fn string, yearsToStore string) {
 	f.Seek(0, 0)
 
 	defer f.Close()
@@ -4457,14 +4834,41 @@ func uploadTimeCapsuleToS3(f *os.File, fn string) {
 		ContentType: aws.String("application/octet-stream"),
 		Body:        f,
 		//StorageClass: types.StorageClassGlacier,
-		//Tagging: aws.String("YearsToStore=" + r.PostFormValue("yearsToStore")),
+		Tagging: aws.String("YearsToStore=" + yearsToStore),
 	})
 
 	if s3err != nil {
 		fmt.Println("error on upload")
 		fmt.Println(s3err.Error())
 	}
-
+	/*
+	   var yearstostore string
+	   		row := db.QueryRow(fmt.Sprintf("select yearstostore from tfldata.timecapsule where tcfilename='%s';", postData.Capsulename))
+	   		sner := row.Scan(&yearstostore)
+	   		if sner != nil {
+	   			fmt.Println("scan err")
+	   			return
+	   		}
+	   		if yearstostore == "1" {
+	   			yearstostore = "one_year"
+	   		} else if yearstostore == "3" {
+	   			yearstostore = "three_years"
+	   		} else if yearstostore == "7" {
+	   			yearstostore = "seven_years"
+	   		}
+	   		s3Client.PutObjectTagging(context.TODO(), &s3.PutObjectTaggingInput{
+	   			Bucket: &s3Domain,
+	   			Key:    aws.String("timecapsules/" + postData.Capsulename),
+	   			Tagging: &types.Tagging{
+	   				TagSet: []types.Tag{
+	   					{
+	   						Key:   aws.String("YearsToStore"),
+	   						Value: &yearstostore,
+	   					},
+	   				},
+	   			},
+	   		})
+	*/
 	defer os.Remove(fn)
 }
 func deleteFileFromS3(delname string, delPath string) {

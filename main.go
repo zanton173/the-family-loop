@@ -3524,6 +3524,10 @@ func main() {
 				Count int    `json:"count"`
 				Unit  string `json:"unit"`
 			}
+			type cancellationObj struct {
+				Cause       string `json:"cause"`
+				EffectiveAt string `json:"effectiveAt"`
+			}
 			type subscObj struct {
 				CycleDuration cycleDurObj `json:"cycleDuration"`
 				CycleCount    int         `json:"cycleCount"`
@@ -3536,20 +3540,21 @@ func main() {
 				ContactId string `json:"contactId"`
 			}
 			type orderObj struct {
-				Id             string        `json:"id"`
-				PlanId         string        `json:"planId"`
-				SubscriptionId string        `json:"subscriptionId"`
-				Buyer          buyerObj      `json:"buyer"`
-				Status         string        `json:"status"`
-				StatusNew      string        `json:"statusNew"`
-				StartDate      string        `json:"startDate"`
-				PlanName       string        `json:"planName"`
-				PlanDesc       string        `json:"planDescription"`
-				PlanPrice      string        `json:"planPrice"`
-				WixPayOrderId  string        `json:"wixPayOrderId"`
-				PricingData    pricingObj    `json:"pricing"`
-				CurrentCycle   innerCycleObj `json:"currentCycle"`
-				OrgID          string        `json:"orgId"`
+				Id                   string          `json:"id"`
+				PlanId               string          `json:"planId"`
+				SubscriptionId       string          `json:"subscriptionId"`
+				Buyer                buyerObj        `json:"buyer"`
+				Status               string          `json:"status"`
+				StatusNew            string          `json:"statusNew"`
+				StartDate            string          `json:"startDate"`
+				PlanName             string          `json:"planName"`
+				PlanDesc             string          `json:"planDescription"`
+				PlanPrice            string          `json:"planPrice"`
+				WixPayOrderId        string          `json:"wixPayOrderId"`
+				PricingData          pricingObj      `json:"pricing"`
+				CurrentCycle         innerCycleObj   `json:"currentCycle"`
+				Cancellation         cancellationObj `json:"cancellation"`
+				AutoRenewedCancelled bool            `json:"autoRenewCanceled"`
 			}
 			type outerRespObj struct {
 				Order orderObj `json:"order"`
@@ -3566,12 +3571,13 @@ func main() {
 				fmt.Println(unmarsherr.Error())
 				return
 			}
-			currentOrderData.Order.OrgID = orgId
+
 			marshedObj, marsherr := json.Marshal(currentOrderData)
 			if marsherr != nil {
 				fmt.Println(marsherr)
 				return
 			}
+
 			w.Write(marshedObj)
 			defer req.Body.Close()
 		} else {

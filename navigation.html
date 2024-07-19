@@ -80,26 +80,11 @@
                     <p id="monthOrYear">Loading...</p><br />
                     <p id="planStatusText">Loading...</p><br />
                     <div id="displayIfNotCancelled" style="display: none; font-size: small;">
-                        <!--<div class="form-check">
-                            <label class="form-check-label" for="cancelLater">
-                                <input class="form-check-input" type="radio" value="later" name="label" checked
-                                    id="cancelLater">
-                                Cancel at the end of Subscription
-                            </label>
-                        </div>
-
-                        <div class="form-check">
-
-                            <label class="form-check-label" for="cancelImmediately">
-                                <input class="form-check-input" type="radio" value="immediate" name="label"
-                                    id="cancelImmediately">
-                                Cancel Immediately
-                            </label>
-                        </div>-->
-
                         <a class="btn-link link" target="_blank" id="linkToCancel">Loading...</a>
-
                     </div>
+                </div>
+                <div id="planPendingCancellation" style="display: none;  text-align: center; margin: auto">
+                    <p id="planWillBeCancelledOn">Loading...</p>
                 </div>
                 <div id="couldNotGetSub" style="display: none; text-align: center; margin: auto">
                     <p>Subscription not found</p>
@@ -567,31 +552,38 @@
             document.getElementById("couldNotGetSub").style.display = "none"
             const resp = await event.detail.xhr.response
             var parsedResp = JSON.parse(resp)
+            if (parsedResp.order.autoRenewCanceled) {
 
-            document.getElementById('planDesc').innerText = parsedResp.order.planDescription
-            document.getElementById('planTitle').innerText = parsedResp.order.planName
-            document.getElementById('planStarted').innerText = "Plan was started on: " + new Date(parsedResp.order.startDate).toDateString()
+                document.getElementById('wixCurrentPlanDiv').style.display = "none"
+                document.getElementById('planPendingCancellation').style.display = "inline"
+                document.getElementById('planWillBeCancelledOn').innerText = "Your plan will expire on: " + new Date(parsedResp.order.currentCycle.endedDate).toDateString()
 
-            document.getElementById('monthOrYear').innerText = "You are currently paying $" + parsedResp.order.planPrice + " per " + parsedResp.order.pricing.subscription.cycleDuration.unit.toString().toLowerCase()
-            document.getElementById('planStatusText').innerText = "Order status: " + parsedResp.order.statusNew.toString().toLowerCase()
-            if (parsedResp.order.statusNew.toString().toLowerCase() === "canceled") {
-                document.getElementById('displayIfNotCancelled').style.display = "none"
 
             } else {
+                document.getElementById('planDesc').innerText = parsedResp.order.planDescription
+                document.getElementById('planTitle').innerText = parsedResp.order.planName
+                document.getElementById('planStarted').innerText = "Plan was started on: " + new Date(parsedResp.order.startDate).toDateString()
 
-                document.getElementById('displayIfNotCancelled').style.display = "block"
-                document.getElementById('linkToCancel').innerText = "Cancel Plan"
-                //document.getElementById('linkToCancel').setAttribute("href", `https://www.the-family-loop.com/regular-user-subscriptions/${parsedResp.order.buyer.memberId}/${parsedResp.order.id}/${parsedResp.order.orgId}?nextPaymentDate=${new Date(parsedResp.order.currentCycle.endedDate).toDateString()}`)
-                document.getElementById('linkToCancel').setAttribute("href", `https://www.the-family-loop.com/regular-user-subscriptions/${parsedResp.order.buyer.memberId}/${parsedResp.order.id}?nextPaymentDate=${new Date(parsedResp.order.currentCycle.endedDate).toDateString()}`)
-                /*
-                document.getElementById('linkToCancel').setAttribute("hx-post", "/cancel-current-sub-regular-user")
-                document.getElementById('linkToCancel').setAttribute("hx-ext", "json-enc")
-                document.getElementById('linkToCancel').setAttribute("hx-vals", `js:{'orderid': '${parsedResp.order.id}', 'radionow': document.getElementById('cancelImmediately').checked, 'radiolater': document.getElementById('cancelLater').checked}`)
-                document.getElementById('linkToCancel').setAttribute("hx-confirm", "Are you sure you would like to cancel your plan?")
-                htmx.process("#linkToCancel")*/
+                document.getElementById('monthOrYear').innerText = "You are currently paying $" + parsedResp.order.planPrice + " per " + parsedResp.order.pricing.subscription.cycleDuration.unit.toString().toLowerCase()
+                document.getElementById('planStatusText').innerText = "Order status: " + parsedResp.order.statusNew.toString().toLowerCase()
+                if (parsedResp.order.statusNew.toString().toLowerCase() === "canceled") {
+                    document.getElementById('displayIfNotCancelled').style.display = "none"
 
+                } else {
+
+                    document.getElementById('displayIfNotCancelled').style.display = "block"
+                    document.getElementById('linkToCancel').innerText = "Cancel Plan"
+                    //document.getElementById('linkToCancel').setAttribute("href", `https://www.the-family-loop.com/regular-user-subscriptions/${parsedResp.order.buyer.memberId}/${parsedResp.order.id}/${parsedResp.order.orgId}?nextPaymentDate=${new Date(parsedResp.order.currentCycle.endedDate).toDateString()}`)
+                    document.getElementById('linkToCancel').setAttribute("href", `https://www.the-family-loop.com/regular-user-subscriptions/${parsedResp.order.buyer.memberId}/${parsedResp.order.id}?nextPaymentDate=${new Date(parsedResp.order.currentCycle.endedDate).toDateString()}`)
+                    /*
+                    document.getElementById('linkToCancel').setAttribute("hx-post", "/cancel-current-sub-regular-user")
+                    document.getElementById('linkToCancel').setAttribute("hx-ext", "json-enc")
+                    document.getElementById('linkToCancel').setAttribute("hx-vals", `js:{'orderid': '${parsedResp.order.id}', 'radionow': document.getElementById('cancelImmediately').checked, 'radiolater': document.getElementById('cancelLater').checked}`)
+                    document.getElementById('linkToCancel').setAttribute("hx-confirm", "Are you sure you would like to cancel your plan?")
+                    htmx.process("#linkToCancel")*/
+
+                }
             }
-
 
         } else if (event.detail.xhr.status === 400) {
             document.getElementById("couldNotGetSub").style.display = "inline-flex"

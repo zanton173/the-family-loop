@@ -558,7 +558,7 @@
     async function checkStatusOfCurrentWixUser(event) {
 
         if (event.detail.xhr.status === 424) {
-
+            document.getElementById('wixCurrentPlanDiv').style.display = ""
             document.getElementById('wixUserNotFoundDiv').style.display = "flex"
             document.getElementById('currentUserEmail').setAttribute("value", event.detail.xhr.response)
         } else if (event.detail.xhr.status === 200) {
@@ -581,7 +581,8 @@
 
                 document.getElementById('displayIfNotCancelled').style.display = "block"
                 document.getElementById('linkToCancel').innerText = "Cancel Plan"
-                document.getElementById('linkToCancel').setAttribute("href", `https://www.the-family-loop.com/regular-user-subscriptions/${parsedResp.order.buyer.memberId}/${parsedResp.order.id}/${parsedResp.order.orgId}?nextPaymentDate=${new Date(parsedResp.order.currentCycle.endedDate).toDateString()}`)
+                //document.getElementById('linkToCancel').setAttribute("href", `https://www.the-family-loop.com/regular-user-subscriptions/${parsedResp.order.buyer.memberId}/${parsedResp.order.id}/${parsedResp.order.orgId}?nextPaymentDate=${new Date(parsedResp.order.currentCycle.endedDate).toDateString()}`)
+                document.getElementById('linkToCancel').setAttribute("href", `https://www.the-family-loop.com/regular-user-subscriptions/${parsedResp.order.buyer.memberId}/${parsedResp.order.id}?nextPaymentDate=${new Date(parsedResp.order.currentCycle.endedDate).toDateString()}`)
                 /*
                 document.getElementById('linkToCancel').setAttribute("hx-post", "/cancel-current-sub-regular-user")
                 document.getElementById('linkToCancel').setAttribute("hx-ext", "json-enc")

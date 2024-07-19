@@ -14,6 +14,10 @@ img.spinner-indicator {
 
 }
 
+i.bi.bi-three-dots.m-1.px-1.editbtnclass {
+    box-shadow: 3px 3px 3px black;
+}
+
 #pwafooter {
     bottom: 0%;
     height: 85px;

@@ -3556,6 +3556,7 @@ func main() {
 				Cancellation         cancellationObj `json:"cancellation"`
 				AutoRenewedCancelled bool            `json:"autoRenewCanceled"`
 			}
+
 			type outerRespObj struct {
 				Order orderObj `json:"order"`
 			}

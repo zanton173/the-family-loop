@@ -543,7 +543,7 @@
     async function checkStatusOfCurrentWixUser(event) {
 
         if (event.detail.xhr.status === 424) {
-            document.getElementById('wixCurrentPlanDiv').style.display = ""
+            document.getElementById('wixCurrentPlanDiv').style.display = "none"
             document.getElementById('wixUserNotFoundDiv').style.display = "flex"
             document.getElementById('currentUserEmail').setAttribute("value", event.detail.xhr.response)
         } else if (event.detail.xhr.status === 200) {

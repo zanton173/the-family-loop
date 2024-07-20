@@ -818,6 +818,9 @@
         } else if (event.detail.xhr.status == 409) {
             alert("That email already exists")
             window.location.reload()
+        } else if (event.detail.xhr.status == 405) {
+            alert("something was wrong with the provided password. Please try again")
+            window.location.reload()
         } else if (event.detail.xhr.status == 424) {
             alert("Sign up failed. Your family loop has reached it maximum allowed amount of users. Please reach out to your account administrator.")
             window.location.reload()

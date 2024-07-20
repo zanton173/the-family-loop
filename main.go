@@ -142,7 +142,9 @@ func main() {
 	mongoDb, mongoerr := mongo.Connect(context.TODO(), options.Client().ApplyURI("mongodb+srv://tfl-user:"+mongoDBPass+"@tfl-leaderboard.dg95d1f.mongodb.net/?retryWrites=true&w=majority"))
 
 	if mongoerr != nil {
-		fmt.Println(mongoerr)
+		activityStr := "mongo Initalize error"
+		db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values(substr('%s',0,105),substr('%s',0,105),now());", mongoerr.Error(), activityStr))
+		return
 	}
 	defer mongoDb.Disconnect(context.TODO())
 	coll := mongoDb.Database("tfl-database").Collection("leaderboards")
@@ -228,7 +230,6 @@ func main() {
 
 		upload, filename, errfile := r.FormFile("pfpformfile")
 		if errfile != nil {
-			fmt.Println(errfile)
 			activityStr := "uploading pfp during sign up"
 			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", errfile, time.Now().In(nyLoc).Format(time.DateTime), activityStr))
 			w.WriteHeader(http.StatusInternalServerError)
@@ -240,14 +241,11 @@ func main() {
 		bytesOfPass, err := bcrypt.GenerateFromPassword(bs, len(bs))
 		if err != nil {
 			fmt.Println(err)
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			return
 		}
 
 		_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.users(\"username\", \"password\", \"pfp_name\", \"email\", \"gchat_bg_theme\", \"gchat_order_option\", \"cf_domain_name\", \"orgid\", \"is_admin\", \"mytz\") values('%s', '%s', '%s', '%s', '%s', %t, '%s', '%s', %t, '%s');", strings.ToLower(r.PostFormValue("usernamesignup")), bytesOfPass, fn, strings.ToLower(r.PostFormValue("emailsignup")), "background: linear-gradient(142deg, #00009f, #3dc9ff 26%)", true, cfdistro, orgId, false, r.PostFormValue("mytz")))
-
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
 
 		if errinsert != nil {
 			activityStr := "err inserting into users table on sign up"
@@ -521,6 +519,7 @@ func main() {
 		})
 
 		if geterr != nil {
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage,activity,createdon) values(substr('%s',0,105),'reset password getmessage', now());", geterr))
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
@@ -530,10 +529,11 @@ func main() {
 
 			marsherr := json.Unmarshal([]byte(*val.Body), &messageData)
 			if marsherr != nil {
-				fmt.Print(marsherr)
+				db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage,activity,createdon) values(substr('%s',0,105),'reset password marshaler', now());", marsherr))
+				w.WriteHeader(http.StatusBadRequest)
+				return
 			}
 			deleteReceipt = *val.ReceiptHandle
-			// fmt.Println(val.MessageAttributes)
 		}
 
 		for emailInput != messageData.Useremail || userInput != messageData.Username {
@@ -563,11 +563,13 @@ func main() {
 
 			newPassbytesOfPass, err := bcrypt.GenerateFromPassword(newpassbs, len(newpassbs))
 			if err != nil {
-				fmt.Println(err)
+				db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage,activity,createdon) values(substr('%s',0,105),'reset password generate issue', now());", err))
+				w.WriteHeader(http.StatusBadRequest)
+				return
 			}
 			_, uperr := db.Exec(fmt.Sprintf("update tfldata.users set password='%s', last_pass_reset=now() where username='%s' or email='%s';", newPassbytesOfPass, messageData.Username, messageData.Useremail))
 			if uperr != nil {
-				fmt.Println(uperr)
+				db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage,activity,createdon) values(substr('%s',0,105),'reset password update users table', now());", uperr))
 				w.WriteHeader(http.StatusBadRequest)
 				return
 			}
@@ -704,11 +706,6 @@ func main() {
 			firstRow := db.QueryRow(fmt.Sprintf("select file_name, file_type from tfldata.postfiles where post_files_key='%s' order by id asc limit 1;", postrows.Postfileskey))
 			firstRow.Scan(&firstImg.filename, &firstImg.filetype)
 
-			/*if strings.Contains(postrows.Title, "'") {
-			  postrows.Title = strings.ReplaceAll(postrows.Title, "'", "")
-			  fmt.Println(postrows.Title)
-			  }*/
-
 			if strings.Contains(firstImg.filetype, "image") {
 
 				if countOfImg > 1 {
@@ -746,17 +743,6 @@ func main() {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
-		cfg, err := config.LoadDefaultConfig(context.TODO(),
-			config.WithDefaultRegion("us-east-1"),
-			config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(awskey, awskeysecret, "")),
-		)
-
-		if err != nil {
-			w.Write([]byte("<p>This is a delete issue. Please create an issue on the bug report page</p>"))
-			return
-		}
-
-		client := s3.NewFromConfig(cfg)
 
 		bs, _ := io.ReadAll(r.Body)
 		type postBody struct {
@@ -786,7 +772,7 @@ func main() {
 			output.Scan(&workData.Pfilesid, &workData.Filename, &workData.Filetype)
 
 			if strings.Contains(workData.Filetype, "image") {
-				_, err := client.DeleteObject(context.TODO(), &s3.DeleteObjectInput{
+				_, err := s3Client.DeleteObject(context.TODO(), &s3.DeleteObjectInput{
 					Bucket: aws.String(s3Domain),
 					Key:    aws.String("posts/images/" + workData.Filename),
 				})
@@ -796,7 +782,7 @@ func main() {
 					fmt.Println(err.Error())
 				}
 			} else {
-				_, err := client.DeleteObject(context.TODO(), &s3.DeleteObjectInput{
+				_, err := s3Client.DeleteObject(context.TODO(), &s3.DeleteObjectInput{
 					Bucket: aws.String(s3Domain),
 					Key:    aws.String("posts/videos/" + workData.Filename),
 				})

@@ -221,8 +221,7 @@
                             style="right: 20%; position: relative; left: 65%" class="link" id="resetPassLink">forgot
                             password</a>
                     </form>
-                    <form class="form" hx-post="/signup" id="sign-up-form" hx-trigger="submit"
-                        hx-encoding="multipart/form-data" hx-swap="none"
+                    <form class="form" hx-post="/signup" id="sign-up-form" hx-trigger="submit" hx-swap="none"
                         hx-vals="js:{'mytz': Intl.DateTimeFormat().resolvedOptions().timeZone}" hx-target="this"
                         hx-indicator="#loadingspinner">
                         <div class="p-4">

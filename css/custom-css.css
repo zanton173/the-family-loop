@@ -108,7 +108,7 @@ button.btn.btn-primary {
 }
 
 #stGameObj {
-    animation: bounce 2s linear infinite
+    animation: bounceFromLeft 2s linear infinite
 }
 
 #bannerimg {
@@ -404,7 +404,7 @@ button.btn.btn-primary {
     }
 }
 
-@keyframes bounce {
+@keyframes bounceFromLeft {
     0% {
         left: 0;
     }
@@ -415,6 +415,20 @@ button.btn.btn-primary {
 
     100% {
         left: 0;
+    }
+}
+
+@keyframes bounceFromRight {
+    0% {
+        right: 0;
+    }
+
+    50% {
+        right: calc(100dvw - var(--game-lvl-width));
+    }
+
+    100% {
+        right: 0;
     }
 }
 

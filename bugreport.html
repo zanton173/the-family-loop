@@ -34,7 +34,8 @@
 
                     </div>
                     <form style="width: 95%; margin: auto;" hx-swap="none" hx-post="/create-issue-comment"
-                        hx-ext='json-enc' id="createIssueCommentForm" hx-on::after-request="window.location.reload()">
+                        hx-ext='json-enc' id="createIssueCommentForm"
+                        hx-on::after-request="{openModalWithCommentURL(openingIssueCommentURL, document.getElementById('issueTitleHeader').innerText); document.getElementById('bugissuecommentinput').value = ''}">
                         <input class="my-3 border-1 text-center"
                             style="border-radius: 3%; width: 85%; margin: auto; display: flex" name="bugissuecomment"
                             id="bugissuecommentinput" type="text" placeholder="Comment" required maxlength="250" />
@@ -220,7 +221,7 @@
                 }
             }
             openingIssueCommentURL = commenturl
-            issueCommentsModal.toggle()
+            issueCommentsModal.show()
         }
 
         async function getDataResp(event) {

@@ -610,7 +610,7 @@ func main() {
 			tmpl := template.Must(template.ParseFiles("timecapsule.html"))
 			tmpl.Execute(w, nil)
 			tm.Execute(w, nil)
-		case "/bugreport":
+		case "/customersupport":
 			tmpl := template.Must(template.ParseFiles("bugreport.html"))
 			tmpl.Execute(w, nil)
 			tm.Execute(w, nil)

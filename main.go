@@ -1742,7 +1742,7 @@ func main() {
 			}
 			dataStr := ""
 			if author == currentUserFromSession {
-				dataStr = "<div class='container gchatmessagecardme' style='width: 95&percnt;;'><div class='row'><b class='col-2 px-1'>" + author + "</b><div class='row'><img style='width: 15%; position: sticky;' class='col-2 px-2 my-1' src='" + pfpImg + "' alt='tfl pfp' /></div><p class='col-10' style='position: relative; left: 13%; margin-bottom: 1%; margin-top: -15%; overflow-wrap: anywhere; padding-right: 0%;'>" + message + "</p></div><div class='row'><p class='col' style='margin-left: 60%; font-size: smaller; margin-bottom: 0%'>" + createdat.Format(formatCreatedatTime) + editDelBtn + "</p></div></div>"
+				dataStr = "<div class='container gchatmessagecardme' style='width: 95&percnt;;'><div class='row'><b class='col-2 px-1'>me</b><div class='row'><img style='width: 15%; position: sticky;' class='col-2 px-2 my-1' src='" + pfpImg + "' alt='tfl pfp' /></div><p class='col-10' style='position: relative; left: 13%; margin-bottom: 1%; margin-top: -15%; overflow-wrap: anywhere; padding-right: 0%;'>" + message + "</p></div><div class='row'><p class='col' style='margin-left: 60%; font-size: smaller; margin-bottom: 0%'>" + createdat.Format(formatCreatedatTime) + editDelBtn + "</p></div></div>"
 			} else {
 				dataStr = "<div class='container gchatmessagecardfrom' style='width: 95&percnt;;'><div class='row'><b class='col-2 px-1'>" + author + "</b><div class='row'><img style='width: 15%; position: sticky;' class='col-2 px-2 my-1' src='" + pfpImg + "' alt='tfl pfp' /></div><p class='col-10' style='position: relative; left: 13%; margin-bottom: 1%; margin-top: -15%; overflow-wrap: anywhere; padding-right: 0%;'>" + message + "</p></div><div class='row'><p class='col' style='margin-left: 60%; font-size: smaller; margin-bottom: 0%'>" + createdat.Format(formatCreatedatTime) + editDelBtn + "</p></div></div>"
 			}
@@ -1827,7 +1827,7 @@ func main() {
 			if pChatRow.toUser == currentUserFromSession {
 				dataStr = "<div id='pchatid_" + fmt.Sprint(pChatRow.id) + "'class='container gchatmessagecardfrom' style='width: 95&percnt;;'><div class='row'><b class='col-2 px-1'>" + pChatRow.fromUser + "</b><div class='row'><img style='width: 15%; position: sticky;' class='col-2 px-2 my-1' src='" + pfpimg + "' alt='tfl pfp' /></div><p class='col-10' style='position: relative; left: 13%; margin-bottom: 1%; margin-top: -15%; overflow-wrap: anywhere; padding-right: 0%;'>" + pChatRow.chatMessage + "</p></div><div class='row'><div class='col' style='position: relative; margin-right: 0&percnt;; width: auto; display: flex; justify-content: flex-start' id='reactionid_" + fmt.Sprint(pChatRow.id) + "'>" + pChatRow.reaction.String + "</div><p class='col' style='margin-left: 60%; font-size: smaller; margin-bottom: 0%'>" + pChatRow.createdOn.Format(pChatRow.formatCreatedOnTime) + editDelBtn + "</p></div></div>"
 			} else {
-				dataStr = "<div class='container gchatmessagecardme' style='width: 95&percnt;;'><div class='row'><div class='row'><b class='col-2 px-1'>" + pChatRow.fromUser + "</b><div class='row'><img style='width: 15%; position: sticky;' class='col-2 px-2 my-1' src='" + pfpimg + "' alt='tfl pfp' /></div><p class='col-10' style='position: relative; left: 13%; margin-bottom: 1%; margin-top: -15%; overflow-wrap: anywhere; padding-right: 0%;'>" + pChatRow.chatMessage + "</p></div><div class='col' style='position: relative; margin-right: 0&percnt;; width: auto; display: flex; justify-content: flex-start' id='reactionid_" + fmt.Sprint(pChatRow.id) + "'>" + pChatRow.reaction.String + "</div><p class='col' style='margin-left: 60%; font-size: smaller; margin-bottom: 0%'>" + pChatRow.createdOn.Format(pChatRow.formatCreatedOnTime) + editDelBtn + "</p></div></div>"
+				dataStr = "<div class='container gchatmessagecardme' style='width: 95&percnt;;'><div class='row'><div class='row'><b class='col-2 px-1'>me</b><div class='row'><img style='width: 15%; position: sticky;' class='col-2 px-2 my-1' src='" + pfpimg + "' alt='tfl pfp' /></div><p class='col-10' style='position: relative; left: 13%; margin-bottom: 1%; margin-top: -15%; overflow-wrap: anywhere; padding-right: 0%;'>" + pChatRow.chatMessage + "</p></div><div class='col' style='position: relative; margin-right: 0&percnt;; width: auto; display: flex; justify-content: flex-start' id='reactionid_" + fmt.Sprint(pChatRow.id) + "'>" + pChatRow.reaction.String + "</div><p class='col' style='margin-left: 60%; font-size: smaller; margin-bottom: 0%'>" + pChatRow.createdOn.Format(pChatRow.formatCreatedOnTime) + editDelBtn + "</p></div></div>"
 			}
 			chattmp, tmperr := template.New("pchat").Parse(dataStr)
 			if tmperr != nil {
@@ -3631,7 +3631,6 @@ func main() {
 			DataCollectionId string          `json:"dataCollectionId"`
 			Query            postReqQueryObj `json:"query"`
 		}
-
 		postReqBody := postReqObj{
 			DataCollectionId: "regular-user-subscriptions",
 			Query: postReqQueryObj{

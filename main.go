@@ -4577,8 +4577,7 @@ func main() {
 	http.Handle("/assets/", http.StripPrefix("/assets/", http.FileServer(http.Dir("assets"))))
 
 	log.Fatal(http.ListenAndServe(":80", nil))
-	// For production
-	// log.Fatal(http.ListenAndServeTLS(":443", "../tflserver.crt", "../tflserver.key", nil))
+
 }
 
 func setLoginCookie(w http.ResponseWriter, db *sql.DB, userStr string, acceptedTz string) {

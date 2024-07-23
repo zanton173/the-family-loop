@@ -294,49 +294,6 @@
     }
 
 
-    /* function openAndShutSearchDiv() {
- 
-         if (document.getElementById('searchBarDiv').style.height == "17px") {
-             document.getElementById('searchCollapsedCarrot').classList.add('openSearchArrow')
-             document.getElementById('searchByKeywordInput').style.display = ""
-             document.getElementById('searchByKeywordInput').classList.add('openSearchInput')
-             document.getElementById('searchBarDiv').classList.add('openSeachBar')
-             document.getElementById('searchBarDiv').addEventListener('animationend', () => {
-                 document.getElementById('searchBarDiv').style.height = "45px"
-                 document.getElementById('searchBarDiv').classList.remove('openSeachBar')
-                 document.getElementById('searchByKeywordInput').classList.remove('openSearchInput')
-                 document.getElementById('searchCollapsedCarrot').style.transform = "rotate(90deg)"
-                 document.getElementById('searchCollapsedCarrot').classList.remove('openSearchArrow')
-                 document.getElementById('searchByKeywordInput').style.display = ""
-             })
- 
-         } else {
- 
-             document.getElementById('searchCollapsedCarrot').classList.add('openSearchArrowReversed')
-             document.getElementById('searchByKeywordInput').classList.add('openSearchInputReversed')
-             document.getElementById('searchBarDiv').classList.add('openSeachBarReversed')
-             document.getElementById('searchBarDiv').addEventListener('animationend', () => {
-                 document.getElementById('searchBarDiv').style.height = "17px"
-                 document.getElementById('searchBarDiv').classList.remove('openSeachBarReversed')
-                 document.getElementById('searchByKeywordInput').classList.remove('openSearchInputReversed')
-                 document.getElementById('searchCollapsedCarrot').style.transform = "rotate(calc(0deg))"
-                 document.getElementById('searchCollapsedCarrot').classList.remove('openSearchArrowReversed')
-                 document.getElementById('searchByKeywordInput').style.display = "none"
-             })
- 
-         }
-     }
- */
-    /* function onChangeSearchByMethod() {
-         document.getElementById('searchByKeywordInput').style.display = "none"
-         document.getElementById('searchByDateInput').style.display = "none"
-         document.getElementById('searchBySelector').value == "bydate" ?
-             document.getElementById('searchByDateInput').style.display = ""
-             :
-             document.getElementById('searchByKeywordInput').style.display = ""
- 
-     }*/
-
     async function checkForTagging() {
         newInput = document.getElementById('commentnote').value
         for (var i = 0; i < taggedUser.length; i++) {
@@ -430,7 +387,7 @@
     });
     function thisFunc() {
         if (document.getElementById('post-items').scrollHeight - window.pageYOffset <= (window.visualViewport.height - 50)) {
-            document.getElementById('divofposts').dispatchEvent(new Event('anotherCustomEvent'))
+            //document.getElementById('divofposts').dispatchEvent(new Event('anotherCustomEvent'))
             //alert('load')
             window.removeEventListener('scroll', thisFunc)
         }
@@ -460,30 +417,29 @@
         return output
     }
     // consider zindex for img toggling
-    function nextLeftImage(id) {
-        console.log(id)
+    async function nextLeftImage(id) {
+
         var itemTag = "IMG"
         var imgCaro = document.getElementById(id)
         imgCaro.tagName == "IMG" ?
             itemTag = "images"
             :
             itemTag = "videos"
-        const imgArray = listOfImageObj.filter((data) => data.id === imgCaro.getAttribute('id'))[0].imgs
+        
+        var imgArray = listOfImageObj.filter((data) => data.id === imgCaro.getAttribute('id'))[0].imgs
 
-        console.log(imgArray)
         if (iter == 0) {
             iter = imgArray.length - 1
             imgCaro.setAttribute("src", "https://d33gjmrumfzeah.cloudfront.net/posts/" + itemTag + "/" + imgArray[iter])
             imgCaro.setAttribute("alt", imgArray[iter])
-        }
-        else {
+        }else {
             imgCaro.setAttribute("src", "https://d33gjmrumfzeah.cloudfront.net/posts/" + itemTag + "/" + imgArray[iter - 1])
             imgCaro.setAttribute("alt", imgArray[iter - 1])
             iter--
         }
     }
-    function nextRightImage(id) {
-        console.log(id)
+    async function nextRightImage(id) {
+
         var itemTag = "IMG"
         var imgCaro = document.getElementById(id)
         imgCaro.tagName == "IMG" ?
@@ -491,14 +447,18 @@
             :
             itemTag = "videos"
 
-        const imgArray = listOfImageObj.filter((data) => data.id === imgCaro.getAttribute('id'))[0].imgs
-        console.log(imgArray)
+        var imgArray = listOfImageObj.filter((data) => data.id === imgCaro.getAttribute('id'))[0].imgs
+
         if (iter == imgArray.length - 1) {
             iter = 0
             imgCaro.setAttribute("src", "https://d33gjmrumfzeah.cloudfront.net/posts/" + itemTag + "/" + imgArray[iter])
             imgCaro.setAttribute("alt", imgArray[iter])
-        }
-        else {
+        }else if(iter >= imgArray.length){
+            iter = imgArray.length
+            imgCaro.setAttribute("src", "https://d33gjmrumfzeah.cloudfront.net/posts/" + itemTag + "/" + imgArray[iter-1])
+            imgCaro.setAttribute("alt", imgArray[iter-1])
+            iter--
+        }else {
             imgCaro.setAttribute("src", "https://d33gjmrumfzeah.cloudfront.net/posts/" + itemTag + "/" + imgArray[iter + 1])
             imgCaro.setAttribute("alt", imgArray[iter + 1])
             iter++

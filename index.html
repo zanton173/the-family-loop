@@ -461,6 +461,7 @@
     }
     // consider zindex for img toggling
     function nextLeftImage(id) {
+        //console.log(id)
         var itemTag = "IMG"
         var imgCaro = document.getElementById(id)
         imgCaro.tagName == "IMG" ?
@@ -469,6 +470,7 @@
             itemTag = "videos"
         const imgArray = listOfImageObj.filter((data) => data.id === imgCaro.getAttribute('id'))[0].imgs
 
+        //console.log(imgArray)
         if (iter == 0) {
             iter = imgArray.length - 1
             imgCaro.setAttribute("src", "https://d33gjmrumfzeah.cloudfront.net/posts/" + itemTag + "/" + imgArray[iter])
@@ -481,6 +483,7 @@
         }
     }
     function nextRightImage(id) {
+        //console.log(id)
         var itemTag = "IMG"
         var imgCaro = document.getElementById(id)
         imgCaro.tagName == "IMG" ?
@@ -489,7 +492,7 @@
             itemTag = "videos"
 
         const imgArray = listOfImageObj.filter((data) => data.id === imgCaro.getAttribute('id'))[0].imgs
-
+        //console.log(imgArray)
         if (iter == imgArray.length - 1) {
             iter = 0
             imgCaro.setAttribute("src", "https://d33gjmrumfzeah.cloudfront.net/posts/" + itemTag + "/" + imgArray[iter])

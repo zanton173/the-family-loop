@@ -387,7 +387,7 @@
     });
     function thisFunc() {
         if (document.getElementById('post-items').scrollHeight - window.pageYOffset <= (window.visualViewport.height - 50)) {
-            //document.getElementById('divofposts').dispatchEvent(new Event('anotherCustomEvent'))
+            document.getElementById('divofposts').dispatchEvent(new Event('anotherCustomEvent'))
             //alert('load')
             window.removeEventListener('scroll', thisFunc)
         }

@@ -362,6 +362,7 @@
 <script>
 
     var iter = 0
+    var currentlySelectedIterId = ""
     var pageLoadPaginator = null
     htmx.on("#post-items", "htmx:afterSettle", function updatePaginator() {
         var postItems = document.querySelectorAll("[hx-get]")
@@ -417,29 +418,39 @@
         return output
     }
     // consider zindex for img toggling
-    async function nextLeftImage(id) {
-
+    function nextLeftImage(id) {
+        if (currentlySelectedIterId != id)
+            iter = 0
         var itemTag = "IMG"
         var imgCaro = document.getElementById(id)
         imgCaro.tagName == "IMG" ?
             itemTag = "images"
             :
             itemTag = "videos"
-        
+
         var imgArray = listOfImageObj.filter((data) => data.id === imgCaro.getAttribute('id'))[0].imgs
+
+
 
         if (iter == 0) {
             iter = imgArray.length - 1
             imgCaro.setAttribute("src", "https://d33gjmrumfzeah.cloudfront.net/posts/" + itemTag + "/" + imgArray[iter])
             imgCaro.setAttribute("alt", imgArray[iter])
-        }else {
+        } else if (iter >= imgArray.length) {
+            imgCaro.setAttribute("src", "https://d33gjmrumfzeah.cloudfront.net/posts/" + itemTag + "/" + imgArray[imgArray.length - 1])
+            imgCaro.setAttribute("alt", imgArray[imgArray.length - 1])
+            iter = 0
+        }
+        else {
             imgCaro.setAttribute("src", "https://d33gjmrumfzeah.cloudfront.net/posts/" + itemTag + "/" + imgArray[iter - 1])
             imgCaro.setAttribute("alt", imgArray[iter - 1])
             iter--
         }
+        currentlySelectedIterId = id
     }
-    async function nextRightImage(id) {
-
+    function nextRightImage(id) {
+        if (currentlySelectedIterId != id)
+            iter = 0
         var itemTag = "IMG"
         var imgCaro = document.getElementById(id)
         imgCaro.tagName == "IMG" ?
@@ -453,17 +464,17 @@
             iter = 0
             imgCaro.setAttribute("src", "https://d33gjmrumfzeah.cloudfront.net/posts/" + itemTag + "/" + imgArray[iter])
             imgCaro.setAttribute("alt", imgArray[iter])
-        }else if(iter >= imgArray.length){
+        } else if (iter >= imgArray.length) {
             iter = imgArray.length
-            imgCaro.setAttribute("src", "https://d33gjmrumfzeah.cloudfront.net/posts/" + itemTag + "/" + imgArray[iter-1])
-            imgCaro.setAttribute("alt", imgArray[iter-1])
+            imgCaro.setAttribute("src", "https://d33gjmrumfzeah.cloudfront.net/posts/" + itemTag + "/" + imgArray[iter - 1])
+            imgCaro.setAttribute("alt", imgArray[iter - 1])
             iter--
-        }else {
+        } else {
             imgCaro.setAttribute("src", "https://d33gjmrumfzeah.cloudfront.net/posts/" + itemTag + "/" + imgArray[iter + 1])
             imgCaro.setAttribute("alt", imgArray[iter + 1])
             iter++
         }
-
+        currentlySelectedIterId = id
 
     }
 

@@ -167,7 +167,7 @@ button.btn.btn-primary {
     width: 70dvw;
     margin-left: auto;
     margin-right: auto;
-    justify-content: center;
+    justify-content: center
 }
 
 .createdontime {
@@ -206,21 +206,25 @@ button.btn.btn-outline-secondary {
 }
 
 @media (min-width:340px) {
-    div>.row>p{
-        font-size: xx-small;
+    div.container.gchatmessagecardme>.row>p {
+        font-size: 10pt
     }
+    div.container.gchatmessagecardfrom>.row>p {
+        font-size: 10pt
+    }
+
     div>.card {
         width: 88%;
         margin: auto
     }
 
     div>.card>.card-body {
-        padding-top: 0%
+        padding-top: 0
     }
 
     #searchBarDiv {
         width: 73dvw;
-        justify-content: center;
+        justify-content: center
     }
 }
 

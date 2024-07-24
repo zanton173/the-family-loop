@@ -127,7 +127,7 @@
     <div id="loadGChathere" hx-get="/group-chat-messages"
         hx-vals="js:{'threadval': document.getElementById('threadSelector').value, 'order_option': gchatOrderOpt, 'limit': limitVal}"
         hx-on::after-request="countOfMessages(event)"
-        hx-trigger="afterThreadSelectorLoadsEvent, every 3s, success-send from:#messageform, limitChange"
+        hx-trigger="afterThreadSelectorLoadsEvent, success-send from:#messageform, limitChange"
         class="border-1 m-2" style="display: block; justify-content: center; text-align: center; border-radius: 1%;">
 
     </div>

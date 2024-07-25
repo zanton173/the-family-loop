@@ -55,7 +55,7 @@
             ]
         },
         {
-            "name": "Chat",
+            "name": "Chats",
             "url": "/groupchat",
             "description": "chat",
             "icons": [

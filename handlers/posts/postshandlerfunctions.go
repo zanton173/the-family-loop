@@ -16,7 +16,7 @@ import (
 
 func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 	jwtSignKey := os.Getenv("JWT_SIGNING_KEY")
-	dbvalidate := globalvars.DbConn()
+	dbvalidate := globalfunctions.DbConn()
 	allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(dbvalidate, r)
 	validBool := globalfunctions.ValidateJWTToken(jwtSignKey, r)
 	if !validBool || !allowOrDeny {
@@ -25,8 +25,7 @@ func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-	db := globalvars.DbConn()
-	s3Client := globalfunctions.InitializeS3Client()
+	db := globalfunctions.DbConn()
 
 	postFilesKey := uuid.NewString()
 
@@ -76,7 +75,7 @@ func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 
 		f.Seek(0, 0)
 
-		globalfunctions.UploadFileToS3(f, tmpFileName, db, filetype, s3Client)
+		globalfunctions.UploadFileToS3(f, tmpFileName, db, filetype)
 
 		_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.postfiles(\"file_name\", \"file_type\", \"post_files_key\") values('%s', '%s', '%s');", fh.Filename, filetype, postFilesKey))
 

@@ -2,14 +2,14 @@ package vars
 
 import (
 	"context"
-	"database/sql"
-	"fmt"
-	"log"
 	"os"
 	"strings"
 	"time"
 
 	firebase "firebase.google.com/go"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"google.golang.org/api/option"
 )
 
@@ -20,15 +20,21 @@ var FbOpts = []option.ClientOption{option.WithCredentialsFile("the-family-loop-f
 var App, AppErr = firebase.NewApp(context.TODO(), nil, FbOpts...)
 var Fb_message_client, FbInitErr = App.Messaging(context.TODO())
 
-func DbConn() *sql.DB {
-	dbpass := os.Getenv("DB_PASS")
+var awscfg, err = config.LoadDefaultConfig(context.TODO(),
+	config.WithDefaultRegion("us-east-1"),
+	config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(Awskey, Awskeysecret, "")),
+)
+var S3Client = s3.NewFromConfig(awscfg)
 
-	connStr := fmt.Sprintf("postgresql://tfldbrole:%s@localhost/tfl?sslmode=disable", dbpass)
-	db, err := sql.Open("postgres", connStr)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-	//defer db.Close()
-	return db
-}
+var Dbpass = os.Getenv("DB_PASS")
+var Awskey = os.Getenv("AWS_ACCESS_KEY")
+var Awskeysecret = os.Getenv("AWS_ACCESS_SECRET")
+var Ghissuetoken = os.Getenv("GH_BEARER")
+var Cfdistro = os.Getenv("CF_DOMAIN")
+var S3Domain = os.Getenv("S3_BUCKET_NAME")
+var OrgId = os.Getenv("ORG_ID")
+var MongoDBPass = os.Getenv("MONGO_PASS")
+var SubLevel = os.Getenv("SUB_PACKAGE")
+var JwtSignKey = os.Getenv("JWT_SIGNING_KEY")
+var Wixapikey = os.Getenv("WIX_API_KEY")
+var Ghusercommentkey = os.Getenv("GH_USER_COMMENT_TOKEN")

@@ -23,13 +23,52 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/disintegration/imaging"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"github.com/joho/godotenv"
 	"github.com/rwcarlsen/goexif/exif"
 	"github.com/rwcarlsen/goexif/tiff"
 )
 
+/* INITIALIZE ITEMS */
+func GetEnv() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+		os.Exit(1)
+	}
+}
+func DbConn() *sql.DB {
+	dbpass := globalvars.Dbpass
+
+	connStr := fmt.Sprintf("postgresql://tfldbrole:%s@localhost/tfl?sslmode=disable", dbpass)
+	db, err := sql.Open("postgres", connStr)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+	//defer db.Close()
+	return db
+}
+func InitializeS3Client() *s3.Client {
+	awskey := os.Getenv("AWS_ACCESS_KEY")
+	awskeysecret := os.Getenv("AWS_ACCESS_SECRET")
+	awscfg, err := config.LoadDefaultConfig(context.TODO(),
+		config.WithDefaultRegion("us-east-1"),
+		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(awskey, awskeysecret, "")),
+	)
+
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(4)
+	}
+
+	return s3.NewFromConfig(awscfg)
+}
+
+/* SESSION ITEMS */
 func ValidateCurrentSessionId(db *sql.DB, r *http.Request) (bool, string, string) {
 	var handlerForLogin string
 	session_token, seshErr := r.Cookie("session_id")
@@ -65,28 +104,6 @@ func ValidateCurrentSessionId(db *sql.DB, r *http.Request) (bool, string, string
 	return scnerr == nil, username.String, handlerForLogin
 
 }
-func GetEnv() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-		os.Exit(1)
-	}
-}
-func InitializeS3Client() *s3.Client {
-	awskey := os.Getenv("AWS_ACCESS_KEY")
-	awskeysecret := os.Getenv("AWS_ACCESS_SECRET")
-	awscfg, err := config.LoadDefaultConfig(context.TODO(),
-		config.WithDefaultRegion("us-east-1"),
-		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(awskey, awskeysecret, "")),
-	)
-
-	if err != nil {
-		log.Fatal(err)
-		os.Exit(4)
-	}
-
-	return s3.NewFromConfig(awscfg)
-}
 func ValidateJWTToken(tokenKey string, r *http.Request) bool {
 	jwtCookie, cookieErr := r.Cookie("backendauth")
 	if cookieErr != nil {
@@ -102,8 +119,68 @@ func ValidateJWTToken(tokenKey string, r *http.Request) bool {
 	}
 	return jwtToken.Valid
 }
-func UploadFileToS3(f multipart.File, fn string, db *sql.DB, filetype string, s3Client *s3.Client) {
-	s3Domain := os.Getenv("S3_BUCKET_NAME")
+func GenerateLoginJWT(username string, w http.ResponseWriter, jwtKey string) *jwt.Token {
+	daysToExp := int64(7)
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"iss":  "backend-auth",
+		"user": username,
+		"exp":  time.Now().Unix() + (24 * 60 * 60 * daysToExp),
+	})
+	expiresAt := time.Now().Add(24 * time.Duration(daysToExp) * time.Hour)
+
+	signKey, _ := token.SignedString([]byte(jwtKey))
+	http.SetCookie(w, &http.Cookie{
+		Name:     "backendauth",
+		MaxAge:   int(time.Until(expiresAt).Seconds()),
+		Value:    signKey,
+		HttpOnly: true,
+		SameSite: http.SameSiteStrictMode,
+		Path:     "/",
+	})
+	return token
+}
+func ValidateWebhookJWTToken(tokenKey string, r *http.Request) bool {
+	jwtHeaderVal := r.Header.Get("Authorization")
+	jwtToken, jwtValidateErr := jwt.Parse(jwtHeaderVal, func(jwtToken *jwt.Token) (interface{}, error) {
+		return []byte(tokenKey), nil
+	}, jwt.WithValidMethods([]string{"HS256"}))
+
+	if jwtValidateErr != nil {
+		return false
+	}
+	return jwtToken.Valid
+}
+func SetLoginCookie(w http.ResponseWriter, db *sql.DB, userStr string, acceptedTz string) {
+
+	sessionToken := uuid.NewString()
+	expiresAt := time.Now().Add(3600 * time.Hour)
+	//fmt.Println(expiresAt.Local().Format(time.DateTime))
+	//fmt.Println(userStr)
+	/*_, inserterr := db.Exec(fmt.Sprintf("insert into tfldata.sessions(\"username\", \"session_token\", \"expiry\", \"ip_addr\") values('%s', '%s', '%s', '%s') on conflict(ip_addr) do update set session_token='%s', expiry='%s';", userStr, sessionToken, expiresAt.Format(time.DateTime), strings.Split(r.RemoteAddr, ":")[0], sessionToken, expiresAt.Format(time.DateTime)))
+	  if inserterr != nil {
+	  db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", inserterr))
+	  fmt.Println(inserterr)
+	  }*/
+	_, updateerr := db.Exec(fmt.Sprintf("update tfldata.users set session_token='%s', mytz='%s' where username='%s' or email='%s';", sessionToken, acceptedTz, userStr, userStr))
+	if updateerr != nil {
+		db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s');", updateerr, time.Now().In(globalvars.NyLoc).Format(time.DateTime)))
+		fmt.Printf("err: '%s'", updateerr)
+	}
+	maxAge := time.Until(expiresAt)
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session_id",
+		Value:    sessionToken,
+		MaxAge:   int(maxAge.Seconds()),
+		SameSite: http.SameSiteStrictMode,
+		Path:     "/",
+	})
+
+}
+
+/* FUNCTION ITEMS */
+func UploadFileToS3(f multipart.File, fn string, db *sql.DB, filetype string) {
+
 	if strings.Contains(filetype, "image") {
 
 		f.Seek(0, 0)
@@ -136,8 +213,8 @@ func UploadFileToS3(f multipart.File, fn string, db *sql.DB, filetype string, s3
 			if encerr != nil {
 				fmt.Println(encerr)
 			}
-			_, err4 := s3Client.PutObject(context.TODO(), &s3.PutObjectInput{
-				Bucket:       aws.String(s3Domain),
+			_, err4 := globalvars.S3Client.PutObject(context.TODO(), &s3.PutObjectInput{
+				Bucket:       aws.String(globalvars.S3Domain),
 				Key:          aws.String("posts/images/" + fn),
 				Body:         &compfile,
 				ContentType:  &filetype,
@@ -196,8 +273,8 @@ func UploadFileToS3(f multipart.File, fn string, db *sql.DB, filetype string, s3
 			if encerr != nil {
 				fmt.Println(encerr)
 			}
-			_, err4 := s3Client.PutObject(context.TODO(), &s3.PutObjectInput{
-				Bucket:       aws.String(s3Domain),
+			_, err4 := globalvars.S3Client.PutObject(context.TODO(), &s3.PutObjectInput{
+				Bucket:       aws.String(globalvars.S3Domain),
 				Key:          aws.String("posts/images/" + fn),
 				Body:         &compfile,
 				ContentType:  &filetype,
@@ -212,8 +289,8 @@ func UploadFileToS3(f multipart.File, fn string, db *sql.DB, filetype string, s3
 		}
 	} else {
 
-		_, err4 := s3Client.PutObject(context.TODO(), &s3.PutObjectInput{
-			Bucket:       aws.String(s3Domain),
+		_, err4 := globalvars.S3Client.PutObject(context.TODO(), &s3.PutObjectInput{
+			Bucket:       aws.String(globalvars.S3Domain),
 			Key:          aws.String("posts/videos/" + fn),
 			Body:         f,
 			ContentType:  &filetype,
@@ -325,7 +402,180 @@ func SendNotificationToAllUsers(db *sql.DB, curUser string, fb_message_client *m
 				}
 			}
 		}
-		//db.Exec(fmt.Sprintf("insert into tfldata.sent_notification_log(\"notification_result\", \"createdon\") values('%s', '%s');", sendRes, time.Now().In(nyLoc).Local().Format(time.DateTime)))
+		//db.Exec(fmt.Sprintf("insert into tfldata.sent_notification_log(\"notification_result\", \"createdon\") values('%s', '%s');", sendRes, time.Now().In(globalvars.NyLoc).Local().Format(time.DateTime)))
 
 	}
+}
+func UploadTimeCapsuleToS3(f *os.File, fn string, yearsToStore string) {
+	f.Seek(0, 0)
+
+	defer f.Close()
+
+	_, s3err := globalvars.S3Client.PutObject(context.TODO(), &s3.PutObjectInput{
+		Bucket:      aws.String(globalvars.S3Domain),
+		Key:         aws.String("timecapsules/" + fn),
+		ContentType: aws.String("application/octet-stream"),
+		Body:        f,
+		//StorageClass: types.StorageClassGlacier,
+		Tagging: aws.String("YearsToStore=" + yearsToStore),
+	})
+
+	if s3err != nil {
+		fmt.Println("error on upload")
+		fmt.Println(s3err.Error())
+	}
+	/*
+	   var yearstostore string
+	   		row := db.QueryRow(fmt.Sprintf("select yearstostore from tfldata.timecapsule where tcfilename='%s';", postData.Capsulename))
+	   		sner := row.Scan(&yearstostore)
+	   		if sner != nil {
+	   			fmt.Println("scan err")
+	   			return
+	   		}
+	   		if yearstostore == "1" {
+	   			yearstostore = "one_year"
+	   		} else if yearstostore == "3" {
+	   			yearstostore = "three_years"
+	   		} else if yearstostore == "7" {
+	   			yearstostore = "seven_years"
+	   		}
+	   		globalvars.S3Client.PutObjectTagging(context.TODO(), &s3.PutObjectTaggingInput{
+	   			Bucket: &globalvars.S3Domain,
+	   			Key:    aws.String("timecapsules/" + postData.Capsulename),
+	   			Tagging: &types.Tagging{
+	   				TagSet: []types.Tag{
+	   					{
+	   						Key:   aws.String("YearsToStore"),
+	   						Value: &yearstostore,
+	   					},
+	   				},
+	   			},
+	   		})
+	*/
+	defer os.Remove(fn)
+}
+func DeleteFileFromS3(delname string, delPath string) {
+
+	_, err := globalvars.S3Client.DeleteObject(context.TODO(), &s3.DeleteObjectInput{
+		Bucket: aws.String(globalvars.S3Domain),
+		Key:    aws.String(delPath + delname),
+	})
+
+	if err != nil {
+		fmt.Println("error on file delete")
+		fmt.Println(err.Error())
+	}
+}
+
+func SendNotificationToSingleUser(db *sql.DB, fb_message_client *messaging.Client, fcmToken string, opts globaltypes.NotificationOpts) {
+	typePayload := make(map[string]string)
+	typePayload["type"] = opts.ExtraPayloadVal
+	sentRes, sendErr := fb_message_client.Send(context.TODO(), &messaging.Message{
+		Token: fcmToken,
+		Notification: &messaging.Notification{
+			Title:    opts.NotificationTitle,
+			Body:     strings.ReplaceAll(opts.NotificationBody, "\\", ""),
+			ImageURL: "/assets/icon-180x180.jpg",
+		},
+
+		Webpush: &messaging.WebpushConfig{
+			Notification: &messaging.WebpushNotification{
+				Title: opts.NotificationTitle,
+				Body:  strings.ReplaceAll(opts.NotificationBody, "\\", ""),
+				Data:  typePayload,
+				Image: "/assets/icon-180x180.jpg",
+				Icon:  "/assets/icon-96x96.jpg",
+				Actions: []*messaging.WebpushNotificationAction{
+					{
+						Action: typePayload["type"],
+						Title:  opts.NotificationTitle,
+						Icon:   "/assets/icon-96x96.png",
+					},
+					{
+						Action: typePayload["type"],
+						Title:  "NA",
+						Icon:   "/assets/icon-96x96.png",
+					},
+				},
+			},
+		},
+	})
+	if sendErr != nil {
+		fmt.Print(sendErr)
+	}
+	db.Exec(fmt.Sprintf("insert into tfldata.sent_notification_log(\"notification_result\", \"createdon\") values('%s', '%s');", sentRes, time.Now().In(globalvars.NyLoc).Local().Format(time.DateTime)))
+}
+
+func UploadPfpToS3(f multipart.File, fn string, r *http.Request, formInputIdentifier string) string {
+
+	defer f.Close()
+	ourfile, fileHeader, errfile := r.FormFile(formInputIdentifier)
+
+	if errfile != nil {
+		log.Fatal(errfile)
+	}
+
+	fileContents := make([]byte, fileHeader.Size)
+
+	ourfile.Read(fileContents)
+	filetype := http.DetectContentType(fileContents)
+	f.Seek(0, 0)
+	buf := bytes.NewBuffer(nil)
+	_, err := io.Copy(buf, f)
+	if err != nil {
+		os.Exit(2)
+	}
+
+	f.Seek(0, 0)
+
+	newimg, _, decerr := imagego.Decode(buf)
+	if decerr != nil {
+		log.Fatal("dec err: " + decerr.Error())
+	}
+	var compfile bytes.Buffer
+	encerr := jpeg.Encode(&compfile, newimg, &jpeg.Options{
+		Quality: 18,
+	})
+	if encerr != nil {
+		fmt.Println(encerr)
+	}
+	tmpFileName := fn
+
+	getout, geterr := globalvars.S3Client.GetObjectAttributes(context.TODO(), &s3.GetObjectAttributesInput{
+		Bucket: aws.String(globalvars.S3Domain),
+		Key:    aws.String("pfp/" + tmpFileName),
+		ObjectAttributes: []types.ObjectAttributes{
+			"ObjectSize",
+		},
+	})
+
+	if geterr != nil {
+		fmt.Println("We can ignore this image: " + geterr.Error())
+
+	} else {
+
+		if *getout.ObjectSize > 1 {
+			tmpFileName = strings.ReplaceAll(strings.ReplaceAll(time.Now().Format(time.DateTime), " ", "_"), ":", "") + "_" + tmpFileName
+			fn = tmpFileName
+		}
+	}
+
+	if len(tmpFileName) > 55 {
+		fn = tmpFileName[len(tmpFileName)-35:]
+	}
+	defer ourfile.Close()
+
+	_, err4 := globalvars.S3Client.PutObject(context.TODO(), &s3.PutObjectInput{
+		Bucket:       aws.String(globalvars.S3Domain),
+		Key:          aws.String("pfp/" + fn),
+		Body:         &compfile,
+		ContentType:  &filetype,
+		CacheControl: aws.String("max-age=31536000"),
+	})
+
+	if err4 != nil {
+		fmt.Println("error on upload")
+		fmt.Println(err4.Error())
+	}
+	return fn
 }

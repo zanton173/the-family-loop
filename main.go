@@ -231,7 +231,7 @@ func main() {
 		upload, filename, errfile := r.FormFile("pfpformfile")
 		if errfile != nil {
 			activityStr := "uploading pfp during sign up"
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", errfile, time.Now().In(nyLoc).Format(time.DateTime), activityStr))
+			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", errfile.Error(), time.Now().In(nyLoc).Format(time.DateTime), activityStr))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}

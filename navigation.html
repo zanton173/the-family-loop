@@ -221,10 +221,10 @@
                             style="right: 20%; position: relative; left: 65%" class="link" id="resetPassLink">forgot
                             password</a>
                     </form>
-                    <form class="form" hx-post="/signup" id="sign-up-form" hx-trigger="submit" hx-swap="none"
+                    <form class="form" hx-post="/signup" id="sign-up-form" hx-trigger="submit" hx-encoding="multipart/form-data" hx-swap="none"
                         hx-vals="js:{'mytz': Intl.DateTimeFormat().resolvedOptions().timeZone}" hx-target="this"
                         hx-indicator="#loadingspinner">
-                        <div class="p-4">
+                        <div class="p-4" style="padding-bottom: .4rem!important;">
                             <h5>Sign Up</h5>
                             <label for="usernamesignupinput">Username:
                                 <input class="form-control" autocomplete="username" type="text" name="usernamesignup"
@@ -234,9 +234,10 @@
                         <div class="p-4">
                             <label for="emailsignupinput">Email:
                                 <input class="form-control" type="email" name="emailsignup" autocomplete="email"
-                                    placeholder="email@example.com" oninput="checkForValidSignUpSubmission()" required
+                                    placeholder="email@example.com" oninput="{checkForValidSignUpSubmission(); checkforValidEmailSubmission()}" required
                                     id="emailsignupinput" maxlength="64" /></label>
-                        </div>
+                                <p style="color: red; display: none; margin-bottom: 0%;" id="notValidEmailMessage">Not a valid email</p>
+                                </div>
                         <div class="p-4">
                             <label for="passwordsignupinput">Password:
                                 <input class="form-control" type="password" name="passwordsignup"
@@ -264,7 +265,7 @@
                                     oninput="checkForValidSignUpSubmission()" required id="orgidinput"
                                     name="orgidinput" /></label>
                         </div>
-                        <div class="p-4">
+                        <div class="p-4" style="padding-top: .4rem!important; padding-bottom: .4rem!important">
 
                             <label for="pfpimage">Pick a profile picture
                                 <input class="form-control" id="pfpimage" type="file" accept="image/*"
@@ -774,6 +775,12 @@
             loginele.removeChild(gologin)
         }
     }
+    function checkforValidEmailSubmission(){
+        !emailsignupinput.value.match(/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/) ?
+            document.getElementById('notValidEmailMessage').style.display = ""
+            :
+        document.getElementById('notValidEmailMessage').style.display = "none"
+    }
     function checkForValidSignUpSubmission() {
         if (passwordsignupinput.value !== confirmpasswordsignupinput.value) {
             document.getElementById('passworddonotmatch').innerHTML = "Passwords do not match!"
@@ -781,7 +788,7 @@
                 signup.removeChild(gosignup)
         } else
             document.getElementById('passworddonotmatch').innerHTML = ""
-
+        
         if (passwordsignupinput.value.length < 7 || passwordsignupinput.value.match(/[!$@#%^&*()_+|~=`{}\[\]:";'<>?,.]/) == null) {
             document.getElementById('passwordnotstrong').innerHTML = "Password needs at least 8 characters and a special character (!@#$^&*)"
             if (signup.contains(gosignup))

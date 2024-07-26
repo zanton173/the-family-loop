@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	postshandler "tfl/handlers/posts"
 
 	imagego "image"
 	"io"
@@ -805,96 +806,97 @@ func main() {
 			fmt.Println(delerr)
 		}
 	}
+	/*
+		createPostHandler := func(w http.ResponseWriter, r *http.Request) {
+			allowOrDeny, currentUserFromSession, h := validateCurrentSessionId(db, r)
 
-	createPostHandler := func(w http.ResponseWriter, r *http.Request) {
-		allowOrDeny, currentUserFromSession, h := validateCurrentSessionId(db, r)
+			validBool := validateJWTToken(jwtSignKey, r)
+			if !validBool || !allowOrDeny {
+				w.Header().Set("HX-Retarget", "window")
+				w.Header().Set("HX-Trigger", h)
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
 
-		validBool := validateJWTToken(jwtSignKey, r)
-		if !validBool || !allowOrDeny {
-			w.Header().Set("HX-Retarget", "window")
-			w.Header().Set("HX-Trigger", h)
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
+			postFilesKey := uuid.NewString()
 
-		postFilesKey := uuid.NewString()
+			parseerr := r.ParseMultipartForm(10 << 20)
+			if parseerr != nil {
+				// handle error
+				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('memory error multi file upload %s');", err))
+			}
+			// upload, filename, errfile := r.FormFile("file_name")
 
-		parseerr := r.ParseMultipartForm(10 << 20)
-		if parseerr != nil {
-			// handle error
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('memory error multi file upload %s');", err))
-		}
-		// upload, filename, errfile := r.FormFile("file_name")
+			//for _, fh := range r.MultipartForm.File["file_name"] {
+			for i := 0; i < len(r.MultipartForm.File["file_name"]); i++ {
 
-		//for _, fh := range r.MultipartForm.File["file_name"] {
-		for i := 0; i < len(r.MultipartForm.File["file_name"]); i++ {
+				fh := r.MultipartForm.File["file_name"][i]
+				f, err := fh.Open()
+				if err != nil {
+					activityStr := fmt.Sprintf("Open multipart file in createPostHandler - %s", currentUserFromSession)
+					db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", err, time.Now().In(nyLoc).Format(time.DateTime), activityStr))
+					w.WriteHeader(http.StatusBadRequest)
+					return
+				}
 
-			fh := r.MultipartForm.File["file_name"][i]
-			f, err := fh.Open()
-			if err != nil {
-				activityStr := fmt.Sprintf("Open multipart file in createPostHandler - %s", currentUserFromSession)
-				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", err, time.Now().In(nyLoc).Format(time.DateTime), activityStr))
+				tmpFileName := fh.Filename
+
+				var countIfExists int16
+				countIfExistsOut := db.QueryRow(fmt.Sprintf("select count(*) from tfldata.postfiles where file_name = '%s';", fh.Filename))
+
+				countIfExistsOut.Scan(&countIfExists)
+
+				if countIfExists > 0 {
+					tmpFileName = strings.ReplaceAll(strings.ReplaceAll(time.Now().Format(time.DateTime), " ", "_"), ":", "") + "_" + tmpFileName
+					fh.Filename = tmpFileName
+				} else {
+					tmpFileName = fh.Filename
+				}
+
+				if len(tmpFileName) > 55 {
+					fh.Filename = tmpFileName[len(tmpFileName)-35:]
+				}
+
+				fileContents := make([]byte, fh.Size)
+
+				f.Read(fileContents)
+
+				filetype := http.DetectContentType(fileContents)
+
+				f.Seek(0, 0)
+
+				uploadFileToS3(f, tmpFileName, db, filetype)
+
+				_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.postfiles(\"file_name\", \"file_type\", \"post_files_key\") values('%s', '%s', '%s');", fh.Filename, filetype, postFilesKey))
+
+				if errinsert != nil {
+					activityStr := fmt.Sprintf("insert into postfiles table createPostHander - %s", currentUserFromSession)
+					db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", errinsert, time.Now().In(nyLoc).Format(time.DateTime), activityStr))
+				}
+
+				defer f.Close()
+			}
+			_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.posts(\"title\", \"description\", \"author\", \"post_files_key\", \"createdon\") values(E'%s', E'%s', '%s', '%s', now());", replacer.Replace(r.PostFormValue("title")), replacer.Replace(r.PostFormValue("description")), currentUserFromSession, postFilesKey))
+
+			if errinsert != nil {
+				activityStr := "insert into posts table createPostHandler"
+				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", errinsert, time.Now().In(nyLoc).Format(time.DateTime), activityStr))
 				w.WriteHeader(http.StatusBadRequest)
 				return
 			}
 
-			tmpFileName := fh.Filename
+			var chatMessageNotificationOpts notificationOpts
+			chatMessageNotificationOpts.extraPayloadKey = "post"
+			chatMessageNotificationOpts.extraPayloadVal = "posts"
+			chatMessageNotificationOpts.notificationPage = "posts"
 
-			var countIfExists int16
-			countIfExistsOut := db.QueryRow(fmt.Sprintf("select count(*) from tfldata.postfiles where file_name = '%s';", fh.Filename))
+			chatMessageNotificationOpts.notificationTitle = fmt.Sprintf("%s just made a new post!", currentUserFromSession)
+			chatMessageNotificationOpts.notificationBody = strings.ReplaceAll(r.PostFormValue("title"), "\\", "")
 
-			countIfExistsOut.Scan(&countIfExists)
+			go sendNotificationToAllUsers(db, currentUserFromSession, fb_message_client, &chatMessageNotificationOpts)
 
-			if countIfExists > 0 {
-				tmpFileName = strings.ReplaceAll(strings.ReplaceAll(time.Now().Format(time.DateTime), " ", "_"), ":", "") + "_" + tmpFileName
-				fh.Filename = tmpFileName
-			} else {
-				tmpFileName = fh.Filename
-			}
-
-			if len(tmpFileName) > 55 {
-				fh.Filename = tmpFileName[len(tmpFileName)-35:]
-			}
-
-			fileContents := make([]byte, fh.Size)
-
-			f.Read(fileContents)
-
-			filetype := http.DetectContentType(fileContents)
-
-			f.Seek(0, 0)
-
-			uploadFileToS3(f, tmpFileName, db, filetype)
-
-			_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.postfiles(\"file_name\", \"file_type\", \"post_files_key\") values('%s', '%s', '%s');", fh.Filename, filetype, postFilesKey))
-
-			if errinsert != nil {
-				activityStr := fmt.Sprintf("insert into postfiles table createPostHander - %s", currentUserFromSession)
-				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", errinsert, time.Now().In(nyLoc).Format(time.DateTime), activityStr))
-			}
-
-			defer f.Close()
 		}
-		_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.posts(\"title\", \"description\", \"author\", \"post_files_key\", \"createdon\") values(E'%s', E'%s', '%s', '%s', now());", replacer.Replace(r.PostFormValue("title")), replacer.Replace(r.PostFormValue("description")), currentUserFromSession, postFilesKey))
-
-		if errinsert != nil {
-			activityStr := "insert into posts table createPostHandler"
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", errinsert, time.Now().In(nyLoc).Format(time.DateTime), activityStr))
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-
-		var chatMessageNotificationOpts notificationOpts
-		chatMessageNotificationOpts.extraPayloadKey = "post"
-		chatMessageNotificationOpts.extraPayloadVal = "posts"
-		chatMessageNotificationOpts.notificationPage = "posts"
-
-		chatMessageNotificationOpts.notificationTitle = fmt.Sprintf("%s just made a new post!", currentUserFromSession)
-		chatMessageNotificationOpts.notificationBody = strings.ReplaceAll(r.PostFormValue("title"), "\\", "")
-
-		go sendNotificationToAllUsers(db, currentUserFromSession, fb_message_client, &chatMessageNotificationOpts)
-
-	}
+	*/
 	createPostReactionHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		allowOrDeny, currentUserFromSession, h := validateCurrentSessionId(db, r)
@@ -4454,7 +4456,7 @@ func main() {
 	}
 
 	http.HandleFunc("/", pagesHandler)
-	http.HandleFunc("/create-post", createPostHandler)
+	http.HandleFunc("/create-post", postshandler.CreatePostHandler)
 
 	http.HandleFunc("/create-reaction-to-post", createPostReactionHandler)
 

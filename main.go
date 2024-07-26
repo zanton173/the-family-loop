@@ -164,7 +164,10 @@ func main() {
 
 	var postTmpl *template.Template
 	var tmerr error
-
+	updateFCMTokenHandler := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		db.Exec(fmt.Sprintf("update tfldata.users set fcm_registration_id = null where username = '%s';", r.URL.Query().Get("username")))
+	}
 	subscriptionHandler := func(w http.ResponseWriter, r *http.Request) {
 
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
@@ -4562,6 +4565,7 @@ func main() {
 	http.HandleFunc("/reset-password", getResetPasswordCodeHandler)
 	http.HandleFunc("/reset-password-with-code", resetPasswordHandler)
 	http.HandleFunc("/update-admin-pass", updateAdminPassHandler)
+	http.HandleFunc("/update-fcm-token", updateFCMTokenHandler)
 
 	http.HandleFunc("/healthy-me-checky", healthCheckHandler)
 	http.HandleFunc("/validate-endpoint-from-wix", validateEndpointForWixHandler)

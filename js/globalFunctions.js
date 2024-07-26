@@ -57,6 +57,8 @@ async function getNotified() {
                                             });
                                     }).catch((efg) => console.log(efg))
                             }).catch((geterr) => console.log("gettoken err: " + geterr))
+                    } else {
+                        alert("Your notifications are disabled by the browser. Please check your browser settings.")
                     }
                 }).catch((err) => console.log(err))
             } else if (data.status == 200) {

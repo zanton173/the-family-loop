@@ -8,3 +8,17 @@ type NotificationOpts struct {
 	NotificationBody  string
 	IsTagged          bool
 }
+type Postsrow struct {
+	Id           int
+	Title        string
+	Description  string
+	Author       string
+	Postfileskey string
+	Createdon    string
+}
+
+type Postjoin struct {
+	Filename     string
+	Filetype     string
+	Postfileskey string
+}

@@ -21,7 +21,6 @@ import (
 	globalvars "tfl/vars"
 	"time"
 
-	firebase "firebase.google.com/go"
 	"firebase.google.com/go/messaging"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -38,22 +37,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"golang.org/x/crypto/bcrypt"
-	"google.golang.org/api/option"
 )
 
-type Postsrow struct {
-	Id           int
-	Title        string
-	Description  string
-	Author       string
-	Postfileskey string
-	Createdon    string
-}
-type Postjoin struct {
-	Filename     string
-	Filetype     string
-	Postfileskey string
-}
 type seshStruct struct {
 	Username         string
 	Pfpname          sql.NullString
@@ -66,43 +51,11 @@ type seshStruct struct {
 	LastViewedThread sql.NullString
 }
 
-/*var globalvars.Awskey string
-var globalvars.Awskeysecret string
-var globalvars.Ghissuetoken string
-var globalvars.S3Domain string*/
-
-//var globalvars.S3Client *s3.Client
-
 func main() {
-	/*globalvars.Replacer := strings.NewReplacer("'", "\\'", "\"", "\\\"")
-	globalvars.NyLoc, _ = time.LoadLocation("America/New_York")
-	globalfunctions.GetEnv()
-	globalvars.Dbpass := os.Getenv("DB_PASS")
-	globalvars.Awskey = os.Getenv("AWS_ACCESS_KEY")
-	globalvars.Awskeysecret = os.Getenv("AWS_ACCESS_SECRET")
-	globalvars.Ghissuetoken = os.Getenv("GH_BEARER")
-	globalvars.Cfdistro := os.Getenv("CF_DOMAIN")
-	globalvars.S3Domain = os.Getenv("S3_BUCKET_NAME")
-	globalvars.OrgId := os.Getenv("ORG_ID")
-	globalvars.MongoDBPass := os.Getenv("MONGO_PASS")
-	globalvars.SubLevel := os.Getenv("SUB_PACKAGE")
-	globalvars.JwtSignKey := os.Getenv("JWT_SIGNING_KEY")
-	globalvars.Wixapikey := os.Getenv("WIX_API_KEY")
-	globalvars.Ghusercommentkey := os.Getenv("GH_USER_COMMENT_TOKEN")*/
 
-	opts := []option.ClientOption{option.WithCredentialsFile("the-family-loop-fb0d9-firebase-adminsdk-k6sxl-14c7d4c4f7.json")}
-
-	// Initialize firebase app
-	app, err := firebase.NewApp(context.TODO(), nil, opts...)
-	if err != nil {
-		fmt.Printf("Error in initializing firebase app: %s", err)
-	}
-	fb_message_client, fbInitErr := app.Messaging(context.TODO())
-	if fbInitErr != nil {
-		fmt.Println("err intializing fb messaging client")
-		os.Exit(3)
-	}
 	// favicon
+
+	globalfunctions.InitalizeAll()
 	faviconHandler := func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "assets/favicon.ico")
 	}
@@ -111,21 +64,14 @@ func main() {
 		http.ServeFile(w, r, "firebase-messaging-sw.js")
 	}
 	http.HandleFunc("/firebase-messaging-sw.js", serviceWorkerHandler)
-
 	// Connect to database
-	connStr := fmt.Sprintf("postgresql://tfldbrole:%s@localhost/tfl?sslmode=disable", globalvars.Dbpass)
-	db, err := sql.Open("postgres", connStr)
 
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer db.Close()
-
+	defer globalvars.Db.Close()
 	mongoDb, mongoerr := mongo.Connect(context.TODO(), options.Client().ApplyURI("mongodb+srv://tfl-user:"+globalvars.MongoDBPass+"@tfl-leaderboard.dg95d1f.mongodb.net/?retryWrites=true&w=majority"))
 
 	if mongoerr != nil {
 		activityStr := "mongo Initalize error"
-		db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values(substr('%s',0,105),substr('%s',0,105),now());", mongoerr.Error(), activityStr))
+		globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values(substr('%s',0,105),substr('%s',0,105),now());", mongoerr.Error(), activityStr))
 		return
 	}
 	defer mongoDb.Disconnect(context.TODO())
@@ -144,11 +90,9 @@ func main() {
 
 	//globalvars.S3Client = s3.NewFromConfig(awscfg)
 
-	var postTmpl *template.Template
-	var tmerr error
 	updateFCMTokenHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		db.Exec(fmt.Sprintf("update tfldata.users set fcm_registration_id = null where username = '%s';", r.URL.Query().Get("username")))
+		globalvars.Db.Exec(fmt.Sprintf("update tfldata.users set fcm_registration_id = null where username = '%s';", r.URL.Query().Get("username")))
 	}
 	subscriptionHandler := func(w http.ResponseWriter, r *http.Request) {
 
@@ -173,10 +117,10 @@ func main() {
 		}
 
 		seshVal := strings.Split(seshToken.Value, "session_id=")[0]
-		_, inserr := db.Exec(fmt.Sprintf("update tfldata.users set fcm_registration_id='%s' where session_token='%s';", postData.Fcmtoken, seshVal))
+		_, inserr := globalvars.Db.Exec(fmt.Sprintf("update tfldata.users set fcm_registration_id='%s' where session_token='%s';", postData.Fcmtoken, seshVal))
 		if inserr != nil {
 			activityStr := "attempt update fcm token where seshtoken is value subHandler"
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", inserr, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
+			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", inserr, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
 		}
 
 	}
@@ -193,7 +137,7 @@ func main() {
 			return
 		}
 		var countOfUsers int
-		userRowCount := db.QueryRow("select count(*) from tfldata.users;")
+		userRowCount := globalvars.Db.QueryRow("select count(*) from tfldata.users;")
 		userRowCount.Scan(&countOfUsers)
 		switch globalvars.SubLevel {
 		case "supreme":
@@ -216,7 +160,7 @@ func main() {
 		upload, filename, errfile := r.FormFile("pfpformfile")
 		if errfile != nil {
 			activityStr := "uploading pfp during sign up"
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", errfile.Error(), time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
+			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", errfile.Error(), time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -230,18 +174,18 @@ func main() {
 			return
 		}
 
-		_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.users(\"username\", \"password\", \"pfp_name\", \"email\", \"gchat_bg_theme\", \"gchat_order_option\", \"cf_domain_name\", \"orgid\", \"is_admin\", \"mytz\") values('%s', '%s', '%s', '%s', '%s', %t, '%s', '%s', %t, '%s');", strings.ToLower(r.PostFormValue("usernamesignup")), bytesOfPass, fn, strings.ToLower(r.PostFormValue("emailsignup")), "background: linear-gradient(142deg, #00009f, #3dc9ff 26%)", true, globalvars.Cfdistro, globalvars.OrgId, false, r.PostFormValue("mytz")))
+		_, errinsert := globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.users(\"username\", \"password\", \"pfp_name\", \"email\", \"gchat_bg_theme\", \"gchat_order_option\", \"cf_domain_name\", \"orgid\", \"is_admin\", \"mytz\") values('%s', '%s', '%s', '%s', '%s', %t, '%s', '%s', %t, '%s');", strings.ToLower(r.PostFormValue("usernamesignup")), bytesOfPass, fn, strings.ToLower(r.PostFormValue("emailsignup")), "background: linear-gradient(142deg, #00009f, #3dc9ff 26%)", true, globalvars.Cfdistro, globalvars.OrgId, false, r.PostFormValue("mytz")))
 
 		if errinsert != nil {
 			activityStr := "err inserting into users table on sign up"
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", errinsert, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
+			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", errinsert, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		_, errutterr := db.Exec(fmt.Sprintf("insert into tfldata.users_to_threads(\"username\", \"thread\", \"is_subscribed\") values('%s', 'posts', true),('%s', 'calendar',true), ('%s', 'main', true);", strings.ToLower(r.PostFormValue("usernamesignup")), strings.ToLower(r.PostFormValue("usernamesignup")), strings.ToLower(r.PostFormValue("usernamesignup"))))
+		_, errutterr := globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.users_to_threads(\"username\", \"thread\", \"is_subscribed\") values('%s', 'posts', true),('%s', 'calendar',true), ('%s', 'main', true);", strings.ToLower(r.PostFormValue("usernamesignup")), strings.ToLower(r.PostFormValue("usernamesignup")), strings.ToLower(r.PostFormValue("usernamesignup"))))
 		if errutterr != nil {
 			activityStr := fmt.Sprintf("user %s will not be subscribed to new posts as of now", strings.ToLower(r.PostFormValue("usernamesignup")))
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values(substr('%s',0,106), substr('%s',0,106), now());", errutterr.Error(), activityStr))
+			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values(substr('%s',0,106), substr('%s',0,106), now());", errutterr.Error(), activityStr))
 		}
 		type memberChildrenObj struct {
 			LoginEmail string `json:"loginEmail"`
@@ -257,14 +201,14 @@ func main() {
 		jsonMarshed, errMarsh := json.Marshal(&postReqBody)
 		if errMarsh != nil {
 			activityStr := "error marshing Json body for members sign up"
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values(substr('%s',0,105), substr('%s',0,105), now());", errMarsh.Error(), activityStr))
+			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values(substr('%s',0,105), substr('%s',0,105), now());", errMarsh.Error(), activityStr))
 			return
 		}
 
 		req, reqerr := http.NewRequest("POST", "https://www.wixapis.com/members/v1/members", bytes.NewReader(jsonMarshed))
 		if reqerr != nil {
 			activityStr := "error posting to wix members sign up"
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values(substr('%s',0,105), substr('%s',0,105), now());", reqerr.Error(), activityStr))
+			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values(substr('%s',0,105), substr('%s',0,105), now());", reqerr.Error(), activityStr))
 			return
 		}
 
@@ -276,7 +220,7 @@ func main() {
 		createresp, clientdoerr := client.Do(req)
 		if clientdoerr != nil {
 			activityStr := "client error for wix members sign up"
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values(substr('%s',0,105), substr('%s',0,105), now());", clientdoerr.Error(), activityStr))
+			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values(substr('%s',0,105), substr('%s',0,105), now());", clientdoerr.Error(), activityStr))
 			return
 		}
 
@@ -301,13 +245,13 @@ func main() {
 		sendjsonMarshed, senderrMarsh := json.Marshal(&postBody)
 		if senderrMarsh != nil {
 			activityStr := "error marshing Json body for members sign up"
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values(substr('%s',0,105), substr('%s',0,105), now());", senderrMarsh.Error(), activityStr))
+			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values(substr('%s',0,105), substr('%s',0,105), now());", senderrMarsh.Error(), activityStr))
 			return
 		}
 		setpassreq, setpassreqerr := http.NewRequest("POST", "https://www.wixapis.com/_api/iam/recovery/v1/send-email", bytes.NewReader(sendjsonMarshed))
 		if setpassreqerr != nil {
 			activityStr := "error sending set pass wix members sign up"
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values(substr('%s',0,105), substr('%s',0,105), now());", setpassreqerr.Error(), activityStr))
+			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values(substr('%s',0,105), substr('%s',0,105), now());", setpassreqerr.Error(), activityStr))
 			return
 		}
 		setpassreq.Header.Set("Content-Type", "application/json")
@@ -318,7 +262,7 @@ func main() {
 		_, sendclientdoerr := sendclient.Do(setpassreq)
 		if sendclientdoerr != nil {
 			activityStr := "client error for wix members sign up"
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values(substr('%s',0,105), substr('%s',0,105), now());", sendclientdoerr.Error(), activityStr))
+			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values(substr('%s',0,105), substr('%s',0,105), now());", sendclientdoerr.Error(), activityStr))
 			return
 		}
 		defer sendclient.CloseIdleConnections()
@@ -333,16 +277,16 @@ func main() {
 		bs, bserr := io.ReadAll(createresp.Body)
 
 		if bserr != nil {
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values (substr('%s',0,105), substr('%s',0,105), now());", bserr.Error(), "creating bs for wix create site member response"))
+			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values (substr('%s',0,105), substr('%s',0,105), now());", bserr.Error(), "creating bs for wix create site member response"))
 		}
 
 		unmarsherr := json.Unmarshal(bs, &responseData)
 		if unmarsherr != nil {
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values (substr('%s',0,105), substr('%s',0,105), now());", unmarsherr.Error(), "unmarshal wix create site member response"))
+			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values (substr('%s',0,105), substr('%s',0,105), now());", unmarsherr.Error(), "unmarshal wix create site member response"))
 		}
-		_, uperr := db.Exec(fmt.Sprintf("update tfldata.users set wix_member_id = '%s' where username = '%s';", responseData.Memberstruct.Id, strings.ToLower(r.PostFormValue("usernamesignup"))))
+		_, uperr := globalvars.Db.Exec(fmt.Sprintf("update tfldata.users set wix_member_id = '%s' where username = '%s';", responseData.Memberstruct.Id, strings.ToLower(r.PostFormValue("usernamesignup"))))
 		if uperr != nil {
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values (substr('%s',0,106), substr('%s',0,105), now());", uperr.Error(), "Err updating users table with wix id"))
+			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values (substr('%s',0,106), substr('%s',0,105), now());", uperr.Error(), "Err updating users table with wix id"))
 		}
 
 		defer createresp.Body.Close()
@@ -355,7 +299,7 @@ func main() {
 		var password string
 		var isAdmin bool
 		var emailIn string
-		passScan := db.QueryRow(fmt.Sprintf("select is_admin, password, email from tfldata.users where username='%s' or email='%s';", userStr, userStr))
+		passScan := globalvars.Db.QueryRow(fmt.Sprintf("select is_admin, password, email from tfldata.users where username='%s' or email='%s';", userStr, userStr))
 
 		scnerr := passScan.Scan(&isAdmin, &password, &emailIn)
 
@@ -364,8 +308,8 @@ func main() {
 			if password == r.PostFormValue("passwordlogin") {
 
 				w.Header().Set("HX-Trigger", "changeAdminPassword")
-				globalfunctions.SetLoginCookie(w, db, userStr, r.PostFormValue("mytz"))
-				db.Exec(fmt.Sprintf("update tfldata.users set last_sign_on='%s' where username='%s';", time.Now().In(globalvars.NyLoc).Format(time.DateTime), userStr))
+				globalfunctions.SetLoginCookie(w, globalvars.Db, userStr, r.PostFormValue("mytz"))
+				globalvars.Db.Exec(fmt.Sprintf("update tfldata.users set last_sign_on='%s' where username='%s';", time.Now().In(globalvars.NyLoc).Format(time.DateTime), userStr))
 
 				globalfunctions.GenerateLoginJWT(userStr, w, globalvars.JwtSignKey)
 
@@ -374,34 +318,34 @@ func main() {
 
 				if err != nil {
 
-					db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values(substr('%s',0,105), '%s');", err, time.Now().In(globalvars.NyLoc).Format(time.DateTime)))
+					globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values(substr('%s',0,105), '%s');", err, time.Now().In(globalvars.NyLoc).Format(time.DateTime)))
 					w.WriteHeader(http.StatusUnauthorized)
 					return
 				} else {
 
 					globalfunctions.GenerateLoginJWT(userStr, w, globalvars.JwtSignKey)
-					globalfunctions.SetLoginCookie(w, db, userStr, r.PostFormValue("mytz"))
-					db.Exec(fmt.Sprintf("update tfldata.users set last_sign_on='%s' where username='%s';", time.Now().In(globalvars.NyLoc).Format(time.DateTime), userStr))
+					globalfunctions.SetLoginCookie(w, globalvars.Db, userStr, r.PostFormValue("mytz"))
+					globalvars.Db.Exec(fmt.Sprintf("update tfldata.users set last_sign_on='%s' where username='%s';", time.Now().In(globalvars.NyLoc).Format(time.DateTime), userStr))
 
 					w.Header().Set("HX-Refresh", "true")
 				}
 			}
 		} else {
 			if scnerr != nil {
-				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('this was the scan error %s with globalvars.Dbpassword *** and form user is %s');", scnerr, userStr))
+				globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('this was the scan error %s with globalvars.Dbpassword *** and form user is %s');", scnerr, userStr))
 				fmt.Print(scnerr)
 			}
 			err := bcrypt.CompareHashAndPassword([]byte(password), []byte(r.PostFormValue("passwordlogin")))
 
 			if err != nil {
-				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values(substr('%s',0,105), '%s');", err, time.Now().In(globalvars.NyLoc).Format(time.DateTime)))
+				globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values(substr('%s',0,105), '%s');", err, time.Now().In(globalvars.NyLoc).Format(time.DateTime)))
 				w.WriteHeader(http.StatusUnauthorized)
 				return
 			} else {
 
 				globalfunctions.GenerateLoginJWT(userStr, w, globalvars.JwtSignKey)
-				globalfunctions.SetLoginCookie(w, db, userStr, r.PostFormValue("mytz"))
-				db.Exec(fmt.Sprintf("update tfldata.users set last_sign_on='%s' where username='%s';", time.Now().In(globalvars.NyLoc).Format(time.DateTime), userStr))
+				globalfunctions.SetLoginCookie(w, globalvars.Db, userStr, r.PostFormValue("mytz"))
+				globalvars.Db.Exec(fmt.Sprintf("update tfldata.users set last_sign_on='%s' where username='%s';", time.Now().In(globalvars.NyLoc).Format(time.DateTime), userStr))
 
 				w.Header().Set("HX-Refresh", "true")
 			}
@@ -429,14 +373,14 @@ func main() {
 		if err != nil {
 			fmt.Println(err)
 			activityStr := "updating admin pass"
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage,activity,createdon) values (substr('%s',0,106), substr('%s',0,106), now());", err.Error(), activityStr))
+			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage,activity,createdon) values (substr('%s',0,106), substr('%s',0,106), now());", err.Error(), activityStr))
 			return
 		}
-		_, uperr := db.Exec(fmt.Sprintf("update tfldata.users set password='%s' where username='%s';", newAdminbytesOfPass, postData.Username))
+		_, uperr := globalvars.Db.Exec(fmt.Sprintf("update tfldata.users set password='%s' where username='%s';", newAdminbytesOfPass, postData.Username))
 		if uperr != nil {
 			fmt.Println(uperr)
 			activityStr := "updating admin pass"
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage,activity,createdon) values (substr('%s',0,106), substr('%s',0,106), now());", uperr.Error(), activityStr))
+			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage,activity,createdon) values (substr('%s',0,106), substr('%s',0,106), now());", uperr.Error(), activityStr))
 			return
 		}
 
@@ -450,7 +394,7 @@ func main() {
 		var userEmail string
 		var userName string
 		var lastPassReset time.Time
-		row := db.QueryRow(fmt.Sprintf("select email, username, last_pass_reset from tfldata.users where email='%s' and (last_pass_reset < now() - interval '32 hours' or last_pass_reset is null);", emailInput))
+		row := globalvars.Db.QueryRow(fmt.Sprintf("select email, username, last_pass_reset from tfldata.users where email='%s' and (last_pass_reset < now() - interval '32 hours' or last_pass_reset is null);", emailInput))
 		scnerr := row.Scan(&userEmail, &userName, &lastPassReset)
 		if scnerr != nil {
 
@@ -504,7 +448,7 @@ func main() {
 		})
 
 		if geterr != nil {
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage,activity,createdon) values(substr('%s',0,105),'reset password getmessage', now());", geterr))
+			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage,activity,createdon) values(substr('%s',0,105),'reset password getmessage', now());", geterr))
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
@@ -514,7 +458,7 @@ func main() {
 
 			marsherr := json.Unmarshal([]byte(*val.Body), &messageData)
 			if marsherr != nil {
-				db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage,activity,createdon) values(substr('%s',0,105),'reset password marshaler', now());", marsherr))
+				globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage,activity,createdon) values(substr('%s',0,105),'reset password marshaler', now());", marsherr))
 				w.WriteHeader(http.StatusBadRequest)
 				return
 			}
@@ -548,13 +492,13 @@ func main() {
 
 			newPassbytesOfPass, err := bcrypt.GenerateFromPassword(newpassbs, len(newpassbs))
 			if err != nil {
-				db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage,activity,createdon) values(substr('%s',0,105),'reset password generate issue', now());", err))
+				globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage,activity,createdon) values(substr('%s',0,105),'reset password generate issue', now());", err))
 				w.WriteHeader(http.StatusBadRequest)
 				return
 			}
-			_, uperr := db.Exec(fmt.Sprintf("update tfldata.users set password='%s', last_pass_reset=now() where username='%s' or email='%s';", newPassbytesOfPass, messageData.Username, messageData.Useremail))
+			_, uperr := globalvars.Db.Exec(fmt.Sprintf("update tfldata.users set password='%s', last_pass_reset=now() where username='%s' or email='%s';", newPassbytesOfPass, messageData.Username, messageData.Useremail))
 			if uperr != nil {
-				db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage,activity,createdon) values(substr('%s',0,105),'reset password update users table', now());", uperr))
+				globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage,activity,createdon) values(substr('%s',0,105),'reset password update users table', now());", uperr))
 				w.WriteHeader(http.StatusBadRequest)
 				return
 			}
@@ -619,299 +563,10 @@ func main() {
 		}
 
 	}
-	getPostsHandler := func(w http.ResponseWriter, r *http.Request) {
-		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(db, r)
-		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
-		if !validBool || !allowOrDeny {
-			w.Header().Set("HX-Retarget", "window")
-			w.Header().Set("HX-Trigger", h)
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
 
-		var reactionBtn string
-		if currentUserFromSession < " " {
-			currentUserFromSession = "Guest"
-		}
-
-		var output *sql.Rows
-		if r.URL.Query().Get("page") == "null" {
-			output, err = db.Query(fmt.Sprintf("select id, \"title\", description, author, post_files_key, createdon at time zone (select mytz from tfldata.users where username='%s') from tfldata.posts where title ilike '%s' or description ilike '%s' or author ilike '%s' order by createdon DESC limit 2;", currentUserFromSession, "%"+r.URL.Query().Get("search")+"%", "%"+r.URL.Query().Get("search")+"%", "%"+r.URL.Query().Get("search")+"%"))
-		} else if r.URL.Query().Get("limit") == "current" {
-			w.Header().Set("HX-Reswap", "innerHTML")
-			output, err = db.Query(fmt.Sprintf("select id, \"title\", description, author, post_files_key, createdon at time zone (select mytz from tfldata.users where username='%s') from tfldata.posts where id >= %s and (title ilike '%s' or description ilike '%s' or author ilike '%s') order by createdon DESC;", currentUserFromSession, r.URL.Query().Get("page"), "%"+r.URL.Query().Get("search")+"%", "%"+r.URL.Query().Get("search")+"%", "%"+r.URL.Query().Get("search")+"%"))
-		} else {
-			output, err = db.Query(fmt.Sprintf("select id, \"title\", description, author, post_files_key, createdon at time zone (select mytz from tfldata.users where username='%s') from tfldata.posts where id < %s and (title ilike '%s' or description ilike '%s' or author ilike '%s') order by createdon DESC limit 2;", currentUserFromSession, r.URL.Query().Get("page"), "%"+r.URL.Query().Get("search")+"%", "%"+r.URL.Query().Get("search")+"%", "%"+r.URL.Query().Get("search")+"%"))
-		}
-
-		var dataStr string
-		if err != nil {
-			// log.Fatal(err)
-			fmt.Print(err)
-		}
-
-		defer output.Close()
-		for output.Next() {
-
-			var postrows Postsrow
-			var reaction string
-			// if err := output.Scan(&postrows.Id, &postrows.Title, &postrows.Description, &postrows.File_name, &postrows.File_type, &postrows.Author); err != nil {
-			if err := output.Scan(&postrows.Id, &postrows.Title, &postrows.Description, &postrows.Author, &postrows.Postfileskey, &postrows.Createdon); err != nil {
-				activityStr := "get posts handler scanning posts query"
-				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", err, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
-
-			}
-
-			reactionRow := db.QueryRow(fmt.Sprintf("select reaction from tfldata.reactions where post_id=%d and author='%s';", postrows.Id, currentUserFromSession))
-			reactionRow.Scan(&reaction)
-
-			editElement := ""
-			reactionEmojiBeforeComment := ""
-			if postrows.Author != currentUserFromSession {
-				if reaction > " " {
-					reactionEmojiBeforeComment = "<div style='align-content: center; margin-right: 1&percnt;;'>" + reaction + "</div>"
-					reactionBtn = fmt.Sprintf("&nbsp;&nbsp;<div onclick='addAReaction(%d)'><i class='bi bi-three-dots'></i></div>", postrows.Id)
-				} else {
-					reactionBtn = fmt.Sprintf("<button class='btn btn-outline-secondary border-0 px-1' style='margin-left: 2&percnt;;' type='button' onclick='addAReaction(%d)'><i class='bi bi-three-dots-vertical'></i></button>", postrows.Id)
-				}
-			} else {
-				reactionBtn = ""
-				editElement = fmt.Sprintf("<i style='position: absolute; background-color: gray; border-radius: 13px / 13px; z-index: 13' class='bi bi-trash m-1 px-1 editbtnclass' hx-post='/delete-this-post' hx-swap='none' hx-on::after-request='window.location.reload()' hx-vals=\"js:{'deletionID': %d}\" hx-params='not page, limit, token' hx-ext='json-enc' hx-confirm='Delete this post forever? This cannot be undone'></i>", postrows.Id)
-			}
-			comment := db.QueryRow(fmt.Sprintf("select count(*) from tfldata.comments where post_id='%d';", postrows.Id))
-			var commentCount string
-			comment.Scan(&commentCount)
-			var countOfImg int
-			rowCount := db.QueryRow(fmt.Sprintf("select count(*) from tfldata.postfiles where post_files_key='%s';", postrows.Postfileskey))
-			rowCount.Scan(&countOfImg)
-			var firstImg struct {
-				filename string
-				filetype string
-			}
-			firstRow := db.QueryRow(fmt.Sprintf("select file_name, file_type from tfldata.postfiles where post_files_key='%s' order by id asc limit 1;", postrows.Postfileskey))
-			firstRow.Scan(&firstImg.filename, &firstImg.filetype)
-
-			if strings.Contains(firstImg.filetype, "image") {
-
-				if countOfImg > 1 {
-					dataStr = fmt.Sprintf("<div class='card my-4' style='background-color: rgb(109 109 109 / .34); border-radius: 20px 20px 20px 20px; box-shadow: 5px 4px 9px 3px rgb(0 0 0 / 52&percnt;);'>%s<img class='img-fluid' id='%s' src='https://%s/posts/images/%s' alt='%s' style='border-radius: 18px 18px;' alt='default' /><p class='createdontime' style='margin-bottom: -6%s; margin-left: 78%s; text-decoration: underline; color: #4e4c4c;'>%s</p><div class='postarrows' style='display: flex; justify-content: space-around;'><i style='padding-left: 2rem; padding-right: 2rem; padding-bottom: .4rem' onclick='nextLeftImage(`%s`)' class='bi bi-arrow-90deg-left'></i><i style='padding-left: 2rem; padding-right: 2rem; padding-bottom: .4rem' onclick='nextRightImage(`%s`)' class='bi bi-arrow-90deg-right'></i></div><div id='%d' class='card-body' style='text-align: left; padding-left: 1&percnt;;'><b>%s</b><br/><p style='margin-bottom: .2rem'>%s</p><p style='margin-bottom: .2rem' class='card-text'>%s</p><div style='display: flex; justify-content: end'>%s<button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' class='btn btn-primary' hx-swap='innerHTML' style='margin-bottom: -.1rem'>Comments (%s)</button>%s</div></div></div>", editElement, postrows.Postfileskey, globalvars.Cfdistro, firstImg.filename, firstImg.filename, "%", "%", strings.Split(postrows.Createdon, "T")[0], postrows.Postfileskey, postrows.Postfileskey, postrows.Id, postrows.Author, postrows.Title, postrows.Description, reactionEmojiBeforeComment, postrows.Id, postrows.Id, commentCount, reactionBtn)
-				} else if countOfImg == 1 {
-					dataStr = fmt.Sprintf("<div class='card my-4' style='background-color: rgb(109 109 109 / .34); border-radius: 20px 20px 20px 20px; box-shadow: 5px 4px 9px 3px rgb(0 0 0 / 52&percnt;);'>%s<img class='img-fluid' id='%s' src='https://%s/posts/images/%s' alt='%s' style='border-radius: 18px 18px;' alt='default' /><p class='createdontime' style='margin-bottom: -6%s; margin-left: 78%s; text-decoration: underline; color: #4e4c4c;'>%s</p><div id='%d' class='card-body' style='text-align: left; padding-left: 1&percnt;;'><b>%s</b><br/><p style='margin-bottom: .2rem'>%s</p><p style='margin-bottom: .2rem' class='card-text'>%s</p><div style='display: flex; justify-content: end'>%s<button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' hx-swap='innerHTML' class='btn btn-primary' style='margin-bottom: -.1rem'>Comments (%s)</button>%s</div></div></div>", editElement, postrows.Postfileskey, globalvars.Cfdistro, firstImg.filename, firstImg.filename, "%", "%", strings.Split(postrows.Createdon, "T")[0], postrows.Id, postrows.Author, postrows.Title, postrows.Description, reactionEmojiBeforeComment, postrows.Id, postrows.Id, commentCount, reactionBtn)
-				}
-
-			} else {
-
-				if countOfImg > 1 {
-					dataStr = fmt.Sprintf("<div class='card my-4' style='background-color: rgb(109 109 109 / .34); border-radius: 20px 20px 20px 20px; box-shadow: 5px 4px 9px 3px rgb(0 0 0 / 52&percnt;);'>%s<video style='border-radius: 18px 18px; z-index: 4;' muted playsinline controls preload='auto' id='%s'><source src='https://%s/posts/videos/%s'></video><p class='createdontime' style='margin-bottom: -6%s; margin-left: 78%s;text-decoration: underline;color: #4e4c4c;'>%s</p><div class='postarrows' style='display: flex; justify-content: space-around;'><i style='padding-left: 2rem; padding-right: 2rem; padding-bottom: .4rem' onclick='nextLeftImage(`%s`)' class='bi bi-arrow-90deg-left'></i><i style='padding-left: 2rem; padding-right: 2rem; padding-bottom: .4rem' onclick='nextRightImage(`%s`)' class='bi bi-arrow-90deg-right'></i></div><div id='%d' class='card-body' style='text-align: left; padding-left: 1&percnt;;'><b>%s</b><br/><p style='margin-bottom: .2rem'>%s</p><p style='margin-bottom: .2rem' class='card-text'>%s</p><div style='display: flex; justify-content: end'>%s<button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' hx-swap='innerHTML' class='btn btn-primary' style='margin-bottom: -.1rem'>Comments (%s)</button>%s</div></div></div>", editElement, postrows.Postfileskey, globalvars.Cfdistro, firstImg.filename, "%", "%", strings.Split(postrows.Createdon, "T")[0], postrows.Postfileskey, postrows.Postfileskey, postrows.Id, postrows.Author, postrows.Title, postrows.Description, reactionEmojiBeforeComment, postrows.Id, postrows.Id, commentCount, reactionBtn)
-				} else if countOfImg == 1 {
-					dataStr = fmt.Sprintf("<div class='card my-4' style='background-color: rgb(109 109 109 / .34); border-radius: 20px 20px 20px 20px; box-shadow: 5px 4px 9px 3px rgb(0 0 0 / 52&percnt;);'>%s<video style='border-radius: 18px 18px; z-index: 4;' muted playsinline controls preload='auto' id='%s'><source src='https://%s/posts/videos/%s'></video><p class='createdontime' style='margin-bottom: -6%s; margin-left: 78%s;text-decoration: underline;color: #4e4c4c;'>%s</p><div id='%d' class='card-body' style='text-align: left; padding-left: 1&percnt;;'><b>%s</b><br/><p style='margin-bottom: .2rem'>%s</p><p style='margin-bottom: .2rem' class='card-text'>%s</p><div style='display: flex; justify-content: end'>%s<button hx-get='/get-selected-post?post-id=%d' onclick='openPostFunction(%d)' hx-target='#modal-post-content' hx-swap='innerHTML' class='btn btn-primary' style='margin-bottom: -.1rem'>Comments (%s)</button>%s</div></div></div>", editElement, postrows.Postfileskey, globalvars.Cfdistro, firstImg.filename, "%", "%", strings.Split(postrows.Createdon, "T")[0], postrows.Id, postrows.Author, postrows.Title, postrows.Description, reactionEmojiBeforeComment, postrows.Id, postrows.Id, commentCount, reactionBtn)
-				}
-			}
-			postTmpl, tmerr = template.New("tem").Parse(dataStr)
-			if tmerr != nil {
-				activityStr := "posts handler postTmpl err"
-				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", tmerr, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
-			}
-			postTmpl.Execute(w, nil)
-
-		}
-
-	}
-
-	deleteThisPostHandler := func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		allowOrDeny, _, h := globalfunctions.ValidateCurrentSessionId(db, r)
-
-		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
-		if !validBool || !allowOrDeny {
-			w.Header().Set("HX-Retarget", "window")
-			w.Header().Set("HX-Trigger", h)
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
-
-		bs, _ := io.ReadAll(r.Body)
-		type postBody struct {
-			PostID int `json:"deletionID"`
-		}
-		var postData postBody
-		marsherr := json.Unmarshal(bs, &postData)
-		if marsherr != nil {
-			fmt.Println(marsherr)
-		}
-		type workObj struct {
-			Filename string
-			Filetype string
-			Pfilesid int
-		}
-
-		output, outerr := db.Query(fmt.Sprintf("select pf.id,pf.file_name,pf.file_type from tfldata.posts as p join tfldata.postfiles as pf on pf.post_files_key = p.post_files_key where p.id=%d;", postData.PostID))
-		if outerr != nil {
-			fmt.Println(outerr)
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte("<p>Please report this error at the bugreport page. Title the error with delete post issue</p>"))
-			return
-		}
-		defer output.Close()
-		for output.Next() {
-			var workData workObj
-			output.Scan(&workData.Pfilesid, &workData.Filename, &workData.Filetype)
-
-			if strings.Contains(workData.Filetype, "image") {
-				_, err := globalvars.S3Client.DeleteObject(context.TODO(), &s3.DeleteObjectInput{
-					Bucket: aws.String(globalvars.S3Domain),
-					Key:    aws.String("posts/images/" + workData.Filename),
-				})
-
-				if err != nil {
-					fmt.Println("error on image delete")
-					fmt.Println(err.Error())
-				}
-			} else {
-				_, err := globalvars.S3Client.DeleteObject(context.TODO(), &s3.DeleteObjectInput{
-					Bucket: aws.String(globalvars.S3Domain),
-					Key:    aws.String("posts/videos/" + workData.Filename),
-				})
-
-				if err != nil {
-					fmt.Println("error on video delete")
-					fmt.Println(err.Error())
-				}
-			}
-
-			db.Exec(fmt.Sprintf("delete from tfldata.postfiles where id=%d", workData.Pfilesid))
-		}
-
-		_, delerr := db.Exec(fmt.Sprintf("delete from tfldata.posts where id=%d", postData.PostID))
-		if delerr != nil {
-			fmt.Println(delerr)
-		}
-	}
-	/*
-		createPostHandler := func(w http.ResponseWriter, r *http.Request) {
-			allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(db, r)
-
-			validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
-			if !validBool || !allowOrDeny {
-				w.Header().Set("HX-Retarget", "window")
-				w.Header().Set("HX-Trigger", h)
-				w.WriteHeader(http.StatusUnauthorized)
-				return
-			}
-
-			postFilesKey := uuid.NewString()
-
-			parseerr := r.ParseMultipartForm(10 << 20)
-			if parseerr != nil {
-				// handle error
-				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('memory error multi file upload %s');", err))
-			}
-			// upload, filename, errfile := r.FormFile("file_name")
-
-			//for _, fh := range r.MultipartForm.File["file_name"] {
-			for i := 0; i < len(r.MultipartForm.File["file_name"]); i++ {
-
-				fh := r.MultipartForm.File["file_name"][i]
-				f, err := fh.Open()
-				if err != nil {
-					activityStr := fmt.Sprintf("Open multipart file in createPostHandler - %s", currentUserFromSession)
-					db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", err, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
-					w.WriteHeader(http.StatusBadRequest)
-					return
-				}
-
-				tmpFileName := fh.Filename
-
-				var countIfExists int16
-				countIfExistsOut := db.QueryRow(fmt.Sprintf("select count(*) from tfldata.postfiles where file_name = '%s';", fh.Filename))
-
-				countIfExistsOut.Scan(&countIfExists)
-
-				if countIfExists > 0 {
-					tmpFileName = strings.ReplaceAll(strings.ReplaceAll(time.Now().Format(time.DateTime), " ", "_"), ":", "") + "_" + tmpFileName
-					fh.Filename = tmpFileName
-				} else {
-					tmpFileName = fh.Filename
-				}
-
-				if len(tmpFileName) > 55 {
-					fh.Filename = tmpFileName[len(tmpFileName)-35:]
-				}
-
-				fileContents := make([]byte, fh.Size)
-
-				f.Read(fileContents)
-
-				filetype := http.DetectContentType(fileContents)
-
-				f.Seek(0, 0)
-
-				uploadFileToS3(f, tmpFileName, db, filetype)
-
-				_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.postfiles(\"file_name\", \"file_type\", \"post_files_key\") values('%s', '%s', '%s');", fh.Filename, filetype, postFilesKey))
-
-				if errinsert != nil {
-					activityStr := fmt.Sprintf("insert into postfiles table createPostHander - %s", currentUserFromSession)
-					db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", errinsert, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
-				}
-
-				defer f.Close()
-			}
-			_, errinsert := db.Exec(fmt.Sprintf("insert into tfldata.posts(\"title\", \"description\", \"author\", \"post_files_key\", \"createdon\") values(E'%s', E'%s', '%s', '%s', now());", globalvars.Replacer.Replace(r.PostFormValue("title")), globalvars.Replacer.Replace(r.PostFormValue("description")), currentUserFromSession, postFilesKey))
-
-			if errinsert != nil {
-				activityStr := "insert into posts table createPostHandler"
-				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", errinsert, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
-				w.WriteHeader(http.StatusBadRequest)
-				return
-			}
-
-			var chatMessageNotificationOpts globaltypes.NotificationOpts
-			chatMessageNotificationOpts.ExtraPayloadKey = "post"
-			chatMessageNotificationOpts.ExtraPayloadVal = "posts"
-			chatMessageNotificationOpts.NotificationPage = "posts"
-
-			chatMessageNotificationOpts.NotificationTitle = fmt.Sprintf("%s just made a new post!", currentUserFromSession)
-			chatMessageNotificationOpts.NotificationBody = strings.ReplaceAll(r.PostFormValue("title"), "\\", "")
-
-			go globalfunctions.SendNotificationToAllUsers(db, currentUserFromSession, fb_message_client, &chatMessageNotificationOpts)
-
-		}
-	*/
-	createPostReactionHandler := func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(db, r)
-
-		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
-		if !validBool || !allowOrDeny {
-			w.Header().Set("HX-Retarget", "window")
-			w.Header().Set("HX-Trigger", h)
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
-		type postBody struct {
-			Username       string `json:"username"`
-			ReactionToPost string `json:"emoji"`
-			Postid         int    `json:"selectedPostId"`
-		}
-		var postData postBody
-		bs, _ := io.ReadAll(r.Body)
-		marsherr := json.Unmarshal(bs, &postData)
-		if marsherr != nil {
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s');", marsherr, time.Now().In(globalvars.NyLoc).Format(time.DateTime)))
-			return
-		}
-		_, inserr := db.Exec(fmt.Sprintf("insert into tfldata.reactions(\"post_id\", \"author\", \"reaction\") values(%d, '%s', '%s') on conflict(post_id,author) do update set reaction='%s';", postData.Postid, postData.Username, postData.ReactionToPost, postData.ReactionToPost))
-		if inserr != nil {
-			activityStr := fmt.Sprintf("insert into reactions createPostReactionHandler - %s", currentUserFromSession)
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", inserr, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
-			w.WriteHeader(http.StatusBadRequest)
-		}
-
-	}
 	updatePChatReactionHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		allowOrDeny, _, h := globalfunctions.ValidateCurrentSessionId(db, r)
+		allowOrDeny, _, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
 		if !validBool || !allowOrDeny {
@@ -928,30 +583,30 @@ func main() {
 		bs, _ := io.ReadAll(r.Body)
 		marsherr := json.Unmarshal(bs, &postData)
 		if marsherr != nil {
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s');", marsherr, time.Now().In(globalvars.NyLoc).Format(time.DateTime)))
+			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s');", marsherr, time.Now().In(globalvars.NyLoc).Format(time.DateTime)))
 			return
 		}
 		var chatreactionfromDB sql.NullString
-		curEmojRow := db.QueryRow(fmt.Sprintf("select reaction from tfldata.pchat where id='%s'", postData.Chatid))
+		curEmojRow := globalvars.Db.QueryRow(fmt.Sprintf("select reaction from tfldata.pchat where id='%s'", postData.Chatid))
 		curEmojRow.Scan(&chatreactionfromDB)
 		if !chatreactionfromDB.Valid {
 			chatreactionfromDB.String = ""
 		}
 
 		if chatreactionfromDB.String != postData.ReactionToPost {
-			_, uperr := db.Exec(fmt.Sprintf("update tfldata.pchat set reaction = '%s' where id = '%s';", postData.ReactionToPost, postData.Chatid))
+			_, uperr := globalvars.Db.Exec(fmt.Sprintf("update tfldata.pchat set reaction = '%s' where id = '%s';", postData.ReactionToPost, postData.Chatid))
 			if uperr != nil {
 				activityStr := "updating pchat reaction"
-				db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage,activity,createdon) values(substr('%s',0,106),substr('%s',0,105),now());", uperr.Error(), activityStr))
+				globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage,activity,createdon) values(substr('%s',0,106),substr('%s',0,105),now());", uperr.Error(), activityStr))
 			}
 		} else {
-			db.Exec(fmt.Sprintf("update tfldata.pchat set reaction = null where id = '%s';", postData.Chatid))
+			globalvars.Db.Exec(fmt.Sprintf("update tfldata.pchat set reaction = null where id = '%s';", postData.Chatid))
 		}
 
 	}
 	getCurrentPChatReactionHandler := func(w http.ResponseWriter, r *http.Request) {
 		var reactionStr sql.NullString
-		reactionRow := db.QueryRow(fmt.Sprintf("select reaction from tfldata.pchat where id='%s';", r.URL.Query().Get("chatid")))
+		reactionRow := globalvars.Db.QueryRow(fmt.Sprintf("select reaction from tfldata.pchat where id='%s';", r.URL.Query().Get("chatid")))
 		reactionRow.Scan(&reactionStr)
 		if reactionStr.Valid {
 			w.Write([]byte(reactionStr.String))
@@ -960,55 +615,8 @@ func main() {
 		}
 	}
 
-	getSelectedPostsComments := func(w http.ResponseWriter, r *http.Request) {
-		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(db, r)
-
-		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
-		if !validBool || !allowOrDeny {
-			w.Header().Set("HX-Retarget", "window")
-			w.Header().Set("HX-Trigger", h)
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
-		type postComment struct {
-			Comment string
-			Author  string
-			Pfpname string
-		}
-
-		//var commentTmpl *template.Template
-
-		output, err := db.Query(fmt.Sprintf("select c.comment, substr(c.author, 0, 14), u.pfp_name from tfldata.comments as c join tfldata.users as u on c.author = u.username where c.post_id='%s'::integer order by c.id asc;", r.URL.Query().Get("post-id")))
-
-		var dataStr string
-		if err != nil {
-			activityStr := fmt.Sprintf("getSelectedPostsCommentsHandler select query - %s", currentUserFromSession)
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", err, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
-		}
-
-		defer output.Close()
-
-		for output.Next() {
-			var posts postComment
-
-			if err := output.Scan(&posts.Comment, &posts.Author, &posts.Pfpname); err != nil || len(posts.Pfpname) == 0 {
-
-				posts.Pfpname = "assets/32x32/ZCAN2301 The Family Loop Favicon_B_32 x 32.jpg"
-				activityStr := fmt.Sprintf("getSelectedPostsCommentsHandler scan err - %s", currentUserFromSession)
-				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", err, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
-
-			} else {
-				posts.Pfpname = "https://" + globalvars.Cfdistro + "/pfp/" + posts.Pfpname
-			}
-
-			dataStr = "<div class='row'><p style='display: flex; align-items: center; padding-right: 0%;' class='m-1 col-7'>" + posts.Comment + "</p><div style='align-items: center; position: relative; display: flex; padding-left: 0%; left: 1%;' class='col my-5'><b style='position: absolute; bottom: 5%'>" + posts.Author + "</b><img width='30px' class='my-1' style='margin-left: 1%; position: absolute; right: 20%; border-style: solid; border-radius: 13px / 13px; box-shadow: 3px 3px 5px; border-width: thin; top: 5%;' src='" + posts.Pfpname + "' alt='tfl pfp' /></div></div>"
-
-			w.Write([]byte(dataStr))
-		}
-
-	}
 	createEventCommentHandler := func(w http.ResponseWriter, r *http.Request) {
-		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(db, r)
+		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
 		if !validBool || !allowOrDeny {
@@ -1029,13 +637,13 @@ func main() {
 		errmarsh := json.Unmarshal(bs, &postData)
 		if errmarsh != nil {
 			fmt.Println(errmarsh)
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s');", errmarsh, time.Now().In(globalvars.NyLoc).Format(time.DateTime)))
+			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s');", errmarsh, time.Now().In(globalvars.NyLoc).Format(time.DateTime)))
 		}
 
-		_, inserterr := db.Exec(fmt.Sprintf("insert into tfldata.comments(\"comment\", \"event_id\", \"author\") values(E'%s', '%d', '%s');", globalvars.Replacer.Replace(postData.Eventcomment), postData.CommentSelectedEventId, currentUserFromSession))
+		_, inserterr := globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.comments(\"comment\", \"event_id\", \"author\") values(E'%s', '%d', '%s');", globalvars.Replacer.Replace(postData.Eventcomment), postData.CommentSelectedEventId, currentUserFromSession))
 		if inserterr != nil {
 			activityStr := fmt.Sprintf("insert into comments table createEventComment - %s", currentUserFromSession)
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", inserterr, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
+			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", inserterr, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
 		}
 
 		dataStr := "<p class='p-2'>" + postData.Eventcomment + " - " + currentUserFromSession + "</p>"
@@ -1046,7 +654,7 @@ func main() {
 
 	}
 	getSelectedEventsComments := func(w http.ResponseWriter, r *http.Request) {
-		allowOrDeny, _, h := globalfunctions.ValidateCurrentSessionId(db, r)
+		allowOrDeny, _, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
 		if !validBool || !allowOrDeny {
@@ -1057,7 +665,7 @@ func main() {
 		}
 		var commentTmpl *template.Template
 
-		output, err := db.Query(fmt.Sprintf("select comment, author from tfldata.comments where event_id='%s'::integer order by event_id desc;", r.URL.Query().Get("commentSelectedEventID")))
+		output, err := globalvars.Db.Query(fmt.Sprintf("select comment, author from tfldata.comments where event_id='%s'::integer order by event_id desc;", r.URL.Query().Get("commentSelectedEventID")))
 
 		var dataStr string
 		if err != nil {
@@ -1087,7 +695,7 @@ func main() {
 
 	}
 	createCommentHandler := func(w http.ResponseWriter, r *http.Request) {
-		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(db, r)
+		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
 		if !validBool || !allowOrDeny {
@@ -1112,13 +720,13 @@ func main() {
 			fmt.Println(errmarsh)
 		}
 
-		_, inserterr := db.Exec(fmt.Sprintf("insert into tfldata.comments(\"comment\", \"post_id\", \"author\") values(E'%s', '%d', (select username from tfldata.users where username='%s'));", globalvars.Replacer.Replace(postData.Comment), postData.SelectedPostId, currentUserFromSession))
+		_, inserterr := globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.comments(\"comment\", \"post_id\", \"author\") values(E'%s', '%d', (select username from tfldata.users where username='%s'));", globalvars.Replacer.Replace(postData.Comment), postData.SelectedPostId, currentUserFromSession))
 		if inserterr != nil {
 			fmt.Println(inserterr)
 		}
 		var author string
 		var pfpname string
-		row := db.QueryRow(fmt.Sprintf("select username, pfp_name from tfldata.users where username='%s';", currentUserFromSession))
+		row := globalvars.Db.QueryRow(fmt.Sprintf("select username, pfp_name from tfldata.users where username='%s';", currentUserFromSession))
 		userscnerr := row.Scan(&author, &pfpname)
 
 		if userscnerr != nil || len(pfpname) == 0 {
@@ -1135,14 +743,14 @@ func main() {
 		commentTmpl.Execute(w, nil)
 		go func() {
 			var fcmToken string
-			fcmrow := db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where username = (select author from tfldata.posts where id=%d) and username != (select username from tfldata.users where username='%s') and fcm_registration_id is not null;", postData.SelectedPostId, currentUserFromSession))
+			fcmrow := globalvars.Db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where username = (select author from tfldata.posts where id=%d) and username != (select username from tfldata.users where username='%s') and fcm_registration_id is not null;", postData.SelectedPostId, currentUserFromSession))
 			scnerr := fcmrow.Scan(&fcmToken)
 			if scnerr == nil {
 
-				//fb_message_client, _ := app.Messaging(context.TODO())
+				//globalvars.Fb_message_client, _ := app.Messaging(context.TODO())
 				typePayload := make(map[string]string)
 				typePayload["type"] = "posts"
-				sentRes, sendErr := fb_message_client.Send(context.TODO(), &messaging.Message{
+				sentRes, sendErr := globalvars.Fb_message_client.Send(context.TODO(), &messaging.Message{
 					Token: fcmToken,
 					Data:  typePayload,
 					Notification: &messaging.Notification{
@@ -1176,23 +784,23 @@ func main() {
 				if sendErr != nil {
 					fmt.Print(sendErr)
 				}
-				db.Exec(fmt.Sprintf("insert into tfldata.sent_notification_log(\"notification_result\", \"createdon\") values('%s', '%s');", sentRes, time.Now().In(globalvars.NyLoc).Local().Format(time.DateTime)))
+				globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.sent_notification_log(\"notification_result\", \"createdon\") values('%s', '%s');", sentRes, time.Now().In(globalvars.NyLoc).Local().Format(time.DateTime)))
 			}
 			if len(postData.Taggedusers) > 0 {
 				var usersPost string
-				row := db.QueryRow(fmt.Sprintf("select author from tfldata.posts where id=%d", postData.SelectedPostId))
+				row := globalvars.Db.QueryRow(fmt.Sprintf("select author from tfldata.posts where id=%d", postData.SelectedPostId))
 				row.Scan(&usersPost)
 
 				for _, userTagged := range postData.Taggedusers {
 					var fcmToken string
-					fcmrow := db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where username = '%s' and username != (select username from tfldata.users where username='%s') and fcm_registration_id is not null;", userTagged, currentUserFromSession))
+					fcmrow := globalvars.Db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where username = '%s' and username != (select username from tfldata.users where username='%s') and fcm_registration_id is not null;", userTagged, currentUserFromSession))
 					scnerr := fcmrow.Scan(&fcmToken)
 					if scnerr == nil {
 
-						//fb_message_client, _ := app.Messaging(context.TODO())
+						//globalvars.Fb_message_client, _ := app.Messaging(context.TODO())
 						typePayload := make(map[string]string)
 						typePayload["type"] = "posts"
-						sentRes, sendErr := fb_message_client.Send(context.TODO(), &messaging.Message{
+						sentRes, sendErr := globalvars.Fb_message_client.Send(context.TODO(), &messaging.Message{
 							Token: fcmToken,
 							Notification: &messaging.Notification{
 								Title:    currentUserFromSession + " tagged you on " + usersPost + "'s post",
@@ -1213,7 +821,7 @@ func main() {
 						if sendErr != nil {
 							fmt.Print(sendErr)
 						}
-						db.Exec(fmt.Sprintf("insert into tfldata.sent_notification_log(\"notification_result\", \"createdon\") values('%s', '%s');", sentRes, time.Now().In(globalvars.NyLoc).Local().Format(time.DateTime)))
+						globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.sent_notification_log(\"notification_result\", \"createdon\") values('%s', '%s');", sentRes, time.Now().In(globalvars.NyLoc).Local().Format(time.DateTime)))
 					}
 
 				}
@@ -1223,7 +831,7 @@ func main() {
 	getEventsHandler := func(w http.ResponseWriter, r *http.Request) {
 
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		allowOrDeny, _, h := globalfunctions.ValidateCurrentSessionId(db, r)
+		allowOrDeny, _, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
 		if !validBool || !allowOrDeny {
@@ -1242,7 +850,7 @@ func main() {
 		}
 
 		ourEvents := []EventData{}
-		output, err := db.Query("select start_date, event_owner, event_details, event_title, id, end_date from tfldata.calendar;")
+		output, err := globalvars.Db.Query("select start_date, event_owner, event_details, event_title, id, end_date from tfldata.calendar;")
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -1265,35 +873,9 @@ func main() {
 		}
 		w.Write(data)
 	}
-	getPostsReactionsHandler := func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		allowOrDeny, _, h := globalfunctions.ValidateCurrentSessionId(db, r)
 
-		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
-		if !validBool || !allowOrDeny {
-			w.Header().Set("HX-Retarget", "window")
-			w.Header().Set("HX-Trigger", h)
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
-
-		output, rowerr := db.Query(fmt.Sprintf("select author, reaction from tfldata.reactions where post_id='%s' and author != '%s';", r.URL.Query().Get("selectedPostId"), r.URL.Query().Get("username")))
-		if rowerr != nil {
-			db.Exec("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", rowerr, time.Now().In(globalvars.NyLoc).Local().Format(time.DateTime))
-		}
-		var outReaction string
-		var outAuthor string
-		defer output.Close()
-		for output.Next() {
-			scnerr := output.Scan(&outAuthor, &outReaction)
-			if scnerr != nil {
-				fmt.Println(scnerr)
-			}
-			w.Write([]byte("&nbsp;&nbsp;" + outAuthor + "&nbsp; - " + outReaction + "<br/>"))
-		}
-	}
 	createEventHandler := func(w http.ResponseWriter, r *http.Request) {
-		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(db, r)
+		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
 		if !validBool || !allowOrDeny {
@@ -1324,7 +906,7 @@ func main() {
 		}
 
 		if len(postData.Enddate) < 1 {
-			_, inserterr := db.Exec(fmt.Sprintf("insert into tfldata.calendar(\"start_date\", \"event_owner\", \"event_details\", \"event_title\") values('%s', '%s', E'%s', E'%s');", postData.Startdate, currentUserFromSession, globalvars.Replacer.Replace(postData.Eventdetails), globalvars.Replacer.Replace(postData.Eventtitle)))
+			_, inserterr := globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.calendar(\"start_date\", \"event_owner\", \"event_details\", \"event_title\") values('%s', '%s', E'%s', E'%s');", postData.Startdate, currentUserFromSession, globalvars.Replacer.Replace(postData.Eventdetails), globalvars.Replacer.Replace(postData.Eventtitle)))
 			if inserterr != nil {
 				fmt.Println(inserterr)
 				w.WriteHeader(http.StatusBadRequest)
@@ -1332,7 +914,7 @@ func main() {
 			}
 		} else {
 
-			_, inserterr := db.Exec(fmt.Sprintf("insert into tfldata.calendar(\"start_date\", \"event_owner\", \"event_details\", \"event_title\", \"end_date\") values('%s', '%s', E'%s', E'%s', '%s');", postData.Startdate, currentUserFromSession, globalvars.Replacer.Replace(postData.Eventdetails), globalvars.Replacer.Replace(postData.Eventtitle), postData.Enddate))
+			_, inserterr := globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.calendar(\"start_date\", \"event_owner\", \"event_details\", \"event_title\", \"end_date\") values('%s', '%s', E'%s', E'%s', '%s');", postData.Startdate, currentUserFromSession, globalvars.Replacer.Replace(postData.Eventdetails), globalvars.Replacer.Replace(postData.Eventtitle), postData.Enddate))
 			if inserterr != nil {
 				fmt.Println(inserterr)
 				w.WriteHeader(http.StatusBadRequest)
@@ -1347,12 +929,12 @@ func main() {
 		chatMessageNotificationOpts.NotificationTitle = "New event on: " + postData.Startdate
 		chatMessageNotificationOpts.NotificationBody = strings.ReplaceAll(postData.Eventtitle, "\\", "")
 
-		go globalfunctions.SendNotificationToAllUsers(db, currentUserFromSession, fb_message_client, &chatMessageNotificationOpts)
+		go globalfunctions.SendNotificationToAllUsers(globalvars.Db, currentUserFromSession, globalvars.Fb_message_client, &chatMessageNotificationOpts)
 
 	}
 	deleteEventHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		allowOrDeny, _, h := globalfunctions.ValidateCurrentSessionId(db, r)
+		allowOrDeny, _, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
 		if !validBool || !allowOrDeny {
@@ -1370,13 +952,13 @@ func main() {
 		if marsherr != nil {
 			fmt.Println(marsherr)
 		}
-		db.Exec(fmt.Sprintf("delete from tfldata.calendar where id=%d;", postData.Eventid))
-		db.Exec(fmt.Sprintf("delete from tfldata.calendar_rsvp where event_id=%d;", postData.Eventid))
-		db.Exec(fmt.Sprintf("delete from tfldata.comments where event_id=%d;", postData.Eventid))
+		globalvars.Db.Exec(fmt.Sprintf("delete from tfldata.calendar where id=%d;", postData.Eventid))
+		globalvars.Db.Exec(fmt.Sprintf("delete from tfldata.calendar_rsvp where event_id=%d;", postData.Eventid))
+		globalvars.Db.Exec(fmt.Sprintf("delete from tfldata.comments where event_id=%d;", postData.Eventid))
 	}
 	updateRSVPForEventHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		allowOrDeny, _, h := globalfunctions.ValidateCurrentSessionId(db, r)
+		allowOrDeny, _, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
 		if !validBool || !allowOrDeny {
@@ -1396,14 +978,14 @@ func main() {
 		if marsherr != nil {
 			fmt.Println(marsherr)
 		}
-		_, inserr := db.Exec(fmt.Sprintf("insert into tfldata.calendar_rsvp(\"username\",\"event_id\",\"status\") values('%s',%d,'%s') on conflict(username,event_id) do update set status='%s';", postData.Username, postData.Eventid, postData.Status, postData.Status))
+		_, inserr := globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.calendar_rsvp(\"username\",\"event_id\",\"status\") values('%s',%d,'%s') on conflict(username,event_id) do update set status='%s';", postData.Username, postData.Eventid, postData.Status, postData.Status))
 		if inserr != nil {
-			db.Exec("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", inserr, time.Now().In(globalvars.NyLoc).Local().Format(time.DateTime))
+			globalvars.Db.Exec("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", inserr, time.Now().In(globalvars.NyLoc).Local().Format(time.DateTime))
 			w.WriteHeader(http.StatusBadRequest)
 		}
 
 		var fcmToken string
-		fcmrow := db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where username = (select event_owner from tfldata.calendar where id=%d);", postData.Eventid))
+		fcmrow := globalvars.Db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where username = (select event_owner from tfldata.calendar where id=%d);", postData.Eventid))
 		scnerr := fcmrow.Scan(&fcmToken)
 		if scnerr != nil {
 
@@ -1411,15 +993,14 @@ func main() {
 				w.WriteHeader(http.StatusAccepted)
 				return
 			}
-			db.Exec("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", scnerr, time.Now().In(globalvars.NyLoc).Local().Format(time.DateTime))
+			globalvars.Db.Exec("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", scnerr, time.Now().In(globalvars.NyLoc).Local().Format(time.DateTime))
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		} else {
 
-			fb_message_client, _ := app.Messaging(context.TODO())
 			typePayload := make(map[string]string)
 			typePayload["type"] = "event"
-			sentRes, sendErr := fb_message_client.Send(context.TODO(), &messaging.Message{
+			sentRes, sendErr := globalvars.Fb_message_client.Send(context.TODO(), &messaging.Message{
 				Token: fcmToken,
 				Notification: &messaging.Notification{
 					Title:    "Someone RSVPed to your event",
@@ -1452,14 +1033,14 @@ func main() {
 			if sendErr != nil {
 				fmt.Print(sendErr)
 			}
-			db.Exec(fmt.Sprintf("insert into tfldata.sent_notification_log(\"notification_result\") values('%s');", sentRes))
+			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.sent_notification_log(\"notification_result\") values('%s');", sentRes))
 		}
 
 	}
 	getEventRSVPHandler := func(w http.ResponseWriter, r *http.Request) {
 
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		allowOrDeny, _, h := globalfunctions.ValidateCurrentSessionId(db, r)
+		allowOrDeny, _, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
 		if !validBool || !allowOrDeny {
@@ -1469,7 +1050,7 @@ func main() {
 			return
 		}
 		var status string
-		row := db.QueryRow(fmt.Sprintf("select status from tfldata.calendar_rsvp where username='%s' and event_id='%s';", r.URL.Query().Get("username"), r.URL.Query().Get("event_id")))
+		row := globalvars.Db.QueryRow(fmt.Sprintf("select status from tfldata.calendar_rsvp where username='%s' and event_id='%s';", r.URL.Query().Get("username"), r.URL.Query().Get("event_id")))
 		scnerr := row.Scan(&status)
 		if scnerr != nil {
 			if scnerr.Error() == "sql: no rows in result set" {
@@ -1482,7 +1063,7 @@ func main() {
 	}
 	getRSVPNotesHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		allowOrDeny, _, h := globalfunctions.ValidateCurrentSessionId(db, r)
+		allowOrDeny, _, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
 		if !validBool || !allowOrDeny {
@@ -1493,7 +1074,7 @@ func main() {
 		}
 		var status string
 		var username string
-		output, outerr := db.Query(fmt.Sprintf("select username, status from tfldata.calendar_rsvp where event_id='%s';", r.URL.Query().Get("event_id")))
+		output, outerr := globalvars.Db.Query(fmt.Sprintf("select username, status from tfldata.calendar_rsvp where event_id='%s';", r.URL.Query().Get("event_id")))
 
 		if outerr != nil {
 			w.WriteHeader(http.StatusBadRequest)
@@ -1523,7 +1104,7 @@ func main() {
 
 	}
 	createGroupChatMessageHandler := func(w http.ResponseWriter, r *http.Request) {
-		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(db, r)
+		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
 		if !validBool || !allowOrDeny {
@@ -1545,20 +1126,20 @@ func main() {
 			return
 		}
 
-		_, inserr := db.Exec(fmt.Sprintf("insert into tfldata.gchat(\"chat\", \"author\", \"createdon\", \"thread\") values(E'%s', '%s', now(), '%s');", chatMessage, currentUserFromSession, threadVal))
+		_, inserr := globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.gchat(\"chat\", \"author\", \"createdon\", \"thread\") values(E'%s', '%s', now(), '%s');", chatMessage, currentUserFromSession, threadVal))
 		if inserr != nil {
 			fmt.Println("error here: " + inserr.Error())
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		_, ttbleerr := db.Exec(fmt.Sprintf("insert into tfldata.threads(\"thread\", \"threadauthor\", \"createdon\") values(E'%s', '%s', now());", threadVal, currentUserFromSession))
+		_, ttbleerr := globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.threads(\"thread\", \"threadauthor\", \"createdon\") values(E'%s', '%s', now());", threadVal, currentUserFromSession))
 		if ttbleerr != nil {
 			if strings.Contains(ttbleerr.Error(), "duplicate key") {
 				fmt.Println("duplicate thread error can be ignored")
 				s := make([]string, 0)
 				s = append(s, "insert into tfldata.users_to_threads(username) select distinct(username) from tfldata.users;")
 				s = append(s, fmt.Sprintf("update tfldata.users_to_threads set is_subscribed=true, thread='%s' where is_subscribed is null and thread is null;", threadVal))
-				upAndInsUTT, txnerr := db.Begin()
+				upAndInsUTT, txnerr := globalvars.Db.Begin()
 				if txnerr != nil {
 					fmt.Println(upAndInsUTT)
 					fmt.Println("This was a transaction error")
@@ -1592,16 +1173,16 @@ func main() {
 		singleUserChatMessageNotificationOpts.NotificationTitle = currentUserFromSession + " just tagged you in : " + threadVal
 		singleUserChatMessageNotificationOpts.NotificationBody = chatMessage
 
-		go globalfunctions.SendNotificationToAllUsers(db, currentUserFromSession, fb_message_client, &chatMessageNotificationOpts)
+		go globalfunctions.SendNotificationToAllUsers(globalvars.Db, currentUserFromSession, globalvars.Fb_message_client, &chatMessageNotificationOpts)
 
 		if len(listOfUsersTagged[0]) > 0 {
 			for _, taggedUser := range listOfUsersTagged {
 				var fcmToken string
-				row := db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where username='%s';", taggedUser))
+				row := globalvars.Db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where username='%s';", taggedUser))
 
 				scnerr := row.Scan(&fcmToken)
 				if scnerr == nil {
-					go globalfunctions.SendNotificationToSingleUser(db, fb_message_client, fcmToken, singleUserChatMessageNotificationOpts)
+					go globalfunctions.SendNotificationToSingleUser(globalvars.Db, globalvars.Fb_message_client, fcmToken, singleUserChatMessageNotificationOpts)
 				}
 
 			}
@@ -1610,7 +1191,7 @@ func main() {
 
 	}
 	delThreadHandler := func(w http.ResponseWriter, r *http.Request) {
-		allowOrDeny, _, h := globalfunctions.ValidateCurrentSessionId(db, r)
+		allowOrDeny, _, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
 		if !validBool || !allowOrDeny {
@@ -1633,7 +1214,7 @@ func main() {
 		s = append(s, fmt.Sprintf("delete from tfldata.gchat where thread='%s';", postData.ThreadToDel))
 		s = append(s, fmt.Sprintf("delete from tfldata.threads where thread='%s';", postData.ThreadToDel))
 		s = append(s, fmt.Sprintf("delete from tfldata.users_to_threads where thread='%s' or thread is null;", postData.ThreadToDel))
-		delThreadDataTxn, txnerr := db.Begin()
+		delThreadDataTxn, txnerr := globalvars.Db.Begin()
 		if txnerr != nil {
 			fmt.Println(delThreadDataTxn)
 			fmt.Println("This was a transaction error")
@@ -1662,15 +1243,15 @@ func main() {
 		if marsherr != nil {
 			fmt.Println(marsherr)
 		}
-		_, uperr := db.Exec(fmt.Sprintf("update tfldata.users set gchat_order_option='%t' where username='%s';", postData.Option, postData.Username))
+		_, uperr := globalvars.Db.Exec(fmt.Sprintf("update tfldata.users set gchat_order_option='%t' where username='%s';", postData.Option, postData.Username))
 		if uperr != nil {
 			activityStr := fmt.Sprintf("%s tried to update gchat_order_option", postData.Username)
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", uperr, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
+			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", uperr, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
 		}
 
 	}
 	getGroupChatMessagesHandler := func(w http.ResponseWriter, r *http.Request) {
-		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(db, r)
+		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
 		if !validBool || !allowOrDeny {
@@ -1689,7 +1270,7 @@ func main() {
 			orderAscOrDesc = "desc"
 		}
 		limitVal, _ := strconv.Atoi(r.URL.Query().Get("limit"))
-		output, err := db.Query(fmt.Sprintf("select id, chat, author, createdon at time zone (select mytz from tfldata.users where username='%s') from (select * from tfldata.gchat where thread='%s' order by createdon DESC limit %d) as tmp order by createdon %s;", currentUserFromSession, r.URL.Query().Get("threadval"), limitVal, orderAscOrDesc))
+		output, err := globalvars.Db.Query(fmt.Sprintf("select id, chat, author, createdon at time zone (select mytz from tfldata.users where username='%s') from (select * from tfldata.gchat where thread='%s' order by createdon DESC limit %d) as tmp order by createdon %s;", currentUserFromSession, r.URL.Query().Get("threadval"), limitVal, orderAscOrDesc))
 
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
@@ -1707,7 +1288,7 @@ func main() {
 
 			output.Scan(&gchatid, &message, &author, &createdat)
 
-			row := db.QueryRow(fmt.Sprintf("select pfp_name from tfldata.users where username='%s';", author))
+			row := globalvars.Db.QueryRow(fmt.Sprintf("select pfp_name from tfldata.users where username='%s';", author))
 			pfpscnerr := row.Scan(&pfpImg)
 			if pfpscnerr != nil {
 				pfpImg = "assets/96x96/ZCAN2301 The Family Loop Favicon_W_96 x 96.png"
@@ -1742,7 +1323,7 @@ func main() {
 		}
 	}
 	getPrivateChatMessagesHandler := func(w http.ResponseWriter, r *http.Request) {
-		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(db, r)
+		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
 		if !validBool || !allowOrDeny {
@@ -1768,7 +1349,7 @@ func main() {
 		}
 
 		limitVal, _ := strconv.Atoi(r.URL.Query().Get("limit"))
-		output, err := db.Query(fmt.Sprintf("select id,message,from_user,to_user,reaction,createdon at time zone (select mytz from tfldata.users where username='%s') from (select * from tfldata.pchat where (from_user='%s' and to_user='%s') or (from_user='%s' and to_user='%s') order by createdon DESC limit %d) as tmp order by createdon %s;", currentUserFromSession, r.URL.Query().Get("userToSendTo"), currentUserFromSession, currentUserFromSession, r.URL.Query().Get("userToSendTo"), limitVal, orderAscOrDesc))
+		output, err := globalvars.Db.Query(fmt.Sprintf("select id,message,from_user,to_user,reaction,createdon at time zone (select mytz from tfldata.users where username='%s') from (select * from tfldata.pchat where (from_user='%s' and to_user='%s') or (from_user='%s' and to_user='%s') order by createdon DESC limit %d) as tmp order by createdon %s;", currentUserFromSession, r.URL.Query().Get("userToSendTo"), currentUserFromSession, currentUserFromSession, r.URL.Query().Get("userToSendTo"), limitVal, orderAscOrDesc))
 
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
@@ -1788,7 +1369,7 @@ func main() {
 				pChatRow.reaction.String = ""
 			}
 
-			pfprow := db.QueryRow(fmt.Sprintf("select pfp_name from tfldata.users where username='%s';", pChatRow.fromUser))
+			pfprow := globalvars.Db.QueryRow(fmt.Sprintf("select pfp_name from tfldata.users where username='%s';", pChatRow.fromUser))
 
 			pfpscnerr := pfprow.Scan(&pfpimg)
 			if pfpscnerr != nil {
@@ -1825,7 +1406,7 @@ func main() {
 		}
 	}
 	createPrivatePChatMessageHandler := func(w http.ResponseWriter, r *http.Request) {
-		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(db, r)
+		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
 		if !validBool || !allowOrDeny {
@@ -1837,17 +1418,17 @@ func main() {
 		userTo := r.PostFormValue("user_to")
 		message := r.PostFormValue("privatechatmessage")
 
-		_, dbinserr := db.Exec(fmt.Sprintf("insert into tfldata.pchat(message, from_user, to_user, createdon) values (substr('%s',0,420), '%s', '%s', now());", message, currentUserFromSession, userTo))
+		_, dbinserr := globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.pchat(message, from_user, to_user, createdon) values (substr('%s',0,420), '%s', '%s', now());", message, currentUserFromSession, userTo))
 		if dbinserr != nil {
 			activityStr := "insert into pchat table"
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, createdon, activity) values (substr('%s',0,106), now(), substr('%s',0,105));", dbinserr.Error(), activityStr))
+			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, createdon, activity) values (substr('%s',0,106), now(), substr('%s',0,105));", dbinserr.Error(), activityStr))
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 
 		var fcmTokenToUser sql.NullString
 
-		fcmRes := db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where username = '%s';", userTo))
+		fcmRes := globalvars.Db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where username = '%s';", userTo))
 
 		fcmRes.Scan(&fcmTokenToUser)
 
@@ -1860,11 +1441,11 @@ func main() {
 			chatMessageNotificationOpts.NotificationTitle = "message from: " + currentUserFromSession
 			chatMessageNotificationOpts.NotificationBody = strings.ReplaceAll(message, "\\", "")
 
-			go globalfunctions.SendNotificationToSingleUser(db, fb_message_client, fcmTokenToUser.String, chatMessageNotificationOpts)
+			go globalfunctions.SendNotificationToSingleUser(globalvars.Db, globalvars.Fb_message_client, fcmTokenToUser.String, chatMessageNotificationOpts)
 		}
 	}
 	updateLastViewedPChatHandler := func(w http.ResponseWriter, r *http.Request) {
-		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(db, r)
+		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
 		if !validBool || !allowOrDeny {
@@ -1881,20 +1462,20 @@ func main() {
 		marsherr := json.Unmarshal(bs, &postData)
 		if marsherr != nil {
 			activityStr := "marsh json updatelastviewed function"
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage,activity,createdon) values(substr('%s',0,105),substr('%s',0,106), now());", marsherr.Error(), activityStr))
+			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage,activity,createdon) values(substr('%s',0,105),substr('%s',0,106), now());", marsherr.Error(), activityStr))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		_, uperr := db.Exec(fmt.Sprintf("update tfldata.users set last_viewed_pchat = '%s' where username = '%s';", postData.LastViewed, currentUserFromSession))
+		_, uperr := globalvars.Db.Exec(fmt.Sprintf("update tfldata.users set last_viewed_pchat = '%s' where username = '%s';", postData.LastViewed, currentUserFromSession))
 		if uperr != nil {
 			activityStr := "update error updatelastviewed function"
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage,activity,createdon) values(substr('%s',0,105),substr('%s',0,106), now());", uperr.Error(), activityStr))
+			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage,activity,createdon) values(substr('%s',0,105),substr('%s',0,106), now());", uperr.Error(), activityStr))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 	}
 	updateLastViewedThreadHandler := func(w http.ResponseWriter, r *http.Request) {
-		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(db, r)
+		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
 		if !validBool || !allowOrDeny {
@@ -1911,20 +1492,20 @@ func main() {
 		marsherr := json.Unmarshal(bs, &postData)
 		if marsherr != nil {
 			activityStr := "marsh json updatelastviewedthread function"
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage,activity,createdon) values(substr('%s',0,105),substr('%s',0,106), now());", marsherr.Error(), activityStr))
+			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage,activity,createdon) values(substr('%s',0,105),substr('%s',0,106), now());", marsherr.Error(), activityStr))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		_, uperr := db.Exec(fmt.Sprintf("update tfldata.users set last_viewed_gchat = '%s' where username = '%s';", postData.LastViewed, currentUserFromSession))
+		_, uperr := globalvars.Db.Exec(fmt.Sprintf("update tfldata.users set last_viewed_gchat = '%s' where username = '%s';", postData.LastViewed, currentUserFromSession))
 		if uperr != nil {
 			activityStr := "update error updatelastviewedthread function"
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage,activity,createdon) values(substr('%s',0,105),substr('%s',0,106), now());", uperr.Error(), activityStr))
+			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage,activity,createdon) values(substr('%s',0,105),substr('%s',0,106), now());", uperr.Error(), activityStr))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 	}
 	getUsernamesToTagHandler := func(w http.ResponseWriter, r *http.Request) {
-		allowOrDeny, _, h := globalfunctions.ValidateCurrentSessionId(db, r)
+		allowOrDeny, _, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
 		if !validBool || !allowOrDeny {
@@ -1933,7 +1514,7 @@ func main() {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
-		searchOutput, searchErr := db.Query("select username from tfldata.users where username like '%" + r.URL.Query().Get("user") + "%';")
+		searchOutput, searchErr := globalvars.Db.Query("select username from tfldata.users where username like '%" + r.URL.Query().Get("user") + "%';")
 		if searchErr != nil {
 			w.Write([]byte("no results found"))
 		}
@@ -1951,31 +1532,10 @@ func main() {
 		}
 		w.Write(jsonbs)
 	}
-	getPostImagesHandler := func(w http.ResponseWriter, r *http.Request) {
 
-		var imgList []string
-		rows, err := db.Query(fmt.Sprintf("select file_name from tfldata.postfiles where post_files_key='%s' order by id asc;", r.URL.Query().Get("id")))
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-		defer rows.Close()
-		for rows.Next() {
-			var filename string
-			rows.Scan(&filename)
-			imgList = append(imgList, filename)
-
-		}
-		data, jsonerr := json.Marshal(&imgList)
-		if jsonerr != nil {
-			fmt.Println(jsonerr)
-		}
-		w.Write(data)
-
-	}
 	getSubscribedHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-type", "application/json; charset=utf-8")
-		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(db, r)
+		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
 
@@ -1987,19 +1547,19 @@ func main() {
 		}
 
 		var fcmRegToken string
-		fcmRegRow := db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where username='%s';", currentUserFromSession))
+		fcmRegRow := globalvars.Db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where username='%s';", currentUserFromSession))
 		scnerr := fcmRegRow.Scan(&fcmRegToken)
 
 		if scnerr != nil {
 			w.WriteHeader(http.StatusAccepted)
 			return
-			// db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", scnerr, time.Now().In(globalvars.NyLoc).Local().Format(time.DateTime)))
+			// globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", scnerr, time.Now().In(globalvars.NyLoc).Local().Format(time.DateTime)))
 		}
 		w.WriteHeader(http.StatusOK)
 	}
 	getSessionDataHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(db, r)
+		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
 
@@ -2026,7 +1586,7 @@ func main() {
 
 		var ourSeshStruct seshStruct
 
-		row := db.QueryRow(fmt.Sprintf("select username, gchat_bg_theme, gchat_order_option, is_admin, pfp_name, fcm_registration_id, last_viewed_pchat, last_viewed_gchat from tfldata.users where username='%s';", currentUserFromSession))
+		row := globalvars.Db.QueryRow(fmt.Sprintf("select username, gchat_bg_theme, gchat_order_option, is_admin, pfp_name, fcm_registration_id, last_viewed_pchat, last_viewed_gchat from tfldata.users where username='%s';", currentUserFromSession))
 		scerr := row.Scan(&ourSeshStruct.Username, &ourSeshStruct.BGtheme, &ourSeshStruct.GchatOrderOpt, &ourSeshStruct.Isadmin, &ourSeshStruct.Pfpname, &ourSeshStruct.Fcmkey, &ourSeshStruct.LastViewedPChat, &ourSeshStruct.LastViewedThread)
 		if scerr != nil {
 			fmt.Println(scerr)
@@ -2057,7 +1617,7 @@ func main() {
 
 	updatePfpHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "multipart/form-data")
-		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(db, r)
+		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
 		if !validBool || !allowOrDeny {
@@ -2071,17 +1631,17 @@ func main() {
 		username := r.PostFormValue("usernameinput")
 
 		fn := globalfunctions.UploadPfpToS3(upload, filename.Filename, r, "changepfp")
-		_, uperr := db.Exec(fmt.Sprintf("update tfldata.users set pfp_name='%s' where username='%s';", fn, username))
+		_, uperr := globalvars.Db.Exec(fmt.Sprintf("update tfldata.users set pfp_name='%s' where username='%s';", fn, username))
 		if uperr != nil {
 			activityStr := fmt.Sprintf("update table users set pfp_name failed for user %s", currentUserFromSession)
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", uperr, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
+			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", uperr, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 	}
 	updateChatThemeHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(db, r)
+		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
 		if !validBool || !allowOrDeny {
@@ -2100,15 +1660,15 @@ func main() {
 		if marsherr != nil {
 			fmt.Println(marsherr)
 		}
-		_, uperr := db.Exec(fmt.Sprintf("update tfldata.users set gchat_bg_theme='%s' where username='%s';", postData.Theme, postData.Username))
+		_, uperr := globalvars.Db.Exec(fmt.Sprintf("update tfldata.users set gchat_bg_theme='%s' where username='%s';", postData.Theme, postData.Username))
 		if uperr != nil {
 			activityStr := fmt.Sprintf("updateChatTheme failed for user %s", currentUserFromSession)
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", uperr, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
+			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", uperr, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
 		}
 	}
 	deleteSelectedChatHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(db, r)
+		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
 		if !validBool || !allowOrDeny {
@@ -2126,15 +1686,15 @@ func main() {
 		if marsherr != nil {
 			fmt.Println(marsherr)
 		}
-		_, delerr := db.Exec(fmt.Sprintf("delete from tfldata.gchat where id='%s';", postData.SelectedChatId))
+		_, delerr := globalvars.Db.Exec(fmt.Sprintf("delete from tfldata.gchat where id='%s';", postData.SelectedChatId))
 		if delerr != nil {
 			activityStr := fmt.Sprintf("%s could not deleteSelectedChat", currentUserFromSession)
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", delerr, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
+			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", delerr, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
 		}
 	}
 	updateSelectedChatHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(db, r)
+		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
 		if !validBool || !allowOrDeny {
@@ -2153,15 +1713,15 @@ func main() {
 		if marsherr != nil {
 			fmt.Println(marsherr)
 		}
-		_, uperr := db.Exec(fmt.Sprintf("update tfldata.gchat set chat='%s' where id='%s';", postData.ChatMessage, postData.SelectedChatId))
+		_, uperr := globalvars.Db.Exec(fmt.Sprintf("update tfldata.gchat set chat='%s' where id='%s';", postData.ChatMessage, postData.SelectedChatId))
 		if uperr != nil {
 			activityStr := fmt.Sprintf("%s could not edit the chat message %s", currentUserFromSession, postData.SelectedChatId)
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", uperr, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
+			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", uperr, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
 		}
 	}
 	deleteSelectedPChatHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(db, r)
+		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
 		if !validBool || !allowOrDeny {
@@ -2179,15 +1739,15 @@ func main() {
 		if marsherr != nil {
 			fmt.Println(marsherr)
 		}
-		_, delerr := db.Exec(fmt.Sprintf("delete from tfldata.pchat where id='%s';", postData.SelectedChatId))
+		_, delerr := globalvars.Db.Exec(fmt.Sprintf("delete from tfldata.pchat where id='%s';", postData.SelectedChatId))
 		if delerr != nil {
 			activityStr := fmt.Sprintf("%s could not deleteSelectedPChat", currentUserFromSession)
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", delerr, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
+			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", delerr, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
 		}
 	}
 	updateSelectedPChatHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(db, r)
+		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
 		if !validBool || !allowOrDeny {
@@ -2206,14 +1766,14 @@ func main() {
 		if marsherr != nil {
 			fmt.Println(marsherr)
 		}
-		_, uperr := db.Exec(fmt.Sprintf("update tfldata.pchat set message='%s' where id='%s';", postData.ChatMessage, postData.SelectedChatId))
+		_, uperr := globalvars.Db.Exec(fmt.Sprintf("update tfldata.pchat set message='%s' where id='%s';", postData.ChatMessage, postData.SelectedChatId))
 		if uperr != nil {
 			activityStr := fmt.Sprintf("%s could not edit the Pchat message %s", currentUserFromSession, postData.SelectedChatId)
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", uperr, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
+			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", uperr, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
 		}
 	}
 	getSelectedChatHandler := func(w http.ResponseWriter, r *http.Request) {
-		allowOrDeny, _, h := globalfunctions.ValidateCurrentSessionId(db, r)
+		allowOrDeny, _, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
 		if !validBool || !allowOrDeny {
@@ -2223,7 +1783,7 @@ func main() {
 			return
 		}
 		var ChatVal string
-		row := db.QueryRow(fmt.Sprintf("select chat from tfldata.gchat where id='%s';", r.URL.Query().Get("chatid")))
+		row := globalvars.Db.QueryRow(fmt.Sprintf("select chat from tfldata.gchat where id='%s';", r.URL.Query().Get("chatid")))
 		row.Scan(&ChatVal)
 		marshbs, marsherr := json.Marshal(ChatVal)
 		if marsherr != nil {
@@ -2232,7 +1792,7 @@ func main() {
 		w.Write(marshbs)
 	}
 	getSelectedPChatHandler := func(w http.ResponseWriter, r *http.Request) {
-		allowOrDeny, _, h := globalfunctions.ValidateCurrentSessionId(db, r)
+		allowOrDeny, _, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
 		if !validBool || !allowOrDeny {
@@ -2242,7 +1802,7 @@ func main() {
 			return
 		}
 		var ChatVal string
-		row := db.QueryRow(fmt.Sprintf("select message from tfldata.pchat where id='%s';", r.URL.Query().Get("chatid")))
+		row := globalvars.Db.QueryRow(fmt.Sprintf("select message from tfldata.pchat where id='%s';", r.URL.Query().Get("chatid")))
 		row.Scan(&ChatVal)
 		marshbs, marsherr := json.Marshal(ChatVal)
 		if marsherr != nil {
@@ -2252,7 +1812,7 @@ func main() {
 	}
 	getGHIssuesComments := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		allowOrDeny, _, h := globalfunctions.ValidateCurrentSessionId(db, r)
+		allowOrDeny, _, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
 		if !validBool || !allowOrDeny {
@@ -2310,7 +1870,7 @@ func main() {
 	}
 	createGHIssueCommentHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		allowOrDeny, _, h := globalfunctions.ValidateCurrentSessionId(db, r)
+		allowOrDeny, _, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
 		if !validBool || !allowOrDeny {
@@ -2364,7 +1924,7 @@ func main() {
 	}
 	getCustomerSupportIssuesHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(db, r)
+		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
 		if !validBool || !allowOrDeny {
@@ -2427,7 +1987,7 @@ func main() {
 	}
 	createIssueHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(db, r)
+		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
 		if !validBool || !allowOrDeny {
@@ -2521,7 +2081,7 @@ func main() {
 		}
 	}
 	getStackerzLeaderboardHandler := func(w http.ResponseWriter, r *http.Request) {
-		allowOrDeny, _, h := globalfunctions.ValidateCurrentSessionId(db, r)
+		allowOrDeny, _, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
 		if !validBool || !allowOrDeny {
@@ -2531,7 +2091,7 @@ func main() {
 			return
 		}
 		if r.URL.Query().Get("leaderboardType") == "family" {
-			output, outerr := db.Query("select substr(username,0,14), bonus_points, level from tfldata.stack_leaderboard order by(bonus_points+level) desc limit 20;")
+			output, outerr := globalvars.Db.Query("select substr(username,0,14), bonus_points, level from tfldata.stack_leaderboard order by(bonus_points+level) desc limit 20;")
 			if outerr != nil {
 				fmt.Println(outerr)
 			}
@@ -2676,7 +2236,7 @@ func main() {
 	}
 	updateStackerzScoreHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(db, r)
+		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
 		if !validBool || !allowOrDeny {
@@ -2696,15 +2256,15 @@ func main() {
 		if marsherr != nil {
 			fmt.Println(marsherr)
 		}
-		_, inserr := db.Exec(fmt.Sprintf("insert into tfldata.stack_leaderboard(\"username\", \"bonus_points\", \"level\") values('%s', %d, %d)", postData.Username, postData.BonusPoints, postData.Level))
+		_, inserr := globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.stack_leaderboard(\"username\", \"bonus_points\", \"level\") values('%s', %d, %d)", postData.Username, postData.BonusPoints, postData.Level))
 		if inserr != nil {
 			activityStr := fmt.Sprintf("could not update stackerz leaderboard for %s", currentUserFromSession)
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", inserr, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
+			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", inserr, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
 		}
 		coll.InsertOne(context.TODO(), bson.M{"org_id": globalvars.OrgId, "game": "stackerz", "bonus_points": postData.BonusPoints, "level": postData.Level, "username": postData.Username, "createdOn": time.Now()})
 	}
 	getPersonalCatchitLeaderboardHandler := func(w http.ResponseWriter, r *http.Request) {
-		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(db, r)
+		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
 		if !validBool || !allowOrDeny {
@@ -2713,7 +2273,7 @@ func main() {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
-		output, outerr := db.Query(fmt.Sprintf("select username, score from tfldata.catchitleaderboard where username='%s' order by score desc limit 20;", currentUserFromSession))
+		output, outerr := globalvars.Db.Query(fmt.Sprintf("select username, score from tfldata.catchitleaderboard where username='%s' order by score desc limit 20;", currentUserFromSession))
 		if outerr != nil {
 			fmt.Println(outerr)
 		}
@@ -2732,7 +2292,7 @@ func main() {
 		}
 	}
 	getCatchitLeaderboardHandler := func(w http.ResponseWriter, r *http.Request) {
-		allowOrDeny, _, h := globalfunctions.ValidateCurrentSessionId(db, r)
+		allowOrDeny, _, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
 		if !validBool || !allowOrDeny {
@@ -2742,7 +2302,7 @@ func main() {
 			return
 		}
 		if r.URL.Query().Get("leaderboardType") == "family" {
-			output, outerr := db.Query("select username, score from tfldata.catchitleaderboard order by score desc limit 20;")
+			output, outerr := globalvars.Db.Query("select username, score from tfldata.catchitleaderboard order by score desc limit 20;")
 			if outerr != nil {
 				fmt.Println(outerr)
 			}
@@ -2866,7 +2426,7 @@ func main() {
 	}
 	updateCatchitScoreHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		allowOrDeny, _, h := globalfunctions.ValidateCurrentSessionId(db, r)
+		allowOrDeny, _, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
 		if !validBool || !allowOrDeny {
@@ -2886,7 +2446,7 @@ func main() {
 			fmt.Println(marsherr)
 		}
 
-		_, inserr := db.Exec(fmt.Sprintf("insert into tfldata.catchitleaderboard(\"username\", \"score\", \"createdon\") values('%s', '%d', now());", postData.Username, postData.Score))
+		_, inserr := globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.catchitleaderboard(\"username\", \"score\", \"createdon\") values('%s', '%d', now());", postData.Username, postData.Score))
 		if inserr != nil {
 			w.WriteHeader(http.StatusBadRequest)
 		}
@@ -2894,7 +2454,7 @@ func main() {
 
 	}
 	getLeaderboardHandler := func(w http.ResponseWriter, r *http.Request) {
-		allowOrDeny, _, h := globalfunctions.ValidateCurrentSessionId(db, r)
+		allowOrDeny, _, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
 		if !validBool || !allowOrDeny {
@@ -2904,7 +2464,7 @@ func main() {
 			return
 		}
 		if r.URL.Query().Get("leaderboardType") == "family" {
-			output, outerr := db.Query("select username, score from tfldata.ss_leaderboard order by score desc limit 20;")
+			output, outerr := globalvars.Db.Query("select username, score from tfldata.ss_leaderboard order by score desc limit 20;")
 			if outerr != nil {
 				fmt.Println(outerr)
 			}
@@ -3040,7 +2600,7 @@ func main() {
 			fmt.Println(errmarsh)
 		}
 
-		_, inserr := db.Exec(fmt.Sprintf("insert into tfldata.ss_leaderboard(\"username\", \"score\") values('%s', '%d');", postData.Username, postData.Score))
+		_, inserr := globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.ss_leaderboard(\"username\", \"score\") values('%s', '%d');", postData.Username, postData.Score))
 		if inserr != nil {
 			w.WriteHeader(http.StatusBadRequest)
 		}
@@ -3048,7 +2608,7 @@ func main() {
 
 	}
 	getOpenThreadsHandler := func(w http.ResponseWriter, r *http.Request) {
-		allowOrDeny, _, h := globalfunctions.ValidateCurrentSessionId(db, r)
+		allowOrDeny, _, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
 		if !validBool || !allowOrDeny {
@@ -3057,7 +2617,7 @@ func main() {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
-		distinctThreadsOutput, queryErr := db.Query("select thread,threadauthor from tfldata.threads order by createdon desc;")
+		distinctThreadsOutput, queryErr := globalvars.Db.Query("select thread,threadauthor from tfldata.threads order by createdon desc;")
 		if queryErr != nil {
 			fmt.Println(queryErr)
 		}
@@ -3075,7 +2635,7 @@ func main() {
 		}
 	}
 	getUsersToChatToHandler := func(w http.ResponseWriter, r *http.Request) {
-		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(db, r)
+		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
 		if !validBool || !allowOrDeny {
@@ -3084,7 +2644,7 @@ func main() {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
-		distinctUsersOutput, queryErr := db.Query(fmt.Sprintf("select distinct(username) from tfldata.users where username != '%s';", currentUserFromSession))
+		distinctUsersOutput, queryErr := globalvars.Db.Query(fmt.Sprintf("select distinct(username) from tfldata.users where username != '%s';", currentUserFromSession))
 		if queryErr != nil {
 			fmt.Println(queryErr)
 		}
@@ -3102,7 +2662,7 @@ func main() {
 	}
 	getUsersSubscribedThreadsHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		allowOrDeny, _, h := globalfunctions.ValidateCurrentSessionId(db, r)
+		allowOrDeny, _, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
 		if !validBool || !allowOrDeny {
@@ -3111,7 +2671,7 @@ func main() {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
-		output, outerr := db.Query(fmt.Sprintf("select thread, is_subscribed::text from tfldata.users_to_threads where username='%s';", r.URL.Query().Get("username")))
+		output, outerr := globalvars.Db.Query(fmt.Sprintf("select thread, is_subscribed::text from tfldata.users_to_threads where username='%s';", r.URL.Query().Get("username")))
 		if outerr != nil {
 			fmt.Println(outerr)
 		}
@@ -3128,7 +2688,7 @@ func main() {
 
 	changeUserSubscriptionToThreadHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(db, r)
+		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
 		if !validBool || !allowOrDeny {
@@ -3148,16 +2708,16 @@ func main() {
 		if marsherr != nil {
 			fmt.Println(marsherr)
 		}
-		_, inserr := db.Exec(fmt.Sprintf("insert into tfldata.users_to_threads(\"username\",\"thread\",\"is_subscribed\") values('%s','%s',%t) on conflict(username,thread) do update set is_subscribed=%t;", postData.User, postData.Thread, postData.CurrentlySubbed, postData.CurrentlySubbed))
+		_, inserr := globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.users_to_threads(\"username\",\"thread\",\"is_subscribed\") values('%s','%s',%t) on conflict(username,thread) do update set is_subscribed=%t;", postData.User, postData.Thread, postData.CurrentlySubbed, postData.CurrentlySubbed))
 		if inserr != nil {
 			activityStr := fmt.Sprintf("%s could not update sub settings for thread %s", currentUserFromSession, postData.Thread)
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", inserr, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
+			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", inserr, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
 		}
 
 	}
 	createNewTimeCapsuleHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "multipart/form-data")
-		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(db, r)
+		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
 		if !validBool || !allowOrDeny {
@@ -3170,7 +2730,7 @@ func main() {
 		var curAmountOfStoredCapsules int
 		var nameExists string
 
-		searchForName := db.QueryRow(fmt.Sprintf("select tcname from tfldata.timecapsule where tcname='%s' and username='%s' limit 1;", r.PostFormValue("tcName"), currentUserFromSession))
+		searchForName := globalvars.Db.QueryRow(fmt.Sprintf("select tcname from tfldata.timecapsule where tcname='%s' and username='%s' limit 1;", r.PostFormValue("tcName"), currentUserFromSession))
 
 		searchForName.Scan(&nameExists)
 
@@ -3180,7 +2740,7 @@ func main() {
 			return
 		}
 
-		row := db.QueryRow(fmt.Sprintf("select count(*) from tfldata.timecapsule where username='%s' and available_on > now();", currentUserFromSession))
+		row := globalvars.Db.QueryRow(fmt.Sprintf("select count(*) from tfldata.timecapsule where username='%s' and available_on > now();", currentUserFromSession))
 		row.Scan(&curAmountOfStoredCapsules)
 
 		if curAmountOfStoredCapsules >= 5 {
@@ -3194,7 +2754,7 @@ func main() {
 		tcFile, err := os.Create(tcFileName)
 		if err != nil {
 			activityStr := "Failed to create zip file in tccreatehandler"
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", err, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
+			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", err, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
 			return
 		}
 		var yearsfordb int
@@ -3212,7 +2772,7 @@ func main() {
 		parseerr := r.ParseMultipartForm(10 << 20)
 		if parseerr != nil {
 			activityStr := "Failed to parse multipart form create tc"
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", parseerr, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
+			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", parseerr, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
 			return
 		}
 		totalFilesSize := 0
@@ -3221,26 +2781,26 @@ func main() {
 			f, openErr := fh.Open()
 			if openErr != nil {
 				activityStr := "failed to open multipart file tc create"
-				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", openErr, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
+				globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", openErr, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
 				return
 			}
 
 			w1, createerr := zipWriter.Create("timecapsule/" + fh.Filename)
 			if createerr != nil {
 				activityStr := "Err creating file to place in zip tccreate handler"
-				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", createerr, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
+				globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", createerr, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
 				return
 			}
 			_, copyerr := io.Copy(w1, f)
 			if copyerr != nil {
 				activityStr := "Err copying file to zip create tc handler"
-				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", copyerr, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
+				globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", copyerr, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
 				return
 			}
 			totalFilesSize += int(fh.Size / 1024 / 1024)
 			/*if err != nil {
 				activityStr := fmt.Sprintf("Open multipart file in createtimecapsulehandler - %s", currentUserFromSession)
-				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", err, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
+				globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", err, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
 				w.WriteHeader(http.StatusUnsupportedMediaType)
 				return
 			}*/
@@ -3248,11 +2808,11 @@ func main() {
 		}
 		zipWriter.Close()
 
-		_, inserr := db.Exec(fmt.Sprintf("insert into tfldata.timecapsule(\"username\", \"available_on\", \"tcname\", \"tcfilename\", \"createdon\", waspurchased, wasearlyaccesspurchased, yearstostore, wasrequested, wasdownloaded) values('%s', '%s'::date + INTERVAL '2 days', '%s', '%s', '%s', false, false, %d, false, false);", currentUserFromSession, expiresOn, r.PostFormValue("tcName"), tcFileName, curDate, yearsfordb))
+		_, inserr := globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.timecapsule(\"username\", \"available_on\", \"tcname\", \"tcfilename\", \"createdon\", waspurchased, wasearlyaccesspurchased, yearstostore, wasrequested, wasdownloaded) values('%s', '%s'::date + INTERVAL '2 days', '%s', '%s', '%s', false, false, %d, false, false);", currentUserFromSession, expiresOn, r.PostFormValue("tcName"), tcFileName, curDate, yearsfordb))
 
 		if inserr != nil {
 			activityStr := "Failed to add time capsule to DB"
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", inserr, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
+			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", inserr, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
 			return
 		}
 
@@ -3260,7 +2820,7 @@ func main() {
 	}
 	initiateMyTCRestoreHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		allowOrDeny, _, h := globalfunctions.ValidateCurrentSessionId(db, r)
+		allowOrDeny, _, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
 		if !validBool || !allowOrDeny {
@@ -3278,10 +2838,10 @@ func main() {
 		if marsherr != nil {
 			fmt.Println(marsherr)
 		}
-		_, uperr := db.Exec(fmt.Sprintf("update tfldata.timecapsule set wasrequested = true where tcfilename='%s';", postData.Tcfilename))
+		_, uperr := globalvars.Db.Exec(fmt.Sprintf("update tfldata.timecapsule set wasrequested = true where tcfilename='%s';", postData.Tcfilename))
 		if uperr != nil {
 			activityStr := "Update tc after requested"
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values('%s', '%s', now());", uperr.Error(), activityStr))
+			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values('%s', '%s', now());", uperr.Error(), activityStr))
 			return
 		}
 
@@ -3365,7 +2925,7 @@ func main() {
 	}
 	availableTcWasDownloaded := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		allowOrDeny, _, h := globalfunctions.ValidateCurrentSessionId(db, r)
+		allowOrDeny, _, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
 		if !validBool || !allowOrDeny {
@@ -3384,11 +2944,11 @@ func main() {
 			fmt.Println(marsherr)
 			return
 		}
-		db.Exec(fmt.Sprintf("update tfldata.timecapsule set wasdownloaded = true where tcfilename='%s';", postData.Tcfilename))
+		globalvars.Db.Exec(fmt.Sprintf("update tfldata.timecapsule set wasdownloaded = true where tcfilename='%s';", postData.Tcfilename))
 	}
 	getMyAvailableTimeCapsulesHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(db, r)
+		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
 		if !validBool || !allowOrDeny {
@@ -3405,7 +2965,7 @@ func main() {
 			wasdownloaded sql.NullBool
 		}
 
-		output, _ := db.Query(fmt.Sprintf("select tcname, tcfilename, createdon, wasrequested, wasdownloaded from tfldata.timecapsule where username='%s' and available_on <= now() + interval '1 day' and waspurchased = true order by available_on asc;", currentUserFromSession))
+		output, _ := globalvars.Db.Query(fmt.Sprintf("select tcname, tcfilename, createdon, wasrequested, wasdownloaded from tfldata.timecapsule where username='%s' and available_on <= now() + interval '1 day' and waspurchased = true order by available_on asc;", currentUserFromSession))
 
 		defer output.Close()
 
@@ -3443,7 +3003,7 @@ func main() {
 	}
 	getMyNotYetPurchasedTimeCapsulesHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(db, r)
+		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
 		if !validBool || !allowOrDeny {
@@ -3460,7 +3020,7 @@ func main() {
 			tcfilename  string
 		}
 
-		output, _ := db.Query(fmt.Sprintf("select tcname, createdon, available_on, tcfilename from tfldata.timecapsule where username='%s' and waspurchased = false order by available_on asc;", currentUserFromSession))
+		output, _ := globalvars.Db.Query(fmt.Sprintf("select tcname, createdon, available_on, tcfilename from tfldata.timecapsule where username='%s' and waspurchased = false order by available_on asc;", currentUserFromSession))
 
 		defer output.Close()
 
@@ -3484,7 +3044,7 @@ func main() {
 
 	getMyPurchasedTimeCapsulesHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(db, r)
+		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
 		if !validBool || !allowOrDeny {
@@ -3502,7 +3062,7 @@ func main() {
 			wasearlyaccesspurchased *sql.NullBool
 		}
 
-		output, _ := db.Query(fmt.Sprintf("select tcname, createdon, available_on, tcfilename, wasearlyaccesspurchased from tfldata.timecapsule where username='%s' and available_on %s now() and waspurchased = true order by available_on asc;", currentUserFromSession, r.URL.Query().Get("pastorpresent")))
+		output, _ := globalvars.Db.Query(fmt.Sprintf("select tcname, createdon, available_on, tcfilename, wasearlyaccesspurchased from tfldata.timecapsule where username='%s' and available_on %s now() and waspurchased = true order by available_on asc;", currentUserFromSession, r.URL.Query().Get("pastorpresent")))
 
 		defer output.Close()
 
@@ -3575,7 +3135,7 @@ func main() {
 	}
 	getCurrentUserSubPlan := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(db, r)
+		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
 		if !validBool || !allowOrDeny {
@@ -3586,7 +3146,7 @@ func main() {
 		}
 		var wixMemberId sql.NullString
 		var userEmail string
-		sqlrow := db.QueryRow(fmt.Sprintf("select wix_member_id, email from tfldata.users where username='%s';", currentUserFromSession))
+		sqlrow := globalvars.Db.QueryRow(fmt.Sprintf("select wix_member_id, email from tfldata.users where username='%s';", currentUserFromSession))
 		sqlrow.Scan(&wixMemberId, &userEmail)
 		if !wixMemberId.Valid {
 			w.WriteHeader(http.StatusFailedDependency)
@@ -3771,7 +3331,7 @@ func main() {
 	}
 	cancelCurrentSubRegUserHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		allowOrDeny, _, h := globalfunctions.ValidateCurrentSessionId(db, r)
+		allowOrDeny, _, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
 		if !validBool || !allowOrDeny {
@@ -3813,7 +3373,7 @@ func main() {
 		req, reqerr := http.NewRequest("POST", "https://www.wixapis.com/pricing-plans/v2/orders/"+postData.Orderid+"/cancel", bytes.NewReader(jsonMarshed))
 		if reqerr != nil {
 			activityStr := "error posting to wix cancel order handler"
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values(substr('%s',0,105), substr('%s',0,105), now());", reqerr.Error(), activityStr))
+			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values(substr('%s',0,105), substr('%s',0,105), now());", reqerr.Error(), activityStr))
 			return
 		}
 
@@ -3825,7 +3385,7 @@ func main() {
 		_, clientdoerr := client.Do(req)
 		if clientdoerr != nil {
 			activityStr := "client error for wix members reset pass only"
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values(substr('%s',0,105), substr('%s',0,105), now());", clientdoerr.Error(), activityStr))
+			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values(substr('%s',0,105), substr('%s',0,105), now());", clientdoerr.Error(), activityStr))
 			return
 		}
 
@@ -3834,7 +3394,7 @@ func main() {
 	}
 	sendResetPassOnlyHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(db, r)
+		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
 		if !validBool || !allowOrDeny {
@@ -3864,14 +3424,14 @@ func main() {
 		jsonMarshed, errMarsh := json.Marshal(&postReqBody)
 		if errMarsh != nil {
 			activityStr := "error marshing Json body for members reset pass only"
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values(substr('%s',0,105), substr('%s',0,105), now());", errMarsh.Error(), activityStr))
+			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values(substr('%s',0,105), substr('%s',0,105), now());", errMarsh.Error(), activityStr))
 			return
 		}
 
 		req, reqerr := http.NewRequest("POST", "https://www.wixapis.com/members/v1/members", bytes.NewReader(jsonMarshed))
 		if reqerr != nil {
 			activityStr := "error posting to wix members sign up / reset pass only handler"
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values(substr('%s',0,105), substr('%s',0,105), now());", reqerr.Error(), activityStr))
+			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values(substr('%s',0,105), substr('%s',0,105), now());", reqerr.Error(), activityStr))
 			return
 		}
 
@@ -3883,7 +3443,7 @@ func main() {
 		createresp, clientdoerr := client.Do(req)
 		if clientdoerr != nil {
 			activityStr := "client error for wix members reset pass only"
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values(substr('%s',0,105), substr('%s',0,105), now());", clientdoerr.Error(), activityStr))
+			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values(substr('%s',0,105), substr('%s',0,105), now());", clientdoerr.Error(), activityStr))
 			return
 		}
 
@@ -3907,13 +3467,13 @@ func main() {
 		sendjsonMarshed, senderrMarsh := json.Marshal(&postBody)
 		if senderrMarsh != nil {
 			activityStr := "error marshing Json body for members sign up reset pass only"
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values(substr('%s',0,105), substr('%s',0,105), now());", senderrMarsh.Error(), activityStr))
+			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values(substr('%s',0,105), substr('%s',0,105), now());", senderrMarsh.Error(), activityStr))
 			return
 		}
 		setpassreq, setpassreqerr := http.NewRequest("POST", "https://www.wixapis.com/_api/iam/recovery/v1/send-email", bytes.NewReader(sendjsonMarshed))
 		if setpassreqerr != nil {
 			activityStr := "error sending set pass wix members sign up reset pass only"
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values(substr('%s',0,105), substr('%s',0,105), now());", setpassreqerr.Error(), activityStr))
+			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values(substr('%s',0,105), substr('%s',0,105), now());", setpassreqerr.Error(), activityStr))
 			return
 		}
 		setpassreq.Header.Set("Content-Type", "application/json")
@@ -3924,7 +3484,7 @@ func main() {
 		_, sendclientdoerr := sendclient.Do(setpassreq)
 		if sendclientdoerr != nil {
 			activityStr := "client error for wix members sign up"
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values(substr('%s',0,105), substr('%s',0,105), now());", sendclientdoerr.Error(), activityStr))
+			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values(substr('%s',0,105), substr('%s',0,105), now());", sendclientdoerr.Error(), activityStr))
 			return
 		}
 		defer sendclient.CloseIdleConnections()
@@ -3939,16 +3499,16 @@ func main() {
 			bs, bserr := io.ReadAll(createresp.Body)
 
 			if bserr != nil {
-				db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values (substr('%s',0,105), substr('%s',0,105), now());", bserr.Error(), "creating bs for wix create site member response"))
+				globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values (substr('%s',0,105), substr('%s',0,105), now());", bserr.Error(), "creating bs for wix create site member response"))
 			}
 
 			unmarsherr := json.Unmarshal(bs, &responseData)
 			if unmarsherr != nil {
-				db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values (substr('%s',0,105), substr('%s',0,105), now());", unmarsherr.Error(), "unmarshal wix create site member response"))
+				globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values (substr('%s',0,105), substr('%s',0,105), now());", unmarsherr.Error(), "unmarshal wix create site member response"))
 			}
-			_, uperr := db.Exec(fmt.Sprintf("update tfldata.users set wix_member_id = '%s' where username = '%s';", responseData.Memberstruct.Id, currentUserFromSession))
+			_, uperr := globalvars.Db.Exec(fmt.Sprintf("update tfldata.users set wix_member_id = '%s' where username = '%s';", responseData.Memberstruct.Id, currentUserFromSession))
 			if uperr != nil {
-				db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values (substr('%s',0,106), substr('%s',0,105), now());", uperr.Error(), "Err updating users table with wix id"))
+				globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values (substr('%s',0,106), substr('%s',0,105), now());", uperr.Error(), "Err updating users table with wix id"))
 			}
 		}
 		defer createresp.Body.Close()
@@ -3962,7 +3522,7 @@ func main() {
 		}
 		var setStatus = false
 		var currentstatus sql.NullBool
-		res := db.QueryRow(fmt.Sprintf("select is_paying_subscriber from tfldata.users where username='%s';", r.URL.Query().Get("username")))
+		res := globalvars.Db.QueryRow(fmt.Sprintf("select is_paying_subscriber from tfldata.users where username='%s';", r.URL.Query().Get("username")))
 		res.Scan(&currentstatus)
 		if !currentstatus.Valid {
 			currentstatus.Bool = false
@@ -3972,10 +3532,10 @@ func main() {
 		} else {
 			setStatus = true
 		}
-		_, uperr := db.Exec(fmt.Sprintf("update tfldata.users set is_paying_subscriber = %t where username = '%s';", setStatus, r.URL.Query().Get("username")))
+		_, uperr := globalvars.Db.Exec(fmt.Sprintf("update tfldata.users set is_paying_subscriber = %t where username = '%s';", setStatus, r.URL.Query().Get("username")))
 		if uperr != nil {
 			activityStr := "updating user is now paying wix webhook"
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values (substr('%s',0,105), substr('%s',0,105), now());", uperr.Error(), activityStr))
+			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values (substr('%s',0,105), substr('%s',0,105), now());", uperr.Error(), activityStr))
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
@@ -4001,12 +3561,12 @@ func main() {
 			fmt.Println("Some marsh err at wixWebhookearlyaccess")
 			return
 		}
-		_, uperr := db.Exec(fmt.Sprintf("update tfldata.timecapsule set waspurchased=true where tcfilename='%s';", postData.Capsulename))
+		_, uperr := globalvars.Db.Exec(fmt.Sprintf("update tfldata.timecapsule set waspurchased=true where tcfilename='%s';", postData.Capsulename))
 		if uperr != nil {
 			fmt.Println("something went wrong")
 		}
 		/*var yearstostore string
-		row := db.QueryRow(fmt.Sprintf("select yearstostore from tfldata.timecapsule where tcfilename='%s';", postData.Capsulename))
+		row := globalvars.Db.QueryRow(fmt.Sprintf("select yearstostore from tfldata.timecapsule where tcfilename='%s';", postData.Capsulename))
 		sner := row.Scan(&yearstostore)
 		if sner != nil {
 			fmt.Println("scan err")
@@ -4053,10 +3613,10 @@ func main() {
 			fmt.Println("Some marsh err at wixWebhookearlyaccess")
 			return
 		}
-		_, uperr := db.Exec(fmt.Sprintf("update tfldata.timecapsule set wasearlyaccesspurchased=true,available_on=now() where tcfilename='%s';", postData.Capsulename))
+		_, uperr := globalvars.Db.Exec(fmt.Sprintf("update tfldata.timecapsule set wasearlyaccesspurchased=true,available_on=now() where tcfilename='%s';", postData.Capsulename))
 		if uperr != nil {
 			activityStr := "Failed attempt purchase early access from wix"
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage,createdon,activity) values(substr('%s',0,240), now(), substr('%s',0,105);", uperr.Error(), activityStr))
+			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage,createdon,activity) values(substr('%s',0,240), now(), substr('%s',0,105);", uperr.Error(), activityStr))
 			return
 		}
 		fmt.Println(postData)
@@ -4077,7 +3637,7 @@ func main() {
 	}
 	deleteMyTChandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(db, r)
+		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
 		if !validBool || !allowOrDeny {
@@ -4101,14 +3661,14 @@ func main() {
 
 		json.Unmarshal(bs, &postData)
 
-		tcrow := db.QueryRow(fmt.Sprintf("select username,createdon,tcname from tfldata.timecapsule where username='%s' and tcname='%s';", currentUserFromSession, postData.MyTCName))
+		tcrow := globalvars.Db.QueryRow(fmt.Sprintf("select username,createdon,tcname from tfldata.timecapsule where username='%s' and tcname='%s';", currentUserFromSession, postData.MyTCName))
 
 		tcrow.Scan(&selectedTc.username, &selectedTc.createdon, &selectedTc.tcname)
 
-		_, delerr := db.Exec(fmt.Sprintf("delete from tfldata.timecapsule where username='%s' and tcname='%s';", currentUserFromSession, postData.MyTCName))
+		_, delerr := globalvars.Db.Exec(fmt.Sprintf("delete from tfldata.timecapsule where username='%s' and tcname='%s';", currentUserFromSession, postData.MyTCName))
 		if delerr != nil {
 			activityStr := "Failed to delete time capsule from DB"
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", delerr, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
+			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", delerr, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
 			return
 		}
 		deletename := strings.Split(selectedTc.createdon, "T")[0] + "_" + selectedTc.tcname + "_capsule_" + selectedTc.username + ".zip"
@@ -4116,7 +3676,7 @@ func main() {
 	}
 
 	validateJWTHandler := func(w http.ResponseWriter, r *http.Request) {
-		allowOrDeny, _, h := globalfunctions.ValidateCurrentSessionId(db, r)
+		allowOrDeny, _, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
 		if !validBool || !allowOrDeny {
@@ -4130,7 +3690,7 @@ func main() {
 	/* NOT USING THIS RIGHT NOW */
 	/*refreshTokenHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		allowOrDeny, _, h :=  globalfunctions.ValidateCurrentSessionId(db, r)
+		allowOrDeny, _, h :=  globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
 		if !validBool || !allowOrDeny {
@@ -4162,16 +3722,16 @@ func main() {
 			SameSite: http.SameSiteStrictMode,
 			Path:     "/",
 		})
-		//db.Exec(fmt.Sprintf("update tfldata.users set fcm_registration_id=null where username='%s';", r.URL.Query().Get("user")))
+		//globalvars.Db.Exec(fmt.Sprintf("update tfldata.users set fcm_registration_id=null where username='%s';", r.URL.Query().Get("user")))
 	}
 
 	adminGetListOfUsersHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(db, r)
+		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 		var isAdmin bool
 
-		rowRes := db.QueryRow(fmt.Sprintf("select is_admin from tfldata.users where username='%s';", currentUserFromSession))
+		rowRes := globalvars.Db.QueryRow(fmt.Sprintf("select is_admin from tfldata.users where username='%s';", currentUserFromSession))
 
 		rowRes.Scan(&isAdmin)
 
@@ -4187,10 +3747,10 @@ func main() {
 			email    string
 		}
 
-		output, outerr := db.Query(fmt.Sprintf("select username, email from tfldata.users order by id %s;", r.URL.Query().Get("sortByLastPass")))
+		output, outerr := globalvars.Db.Query(fmt.Sprintf("select username, email from tfldata.users order by id %s;", r.URL.Query().Get("sortByLastPass")))
 		if outerr != nil {
 			activityStr := "Gathering listofusers for admin dash"
-			db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", outerr, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
+			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", outerr, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
 		}
 		defer output.Close()
 
@@ -4199,7 +3759,7 @@ func main() {
 			scnErr := output.Scan(&curDataObj.username, &curDataObj.email)
 			if scnErr != nil {
 				activityStr := "Scan err on listofusers admin dash"
-				db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", outerr, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
+				globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", outerr, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
 			}
 			w.Write([]byte(fmt.Sprintf("<tr><td style='padding-bottom: 0&percnt;'>%s</td><td style='padding-bottom: 0&percnt;'>%s</td><td style='padding-bottom: 0&percnt;;'><p onclick='openDeleteModal(`%s`)' style='color: white; border-radius: 15px / 15px; box-shadow: 1px 1px 6px black; text-align: center; width: 20&percnt;; background: linear-gradient(130deg, #9d9d9d, #f94242f5); margin: auto; margin-bottom: 10&percnt;;'>X</p></td></tr>", curDataObj.username, curDataObj.email, curDataObj.username)))
 
@@ -4208,11 +3768,11 @@ func main() {
 	}
 	adminGetSubPackageHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(db, r)
+		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 		var isAdmin bool
 
-		rowRes := db.QueryRow(fmt.Sprintf("select is_admin from tfldata.users where username='%s';", currentUserFromSession))
+		rowRes := globalvars.Db.QueryRow(fmt.Sprintf("select is_admin from tfldata.users where username='%s';", currentUserFromSession))
 
 		rowRes.Scan(&isAdmin)
 
@@ -4226,7 +3786,7 @@ func main() {
 
 		var countOfUsers int
 		var totalUsers int
-		rowOfCount := db.QueryRow("select count(*) from tfldata.users;")
+		rowOfCount := globalvars.Db.QueryRow("select count(*) from tfldata.users;")
 		rowOfCount.Scan(&countOfUsers)
 		switch globalvars.SubLevel {
 		case "supreme":
@@ -4241,11 +3801,11 @@ func main() {
 	}
 	adminGetAllTCHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(db, r)
+		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 		var isAdmin bool
 
-		rowRes := db.QueryRow(fmt.Sprintf("select is_admin from tfldata.users where username='%s';", currentUserFromSession))
+		rowRes := globalvars.Db.QueryRow(fmt.Sprintf("select is_admin from tfldata.users where username='%s';", currentUserFromSession))
 
 		rowRes.Scan(&isAdmin)
 
@@ -4262,7 +3822,7 @@ func main() {
 			availableOn string
 		}
 
-		output, _ := db.Query(fmt.Sprintf("select tcname, createdon, available_on from tfldata.timecapsule where available_on %s now() order by available_on asc;", r.URL.Query().Get("pastorpresent")))
+		output, _ := globalvars.Db.Query(fmt.Sprintf("select tcname, createdon, available_on from tfldata.timecapsule where available_on %s now() order by available_on asc;", r.URL.Query().Get("pastorpresent")))
 
 		defer output.Close()
 
@@ -4285,11 +3845,11 @@ func main() {
 	}
 	adminDeleteUserHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(db, r)
+		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 		var isAdmin bool
 
-		rowRes := db.QueryRow(fmt.Sprintf("select is_admin from tfldata.users where username='%s';", currentUserFromSession))
+		rowRes := globalvars.Db.QueryRow(fmt.Sprintf("select is_admin from tfldata.users where username='%s';", currentUserFromSession))
 
 		rowRes.Scan(&isAdmin)
 
@@ -4320,20 +3880,20 @@ func main() {
 		var tcFileToDeleteTcname string
 		var pfpName string
 
-		postfileout, postfileouterr := db.Query(fmt.Sprintf("select file_name,file_type from tfldata.postfiles where post_files_key in (select post_files_key from tfldata.posts where author='%s');", postData.SelectedUser))
+		postfileout, postfileouterr := globalvars.Db.Query(fmt.Sprintf("select file_name,file_type from tfldata.postfiles where post_files_key in (select post_files_key from tfldata.posts where author='%s');", postData.SelectedUser))
 		if postfileouterr != nil {
 			fmt.Println(postfileouterr)
 		}
 		defer postfileout.Close()
 
-		tcrow := db.QueryRow(fmt.Sprintf("select createdon,tcname from tfldata.timecapsule where username='%s';", postData.SelectedUser))
+		tcrow := globalvars.Db.QueryRow(fmt.Sprintf("select createdon,tcname from tfldata.timecapsule where username='%s';", postData.SelectedUser))
 
 		scner := tcrow.Scan(&tcFileToDeleteCreatedon, &tcFileToDeleteTcname)
 		if scner != nil {
 			fmt.Println(scner)
 		}
 
-		pfprow := db.QueryRow(fmt.Sprintf("select pfp_name from tfldata.users where username='%s';", postData.SelectedUser))
+		pfprow := globalvars.Db.QueryRow(fmt.Sprintf("select pfp_name from tfldata.users where username='%s';", postData.SelectedUser))
 		pfpscnerr := pfprow.Scan(&pfpName)
 		if pfpscnerr != nil {
 			fmt.Println(pfpscnerr)
@@ -4374,28 +3934,28 @@ func main() {
 					go globalfunctions.DeleteFileFromS3(fileName, "posts/videos/")
 				}
 			}
-			db.Exec(fmt.Sprintf("delete from tfldata.calendar where event_owner='%s';", postData.SelectedUser))
-			db.Exec(fmt.Sprintf("delete from tfldata.comments where author='%s';", postData.SelectedUser))
-			db.Exec(fmt.Sprintf("delete from tfldata.calendar_rsvp where username='%s';", postData.SelectedUser))
-			db.Exec(fmt.Sprintf("delete from tfldata.gchat where thread in (select thread from tfldata.threads where threadauthor = '%s');", postData.SelectedUser))
-			db.Exec(fmt.Sprintf("delete from tfldata.gchat where author='%s';", postData.SelectedUser))
-			db.Exec(fmt.Sprintf("delete from tfldata.threads where threadauthor='%s';", postData.SelectedUser))
-			db.Exec(fmt.Sprintf("delete from tfldata.users_to_threads where username='%s';", postData.SelectedUser))
-			db.Exec(fmt.Sprintf("delete from tfldata.stack_leaderboard where username='%s';", postData.SelectedUser))
-			db.Exec(fmt.Sprintf("delete from tfldata.ss_leaderboard where username='%s';", postData.SelectedUser))
-			db.Exec(fmt.Sprintf("delete from tfldata.catchitleaderboard where username='%s';", postData.SelectedUser))
-			db.Exec(fmt.Sprintf("delete from tfldata.timecapsule where username='%s';", postData.SelectedUser))
-			db.Exec(fmt.Sprintf("delete from tfldata.posts where author='%s';", postData.SelectedUser))
-			db.Exec(fmt.Sprintf("delete from tfldata.postfiles where post_files_key in (select post_files_key from tfldata.posts where author='%s');", postData.SelectedUser))
-			db.Exec(fmt.Sprintf("delete from tfldata.users where username='%s';", postData.SelectedUser))
+			globalvars.Db.Exec(fmt.Sprintf("delete from tfldata.calendar where event_owner='%s';", postData.SelectedUser))
+			globalvars.Db.Exec(fmt.Sprintf("delete from tfldata.comments where author='%s';", postData.SelectedUser))
+			globalvars.Db.Exec(fmt.Sprintf("delete from tfldata.calendar_rsvp where username='%s';", postData.SelectedUser))
+			globalvars.Db.Exec(fmt.Sprintf("delete from tfldata.gchat where thread in (select thread from tfldata.threads where threadauthor = '%s');", postData.SelectedUser))
+			globalvars.Db.Exec(fmt.Sprintf("delete from tfldata.gchat where author='%s';", postData.SelectedUser))
+			globalvars.Db.Exec(fmt.Sprintf("delete from tfldata.threads where threadauthor='%s';", postData.SelectedUser))
+			globalvars.Db.Exec(fmt.Sprintf("delete from tfldata.users_to_threads where username='%s';", postData.SelectedUser))
+			globalvars.Db.Exec(fmt.Sprintf("delete from tfldata.stack_leaderboard where username='%s';", postData.SelectedUser))
+			globalvars.Db.Exec(fmt.Sprintf("delete from tfldata.ss_leaderboard where username='%s';", postData.SelectedUser))
+			globalvars.Db.Exec(fmt.Sprintf("delete from tfldata.catchitleaderboard where username='%s';", postData.SelectedUser))
+			globalvars.Db.Exec(fmt.Sprintf("delete from tfldata.timecapsule where username='%s';", postData.SelectedUser))
+			globalvars.Db.Exec(fmt.Sprintf("delete from tfldata.posts where author='%s';", postData.SelectedUser))
+			globalvars.Db.Exec(fmt.Sprintf("delete from tfldata.postfiles where post_files_key in (select post_files_key from tfldata.posts where author='%s');", postData.SelectedUser))
+			globalvars.Db.Exec(fmt.Sprintf("delete from tfldata.users where username='%s';", postData.SelectedUser))
 
 		} else {
 			if postData.DeleteChatsOpt == "on" {
-				db.Exec(fmt.Sprintf("delete from tfldata.gchat where thread in (select thread from tfldata.threads where threadauthor = '%s');", postData.SelectedUser))
-				db.Exec(fmt.Sprintf("delete from tfldata.gchat where author='%s';", postData.SelectedUser))
-				db.Exec(fmt.Sprintf("delete from tfldata.threads where threadauthor='%s';", postData.SelectedUser))
-				db.Exec(fmt.Sprintf("delete from tfldata.users_to_threads where username='%s';", postData.SelectedUser))
-				db.Exec(fmt.Sprintf("delete from tfldata.users where username='%s';", postData.SelectedUser))
+				globalvars.Db.Exec(fmt.Sprintf("delete from tfldata.gchat where thread in (select thread from tfldata.threads where threadauthor = '%s');", postData.SelectedUser))
+				globalvars.Db.Exec(fmt.Sprintf("delete from tfldata.gchat where author='%s';", postData.SelectedUser))
+				globalvars.Db.Exec(fmt.Sprintf("delete from tfldata.threads where threadauthor='%s';", postData.SelectedUser))
+				globalvars.Db.Exec(fmt.Sprintf("delete from tfldata.users_to_threads where username='%s';", postData.SelectedUser))
+				globalvars.Db.Exec(fmt.Sprintf("delete from tfldata.users where username='%s';", postData.SelectedUser))
 			}
 			if postData.DeletePostsOpt == "on" {
 				for postfileout.Next() {
@@ -4411,21 +3971,21 @@ func main() {
 						go globalfunctions.DeleteFileFromS3(fileName, "posts/videos/")
 					}
 				}
-				db.Exec(fmt.Sprintf("delete from tfldata.posts where author='%s';", postData.SelectedUser))
-				db.Exec(fmt.Sprintf("delete from tfldata.postfiles where post_files_key in (select post_files_key from tfldata.posts where author='%s');", postData.SelectedUser))
-				db.Exec(fmt.Sprintf("delete from tfldata.users where username='%s';", postData.SelectedUser))
+				globalvars.Db.Exec(fmt.Sprintf("delete from tfldata.posts where author='%s';", postData.SelectedUser))
+				globalvars.Db.Exec(fmt.Sprintf("delete from tfldata.postfiles where post_files_key in (select post_files_key from tfldata.posts where author='%s');", postData.SelectedUser))
+				globalvars.Db.Exec(fmt.Sprintf("delete from tfldata.users where username='%s';", postData.SelectedUser))
 			}
 			if postData.DeleteGameScoresOpt == "on" {
-				db.Exec(fmt.Sprintf("delete from tfldata.stack_leaderboard where username='%s';", postData.SelectedUser))
-				db.Exec(fmt.Sprintf("delete from tfldata.ss_leaderboard where username='%s';", postData.SelectedUser))
-				db.Exec(fmt.Sprintf("delete from tfldata.catchitleaderboard where username='%s';", postData.SelectedUser))
-				db.Exec(fmt.Sprintf("delete from tfldata.users where username='%s';", postData.SelectedUser))
+				globalvars.Db.Exec(fmt.Sprintf("delete from tfldata.stack_leaderboard where username='%s';", postData.SelectedUser))
+				globalvars.Db.Exec(fmt.Sprintf("delete from tfldata.ss_leaderboard where username='%s';", postData.SelectedUser))
+				globalvars.Db.Exec(fmt.Sprintf("delete from tfldata.catchitleaderboard where username='%s';", postData.SelectedUser))
+				globalvars.Db.Exec(fmt.Sprintf("delete from tfldata.users where username='%s';", postData.SelectedUser))
 			}
 			if postData.DeleteCalendarEventsOpt == "on" {
-				db.Exec(fmt.Sprintf("delete from tfldata.calendar where event_owner='%s';", postData.SelectedUser))
-				db.Exec(fmt.Sprintf("delete from tfldata.comments where author='%s';", postData.SelectedUser))
-				db.Exec(fmt.Sprintf("delete from tfldata.calendar_rsvp where username='%s';", postData.SelectedUser))
-				db.Exec(fmt.Sprintf("delete from tfldata.users where username='%s';", postData.SelectedUser))
+				globalvars.Db.Exec(fmt.Sprintf("delete from tfldata.calendar where event_owner='%s';", postData.SelectedUser))
+				globalvars.Db.Exec(fmt.Sprintf("delete from tfldata.comments where author='%s';", postData.SelectedUser))
+				globalvars.Db.Exec(fmt.Sprintf("delete from tfldata.calendar_rsvp where username='%s';", postData.SelectedUser))
+				globalvars.Db.Exec(fmt.Sprintf("delete from tfldata.users where username='%s';", postData.SelectedUser))
 			}
 
 		}
@@ -4439,22 +3999,21 @@ func main() {
 	http.HandleFunc("/", pagesHandler)
 	http.HandleFunc("/create-post", postshandler.CreatePostHandler)
 
-	http.HandleFunc("/create-reaction-to-post", createPostReactionHandler)
+	http.HandleFunc("/create-reaction-to-post", postshandler.CreatePostReactionHandler)
 
-	http.HandleFunc("/get-posts", getPostsHandler)
-	http.HandleFunc("/delete-this-post", deleteThisPostHandler)
+	http.HandleFunc("/get-posts", postshandler.GetPostsHandler)
+	http.HandleFunc("/delete-this-post", postshandler.DeleteThisPostHandler)
 
-	http.HandleFunc("/get-selected-post", getSelectedPostsComments)
+	http.HandleFunc("/get-selected-post", postshandler.GetSelectedPostsComments)
 
-	http.HandleFunc("/get-posts-reactions", getPostsReactionsHandler)
+	http.HandleFunc("/get-posts-reactions", postshandler.GetPostsReactionsHandler)
+	http.HandleFunc("/get-post-images", postshandler.GetPostImagesHandler)
 
 	http.HandleFunc("/get-events", getEventsHandler)
 	http.HandleFunc("/get-event-comments", getSelectedEventsComments)
 
 	http.HandleFunc("/get-selected-chat", getSelectedChatHandler)
 	http.HandleFunc("/get-selected-pchat", getSelectedPChatHandler)
-
-	http.HandleFunc("/get-post-images", getPostImagesHandler)
 
 	http.HandleFunc("/create-comment", createCommentHandler)
 	http.HandleFunc("/create-event-comment", createEventCommentHandler)

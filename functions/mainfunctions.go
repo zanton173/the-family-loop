@@ -18,6 +18,7 @@ import (
 	globaltypes "tfl/types"
 	globalvars "tfl/vars"
 
+	firebase "firebase.google.com/go"
 	"firebase.google.com/go/messaging"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -30,6 +31,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/rwcarlsen/goexif/exif"
 	"github.com/rwcarlsen/goexif/tiff"
+	"google.golang.org/api/option"
 )
 
 /* INITIALIZE ITEMS */
@@ -40,6 +42,47 @@ func GetEnv() {
 		os.Exit(1)
 	}
 }
+func InitalizeAll() {
+	GetEnv()
+	globalvars.Dbpass = os.Getenv("DB_PASS")
+	globalvars.Awskey = os.Getenv("AWS_ACCESS_KEY")
+	globalvars.Awskeysecret = os.Getenv("AWS_ACCESS_SECRET")
+	globalvars.Ghissuetoken = os.Getenv("GH_BEARER")
+	globalvars.Cfdistro = os.Getenv("CF_DOMAIN")
+	globalvars.S3Domain = os.Getenv("S3_BUCKET_NAME")
+	globalvars.OrgId = os.Getenv("ORG_ID")
+	globalvars.MongoDBPass = os.Getenv("MONGO_PASS")
+	globalvars.SubLevel = os.Getenv("SUB_PACKAGE")
+	globalvars.JwtSignKey = os.Getenv("JWT_SIGNING_KEY")
+	globalvars.Wixapikey = os.Getenv("WIX_API_KEY")
+	globalvars.Ghusercommentkey = os.Getenv("GH_USER_COMMENT_TOKEN")
+	globalvars.Replacer = strings.NewReplacer("'", "\\'", "\"", "\\\"")
+
+	globalvars.NyLoc, globalvars.NyLocErr = time.LoadLocation("America/New_York")
+	globalvars.FbOpts = []option.ClientOption{option.WithCredentialsFile("the-family-loop-fb0d9-firebase-adminsdk-k6sxl-14c7d4c4f7.json")}
+
+	globalvars.App, globalvars.AppErr = firebase.NewApp(context.TODO(), nil, globalvars.FbOpts...)
+	globalvars.Fb_message_client, globalvars.FbInitErr = globalvars.App.Messaging(context.TODO())
+
+	globalvars.Awscfg, globalvars.Awscfgerr = config.LoadDefaultConfig(context.TODO(),
+		config.WithDefaultRegion("us-east-1"),
+		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(globalvars.Awskey, globalvars.Awskeysecret, "")),
+	)
+
+	if globalvars.Awscfgerr != nil {
+		fmt.Println(globalvars.Awscfgerr)
+		os.Exit(3)
+	}
+
+	globalvars.S3Client = s3.NewFromConfig(globalvars.Awscfg)
+	connStr := fmt.Sprintf("postgresql://tfldbrole:%s@localhost/tfl?sslmode=disable", globalvars.Dbpass)
+	globalvars.Db, globalvars.DbErr = sql.Open("postgres", connStr)
+
+	if globalvars.DbErr != nil {
+		log.Fatal(globalvars.DbErr)
+	}
+}
+
 func DbConn() *sql.DB {
 	dbpass := globalvars.Dbpass
 
@@ -100,7 +143,6 @@ func ValidateCurrentSessionId(db *sql.DB, r *http.Request) (bool, string, string
 		handlerForLogin = "onRevealedYouHaveNotPurchasedRegularUserSubscriptionPlan"
 		return false, username.String, handlerForLogin
 	}
-	defer db.Close()
 	return scnerr == nil, username.String, handlerForLogin
 
 }
@@ -405,6 +447,7 @@ func SendNotificationToAllUsers(db *sql.DB, curUser string, fb_message_client *m
 		//db.Exec(fmt.Sprintf("insert into tfldata.sent_notification_log(\"notification_result\", \"createdon\") values('%s', '%s');", sendRes, time.Now().In(globalvars.NyLoc).Local().Format(time.DateTime)))
 
 	}
+	//db.Close()
 }
 func UploadTimeCapsuleToS3(f *os.File, fn string, yearsToStore string) {
 	f.Seek(0, 0)

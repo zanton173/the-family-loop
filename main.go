@@ -19,6 +19,7 @@ import (
 	chathandler "tfl/handlers/chats"
 	postshandler "tfl/handlers/posts"
 	tchandler "tfl/handlers/timecapsule"
+	userdatahandler "tfl/handlers/userdata"
 	globalvars "tfl/vars"
 	"time"
 
@@ -36,18 +37,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"golang.org/x/crypto/bcrypt"
 )
-
-type seshStruct struct {
-	Username         string
-	Pfpname          sql.NullString
-	BGtheme          string
-	GchatOrderOpt    bool
-	CFDomain         string
-	Isadmin          bool
-	Fcmkey           sql.NullString
-	LastViewedPChat  sql.NullString
-	LastViewedThread sql.NullString
-}
 
 func main() {
 
@@ -91,36 +80,6 @@ func main() {
 	updateFCMTokenHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		globalvars.Db.Exec(fmt.Sprintf("update tfldata.users set fcm_registration_id = null where username = '%s';", r.URL.Query().Get("username")))
-	}
-	subscriptionHandler := func(w http.ResponseWriter, r *http.Request) {
-
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-
-		bs, _ := io.ReadAll(r.Body)
-
-		type postBody struct {
-			Fcmtoken string `json:"fcm_token"`
-		}
-		var postData postBody
-		psdmae := json.Unmarshal(bs, &postData)
-		if psdmae != nil {
-			fmt.Print(psdmae)
-		}
-		seshToken, seshErr := r.Cookie("session_id")
-		if seshErr != nil {
-			w.Header().Set("HX-Retarget", "window")
-			w.Header().Set("HX-Trigger", "onUnauthorizedEvent")
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
-
-		seshVal := strings.Split(seshToken.Value, "session_id=")[0]
-		_, inserr := globalvars.Db.Exec(fmt.Sprintf("update tfldata.users set fcm_registration_id='%s' where session_token='%s';", postData.Fcmtoken, seshVal))
-		if inserr != nil {
-			activityStr := "attempt update fcm token where seshtoken is value subHandler"
-			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", inserr, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
-		}
-
 	}
 
 	signUpHandler := func(w http.ResponseWriter, r *http.Request) {
@@ -512,140 +471,6 @@ func main() {
 		} else {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
-		}
-	}
-
-	getSubscribedHandler := func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-type", "application/json; charset=utf-8")
-		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
-
-		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
-
-		if !validBool || !allowOrDeny {
-			w.Header().Set("HX-Retarget", "window")
-			w.Header().Set("HX-Trigger", h)
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
-
-		var fcmRegToken string
-		fcmRegRow := globalvars.Db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where username='%s';", currentUserFromSession))
-		scnerr := fcmRegRow.Scan(&fcmRegToken)
-
-		if scnerr != nil {
-			w.WriteHeader(http.StatusAccepted)
-			return
-			// globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", scnerr, time.Now().In(globalvars.NyLoc).Local().Format(time.DateTime)))
-		}
-		w.WriteHeader(http.StatusOK)
-	}
-	getSessionDataHandler := func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
-
-		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
-
-		if !validBool || !allowOrDeny {
-			w.Header().Set("HX-Retarget", "window")
-			if h == "onRevealedYouHaveNotPurchasedRegularUserSubscriptionPlan" {
-				w.Header().Set("HX-Trigger", h)
-				w.WriteHeader(http.StatusFound)
-				type respBody struct {
-					Orgid    string `json:"orgid"`
-					Username string `json:"username"`
-				}
-				var resp respBody
-				resp.Orgid = globalvars.OrgId
-				resp.Username = currentUserFromSession
-				bs, _ := json.Marshal(&resp)
-				w.Write(bs)
-				return
-			}
-			w.Header().Set("HX-Trigger", h)
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
-
-		var ourSeshStruct seshStruct
-
-		row := globalvars.Db.QueryRow(fmt.Sprintf("select username, gchat_bg_theme, gchat_order_option, is_admin, pfp_name, fcm_registration_id, last_viewed_pchat, last_viewed_gchat from tfldata.users where username='%s';", currentUserFromSession))
-		scerr := row.Scan(&ourSeshStruct.Username, &ourSeshStruct.BGtheme, &ourSeshStruct.GchatOrderOpt, &ourSeshStruct.Isadmin, &ourSeshStruct.Pfpname, &ourSeshStruct.Fcmkey, &ourSeshStruct.LastViewedPChat, &ourSeshStruct.LastViewedThread)
-		if scerr != nil {
-			fmt.Println(scerr)
-		}
-
-		if !ourSeshStruct.Fcmkey.Valid {
-			ourSeshStruct.Fcmkey.String = ""
-		}
-		if !ourSeshStruct.Pfpname.Valid {
-			ourSeshStruct.Pfpname.String = ""
-		}
-		if !ourSeshStruct.LastViewedPChat.Valid {
-			ourSeshStruct.LastViewedPChat.String = ""
-		}
-		if !ourSeshStruct.LastViewedThread.Valid {
-			ourSeshStruct.LastViewedThread.String = ""
-		}
-
-		ourSeshStruct.CFDomain = globalvars.Cfdistro
-
-		data, err := json.Marshal(&ourSeshStruct)
-		if err != nil {
-			fmt.Println(err)
-		}
-
-		w.Write(data)
-	}
-
-	updatePfpHandler := func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "multipart/form-data")
-		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
-
-		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
-		if !validBool || !allowOrDeny {
-			w.Header().Set("HX-Retarget", "window")
-			w.Header().Set("HX-Trigger", h)
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
-		upload, filename, _ := r.FormFile("changepfp")
-
-		username := r.PostFormValue("usernameinput")
-
-		fn := globalfunctions.UploadPfpToS3(upload, filename.Filename, r, "changepfp")
-		_, uperr := globalvars.Db.Exec(fmt.Sprintf("update tfldata.users set pfp_name='%s' where username='%s';", fn, username))
-		if uperr != nil {
-			activityStr := fmt.Sprintf("update table users set pfp_name failed for user %s", currentUserFromSession)
-			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", uperr, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-	}
-	updateChatThemeHandler := func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
-
-		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
-		if !validBool || !allowOrDeny {
-			w.Header().Set("HX-Retarget", "window")
-			w.Header().Set("HX-Trigger", h)
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
-		type postBody struct {
-			Theme    string `json:"theme"`
-			Username string `json:"username"`
-		}
-		var postData postBody
-		bs, _ := io.ReadAll(r.Body)
-		marsherr := json.Unmarshal(bs, &postData)
-		if marsherr != nil {
-			fmt.Println(marsherr)
-		}
-		_, uperr := globalvars.Db.Exec(fmt.Sprintf("update tfldata.users set gchat_bg_theme='%s' where username='%s';", postData.Theme, postData.Username))
-		if uperr != nil {
-			activityStr := fmt.Sprintf("updateChatTheme failed for user %s", currentUserFromSession)
-			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", uperr, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
 		}
 	}
 
@@ -2276,57 +2101,52 @@ func main() {
 	http.HandleFunc("/webhook-tc-early-access-payment-complete", tchandler.WixWebhookEarlyAccessPaymentCompleteHandler)
 	http.HandleFunc("/webhook-tc-initial-payment-complete", tchandler.WixWebhookTCInitialPurchaseHandler)
 	http.HandleFunc("/delete-my-tc", tchandler.DeleteMyTChandler)
-
-	http.HandleFunc("/get-username-from-session", getSessionDataHandler)
-	http.HandleFunc("/get-check-if-subscribed", getSubscribedHandler)
-
-	http.HandleFunc("/create-subscription", subscriptionHandler)
-
-	http.HandleFunc("/update-pfp", updatePfpHandler)
-	http.HandleFunc("/update-gchat-bg-theme", updateChatThemeHandler)
-
+	/* User data handlers */
+	http.HandleFunc("/get-username-from-session", userdatahandler.GetSessionDataHandler)
+	http.HandleFunc("/get-check-if-subscribed", userdatahandler.GetSubscribedHandler)
+	http.HandleFunc("/create-subscription", userdatahandler.SubscriptionHandler)
+	http.HandleFunc("/update-pfp", userdatahandler.UpdatePfpHandler)
+	http.HandleFunc("/update-gchat-bg-theme", userdatahandler.UpdateChatThemeHandler)
+	/* Customer Support handlers */
 	http.HandleFunc("/create-issue", createIssueHandler)
 	http.HandleFunc("/get-my-customer-support-issues", getCustomerSupportIssuesHandler)
 	http.HandleFunc("/get-issues-comments", getGHIssuesComments)
 	http.HandleFunc("/create-issue-comment", createGHIssueCommentHandler)
-
+	/* Games handlers */
 	http.HandleFunc("/get-leaderboard", getLeaderboardHandler)
 	http.HandleFunc("/update-simpleshades-score", updateSimpleShadesScoreHandler)
-
 	http.HandleFunc("/get-stackerz-leaderboard", getStackerzLeaderboardHandler)
 	http.HandleFunc("/update-stackerz-score", updateStackerzScoreHandler)
-
 	http.HandleFunc("/get-catchit-leaderboard", getCatchitLeaderboardHandler)
 	http.HandleFunc("/get-my-personal-score-catchit", getPersonalCatchitLeaderboardHandler)
 	http.HandleFunc("/update-catchit-score", updateCatchitScoreHandler)
-
+	/* Wix handlers */
 	http.HandleFunc("/wix-webhook-pricing-plan-changed", wixWebhookChangePlanHandler)
 	http.HandleFunc("/wix-webhook-update-reg-user-paid-plan", regUserPaidForPlanHandler)
 	http.HandleFunc("/current-user-wix-subscription", getCurrentUserSubPlan)
 	http.HandleFunc("/send-reset-pass-wix-user", sendResetPassOnlyHandler)
 	http.HandleFunc("/cancel-current-sub-regular-user", cancelCurrentSubRegUserHandler)
-
+	/* Admin dashboard handlers */
 	http.HandleFunc("/admin-list-of-users", adminGetListOfUsersHandler)
 	http.HandleFunc("/admin-get-all-time-capsules", adminGetAllTCHandler)
 	http.HandleFunc("/admin-get-subscription-package", adminGetSubPackageHandler)
 	http.HandleFunc("/admin-delete-user", adminDeleteUserHandler)
-
+	/* Auth handlers */
 	http.HandleFunc("/signup", signUpHandler)
 	http.HandleFunc("/login", loginHandler)
 	http.HandleFunc("/reset-password", getResetPasswordCodeHandler)
 	http.HandleFunc("/reset-password-with-code", resetPasswordHandler)
 	http.HandleFunc("/update-admin-pass", updateAdminPassHandler)
 	http.HandleFunc("/update-fcm-token", updateFCMTokenHandler)
+	// NOT USING THIS RIGHT NOW
+	//http.HandleFunc("/refresh-token", refreshTokenHandler)
+	http.HandleFunc("/delete-jwt", deleteJWTHandler)
 
 	http.HandleFunc("/healthy-me-checky", healthCheckHandler)
 	http.HandleFunc("/validate-endpoint-from-wix", validateEndpointForWixHandler)
 
 	http.HandleFunc("/jwt-validation-endpoint", validateJWTHandler)
-	// NOT USING THIS RIGHT NOW
-	//http.HandleFunc("/refresh-token", refreshTokenHandler)
-	http.HandleFunc("/delete-jwt", deleteJWTHandler)
 
-	// http.HandleFunc("/upload-file", h3)
 	http.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("css"))))
 	http.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir("js"))))
 	http.Handle("/assets/", http.StripPrefix("/assets/", http.FileServer(http.Dir("assets"))))

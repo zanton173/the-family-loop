@@ -1806,114 +1806,7 @@ func main() {
 		coll.InsertOne(context.TODO(), bson.M{"org_id": globalvars.OrgId, "game": "simple_shades", "score": postData.Score, "username": postData.Username, "createdOn": time.Now()})
 
 	}
-	getOpenThreadsHandler := func(w http.ResponseWriter, r *http.Request) {
-		allowOrDeny, _, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
-		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
-		if !validBool || !allowOrDeny {
-			w.Header().Set("HX-Retarget", "window")
-			w.Header().Set("HX-Trigger", h)
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
-		distinctThreadsOutput, queryErr := globalvars.Db.Query("select thread,threadauthor from tfldata.threads order by createdon desc;")
-		if queryErr != nil {
-			fmt.Println(queryErr)
-		}
-		defer distinctThreadsOutput.Close()
-		for distinctThreadsOutput.Next() {
-			var thread string
-			var threadAuthor string
-			scnerr := distinctThreadsOutput.Scan(&thread, &threadAuthor)
-			if scnerr != nil {
-				fmt.Print("scan error: " + scnerr.Error())
-			}
-			dataStr := fmt.Sprintf("<option id='%s' value='%s'>%s</option>", threadAuthor, thread, thread)
-
-			w.Write([]byte(dataStr))
-		}
-	}
-	getUsersToChatToHandler := func(w http.ResponseWriter, r *http.Request) {
-		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
-
-		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
-		if !validBool || !allowOrDeny {
-			w.Header().Set("HX-Retarget", "window")
-			w.Header().Set("HX-Trigger", h)
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
-		distinctUsersOutput, queryErr := globalvars.Db.Query(fmt.Sprintf("select distinct(username) from tfldata.users where username != '%s';", currentUserFromSession))
-		if queryErr != nil {
-			fmt.Println(queryErr)
-		}
-		defer distinctUsersOutput.Close()
-		for distinctUsersOutput.Next() {
-			var user string
-			scnerr := distinctUsersOutput.Scan(&user)
-			if scnerr != nil {
-				fmt.Print("scan error: " + scnerr.Error())
-			}
-			dataStr := fmt.Sprintf("<option value='%s'>%s</option>", user, user)
-
-			w.Write([]byte(dataStr))
-		}
-	}
-	getUsersSubscribedThreadsHandler := func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		allowOrDeny, _, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
-
-		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
-		if !validBool || !allowOrDeny {
-			w.Header().Set("HX-Retarget", "window")
-			w.Header().Set("HX-Trigger", h)
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
-		output, outerr := globalvars.Db.Query(fmt.Sprintf("select thread, is_subscribed::text from tfldata.users_to_threads where username='%s';", r.URL.Query().Get("username")))
-		if outerr != nil {
-			fmt.Println(outerr)
-		}
-		defer output.Close()
-
-		for output.Next() {
-			var thread string
-			var isSubbed string
-			output.Scan(&thread, &isSubbed)
-			w.Write([]byte(thread + "," + isSubbed + "\n"))
-		}
-
-	}
-
-	changeUserSubscriptionToThreadHandler := func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
-
-		validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
-		if !validBool || !allowOrDeny {
-			w.Header().Set("HX-Retarget", "window")
-			w.Header().Set("HX-Trigger", h)
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
-		bs, _ := io.ReadAll(r.Body)
-		type postBody struct {
-			User            string `json:"username"`
-			CurrentlySubbed bool   `json:"currentlyNotifiedVal"`
-			Thread          string `json:"curThread"`
-		}
-		var postData postBody
-		marsherr := json.Unmarshal(bs, &postData)
-		if marsherr != nil {
-			fmt.Println(marsherr)
-		}
-		_, inserr := globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.users_to_threads(\"username\",\"thread\",\"is_subscribed\") values('%s','%s',%t) on conflict(username,thread) do update set is_subscribed=%t;", postData.User, postData.Thread, postData.CurrentlySubbed, postData.CurrentlySubbed))
-		if inserr != nil {
-			activityStr := fmt.Sprintf("%s could not update sub settings for thread %s", currentUserFromSession, postData.Thread)
-			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", inserr, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
-		}
-
-	}
 	createNewTimeCapsuleHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "multipart/form-data")
 		allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
@@ -3223,20 +3116,22 @@ func main() {
 	http.HandleFunc("/delete-selected-chat", chathandler.DeleteSelectedChatHandler)
 	http.HandleFunc("/update-selected-pchat", chathandler.UpdateSelectedPChatHandler)
 	http.HandleFunc("/delete-selected-pchat", chathandler.DeleteSelectedPChatHandler)
-
+	http.HandleFunc("/get-open-threads", chathandler.GetOpenThreadsHandler)
+	http.HandleFunc("/get-users-chat", chathandler.GetUsersToChatToHandler)
+	http.HandleFunc("/get-users-subscribed-threads", chathandler.GetUsersSubscribedThreadsHandler)
+	http.HandleFunc("/change-if-notified-for-thread", chathandler.ChangeUserSubscriptionToThreadHandler)
+	/* calendar handlers */
 	http.HandleFunc("/get-events", getEventsHandler)
 	http.HandleFunc("/get-event-comments", getSelectedEventsComments)
-
 	http.HandleFunc("/create-event-comment", createEventCommentHandler)
-
-	http.HandleFunc("/get-username-from-session", getSessionDataHandler)
-	http.HandleFunc("/get-check-if-subscribed", getSubscribedHandler)
-
 	http.HandleFunc("/create-event", createEventHandler)
 	http.HandleFunc("/update-rsvp-for-event", updateRSVPForEventHandler)
 	http.HandleFunc("/get-rsvp-data", getEventRSVPHandler)
 	http.HandleFunc("/get-rsvp", getRSVPNotesHandler)
 	http.HandleFunc("/delete-event", deleteEventHandler)
+
+	http.HandleFunc("/get-username-from-session", getSessionDataHandler)
+	http.HandleFunc("/get-check-if-subscribed", getSubscribedHandler)
 
 	http.HandleFunc("/create-subscription", subscriptionHandler)
 
@@ -3257,12 +3152,6 @@ func main() {
 	http.HandleFunc("/get-catchit-leaderboard", getCatchitLeaderboardHandler)
 	http.HandleFunc("/get-my-personal-score-catchit", getPersonalCatchitLeaderboardHandler)
 	http.HandleFunc("/update-catchit-score", updateCatchitScoreHandler)
-
-	http.HandleFunc("/get-open-threads", getOpenThreadsHandler)
-	http.HandleFunc("/get-users-chat", getUsersToChatToHandler)
-
-	http.HandleFunc("/get-users-subscribed-threads", getUsersSubscribedThreadsHandler)
-	http.HandleFunc("/change-if-notified-for-thread", changeUserSubscriptionToThreadHandler)
 
 	http.HandleFunc("/create-new-tc", createNewTimeCapsuleHandler)
 	http.HandleFunc("/get-my-time-capsules", getMyPurchasedTimeCapsulesHandler)

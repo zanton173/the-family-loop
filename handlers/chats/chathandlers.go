@@ -260,6 +260,85 @@ func GetGroupChatMessagesHandler(w http.ResponseWriter, r *http.Request) {
 
 	}
 }
+
+func GetUsersSubscribedThreadsHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	allowOrDeny, _, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
+
+	validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
+	if !validBool || !allowOrDeny {
+		w.Header().Set("HX-Retarget", "window")
+		w.Header().Set("HX-Trigger", h)
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	output, outerr := globalvars.Db.Query(fmt.Sprintf("select thread, is_subscribed::text from tfldata.users_to_threads where username='%s';", r.URL.Query().Get("username")))
+	if outerr != nil {
+		fmt.Println(outerr)
+	}
+	defer output.Close()
+
+	for output.Next() {
+		var thread string
+		var isSubbed string
+		output.Scan(&thread, &isSubbed)
+		w.Write([]byte(thread + "," + isSubbed + "\n"))
+	}
+
+}
+func GetUsersToChatToHandler(w http.ResponseWriter, r *http.Request) {
+	allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
+
+	validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
+	if !validBool || !allowOrDeny {
+		w.Header().Set("HX-Retarget", "window")
+		w.Header().Set("HX-Trigger", h)
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	distinctUsersOutput, queryErr := globalvars.Db.Query(fmt.Sprintf("select distinct(username) from tfldata.users where username != '%s';", currentUserFromSession))
+	if queryErr != nil {
+		fmt.Println(queryErr)
+	}
+	defer distinctUsersOutput.Close()
+	for distinctUsersOutput.Next() {
+		var user string
+		scnerr := distinctUsersOutput.Scan(&user)
+		if scnerr != nil {
+			fmt.Print("scan error: " + scnerr.Error())
+		}
+		dataStr := fmt.Sprintf("<option value='%s'>%s</option>", user, user)
+
+		w.Write([]byte(dataStr))
+	}
+}
+func GetOpenThreadsHandler(w http.ResponseWriter, r *http.Request) {
+	allowOrDeny, _, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
+
+	validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
+	if !validBool || !allowOrDeny {
+		w.Header().Set("HX-Retarget", "window")
+		w.Header().Set("HX-Trigger", h)
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	distinctThreadsOutput, queryErr := globalvars.Db.Query("select thread,threadauthor from tfldata.threads order by createdon desc;")
+	if queryErr != nil {
+		fmt.Println(queryErr)
+	}
+	defer distinctThreadsOutput.Close()
+	for distinctThreadsOutput.Next() {
+		var thread string
+		var threadAuthor string
+		scnerr := distinctThreadsOutput.Scan(&thread, &threadAuthor)
+		if scnerr != nil {
+			fmt.Print("scan error: " + scnerr.Error())
+		}
+		dataStr := fmt.Sprintf("<option id='%s' value='%s'>%s</option>", threadAuthor, thread, thread)
+
+		w.Write([]byte(dataStr))
+	}
+}
 func GetSelectedPChatHandler(w http.ResponseWriter, r *http.Request) {
 	allowOrDeny, _, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
@@ -476,6 +555,35 @@ func UpdateLastViewedPChatHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+}
+func ChangeUserSubscriptionToThreadHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
+
+	validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
+	if !validBool || !allowOrDeny {
+		w.Header().Set("HX-Retarget", "window")
+		w.Header().Set("HX-Trigger", h)
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	bs, _ := io.ReadAll(r.Body)
+	type postBody struct {
+		User            string `json:"username"`
+		CurrentlySubbed bool   `json:"currentlyNotifiedVal"`
+		Thread          string `json:"curThread"`
+	}
+	var postData postBody
+	marsherr := json.Unmarshal(bs, &postData)
+	if marsherr != nil {
+		fmt.Println(marsherr)
+	}
+	_, inserr := globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.users_to_threads(\"username\",\"thread\",\"is_subscribed\") values('%s','%s',%t) on conflict(username,thread) do update set is_subscribed=%t;", postData.User, postData.Thread, postData.CurrentlySubbed, postData.CurrentlySubbed))
+	if inserr != nil {
+		activityStr := fmt.Sprintf("%s could not update sub settings for thread %s", currentUserFromSession, postData.Thread)
+		globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", inserr, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
+	}
+
 }
 func UpdatePChatReactionHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")

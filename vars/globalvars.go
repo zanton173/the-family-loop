@@ -9,6 +9,7 @@ import (
 	"firebase.google.com/go/messaging"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"go.mongodb.org/mongo-driver/mongo"
 	"google.golang.org/api/option"
 )
@@ -39,7 +40,13 @@ var (
 	DbErr error
 )
 
+var (
+	MongoDb  *mongo.Client
+	Mongoerr error
+)
+
 var S3Client *s3.Client
+var SqsClient *sqs.Client
 
 var Dbpass string
 var Awskey string

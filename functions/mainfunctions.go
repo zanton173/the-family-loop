@@ -25,6 +25,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
+	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/disintegration/imaging"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
@@ -75,6 +76,7 @@ func InitalizeAll() {
 		fmt.Println(globalvars.Awscfgerr)
 		os.Exit(3)
 	}
+	globalvars.SqsClient = sqs.NewFromConfig(globalvars.Awscfg)
 
 	globalvars.S3Client = s3.NewFromConfig(globalvars.Awscfg)
 	connStr := fmt.Sprintf("postgresql://tfldbrole:%s@localhost/tfl?sslmode=disable", globalvars.Dbpass)
@@ -84,15 +86,15 @@ func InitalizeAll() {
 		log.Fatal(globalvars.DbErr)
 	}
 
-	mongoDb, mongoerr := mongo.Connect(context.TODO(), options.Client().ApplyURI("mongodb+srv://tfl-user:"+globalvars.MongoDBPass+"@tfl-leaderboard.dg95d1f.mongodb.net/?retryWrites=true&w=majority"))
+	globalvars.MongoDb, globalvars.Mongoerr = mongo.Connect(context.TODO(), options.Client().ApplyURI("mongodb+srv://tfl-user:"+globalvars.MongoDBPass+"@tfl-leaderboard.dg95d1f.mongodb.net/?retryWrites=true&w=majority"))
 
-	if mongoerr != nil {
+	if globalvars.Mongoerr != nil {
 		activityStr := "mongo Initalize error"
-		globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values(substr('%s',0,105),substr('%s',0,105),now());", mongoerr.Error(), activityStr))
+		globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values(substr('%s',0,105),substr('%s',0,105),now());", globalvars.Mongoerr.Error(), activityStr))
 		return
 	}
-	defer mongoDb.Disconnect(context.TODO())
-	globalvars.Leaderboardcoll = mongoDb.Database("tfl-database").Collection("leaderboards")
+
+	globalvars.Leaderboardcoll = globalvars.MongoDb.Database("tfl-database").Collection("leaderboards")
 }
 
 func DbConn() *sql.DB {

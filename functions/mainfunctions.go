@@ -31,6 +31,8 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/rwcarlsen/goexif/exif"
 	"github.com/rwcarlsen/goexif/tiff"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"google.golang.org/api/option"
 )
 
@@ -81,6 +83,16 @@ func InitalizeAll() {
 	if globalvars.DbErr != nil {
 		log.Fatal(globalvars.DbErr)
 	}
+
+	mongoDb, mongoerr := mongo.Connect(context.TODO(), options.Client().ApplyURI("mongodb+srv://tfl-user:"+globalvars.MongoDBPass+"@tfl-leaderboard.dg95d1f.mongodb.net/?retryWrites=true&w=majority"))
+
+	if mongoerr != nil {
+		activityStr := "mongo Initalize error"
+		globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values(substr('%s',0,105),substr('%s',0,105),now());", mongoerr.Error(), activityStr))
+		return
+	}
+	defer mongoDb.Disconnect(context.TODO())
+	globalvars.Leaderboardcoll = mongoDb.Database("tfl-database").Collection("leaderboards")
 }
 
 func DbConn() *sql.DB {

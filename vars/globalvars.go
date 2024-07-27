@@ -9,6 +9,7 @@ import (
 	"firebase.google.com/go/messaging"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"go.mongodb.org/mongo-driver/mongo"
 	"google.golang.org/api/option"
 )
 
@@ -52,3 +53,5 @@ var SubLevel string
 var JwtSignKey string
 var Wixapikey string
 var Ghusercommentkey string
+
+var Leaderboardcoll *mongo.Collection

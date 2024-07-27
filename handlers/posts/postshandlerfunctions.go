@@ -15,14 +15,14 @@ import (
 	globaltypes "tfl/types"
 	globalvars "tfl/vars"
 
+	"firebase.google.com/go/messaging"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/google/uuid"
 )
 
-func DeleteThisPostHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	allowOrDeny, _, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
+func CreateCommentHandler(w http.ResponseWriter, r *http.Request) {
+	allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 	validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
 	if !validBool || !allowOrDeny {
@@ -32,62 +32,128 @@ func DeleteThisPostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+
 	bs, _ := io.ReadAll(r.Body)
 	type postBody struct {
-		PostID int `json:"deletionID"`
+		Comment        string   `json:"comment"`
+		SelectedPostId int      `json:"selectedPostId"`
+		Taggedusers    []string `json:"taggedUser"`
 	}
+
 	var postData postBody
-	marsherr := json.Unmarshal(bs, &postData)
-	if marsherr != nil {
-		fmt.Println(marsherr)
-	}
-	type workObj struct {
-		Filename string
-		Filetype string
-		Pfilesid int
+	errmarsh := json.Unmarshal(bs, &postData)
+	if errmarsh != nil {
+		fmt.Println(errmarsh)
 	}
 
-	output, outerr := globalvars.Db.Query(fmt.Sprintf("select pf.id,pf.file_name,pf.file_type from tfldata.posts as p join tfldata.postfiles as pf on pf.post_files_key = p.post_files_key where p.id=%d;", postData.PostID))
-	if outerr != nil {
-		fmt.Println(outerr)
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("<p>Please report this error at the bugreport page. Title the error with delete post issue</p>"))
-		return
+	_, inserterr := globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.comments(\"comment\", \"post_id\", \"author\") values(E'%s', '%d', (select username from tfldata.users where username='%s'));", globalvars.Replacer.Replace(postData.Comment), postData.SelectedPostId, currentUserFromSession))
+	if inserterr != nil {
+		fmt.Println(inserterr)
 	}
-	defer output.Close()
-	for output.Next() {
-		var workData workObj
-		output.Scan(&workData.Pfilesid, &workData.Filename, &workData.Filetype)
+	var author string
+	var pfpname string
+	row := globalvars.Db.QueryRow(fmt.Sprintf("select username, pfp_name from tfldata.users where username='%s';", currentUserFromSession))
+	userscnerr := row.Scan(&author, &pfpname)
 
-		if strings.Contains(workData.Filetype, "image") {
-			_, err := globalvars.S3Client.DeleteObject(context.TODO(), &s3.DeleteObjectInput{
-				Bucket: aws.String(globalvars.S3Domain),
-				Key:    aws.String("posts/images/" + workData.Filename),
+	if userscnerr != nil || len(pfpname) == 0 {
+		pfpname = "assets/32x32/ZCAN2301 The Family Loop Favicon_B_32 x 32.jpg"
+	} else {
+		pfpname = "https://" + globalvars.Cfdistro + "/pfp/" + pfpname
+	}
+	dataStr := "<div class='row'><p style='display: flex; align-items: center; padding-right: 0%;' class='m-1 col-7'>" + postData.Comment + "</p><div style='align-items: center; position: relative; display: flex; padding-left: 0%; left: 1%;' class='col my-5'><b style='position: absolute; bottom: 5%'>" + author + "</b><img width='30px' class='my-1' style='margin-left: 1%; position: absolute; right: 20%; border-style: solid; border-radius: 13px / 13px; box-shadow: 3px 3px 5px; border-width: thin; top: 5%;' src='" + pfpname + "' alt='tfl pfp' /></div></div>"
+
+	commentTmpl, err := template.New("com").Parse(dataStr)
+	if err != nil {
+		fmt.Println(err)
+	}
+	commentTmpl.Execute(w, nil)
+	go func() {
+		var fcmToken string
+		fcmrow := globalvars.Db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where username = (select author from tfldata.posts where id=%d) and username != (select username from tfldata.users where username='%s') and fcm_registration_id is not null;", postData.SelectedPostId, currentUserFromSession))
+		scnerr := fcmrow.Scan(&fcmToken)
+		if scnerr == nil {
+
+			//globalvars.Fb_message_client, _ := app.Messaging(context.TODO())
+			typePayload := make(map[string]string)
+			typePayload["type"] = "posts"
+			sentRes, sendErr := globalvars.Fb_message_client.Send(context.TODO(), &messaging.Message{
+				Token: fcmToken,
+				Data:  typePayload,
+				Notification: &messaging.Notification{
+					Title:    author + " commented on your post!",
+					Body:     "\"" + postData.Comment + "\"",
+					ImageURL: "/assets/icon-180x180.jpg",
+				},
+
+				Webpush: &messaging.WebpushConfig{
+					Notification: &messaging.WebpushNotification{
+						Title: author + " commented on your post!",
+						Body:  "\"" + postData.Comment + "\"",
+						Data:  typePayload,
+						Image: "/assets/icon-180x180.jpg",
+						Icon:  "/assets/icon-96x96.jpg",
+						Actions: []*messaging.WebpushNotificationAction{
+							{
+								Action: typePayload["type"],
+								Title:  author + " commented on your post!",
+								Icon:   "/assets/icon-96x96.png",
+							},
+							{
+								Action: typePayload["type"],
+								Title:  "NA",
+								Icon:   "/assets/icon-96x96.png",
+							},
+						},
+					},
+				},
 			})
-
-			if err != nil {
-				fmt.Println("error on image delete")
-				fmt.Println(err.Error())
+			if sendErr != nil {
+				fmt.Print(sendErr)
 			}
-		} else {
-			_, err := globalvars.S3Client.DeleteObject(context.TODO(), &s3.DeleteObjectInput{
-				Bucket: aws.String(globalvars.S3Domain),
-				Key:    aws.String("posts/videos/" + workData.Filename),
-			})
+			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.sent_notification_log(\"notification_result\", \"createdon\") values('%s', '%s');", sentRes, time.Now().In(globalvars.NyLoc).Local().Format(time.DateTime)))
+		}
+		if len(postData.Taggedusers) > 0 {
+			var usersPost string
+			row := globalvars.Db.QueryRow(fmt.Sprintf("select author from tfldata.posts where id=%d", postData.SelectedPostId))
+			row.Scan(&usersPost)
 
-			if err != nil {
-				fmt.Println("error on video delete")
-				fmt.Println(err.Error())
+			for _, userTagged := range postData.Taggedusers {
+				var fcmToken string
+				fcmrow := globalvars.Db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where username = '%s' and username != (select username from tfldata.users where username='%s') and fcm_registration_id is not null;", userTagged, currentUserFromSession))
+				scnerr := fcmrow.Scan(&fcmToken)
+				if scnerr == nil {
+
+					//globalvars.Fb_message_client, _ := app.Messaging(context.TODO())
+					typePayload := make(map[string]string)
+					typePayload["type"] = "posts"
+					sentRes, sendErr := globalvars.Fb_message_client.Send(context.TODO(), &messaging.Message{
+						Token: fcmToken,
+						Notification: &messaging.Notification{
+							Title:    currentUserFromSession + " tagged you on " + usersPost + "'s post",
+							Body:     "\"" + postData.Comment + "\"",
+							ImageURL: "/assets/icon-180x180.jpg",
+						},
+
+						Webpush: &messaging.WebpushConfig{
+							Notification: &messaging.WebpushNotification{
+								Title: currentUserFromSession + " tagged you on " + usersPost + "'s post",
+								Body:  "\"" + postData.Comment + "\"",
+								Data:  typePayload,
+								Image: "/assets/icon-180x180.jpg",
+								Icon:  "/assets/icon-96x96.jpg",
+							},
+						},
+					})
+					if sendErr != nil {
+						fmt.Print(sendErr)
+					}
+					globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.sent_notification_log(\"notification_result\", \"createdon\") values('%s', '%s');", sentRes, time.Now().In(globalvars.NyLoc).Local().Format(time.DateTime)))
+				}
+
 			}
 		}
-
-		globalvars.Db.Exec(fmt.Sprintf("delete from tfldata.postfiles where id=%d", workData.Pfilesid))
-	}
-
-	_, delerr := globalvars.Db.Exec(fmt.Sprintf("delete from tfldata.posts where id=%d", postData.PostID))
-	if delerr != nil {
-		fmt.Println(delerr)
-	}
+	}()
 }
 func GetPostsHandler(w http.ResponseWriter, r *http.Request) {
 	allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
@@ -407,4 +473,74 @@ func CreatePostReactionHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+}
+
+func DeleteThisPostHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	allowOrDeny, _, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
+
+	validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
+	if !validBool || !allowOrDeny {
+		w.Header().Set("HX-Retarget", "window")
+		w.Header().Set("HX-Trigger", h)
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	bs, _ := io.ReadAll(r.Body)
+	type postBody struct {
+		PostID int `json:"deletionID"`
+	}
+	var postData postBody
+	marsherr := json.Unmarshal(bs, &postData)
+	if marsherr != nil {
+		fmt.Println(marsherr)
+	}
+	type workObj struct {
+		Filename string
+		Filetype string
+		Pfilesid int
+	}
+
+	output, outerr := globalvars.Db.Query(fmt.Sprintf("select pf.id,pf.file_name,pf.file_type from tfldata.posts as p join tfldata.postfiles as pf on pf.post_files_key = p.post_files_key where p.id=%d;", postData.PostID))
+	if outerr != nil {
+		fmt.Println(outerr)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("<p>Please report this error at the bugreport page. Title the error with delete post issue</p>"))
+		return
+	}
+	defer output.Close()
+	for output.Next() {
+		var workData workObj
+		output.Scan(&workData.Pfilesid, &workData.Filename, &workData.Filetype)
+
+		if strings.Contains(workData.Filetype, "image") {
+			_, err := globalvars.S3Client.DeleteObject(context.TODO(), &s3.DeleteObjectInput{
+				Bucket: aws.String(globalvars.S3Domain),
+				Key:    aws.String("posts/images/" + workData.Filename),
+			})
+
+			if err != nil {
+				fmt.Println("error on image delete")
+				fmt.Println(err.Error())
+			}
+		} else {
+			_, err := globalvars.S3Client.DeleteObject(context.TODO(), &s3.DeleteObjectInput{
+				Bucket: aws.String(globalvars.S3Domain),
+				Key:    aws.String("posts/videos/" + workData.Filename),
+			})
+
+			if err != nil {
+				fmt.Println("error on video delete")
+				fmt.Println(err.Error())
+			}
+		}
+
+		globalvars.Db.Exec(fmt.Sprintf("delete from tfldata.postfiles where id=%d", workData.Pfilesid))
+	}
+
+	_, delerr := globalvars.Db.Exec(fmt.Sprintf("delete from tfldata.posts where id=%d", postData.PostID))
+	if delerr != nil {
+		fmt.Println(delerr)
+	}
 }

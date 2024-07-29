@@ -65,7 +65,18 @@ func InitalizeAll() {
 	globalvars.FbOpts = []option.ClientOption{option.WithCredentialsFile("the-family-loop-fb0d9-firebase-adminsdk-k6sxl-14c7d4c4f7.json")}
 
 	globalvars.App, globalvars.AppErr = firebase.NewApp(context.TODO(), nil, globalvars.FbOpts...)
+
+	if globalvars.AppErr != nil {
+		fmt.Println("Err init firebase app")
+		os.Exit(14)
+	}
+
 	globalvars.Fb_message_client, globalvars.FbInitErr = globalvars.App.Messaging(context.TODO())
+
+	if globalvars.FbInitErr != nil {
+		fmt.Println("Err init firebase messaging app")
+		os.Exit(15)
+	}
 
 	globalvars.Awscfg, globalvars.Awscfgerr = config.LoadDefaultConfig(context.TODO(),
 		config.WithDefaultRegion("us-east-1"),

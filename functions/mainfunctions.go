@@ -25,6 +25,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
+	"github.com/aws/aws-sdk-go-v2/service/ses"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/disintegration/imaging"
 	"github.com/golang-jwt/jwt/v5"
@@ -87,9 +88,11 @@ func InitalizeAll() {
 		fmt.Println(globalvars.Awscfgerr)
 		os.Exit(3)
 	}
-	globalvars.SqsClient = sqs.NewFromConfig(globalvars.Awscfg)
 
+	globalvars.SqsClient = sqs.NewFromConfig(globalvars.Awscfg)
 	globalvars.S3Client = s3.NewFromConfig(globalvars.Awscfg)
+	globalvars.SesClient = ses.NewFromConfig(globalvars.Awscfg)
+
 	connStr := fmt.Sprintf("postgresql://tfldbrole:%s@localhost/tfl?sslmode=disable", globalvars.Dbpass)
 	globalvars.Db, globalvars.DbErr = sql.Open("postgres", connStr)
 

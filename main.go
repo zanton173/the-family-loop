@@ -191,6 +191,7 @@ func main() {
 	http.HandleFunc("/admin-get-all-time-capsules", adminhandler.AdminGetAllTCHandler)
 	http.HandleFunc("/admin-get-subscription-package", adminhandler.AdminGetSubPackageHandler)
 	http.HandleFunc("/admin-delete-user", adminhandler.AdminDeleteUserHandler)
+	http.HandleFunc("/admin-send-invite", adminhandler.AdminSendInviteHandler)
 	/* Auth handlers */
 	http.HandleFunc("/signup", authhandler.SignUpHandler)
 	http.HandleFunc("/login", authhandler.LoginHandler)

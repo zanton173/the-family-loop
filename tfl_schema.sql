@@ -284,6 +284,20 @@ ALTER SEQUENCE tfldata.inclog_id_seq OWNED BY tfldata.inclog.id;
 
 
 --
+-- Name: invite_sent_requests; Type: TABLE; Schema: tfldata; Owner: tfldbrole
+--
+
+CREATE TABLE tfldata.invite_sent_requests (
+    from_admin character varying(13),
+    to_user_email character varying(255),
+    to_user_first_name character varying(35),
+    hassent boolean
+);
+
+
+ALTER TABLE tfldata.invite_sent_requests OWNER TO tfldbrole;
+
+--
 -- Name: pchat; Type: TABLE; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -394,6 +408,22 @@ ALTER TABLE tfldata.posts_id_seq OWNER TO tfldbrole;
 
 ALTER SEQUENCE tfldata.posts_id_seq OWNED BY tfldata.posts.id;
 
+
+--
+-- Name: posts_img_undefined_bkp; Type: TABLE; Schema: tfldata; Owner: tfldbrole
+--
+
+CREATE TABLE tfldata.posts_img_undefined_bkp (
+    id integer,
+    title character varying(128),
+    description character varying(420),
+    author character varying(15),
+    post_files_key uuid,
+    createdon timestamp without time zone
+);
+
+
+ALTER TABLE tfldata.posts_img_undefined_bkp OWNER TO tfldbrole;
 
 --
 -- Name: reactions; Type: TABLE; Schema: tfldata; Owner: tfldbrole
@@ -986,6 +1016,13 @@ CREATE INDEX gchat_tbl_author_idx ON tfldata.gchat USING btree (author);
 --
 
 CREATE INDEX gchat_tbl_thread_idx ON tfldata.gchat USING btree (thread);
+
+
+--
+-- Name: invite_sent_requests_to_user_email_from_admin_idx; Type: INDEX; Schema: tfldata; Owner: tfldbrole
+--
+
+CREATE INDEX invite_sent_requests_to_user_email_from_admin_idx ON tfldata.invite_sent_requests USING btree (to_user_email, from_admin);
 
 
 --

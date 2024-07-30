@@ -2,6 +2,7 @@ package adminhandler
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -13,6 +14,32 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson"
 )
+
+func AdminSendInviteHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
+
+	var isAdmin bool
+
+	rowRes := globalvars.Db.QueryRow(fmt.Sprintf("select is_admin from tfldata.users where username='%s';", currentUserFromSession))
+	rowRes.Scan(&isAdmin)
+	validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
+	if !validBool || !allowOrDeny || !isAdmin {
+		w.Header().Set("HX-Retarget", "window")
+		w.Header().Set("HX-Trigger", h)
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	var hasSent sql.NullString
+	row := globalvars.Db.QueryRow(fmt.Sprintf("select hassent from tfldata.invite_sent_requests where from_admin = '%s' and to_user_email = '%s';", currentUserFromSession, r.PostFormValue("emailtosendto")))
+	row.Scan(&hasSent)
+	if hasSent.Valid {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("<p style='color: red'>You have already sent a request to this email</p>"))
+		return
+	}
+
+}
 
 func AdminGetListOfUsersHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")

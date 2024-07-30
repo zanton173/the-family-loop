@@ -408,23 +408,6 @@ ALTER TABLE tfldata.posts_id_seq OWNER TO tfldbrole;
 
 ALTER SEQUENCE tfldata.posts_id_seq OWNED BY tfldata.posts.id;
 
-
---
--- Name: posts_img_undefined_bkp; Type: TABLE; Schema: tfldata; Owner: tfldbrole
---
-
-CREATE TABLE tfldata.posts_img_undefined_bkp (
-    id integer,
-    title character varying(128),
-    description character varying(420),
-    author character varying(15),
-    post_files_key uuid,
-    createdon timestamp without time zone
-);
-
-
-ALTER TABLE tfldata.posts_img_undefined_bkp OWNER TO tfldbrole;
-
 --
 -- Name: reactions; Type: TABLE; Schema: tfldata; Owner: tfldbrole
 --

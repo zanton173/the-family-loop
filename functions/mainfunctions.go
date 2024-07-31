@@ -427,35 +427,37 @@ func SendNotificationToAllUsers(db *sql.DB, curUser string, fb_message_client *m
 						Notification: &messaging.Notification{
 							Title:    opts.NotificationTitle,
 							Body:     opts.NotificationBody,
-							ImageURL: "/assets/icon-180x180.jpg",
+							ImageURL: "/assets/icon-512x512.png",
 						},
 						Webpush: &messaging.WebpushConfig{
 							Notification: &messaging.WebpushNotification{
 								Title: opts.NotificationTitle,
 								Body:  opts.NotificationBody,
 								Data:  typePayload,
-								Image: "/assets/icon-180x180.jpg",
-								Icon:  "/assets/icon-96x96.png",
+								Image: "/assets/icon-512x512.png",
+								Icon:  "/assets/icon-512x512.png",
+								Tag:   typePayload["type"],
 								Actions: []*messaging.WebpushNotificationAction{
 									{
 										Action: typePayload["type"],
 										Title:  opts.NotificationTitle,
-										Icon:   "/assets/icon-96x96.png",
+										Icon:   "/assets/icon-512x512.png",
 									},
 									{
 										Action: typePayload[opts.ExtraPayloadKey],
 										Title:  "NA",
-										Icon:   "/assets/icon-96x96.png",
+										Icon:   "/assets/icon-512x512.png",
 									},
 								},
 							},
 						},
 						Android: &messaging.AndroidConfig{
 							Notification: &messaging.AndroidNotification{
-								Title:    opts.NotificationTitle,
-								Body:     opts.NotificationBody,
-								ImageURL: "/assets/icon-180x180.jpg",
-								Icon:     "/assets/icon-96x96.png",
+								Title:       opts.NotificationTitle,
+								Body:        opts.NotificationBody,
+								ClickAction: typePayload["type"],
+								ImageURL:    "/assets/icon-512x512.png",
+								Icon:        "/assets/icon-512x512.png",
 							},
 						},
 					})

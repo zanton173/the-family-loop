@@ -61,7 +61,7 @@
                     style="display: none; width: 75%; text-align: center; justify-content: center; margin: auto">
                     <form hx-ext="json-enc" class="form modal-content border-0" hx-post="/send-reset-pass-wix-user"
                         hx-indicator="#loadingspinner" hx-swap="none"
-                        hx-vals="{'currentemail': document.getElementById('currentUserEmail')}"
+                        hx-vals="js:{'currentemail': document.getElementById('currentUserEmail')}"
                         id="updateEmailSendResetForm" style="padding: 5%; border-radius: 15px / 15px;">
                         <h5>Please verify that this your current email. You will need to reset your password via email
                             for the payments portal</h5><br />

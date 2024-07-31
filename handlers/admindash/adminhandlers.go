@@ -12,6 +12,9 @@ import (
 	globalvars "tfl/vars"
 	"time"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/ses"
+	"github.com/aws/aws-sdk-go-v2/service/ses/types"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
@@ -39,6 +42,38 @@ func AdminSendInviteHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var loopPassDataStr string
+	if r.PostFormValue("sendviaemailval") == "yes" {
+		loopPassDataStr = fmt.Sprintf("<p id='looppass'> Use the password: %s to signup!</p>", globalvars.OrgId)
+	} else {
+		loopPassDataStr = ""
+	}
+	var reachThemDataStr string
+	if len(r.PostFormValue("emailtoreachout")) > 0 || len(r.PostFormValue("phoneadmin")) > 0 {
+		reachThemDataStr = "You can reach out with questions at: " + r.PostFormValue("emailtoreachout") + " " + r.PostFormValue("phoneadmin")
+	}
+	_, sendemailerr := globalvars.SesClient.SendEmail(context.TODO(), &ses.SendEmailInput{
+		Source: aws.String("tfl-response@the-family-loop.com"),
+		Destination: &types.Destination{
+			ToAddresses: aws.ToStringSlice(aws.StringSlice([]string{r.PostFormValue("emailtosendto")})),
+		},
+		Message: &types.Message{
+			Body: &types.Body{
+				Html: &types.Content{
+					Data: aws.String(fmt.Sprintf("<div style='background: radial-gradient(white, #4f4f4f7a); border-radius: 20px 20px 20px 20px; padding: 15px;'> <div style='display: block;'> <div style='width: 100&percnt;'><img src='https://antons.the-family-loop.com/assets/TFLBanner.png' style='width: 23dvw'> <h1 style='text-align: center'>You've been invited!</h1> </div> <div style='text-align: center;'> <div style='display: flex; justify-content: center;'> <p id='usertosend' style='text-align: center; margin: auto'>Hi&nbsp;%s, you are invited to join a family loop.</p> </div> <div style='display: block; text-align: center;'> <p id='someone'>Someone has invited you to their loop!&nbsp; %s </p> </div> <p id='reachthemat'>%s</p> <p>Please follow the <a href='%s'>link</a> to sign up</p> </div> </div> </div>", r.PostFormValue("firstnamesendto"), loopPassDataStr, reachThemDataStr, r.PostFormValue("loopurl"))),
+				},
+			},
+			Subject: &types.Content{
+				Data: aws.String("You got an invite!"),
+			},
+		},
+	})
+	if sendemailerr == nil {
+		_, inserr := globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.invite_sent_requests(from_admin, to_user_email, to_user_first_name, hassent) values('%s', '%s', '%s', true);", currentUserFromSession, r.PostFormValue("emailtosendto"), r.PostFormValue("firstnamesendto")))
+		if inserr != nil {
+			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values(substr('%s', 0, 105), 'Err inserting into invite_sent_requests', now());", inserr.Error()))
+		}
+	}
 }
 
 func AdminGetListOfUsersHandler(w http.ResponseWriter, r *http.Request) {

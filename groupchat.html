@@ -127,8 +127,8 @@
     <div id="loadGChathere" hx-get="/group-chat-messages"
         hx-vals="js:{'threadval': document.getElementById('threadSelector').value, 'order_option': gchatOrderOpt, 'limit': limitVal}"
         hx-on::after-request="countOfMessages(event)"
-        hx-trigger="afterThreadSelectorLoadsEvent, success-send from:#messageform, limitChange"
-        class="border-1 m-2" style="display: block; justify-content: center; text-align: center; border-radius: 1%;">
+        hx-trigger="afterThreadSelectorLoadsEvent, success-send from:#messageform, limitChange" class="border-1 m-2"
+        style="display: block; justify-content: center; text-align: center; border-radius: 1%;">
 
     </div>
     <div id="loadPChatHere" hx-get="/private-chat-messages" hx-target="this" hx-on::after-request="loadHandleClickOp()"
@@ -422,20 +422,25 @@
 
             }
             setTimeout(() => {
-                document.getElementById('threadSelector').childNodes.forEach((val) => {
-                    if (val.innerText == curUserDataLastViewedThread) {
-                        val.setAttribute('selected', 'true')
-                        document.getElementById('loadGChathere').dispatchEvent(new Event('afterThreadSelectorLoadsEvent'))
-                    }
-                })
-                if (document.getElementById('toggleDirectOrThreads').innerText.includes('Direct')) {
-                    document.querySelector('option[value="' + document.getElementById('threadSelector').value + '"]') &&
-                        document.querySelector('option[value="' + document.getElementById('threadSelector').value + '"]').id &&
-                        checkIfDeletable()
-                    checkIfSubbed()
-                }
 
-                currentlySelectedThread = document.getElementById('threadSelector').value
+                var param = new URL(document.location).searchParams
+                console.log(param)
+                if (!param.get('thread') || param.get('thread').length === 0) {
+                    document.getElementById('threadSelector').childNodes.forEach((val) => {
+                        if (val.innerText == curUserDataLastViewedThread) {
+                            val.setAttribute('selected', 'true')
+                            document.getElementById('loadGChathere').dispatchEvent(new Event('afterThreadSelectorLoadsEvent'))
+                        }
+                    })
+                    if (document.getElementById('toggleDirectOrThreads').innerText.includes('Direct')) {
+                        document.querySelector('option[value="' + document.getElementById('threadSelector').value + '"]') &&
+                            document.querySelector('option[value="' + document.getElementById('threadSelector').value + '"]').id &&
+                            checkIfDeletable()
+                        checkIfSubbed()
+                    }
+
+                    currentlySelectedThread = document.getElementById('threadSelector').value
+                }
             }, 300)
 
 
@@ -456,12 +461,17 @@
                 if (param.get('thread') && param.get('thread').length >= 1) {
 
                     for (var i = 0; i < document.getElementById('threadSelector').children.length; i++) {
-                        if (document.getElementById('threadSelector').children[i].value == param.get('thread')) {
+                        if (document.getElementById('threadSelector').children[i].value == param.get('thread').replace("%20", " ")) {
+                            console.log('fdhs')
 
                             document.getElementById('threadSelector').children[i].selected = true
                             //document.getElementById('loadGChathere').dispatchEvent(new Event('afterThreadSelectorLoadsEvent'))
-                            window.history.pushState({}, document.title, "/" + "groupchat")
-                            document.getElementById('loadGChathere').removeEventListener("htmx:afterRequest", checkNotified)
+                            document.getElementById('loadGChathere').dispatchEvent(new Event('afterThreadSelectorLoadsEvent'))
+                            setTimeout(() => {
+
+                                window.history.pushState({}, document.title, "/" + "groupchat")
+                                document.getElementById('loadGChathere').removeEventListener("htmx:afterRequest", checkNotified)
+                            }, 1200)
                             //document.getElementById('threadSelector').children[i].dispatchEvent(new Event("onchange"))
                         }
                     }

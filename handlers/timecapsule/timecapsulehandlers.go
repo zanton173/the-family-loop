@@ -458,7 +458,7 @@ func WixWebhookTCInitialPurchaseHandler(w http.ResponseWriter, r *http.Request) 
 	if uperr != nil {
 		fmt.Println("something went wrong")
 	}
-	/*var yearstostore string
+	var yearstostore string
 	row := globalvars.Db.QueryRow(fmt.Sprintf("select yearstostore from tfldata.timecapsule where tcfilename='%s';", postData.Capsulename))
 	sner := row.Scan(&yearstostore)
 	if sner != nil {
@@ -483,7 +483,7 @@ func WixWebhookTCInitialPurchaseHandler(w http.ResponseWriter, r *http.Request) 
 				},
 			},
 		},
-	})*/
+	})
 }
 func DeleteMyTChandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")

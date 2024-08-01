@@ -490,7 +490,7 @@ func UploadTimeCapsuleToS3(f *os.File, fn string, yearsToStore string) {
 		ContentType: aws.String("application/octet-stream"),
 		Body:        f,
 		//StorageClass: types.StorageClassGlacier,
-		Tagging: aws.String("YearsToStore=" + yearsToStore),
+		//Tagging: aws.String("YearsToStore=" + yearsToStore),
 	})
 
 	if s3err != nil {

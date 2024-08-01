@@ -140,10 +140,14 @@
                     hx-swap="none" hx-indicator="#loadingspinner"
                     style="background-color: white; border-radius: 15px / 15px; padding: 5%">
                     <div style="margin: auto; text-align: center; box-sizing: border-box;">
-                        <input class="my-2 shadow-sm border-1 text-center" style="width: 100%; border-radius: 13px 13px 13px 13px; box-shadow: 3px 5px 8px gray!important; margin-bottom: 5%!important;" name="title"
-                            id="posttitle" type="text" placeholder="title your post" required maxlength="128" />
-                        <input class="my-2 shadow-sm border-1 text-center" style="width: 100%; border-radius: 13px 13px 13px 13px; box-shadow: 3px 5px 8px gray!important; margin-bottom: 5%!important;" name="description"
-                            id="postdesc" type="text" placeholder="describe the post" maxlength="420" />
+                        <input class="my-2 shadow-sm border-1 text-center"
+                            style="width: 100%; border-radius: 13px 13px 13px 13px; box-shadow: 3px 5px 8px gray!important; margin-bottom: 5%!important;"
+                            name="title" id="posttitle" type="text" placeholder="title your post" required
+                            maxlength="128" />
+                        <input class="my-2 shadow-sm border-1 text-center"
+                            style="width: 100%; border-radius: 13px 13px 13px 13px; box-shadow: 3px 5px 8px gray!important; margin-bottom: 5%!important;"
+                            name="description" id="postdesc" type="text" placeholder="describe the post"
+                            maxlength="420" />
                         <input id="postinput" class="my-2 shadow" oninput="checkValidityOfFiles()" multiple type="file"
                             required
                             style="box-shadow: 3px 6px 10px gray!important; border-radius: 15px / 15px; width: 100%"
@@ -434,15 +438,15 @@
 
         if (iter == 0) {
             iter = imgArray.length - 1
-            imgCaro.setAttribute("src", "https://d33gjmrumfzeah.cloudfront.net/posts/" + itemTag + "/" + imgArray[iter])
+            imgCaro.setAttribute("src", `https://${cfDomain}/posts/` + itemTag + "/" + imgArray[iter])
             imgCaro.setAttribute("alt", imgArray[iter])
         } else if (iter >= imgArray.length) {
-            imgCaro.setAttribute("src", "https://d33gjmrumfzeah.cloudfront.net/posts/" + itemTag + "/" + imgArray[imgArray.length - 1])
+            imgCaro.setAttribute("src", `https://${cfDomain}/posts/` + itemTag + "/" + imgArray[imgArray.length - 1])
             imgCaro.setAttribute("alt", imgArray[imgArray.length - 1])
             iter = 0
         }
         else {
-            imgCaro.setAttribute("src", "https://d33gjmrumfzeah.cloudfront.net/posts/" + itemTag + "/" + imgArray[iter - 1])
+            imgCaro.setAttribute("src", `https://${cfDomain}/posts/` + itemTag + "/" + imgArray[iter - 1])
             imgCaro.setAttribute("alt", imgArray[iter - 1])
             iter--
         }
@@ -462,15 +466,15 @@
 
         if (iter == imgArray.length - 1) {
             iter = 0
-            imgCaro.setAttribute("src", "https://d33gjmrumfzeah.cloudfront.net/posts/" + itemTag + "/" + imgArray[iter])
+            imgCaro.setAttribute("src", `https://${cfDomain}/posts/` + itemTag + "/" + imgArray[iter])
             imgCaro.setAttribute("alt", imgArray[iter])
         } else if (iter >= imgArray.length) {
             iter = imgArray.length
-            imgCaro.setAttribute("src", "https://d33gjmrumfzeah.cloudfront.net/posts/" + itemTag + "/" + imgArray[iter - 1])
+            imgCaro.setAttribute("src", `https://${cfDomain}/posts/` + itemTag + "/" + imgArray[iter - 1])
             imgCaro.setAttribute("alt", imgArray[iter - 1])
             iter--
         } else {
-            imgCaro.setAttribute("src", "https://d33gjmrumfzeah.cloudfront.net/posts/" + itemTag + "/" + imgArray[iter + 1])
+            imgCaro.setAttribute("src", `https://${cfDomain}/posts/` + itemTag + "/" + imgArray[iter + 1])
             imgCaro.setAttribute("alt", imgArray[iter + 1])
             iter++
         }

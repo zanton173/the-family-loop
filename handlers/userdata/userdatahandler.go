@@ -15,7 +15,33 @@ import (
 
 func GetSessionDataHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+
+	var isPaidForNull sql.NullBool
+	var loopOwnerUsername string
+	paidres := globalvars.Db.QueryRow("select is_paying_subscriber,username from tfldata.users where isloopowner = true;")
+	paidres.Scan(&isPaidForNull, &loopOwnerUsername)
+	if !isPaidForNull.Valid {
+		isPaidForNull.Bool = false
+	}
 	allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
+	if !isPaidForNull.Bool {
+		type planCanceled struct {
+			LoopOwner   string `json:"loopownerusername"`
+			CurrentUser string `json:"curUser"`
+		}
+		var planData planCanceled
+		planData.CurrentUser = currentUserFromSession
+		planData.LoopOwner = loopOwnerUsername
+		marshinto, marshintoerr := json.Marshal(&planData)
+		if marshintoerr != nil {
+			fmt.Println(marshintoerr)
+		}
+		w.Header().Set("HX-Retarget", "window")
+		w.Header().Set("HX-Trigger", "onPlanNotBeingPaidFor")
+		w.WriteHeader(http.StatusConflict)
+		w.Write(marshinto)
+		return
+	}
 
 	validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
 

@@ -52,10 +52,11 @@
             style="border-radius: 15px / 15px; background-color: rgba(217, 216, 216, 0.923);">
 
             <div class="modal-header p-2 my-1" id="changepfpheader" style="display: block;">
-                <h2 class="modal-title" style="text-align: center;">User Settings</h2>
+                <h2 class="modal-title" style="text-align: center;">Settings</h2>
             </div>
-            <div id="wixSubDivContent" hx-get="/current-user-wix-subscription" hx-trigger="click from:#settingsBtn"
-                hx-swap="none" hx-on::after-request="checkStatusOfCurrentWixUser(event)" hx-target="#wixCurrentPlanDiv">
+            <div id="wixSubDivContent" hx-get="/current-user-wix-subscription"
+                hx-trigger="click from:#settingsBtn, onPlanNotBeingPaidFor from:window" hx-swap="none"
+                hx-on::after-request="checkStatusOfCurrentWixUser(event)" hx-target="#wixCurrentPlanDiv">
 
                 <div id="wixUserNotFoundDiv"
                     style="display: none; width: 75%; text-align: center; justify-content: center; margin: auto">
@@ -408,6 +409,24 @@
         </div>
     </div>
 </div>
+<div class="modal customModalTrans" data-bs-backdrop="static" tabindex="-1" id="host-not-paying-modal">
+    <div class="modal-dialog">
+        <div class="modal-content border-2"
+            style="background-color: rgb(220, 248, 241); border-radius: 15px / 15px; box-shadow: 2px 2px 6px 0px;">
+            <div class="modal-header" id="login-modal-header" style="display: block;">
+                <h4 class="modal-title" style="text-align: center;">The plan is currently canceled</h4>
+            </div>
+            <div id="yourPlanIsCanceled" class="modal-body" style="text-align: center;">
+                The plan provider is no longer paying for their subscription.<br /> You are responsible for canceling
+                your own
+                subscription
+            </div>
+            <div id="attachRegUserPlanHere">
+                <div id="loadingPlanForCancellation" style="text-align: center; font-size: larger;">Loading...</div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script>
     var changePfpModal = new bootstrap.Modal(document.getElementById('changepfpmodal'), {});
@@ -457,6 +476,7 @@
 
     var loginModal = new bootstrap.Modal(document.getElementById('login-modal'), {});
     var payLinkModal = new bootstrap.Modal(document.getElementById('pay-regular-subscriber-modal'), {});
+    var hostpayingmodal = new bootstrap.Modal(document.getElementById('host-not-paying-modal'), {});
     var tandcModal = new bootstrap.Modal(document.getElementById('tcmodal'), {});
 
     var pfpChangeInput = document.getElementById('pfpchangeinput')
@@ -513,8 +533,24 @@
                 "Content-Type": "application/json"
             }
         })
+        if (resp.status === 409) {
+            const respdata = await resp.text()
+            const parsedjson = JSON.parse(respdata)
+            hostpayingmodal.show()
 
-        if (resp.status == 401) {
+            if (parsedjson.loopownerusername !== parsedjson.curUser) {
+                setTimeout(() => {
+                    document.getElementById('loadingPlanForCancellation').style.display = 'none'
+                    window.dispatchEvent(new Event("onPlanNotBeingPaidFor"))
+                    document.getElementById('attachRegUserPlanHere').append(document.getElementById('wixCurrentPlanDiv'))
+                }, 2250)
+            } else {
+                document.getElementById('yourPlanIsCanceled').innerHTML = "You have canceled your loop plan. You will need to start a new subscription"
+                document.getElementById('loadingPlanForCancellation').style.display = 'none'
+            }
+            return
+        }
+        else if (resp.status == 401) {
             //document.dispatchEvent(new Event("onUnauthorizedEvent"))
             window.history.pushState("", "", "/")
             loginModal.show()
@@ -560,7 +596,7 @@
                 : navItemWelcomeAvatar.setAttribute("src", "https://" + cfDomain + "/pfp/" + text.Pfpname.String)
 
         if (document.getElementById('notifydiv')) {
-            if (Notification.permission !== 'granted') {
+            if (Notification.permission !== 'granted' || fcmKey.length === 0) {
                 document.getElementById('notifydiv').setAttribute("style", "display: inline")
                 fetch("/update-fcm-token?username=" + text.Username, {
                     method: "GET",
@@ -904,6 +940,9 @@
 
     window.addEventListener("onUnauthorizedEvent", () => {
         logoutFunction()
+    })
+    window.addEventListener("onPlanNotBeingPaidFor", () => {
+        console.log('host is not paying right now')
     })
     window.addEventListener("onRevealedYouHaveNotPurchasedRegularUserSubscriptionPlan", () => {
         console.log('you have not purchased :(')

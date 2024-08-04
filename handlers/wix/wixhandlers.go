@@ -230,7 +230,7 @@ func GetCurrentUserSubPlan(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		marshedObj, marsherr := json.Marshal(currentOrderData)
+		marshedObj, marsherr := json.Marshal(&currentOrderData)
 		if marsherr != nil {
 			fmt.Println(marsherr)
 			return
@@ -242,6 +242,157 @@ func GetCurrentUserSubPlan(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+}
+func GetAdminCurrentWixSubPlanHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
+
+	validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
+	if !validBool || !allowOrDeny {
+		w.Header().Set("HX-Retarget", "window")
+		w.Header().Set("HX-Trigger", h)
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	type operatorDataType string
+	type titleObj struct {
+		Oper operatorDataType `json:"$eq"`
+	}
+	type usernameObj struct {
+		Oper operatorDataType `json:"$eq"`
+	}
+
+	type filterTitleObj struct {
+		Title    titleObj    `json:"title"`
+		Username usernameObj `json:"adminusername"`
+	}
+
+	type postReqQueryObj struct {
+		Filter filterTitleObj `json:"filter"`
+		Fields []string       `json:"fields"`
+	}
+	type postReqObj struct {
+		DataCollectionId string          `json:"dataCollectionId"`
+		Query            postReqQueryObj `json:"query"`
+	}
+
+	postReqBody := postReqObj{
+		DataCollectionId: "env-data",
+		Query: postReqQueryObj{
+			Filter: filterTitleObj{
+				Title: titleObj{
+					Oper: operatorDataType(globalvars.OrgId),
+				},
+				Username: usernameObj{
+					Oper: operatorDataType(currentUserFromSession),
+				},
+			},
+			Fields: []string{"orderid", "memberid"},
+		},
+	}
+	type collBody struct {
+		Orderid  string `json:"orderid"`
+		MemberId string `json:"memberid"`
+	}
+	type dataItems []struct {
+		Id           string   `json:"id,omitempty"`
+		CollBodyData collBody `json:"data"`
+	}
+
+	type clientListStruct struct {
+		Dataitems dataItems `json:"dataItems"`
+	}
+	var respObj clientListStruct
+
+	jsonMarshed, errMarsh := json.Marshal(&postReqBody)
+	if errMarsh != nil {
+		fmt.Println(errMarsh)
+	}
+
+	req, reqerr := http.NewRequest("POST", "https://www.wixapis.com/wix-data/v2/items/query", bytes.NewReader(jsonMarshed))
+	if reqerr != nil {
+		fmt.Println(reqerr)
+		return
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", globalvars.Wixapikey)
+	req.Header.Set("wix-account-id", "1c983d62-821d-4336-b87a-a66679cdf547")
+	req.Header.Set("wix-site-id", "505f68a9-540d-40a7-abba-8ae650fa3252")
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	bs, readerr := io.ReadAll(resp.Body)
+	if readerr != nil {
+		fmt.Println(readerr)
+		return
+	}
+	defer resp.Body.Close()
+	marsherr := json.Unmarshal(bs, &respObj)
+	if marsherr != nil {
+		fmt.Println(marsherr)
+		return
+	}
+	orderID := respObj.Dataitems[0].CollBodyData.Orderid
+
+	orderreq, orderreqerr := http.NewRequest("GET", "https://www.wixapis.com/pricing-plans/v2/orders/"+orderID, nil)
+	orderreq.Header.Set("Content-Type", "application/json")
+	orderreq.Header.Set("Authorization", globalvars.Wixapikey)
+	orderreq.Header.Set("wix-account-id", "1c983d62-821d-4336-b87a-a66679cdf547")
+	orderreq.Header.Set("wix-site-id", "505f68a9-540d-40a7-abba-8ae650fa3252")
+	if orderreqerr != nil {
+		fmt.Println(orderreqerr)
+		return
+	}
+	orderdataResp, orderDataRespErr := client.Do(orderreq)
+	if orderDataRespErr != nil {
+		fmt.Println(orderDataRespErr)
+		return
+	}
+	type innerCycleObj struct {
+		StartedDate string `json:"startedDate"`
+		EndedDate   string `json:"endedDate"`
+	}
+	type cancellationObj struct {
+		EffectiveAt string `json:"effectiveAt"`
+	}
+	type orderObj struct {
+		Id                   string          `json:"id"`
+		PlanDesc             string          `json:"planDescription"`
+		PlanPrice            string          `json:"planPrice"`
+		WixPayOrderId        string          `json:"wixPayOrderId"`
+		CurrentCycle         innerCycleObj   `json:"currentCycle"`
+		Cancellation         cancellationObj `json:"cancellation"`
+		AutoRenewedCancelled bool            `json:"autoRenewCanceled"`
+	}
+
+	type outerRespObj struct {
+		Order orderObj `json:"order"`
+	}
+	var currentOrderData outerRespObj
+	orderRespBody, readerr := io.ReadAll(orderdataResp.Body)
+	if readerr != nil {
+		fmt.Println(readerr.Error())
+		return
+	}
+
+	unmarsherr := json.Unmarshal(orderRespBody, &currentOrderData)
+	if unmarsherr != nil {
+		fmt.Println(unmarsherr.Error())
+		return
+	}
+
+	defer req.Body.Close()
+	defer orderdataResp.Body.Close()
+	wixDataItem, marshsenderr := json.Marshal(&currentOrderData)
+	if marshsenderr != nil {
+		fmt.Println(marshsenderr)
+	}
+	w.Write(wixDataItem)
+
 }
 func CancelCurrentSubRegUserHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")

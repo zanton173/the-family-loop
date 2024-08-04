@@ -408,6 +408,7 @@ ALTER TABLE tfldata.posts_id_seq OWNER TO tfldbrole;
 
 ALTER SEQUENCE tfldata.posts_id_seq OWNED BY tfldata.posts.id;
 
+
 --
 -- Name: reactions; Type: TABLE; Schema: tfldata; Owner: tfldbrole
 --
@@ -609,7 +610,8 @@ CREATE TABLE tfldata.users (
     last_viewed_pchat character varying(15),
     last_viewed_gchat character varying(32),
     is_paying_subscriber boolean,
-    wix_member_id character varying(40)
+    wix_member_id character varying(40),
+    isloopowner boolean
 );
 
 

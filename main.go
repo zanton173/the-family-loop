@@ -184,6 +184,7 @@ func main() {
 	http.HandleFunc("/wix-webhook-pricing-plan-changed", wixhandler.WixWebhookChangePlanHandler)
 	http.HandleFunc("/wix-webhook-update-reg-user-paid-plan", wixhandler.RegUserPaidForPlanHandler)
 	http.HandleFunc("/current-user-wix-subscription", wixhandler.GetCurrentUserSubPlan)
+	http.HandleFunc("/get-admin-current-wix-sub-plan", wixhandler.GetAdminCurrentWixSubPlanHandler)
 	http.HandleFunc("/send-reset-pass-wix-user", wixhandler.SendResetPassOnlyHandler)
 	http.HandleFunc("/cancel-current-sub-regular-user", wixhandler.CancelCurrentSubRegUserHandler)
 	/* Admin dashboard handlers */

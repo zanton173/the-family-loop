@@ -188,9 +188,15 @@
             <p hx-get="/admin-get-subscription-package" hx-trigger="load"
                 hx-on::after-request="checkCurrentPlan(event)">
             </p>
-            <div><a id="firstPlanLink" target="_blank">Switch to: <p id="switchToFirst"></p></a></div>
-            <div><a id="secondPlanLink" target="_blank">Switch to: <p id="switchToSecond"></p></a></div>
-            <a href="https://www.the-family-loop.com/account/my-subscriptions" target="_blank">My plan</a>
+            <p style="font-size: medium; text-align: center; margin-bottom: 0%;">Switch plan to: </p>
+            <div><a style="margin-bottom: 0%;" id="firstPlanLink" target="_blank">
+                    <p id="switchToFirst"></p>
+                </a>
+                <a id="secondPlanLink" target="_blank">
+                    <p id="switchToSecond"></p>
+                </a>
+            </div>
+            <a target="_blank" id="adminDashCancelLink">Cancel my plan</a>
         </div>
     </div>
     <div class="modal" tabindex="-1" id="deleteUserModal" aria-labelledby="deleteUserModal" aria-hidden="true">
@@ -288,11 +294,26 @@
         var sendviaemailno = document.getElementById('sendviaemailno')
         var phoneadmininput = document.getElementById('phoneadmininput')
         window.addEventListener("DOMContentLoaded", () => {
+            document.getElementById('adminDashCancelLink').dispatchEvent(new Event('hasloaded'))
             setTimeout(() => {
                 if (!isAdmin)
                     window.location.href = "/"
-
             }, 1500)
+        })
+        document.getElementById('adminDashCancelLink').addEventListener("hasloaded", async () => {
+            const resp = await fetch("/get-admin-current-wix-sub-plan", {
+                method: "GET",
+                headers: {
+                    "Content-type": "application/json"
+                }
+            })
+            const respJson = await resp.json()
+            console.log(respJson)
+            var endDate = new Date(respJson.order.currentCycle.startedDate)
+            endDate.setDate(endDate.getDate() + 30)
+            endDate = endDate.toDateString()
+            document.getElementById('adminDashCancelLink').setAttribute("href", `https://www.the-family-loop.com/env-data/${respJson.order.id}?endDate=${endDate}`)
+
         })
         function modifyPreviewEmail() {
             firstnamesendto.value.length > 0 ?

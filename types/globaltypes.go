@@ -34,4 +34,5 @@ type SeshStruct struct {
 	Fcmkey           sql.NullString
 	LastViewedPChat  sql.NullString
 	LastViewedThread sql.NullString
+	IsLoopOwner      bool
 }

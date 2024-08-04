@@ -1,6 +1,7 @@
 package userdatahandler
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -40,9 +41,9 @@ func GetSessionDataHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var ourSeshStruct globaltypes.SeshStruct
-
-	row := globalvars.Db.QueryRow(fmt.Sprintf("select username, gchat_bg_theme, gchat_order_option, is_admin, pfp_name, fcm_registration_id, last_viewed_pchat, last_viewed_gchat from tfldata.users where username='%s';", currentUserFromSession))
-	scerr := row.Scan(&ourSeshStruct.Username, &ourSeshStruct.BGtheme, &ourSeshStruct.GchatOrderOpt, &ourSeshStruct.Isadmin, &ourSeshStruct.Pfpname, &ourSeshStruct.Fcmkey, &ourSeshStruct.LastViewedPChat, &ourSeshStruct.LastViewedThread)
+	var isLoopOwnerNull sql.NullBool
+	row := globalvars.Db.QueryRow(fmt.Sprintf("select username, gchat_bg_theme, gchat_order_option, is_admin, pfp_name, fcm_registration_id, last_viewed_pchat, last_viewed_gchat, isloopowner from tfldata.users where username='%s';", currentUserFromSession))
+	scerr := row.Scan(&ourSeshStruct.Username, &ourSeshStruct.BGtheme, &ourSeshStruct.GchatOrderOpt, &ourSeshStruct.Isadmin, &ourSeshStruct.Pfpname, &ourSeshStruct.Fcmkey, &ourSeshStruct.LastViewedPChat, &ourSeshStruct.LastViewedThread, &isLoopOwnerNull)
 	if scerr != nil {
 		fmt.Println(scerr)
 	}
@@ -59,9 +60,11 @@ func GetSessionDataHandler(w http.ResponseWriter, r *http.Request) {
 	if !ourSeshStruct.LastViewedThread.Valid {
 		ourSeshStruct.LastViewedThread.String = ""
 	}
-
+	if !isLoopOwnerNull.Valid {
+		isLoopOwnerNull.Bool = false
+	}
 	ourSeshStruct.CFDomain = globalvars.Cfdistro
-
+	ourSeshStruct.IsLoopOwner = isLoopOwnerNull.Bool
 	data, err := json.Marshal(&ourSeshStruct)
 	if err != nil {
 		fmt.Println(err)

@@ -501,6 +501,7 @@
     var username = ''
     var fcmKey = ''
     var isAdmin = false
+    var isLoopAdmin = false
     var cfdomain = ""
     p.append(c)
 
@@ -542,6 +543,7 @@
         cfDomain = text.CFDomain
         isAdmin = text.Isadmin
         fcmKey = text.Fcmkey.String
+        isLoopAdmin = text.IsLoopOwner
 
         if (window.location.path === "/admin-dashboard" && (isAdmin != null || isAdmin != undefined))
             isAdmin = text.Isadmin

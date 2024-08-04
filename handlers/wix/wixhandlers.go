@@ -578,6 +578,21 @@ func SendResetPassOnlyHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer createresp.Body.Close()
 }
+func UpdateHostAdminPlanPaidForHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	validBool := globalfunctions.ValidateWebhookJWTToken(globalvars.JwtSignKey, r)
+	if !validBool {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	_, uperr := globalvars.Db.Exec(fmt.Sprintf("update tfldata.users set is_paying_subscriber = false where username='%s' and isloopowner = true;", r.URL.Query().Get("username")))
+
+	if uperr != nil {
+		globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage,activity,createdon) value (substr('%s', 0,106),substr('%s', 0,106), now());", uperr.Error(), "UpdateHostAdminPlanPaidForHandler in wixhandlers"))
+	}
+
+}
 func RegUserPaidForPlanHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	validBool := globalfunctions.ValidateWebhookJWTToken(globalvars.JwtSignKey, r)

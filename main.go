@@ -187,6 +187,7 @@ func main() {
 	http.HandleFunc("/get-admin-current-wix-sub-plan", wixhandler.GetAdminCurrentWixSubPlanHandler)
 	http.HandleFunc("/send-reset-pass-wix-user", wixhandler.SendResetPassOnlyHandler)
 	http.HandleFunc("/cancel-current-sub-regular-user", wixhandler.CancelCurrentSubRegUserHandler)
+	http.HandleFunc("/cancel-plan-for-loop-owner", wixhandler.UpdateHostAdminPlanPaidForHandler)
 	/* Admin dashboard handlers */
 	http.HandleFunc("/admin-list-of-users", adminhandler.AdminGetListOfUsersHandler)
 	http.HandleFunc("/admin-get-all-time-capsules", adminhandler.AdminGetAllTCHandler)

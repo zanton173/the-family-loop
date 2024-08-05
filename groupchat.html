@@ -47,8 +47,9 @@
 
                 <div style="text-align: center;">
                     <div style="display: grid; " class="my-1">
-                        <input name="usernameinput" id="currentChatMessage"
-                            style="border-radius: 15px / 15px; border-width: 0; box-shadow: 1px 1px 4px; margin-top: 1%;" />
+                        <input id="currentChatMessage"
+                            style="border-radius: 15px / 15px; border-width: 0; box-shadow: 1px 1px 4px; margin-top: 1%;"
+                            maxlength="305" />
                         <button id="updateChatButton" class="btn btn-success col my-2" hx-post="/update-selected-chat"
                             hx-on::after-request="{editOrDeleteModal.hide(); document.getElementById('loadGChathere').dispatchEvent(new Event('afterThreadSelectorLoadsEvent')); document.getElementById('loadPChatHere').dispatchEvent(new Event('loadFromThread'))}"
                             hx-ext="json-enc" hx-trigger="click"
@@ -178,7 +179,7 @@
                                 style="border-radius: 18px / 18px; width: 75%; box-shadow: 3px 3px 5px"
                                 name="gchatmessage" id="gchatinput" role="text" rows="1"
                                 oninput="{checkForTagging(); this.style.height = Math.min(this.scrollHeight, 75) + 'px';}"
-                                placeholder="Enter message" required maxlength="420"
+                                placeholder="Enter message" required maxlength="305"
                                 onkeypress="submitCreateGChatMessage(event)"></textarea>
                             <button type="submit" class="col-2 mx-2 border-0 btn btn-success"
                                 style="border-radius: 18px / 18px; box-shadow: 3px 3px 5px black;"><i
@@ -215,7 +216,7 @@
                                 style="border-radius: 18px / 18px; width: 75%; box-shadow: 3px 3px 5px"
                                 name="privatechatmessage" id="privatechatinput" role="text" rows="1"
                                 oninput="{this.style.height = Math.min(this.scrollHeight, 75) + 'px';}"
-                                placeholder="Enter message" required maxlength="420"
+                                placeholder="Enter message" required maxlength="305"
                                 onkeypress="submitCreatePrivateChatMessage(event)"></textarea>
                             <button type="submit" class="col-2 mx-2 border-0 btn btn-success"
                                 style="border-radius: 18px / 18px; box-shadow: 3px 3px 5px black;"><i
@@ -228,7 +229,7 @@
 
         </div>
     </div>
-    <link rel="manifest" href="assets/manifest.webmanifest" />
+    <link rel="manifest" href="assets/manifest.json" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 
     <link href="css/bootstrap.min.css" rel="stylesheet">
@@ -424,7 +425,7 @@
             setTimeout(() => {
 
                 var param = new URL(document.location).searchParams
-                console.log(param)
+
                 if (!param.get('thread') || param.get('thread').length === 0) {
                     document.getElementById('threadSelector').childNodes.forEach((val) => {
                         if (val.innerText == curUserDataLastViewedThread) {

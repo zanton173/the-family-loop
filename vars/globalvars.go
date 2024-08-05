@@ -15,6 +15,8 @@ import (
 	"google.golang.org/api/option"
 )
 
+var EncryptionBytes = []byte{15, 15, 14, 32, 32, 91, 81, 32, 67, 81, 49, 22, 17, 11, 19, 66}
+
 var Replacer *strings.Replacer
 
 var (

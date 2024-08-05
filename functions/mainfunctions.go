@@ -3,7 +3,10 @@ package globalfunctions
 import (
 	"bytes"
 	"context"
+	"crypto/aes"
+	"crypto/cipher"
 	"database/sql"
+	"encoding/base64"
 	"fmt"
 	"image/jpeg"
 	"io"
@@ -246,6 +249,40 @@ func SetLoginCookie(w http.ResponseWriter, db *sql.DB, userStr string, acceptedT
 		Path:     "/",
 	})
 
+}
+
+/* Encryption ITEMS */
+func Encode(b []byte) string {
+	return base64.StdEncoding.EncodeToString(b)
+}
+func Encrypt(message string) (string, error) {
+	block, err := aes.NewCipher([]byte(globalvars.JwtSignKey[:24]))
+	if err != nil {
+		return "", err
+	}
+	plainText := []byte(message)
+	cfb := cipher.NewCFBEncrypter(block, globalvars.EncryptionBytes)
+	cipherText := make([]byte, len(plainText))
+	cfb.XORKeyStream(cipherText, plainText)
+	return Encode(cipherText), nil
+}
+func Decode(s string) []byte {
+	data, err := base64.StdEncoding.DecodeString(s)
+	if err != nil {
+		panic(err)
+	}
+	return data
+}
+func Decrypt(message string) (string, error) {
+	block, err := aes.NewCipher([]byte(globalvars.JwtSignKey[:24]))
+	if err != nil {
+		return "", err
+	}
+	cipherText := Decode(message)
+	cfb := cipher.NewCFBDecrypter(block, globalvars.EncryptionBytes)
+	plainText := make([]byte, len(cipherText))
+	cfb.XORKeyStream(plainText, cipherText)
+	return string(plainText), nil
 }
 
 /* FUNCTION ITEMS */

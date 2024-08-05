@@ -28,6 +28,14 @@ func CreateGroupChatMessageHandler(w http.ResponseWriter, r *http.Request) {
 
 	chatMessage := globalvars.Replacer.Replace(r.PostFormValue("gchatmessage"))
 
+	encryptedChatMessage, encrypterr := globalfunctions.Encrypt(chatMessage)
+	if encrypterr != nil {
+		fmt.Println(encrypterr)
+		globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity,createdon) values(substr('%s',0,105),'Err encrypting g chat message' now());", encrypterr.Error()))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
 	listOfUsersTagged := strings.Split(r.PostFormValue("taggedUser"), ",")
 
 	threadVal := r.PostFormValue("threadval")
@@ -38,7 +46,7 @@ func CreateGroupChatMessageHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, inserr := globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.gchat(\"chat\", \"author\", \"createdon\", \"thread\") values(E'%s', '%s', now(), '%s');", chatMessage, currentUserFromSession, threadVal))
+	_, inserr := globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.gchat(\"chat\", \"author\", \"createdon\", \"thread\") values(E'%s', '%s', now(), '%s');", encryptedChatMessage, currentUserFromSession, threadVal))
 	if inserr != nil {
 		fmt.Println("error here: " + inserr.Error())
 		w.WriteHeader(http.StatusBadRequest)
@@ -115,7 +123,15 @@ func CreatePrivatePChatMessageHandler(w http.ResponseWriter, r *http.Request) {
 	userTo := r.PostFormValue("user_to")
 	message := r.PostFormValue("privatechatmessage")
 
-	_, dbinserr := globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.pchat(message, from_user, to_user, createdon) values (substr('%s',0,420), '%s', '%s', now());", message, currentUserFromSession, userTo))
+	encryptedChatMessage, encrypterr := globalfunctions.Encrypt(message)
+	if encrypterr != nil {
+		fmt.Println(encrypterr)
+		globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity,createdon) values(substr('%s',0,105),'Err encrypting g chat message' now());", encrypterr.Error()))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	_, dbinserr := globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.pchat(message, from_user, to_user, createdon) values (substr('%s',0,420), '%s', '%s', now());", encryptedChatMessage, currentUserFromSession, userTo))
 	if dbinserr != nil {
 		activityStr := "insert into pchat table"
 		globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, createdon, activity) values (substr('%s',0,106), now(), substr('%s',0,105));", dbinserr.Error(), activityStr))
@@ -154,7 +170,12 @@ func GetSelectedChatHandler(w http.ResponseWriter, r *http.Request) {
 	var ChatVal string
 	row := globalvars.Db.QueryRow(fmt.Sprintf("select chat from tfldata.gchat where id='%s';", r.URL.Query().Get("chatid")))
 	row.Scan(&ChatVal)
-	marshbs, marsherr := json.Marshal(ChatVal)
+	decryptedMessage, decrypterr := globalfunctions.Decrypt(ChatVal)
+	if decrypterr != nil {
+		globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values(substr('%s',0,105),'failure to decrypt gchat message' now());", decrypterr.Error()))
+		decryptedMessage = "Could not decrypt this message"
+	}
+	marshbs, marsherr := json.Marshal(&decryptedMessage)
 	if marsherr != nil {
 		fmt.Println(marsherr)
 	}
@@ -246,11 +267,18 @@ func GetGroupChatMessagesHandler(w http.ResponseWriter, r *http.Request) {
 		if author == currentUserFromSession {
 			editDelBtn = "<i class='bi bi-three-dots-vertical px-1' onclick='editOrDeleteChat(`" + gchatid + "`)'></i>"
 		}
+
+		decryptedMessage, decrypterr := globalfunctions.Decrypt(message)
+		if decrypterr != nil {
+			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values(substr('%s',0,105),'failure to decrypt gchat message' now());", decrypterr.Error()))
+			decryptedMessage = "<i>Could not decrypt this message</i>"
+		}
+
 		dataStr := ""
 		if author == currentUserFromSession {
-			dataStr = "<div class='container gchatmessagecardme' style='width: 95&percnt;;'><div class='row'><b class='col-2 px-1'>me</b><div class='row'><img style='position: sticky; width: 15%; align-self: baseline;' class='col-2 px-2 my-1' src='" + pfpImg + "' alt='tfl pfp' /><p class='col-10' style='padding-right: 0'>" + message + "</p></div></div><div class='row'><p class='col' style='margin-left: 2rem; text-align: right;; font-size: smaller; margin-bottom: 0%'>" + createdat.Format(formatCreatedatTime) + editDelBtn + "</p></div></div>"
+			dataStr = "<div class='container gchatmessagecardme' style='width: 95&percnt;;'><div class='row'><b class='col-2 px-1'>me</b><div class='row'><img style='position: sticky; width: 15%; align-self: baseline;' class='col-2 px-2 my-1' src='" + pfpImg + "' alt='tfl pfp' /><p class='col-10' style='padding-right: 0'>" + decryptedMessage + "</p></div></div><div class='row'><p class='col' style='margin-left: 2rem; text-align: right;; font-size: smaller; margin-bottom: 0%'>" + createdat.Format(formatCreatedatTime) + editDelBtn + "</p></div></div>"
 		} else {
-			dataStr = "<div class='container gchatmessagecardfrom' style='width: 95&percnt;;'><div class='row'><b class='col-2 px-1'>" + author + "</b><div class='row'><img style='position: sticky; width: 15%; align-self: baseline;' class='col-2 px-2 my-1' src='" + pfpImg + "' alt='tfl pfp' /><p class='col-10' style='padding-right: 0'>" + message + "</p></div></div><div class='row'><p class='col' style='margin-left: 2rem; text-align: right;; font-size: smaller; margin-bottom: 0%'>" + createdat.Format(formatCreatedatTime) + editDelBtn + "</p></div></div>"
+			dataStr = "<div class='container gchatmessagecardfrom' style='width: 95&percnt;;'><div class='row'><b class='col-2 px-1'>" + author + "</b><div class='row'><img style='position: sticky; width: 15%; align-self: baseline;' class='col-2 px-2 my-1' src='" + pfpImg + "' alt='tfl pfp' /><p class='col-10' style='padding-right: 0'>" + decryptedMessage + "</p></div></div><div class='row'><p class='col' style='margin-left: 2rem; text-align: right;; font-size: smaller; margin-bottom: 0%'>" + createdat.Format(formatCreatedatTime) + editDelBtn + "</p></div></div>"
 		}
 		chattmp, tmperr := template.New("gchat").Parse(dataStr)
 		if tmperr != nil {
@@ -352,7 +380,12 @@ func GetSelectedPChatHandler(w http.ResponseWriter, r *http.Request) {
 	var ChatVal string
 	row := globalvars.Db.QueryRow(fmt.Sprintf("select message from tfldata.pchat where id='%s';", r.URL.Query().Get("chatid")))
 	row.Scan(&ChatVal)
-	marshbs, marsherr := json.Marshal(ChatVal)
+	decryptedMessage, decrypterr := globalfunctions.Decrypt(ChatVal)
+	if decrypterr != nil {
+		globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values(substr('%s',0,105),'failure to decrypt gchat message' now());", decrypterr.Error()))
+		decryptedMessage = "Could not decrypt this message"
+	}
+	marshbs, marsherr := json.Marshal(&decryptedMessage)
 	if marsherr != nil {
 		fmt.Println(marsherr)
 	}
@@ -427,11 +460,15 @@ func GetPrivateChatMessagesHandler(w http.ResponseWriter, r *http.Request) {
 			editDelBtn = fmt.Sprintf("<i class='bi bi-three-dots-vertical px-1' onclick='editOrDeletePChat(`%d`)'></i>", pChatRow.id)
 		}
 		dataStr := ""
-
+		decryptedMessage, decrypterr := globalfunctions.Decrypt(pChatRow.chatMessage)
+		if decrypterr != nil {
+			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity, createdon) values(substr('%s',0,105),'failure to decrypt gchat message' now());", decrypterr.Error()))
+			decryptedMessage = "<i>Could not decrypt this message</i>"
+		}
 		if pChatRow.toUser == currentUserFromSession {
-			dataStr = "<div id='pchatid_" + fmt.Sprint(pChatRow.id) + "'class='container gchatmessagecardfrom' style='width: 95&percnt;;'><div class='row'><b class='col-2 px-1'>" + pChatRow.fromUser + "</b><div class='row'><img style='width: 15%; position: sticky; align-self: baseline;' class='col-2 px-2 my-1' src='" + pfpimg + "' alt='tfl pfp' /></div><p class='col-10' style='position: relative; left: 13%; margin-bottom: 1%; margin-top: -15%; overflow-wrap: anywhere; padding-right: 0%;'>" + pChatRow.chatMessage + "</p></div><div class='row'><div class='col' style='position: relative; margin-right: 0&percnt;; width: auto; display: flex; justify-content: flex-start' id='reactionid_" + fmt.Sprint(pChatRow.id) + "'>" + pChatRow.reaction.String + "</div><p class='col' style='margin-left: 2rem; text-align: right;; font-size: smaller; margin-bottom: 0%'>" + pChatRow.createdOn.Format(pChatRow.formatCreatedOnTime) + editDelBtn + "</p></div></div>"
+			dataStr = "<div id='pchatid_" + fmt.Sprint(pChatRow.id) + "'class='container gchatmessagecardfrom' style='width: 95&percnt;;'><div class='row'><b class='col-2 px-1'>" + pChatRow.fromUser + "</b><div class='row'><img style='width: 15%; position: sticky; align-self: baseline;' class='col-2 px-2 my-1' src='" + pfpimg + "' alt='tfl pfp' /></div><p class='col-10' style='position: relative; left: 13%; margin-bottom: 1%; margin-top: -15%; overflow-wrap: anywhere; padding-right: 0%;'>" + decryptedMessage + "</p></div><div class='row'><div class='col' style='position: relative; margin-right: 0&percnt;; width: auto; display: flex; justify-content: flex-start' id='reactionid_" + fmt.Sprint(pChatRow.id) + "'>" + pChatRow.reaction.String + "</div><p class='col' style='margin-left: 2rem; text-align: right;; font-size: smaller; margin-bottom: 0%'>" + pChatRow.createdOn.Format(pChatRow.formatCreatedOnTime) + editDelBtn + "</p></div></div>"
 		} else {
-			dataStr = "<div class='container gchatmessagecardme' style='width: 95&percnt;;'><div class='row'><div class='row'><b class='col-2 px-1'>me</b><div class='row'><img style='width: 15%; position: sticky; align-self: baseline;' class='col-2 px-2 my-1' src='" + pfpimg + "' alt='tfl pfp' /></div><p class='col-10' style='position: relative; left: 13%; margin-bottom: 1%; margin-top: -15%; overflow-wrap: anywhere; padding-right: 0%;'>" + pChatRow.chatMessage + "</p></div><div class='col' style='position: relative; margin-right: 0&percnt;; width: auto; display: flex; justify-content: flex-start' id='reactionid_" + fmt.Sprint(pChatRow.id) + "'>" + pChatRow.reaction.String + "</div><p class='col' style='margin-left: 2rem; text-align: right;; font-size: smaller; margin-bottom: 0%'>" + pChatRow.createdOn.Format(pChatRow.formatCreatedOnTime) + editDelBtn + "</p></div></div>"
+			dataStr = "<div class='container gchatmessagecardme' style='width: 95&percnt;;'><div class='row'><div class='row'><b class='col-2 px-1'>me</b><div class='row'><img style='width: 15%; position: sticky; align-self: baseline;' class='col-2 px-2 my-1' src='" + pfpimg + "' alt='tfl pfp' /></div><p class='col-10' style='position: relative; left: 13%; margin-bottom: 1%; margin-top: -15%; overflow-wrap: anywhere; padding-right: 0%;'>" + decryptedMessage + "</p></div><div class='col' style='position: relative; margin-right: 0&percnt;; width: auto; display: flex; justify-content: flex-start' id='reactionid_" + fmt.Sprint(pChatRow.id) + "'>" + pChatRow.reaction.String + "</div><p class='col' style='margin-left: 2rem; text-align: right;; font-size: smaller; margin-bottom: 0%'>" + pChatRow.createdOn.Format(pChatRow.formatCreatedOnTime) + editDelBtn + "</p></div></div>"
 		}
 		chattmp, tmperr := template.New("pchat").Parse(dataStr)
 		if tmperr != nil {
@@ -490,7 +527,14 @@ func UpdateSelectedChatHandler(w http.ResponseWriter, r *http.Request) {
 	if marsherr != nil {
 		fmt.Println(marsherr)
 	}
-	_, uperr := globalvars.Db.Exec(fmt.Sprintf("update tfldata.gchat set chat='%s' where id='%s';", postData.ChatMessage, postData.SelectedChatId))
+	encryptedChatMessage, encrypterr := globalfunctions.Encrypt(postData.ChatMessage)
+	if encrypterr != nil {
+		fmt.Println(encrypterr)
+		globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity,createdon) values(substr('%s',0,105),'Err encrypting g chat message' now());", encrypterr.Error()))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	_, uperr := globalvars.Db.Exec(fmt.Sprintf("update tfldata.gchat set chat='%s' where id='%s';", encryptedChatMessage, postData.SelectedChatId))
 	if uperr != nil {
 		activityStr := fmt.Sprintf("%s could not edit the chat message %s", currentUserFromSession, postData.SelectedChatId)
 		globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", uperr, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
@@ -646,7 +690,14 @@ func UpdateSelectedPChatHandler(w http.ResponseWriter, r *http.Request) {
 	if marsherr != nil {
 		fmt.Println(marsherr)
 	}
-	_, uperr := globalvars.Db.Exec(fmt.Sprintf("update tfldata.pchat set message='%s' where id='%s';", postData.ChatMessage, postData.SelectedChatId))
+	encryptedChatMessage, encrypterr := globalfunctions.Encrypt(postData.ChatMessage)
+	if encrypterr != nil {
+		fmt.Println(encrypterr)
+		globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage, activity,createdon) values(substr('%s',0,105),'Err encrypting g chat message' now());", encrypterr.Error()))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	_, uperr := globalvars.Db.Exec(fmt.Sprintf("update tfldata.pchat set message='%s' where id='%s';", encryptedChatMessage, postData.SelectedChatId))
 	if uperr != nil {
 		activityStr := fmt.Sprintf("%s could not edit the Pchat message %s", currentUserFromSession, postData.SelectedChatId)
 		globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", uperr, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))

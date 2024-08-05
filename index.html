@@ -408,6 +408,10 @@
         //if (imgListUUID != 'video') {
         listOfImageObj.push({ id: imgListUUID, imgs: await getListOfImgs(imgListUUID) })
         //}
+        var vidList = event.detail.elt.querySelectorAll('video')
+
+        if (vidList.length > 0)
+            vidList[0].load()
 
     })
     async function getListOfImgs(imgListUUID) {

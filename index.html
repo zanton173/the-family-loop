@@ -112,7 +112,14 @@
             </div>
         </div>
     </div>
+    <div class="modal customModalTrans p-3" id="openPfpImgBigger" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content p-1">
+                <img id="imgHere" />
+            </div>
 
+        </div>
+    </div>
 
     <!--<div class="modal" id="installmodal" tabindex="-1" aria-labelledby="installmodal" aria-hidden="true">
         <div class="modal-dialog">
@@ -202,6 +209,7 @@
 </body>
 <script>
 
+    var biggerPfpImgModal = new bootstrap.Modal(document.getElementById('openPfpImgBigger'), {});
     var listOfUsersArr = []
     var taggedUser = []
     var newInput = ""
@@ -218,6 +226,11 @@
             sendEmojiTo = null
         } else
             reactIcons.setAttribute('style', "position: relative; margin-top: 4%; background-color: rgba(255, 255, 255, .9); border-radius: 10px / 10px; border-style: solid; border-width: medium; display: flex; z-index: 2; overflow: auto;")
+    }
+    function openImgBiggerView(event) {
+
+        document.getElementById('imgHere').src = event.srcElement.src
+        biggerPfpImgModal.toggle()
     }
     async function postEmoji(val) {
 

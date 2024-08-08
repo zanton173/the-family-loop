@@ -252,8 +252,10 @@
 
     }
     function changeBodyHeight(event) {
-        if (event.detail.elt.childNodes.length > 1 && event.detail.elt.childNodes[1].childNodes.length > 1)
+        if (event.detail.elt.querySelectorAll('div.card').length > 1)
             document.body.style.height = ''
+        else
+            document.body.style.height = '100dvh'
     }
     window.addEventListener("load", () => {
 

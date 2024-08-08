@@ -8,7 +8,7 @@
     <title>The Family Loop - Chat</title>
 </head>
 
-<body style="height: 100%" id="gchatBody">
+<body style="height: 100dvh" id="gchatBody">
     <div id="blurredback" style="height: 100dvh; width: 100dvw; position: absolute; z-index: -5;">
 
     </div>
@@ -72,7 +72,7 @@
     </div>
 
     <div id="showthemebtn"
-        style="display: flex; text-align: center; width: 60dvw; margin: auto; justify-content: space-evenly;">
+        style="display: flex; text-align: center; width: 100dvw; margin: auto; justify-content: space-between;">
         <button type="button" onclick="showThemePanel()" class="btn btn-dark border-0 btn-sm"
             style="box-shadow: 3px 3px 6px;">Change Theme</button>
 
@@ -342,10 +342,12 @@
         const delThreadBtn = document.getElementById('delThreadBtn')
 
         function countOfMessages(event) {
-            if (event.detail.elt.children.length > 4)
-                document.body.style.height = ''
-            else
-                document.body.style.height = '100%'
+            setTimeout(() => {
+                if (event.detail.elt.children.length > 4)
+                    document.body.style.height = ''
+                else
+                    document.body.style.height = '100dvh'
+            }, 200)
         }
 
         var usersSubbedThreads = []

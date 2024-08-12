@@ -9,19 +9,20 @@
         <div class="collapse navbar-collapse" style="text-align-last: center; font-size: medium;" id="navbarText">
             <ul class="navbar-nav nav-fill w-100" style="display: contents;" id="navlist">
                 <!--<li class="nav-item"><img src='assets/favicon-32x32.png' alt="tfl-logo" /></li>-->
-                <li class="nav-item navCustomItem"><a class="nav-link" href="/calendar"
-                        style="color: rgb(200, 210, 230)">calendar</a>
+                <li id="calendarnavitem" class="nav-item navCustomItem"><a class="nav-link" href="/calendar"
+                        style="color: rgb(200, 210, 230)"><i class="bi bi-calendar3"></i>&nbsp;&nbsp;calendar</a>
                 </li>
-                <li class="nav-item navCustomItem"><a class="nav-link" href="/groupchat"
-                        style="color: rgb(200, 210, 230)">chat</a>
+                <li id="chatnavitem" class="nav-item navCustomItem"><a class="nav-link" href="/groupchat"
+                        style="color: rgb(200, 210, 230)"><i class="bi bi-chat-left-dots-fill"></i>&nbsp;&nbsp;chat</a>
                 </li>
-                <li class="nav-item navCustomItem"><a class="nav-link" href="/posts"
-                        style="color: rgb(200, 210, 230)">posts</a></li>
-                <li class="nav-item navCustomItem"><a class="nav-link" href="/time-capsule"
-                        style="color: rgb(200, 210, 230)">time capsule</a></li>
+                <li id="postsnavitem" class="nav-item navCustomItem"><a class="nav-link" href="/posts"
+                        style="color: rgb(200, 210, 230)"><i class="bi bi-file-post-fill"></i>&nbsp;&nbsp;posts</a></li>
+                <li id="time-capsulenavitem" class="nav-item navCustomItem"><a class="nav-link" href="/time-capsule"
+                        style="color: rgb(200, 210, 230)"><i class="bi bi-hourglass-split"></i>&nbsp;&nbsp;time
+                        capsule</a></li>
                 <li class="nav-item navCustomItem"><a class="nav-link dropdown-toggle" href="#" role="button"
                         data-bs-toggle="dropdown" aria-expanded="false" style="color: rgb(200, 210, 230)">
-                        games
+                        <i class="bi bi-controller"></i>&nbsp;&nbsp;games
                     </a>
                     <ul class="dropdown-menu" style="left: auto;">
                         <li><a class="dropdown-item my-2 py-2" href="/games/simple-shades"
@@ -33,10 +34,13 @@
                                 style="background-color: rgb(99 81 95 / 15%);">Catch it</a></li>
                     </ul>
                 </li>
-                <li class="nav-item navCustomItem" id="adminDashboardLinkDiv"><a class="nav-link"
-                        href="/admin-dashboard" style="color: rgb(200, 210, 230)">Admin Portal</a></li>
-                <li class="nav-item navCustomItem"><a class="nav-link" href="/customersupport"
-                        style="color: rgb(200, 210, 230)">Customer Support</a></li>
+                <li class="nav-item navCustomItem" id="admin-dashboardnavitem" style="display: none"><a class="nav-link"
+                        href="/admin-dashboard" style="color: rgb(200, 210, 230);"><i
+                            class="bi bi-menu-up"></i>&nbsp;&nbsp;Admin Portal</a></li>
+                <li id="customersupportnavitem" class="nav-item navCustomItem"><a class="nav-link"
+                        href="/customersupport" style="color: rgb(200, 210, 230)"><i
+                            class="bi bi-person-raised-hand"></i>&nbsp;&nbsp;Customer
+                        Support</a></li>
                 <li class="nav-item" id="navitemforwelcome"><button id="loginlogoutnav" class="nav-link"
                         onclick='{loginModal.toggle(); showLoginForm()}'>login</button>
                 </li>
@@ -584,10 +588,13 @@
         if (window.location.path === "/admin-dashboard" && (isAdmin != null || isAdmin != undefined))
             isAdmin = text.Isadmin
 
-        text.Isadmin ?
-            document.getElementById('adminDashboardLinkDiv').style.display = "block"
-            : document.getElementById('adminDashboardLinkDiv').style.display = "none"
-
+        try {
+            text.Isadmin ?
+                document.getElementById('admin-dashboardnavitem').style.display = "block"
+                : document.getElementById('admin-dashboardnavitem').style.display = "none"
+        } catch {
+            console.log("Item does not exist and it's not an issue")
+        }
         text.Username.length < 1
             ? window.dispatchEvent(new Event("onUnauthorizedEvent"))
             :
@@ -747,6 +754,16 @@
         document.getElementById('navlist').removeChild(navItemToReplace)
 
         navbarItems.append(divToStickNav)
+        var itemsinnav = document.getElementById('navlist').children
+        for (var i = 0; i < itemsinnav.length; i++) {
+            if (itemsinnav[i].id !== null && itemsinnav[i].children.length === 1) {
+                if (window.location.pathname.includes(itemsinnav[i].id.replace('navitem', '')))
+                    document.getElementById('navlist').removeChild(document.getElementById(`${itemsinnav[i].id}`))
+
+                else if (window.location.pathname === "/" || window.location.pathname === "")
+                    document.getElementById('navlist').removeChild(document.getElementById("postsnavitem"))
+            }
+        }
 
     } else {
 

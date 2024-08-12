@@ -252,6 +252,11 @@
 
     }
     function changeBodyHeight(event) {
+
+        if (event.detail.elt.querySelectorAll('div.card').length === 2)
+            document.getElementById('posts-div').style.height = '100dvh'
+        else
+            document.getElementById('posts-div').style.height = ''
         if (event.detail.elt.querySelectorAll('div.card').length > 1)
             document.body.style.height = ''
         else

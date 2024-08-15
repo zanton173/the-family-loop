@@ -68,7 +68,8 @@
                         hx-indicator="#loadingspinner" hx-swap="none"
                         hx-vals="js:{'currentemail': document.getElementById('currentUserEmail')}"
                         id="updateEmailSendResetForm" style="padding: 5%; border-radius: 15px / 15px;">
-                        <h5>Please verify that this your current email. You will need to reset your password via email
+                        <h5>Please verify that this your current email. You will need to reset your password via
+                            email
                             for the payments portal</h5><br />
                         <input id="currentUserEmail" name="emailsignupresetpass"
                             placeholder="your.email@example.com" /><br />
@@ -399,13 +400,15 @@
 
                 **10. Interaction Liability**<br /><br />
 
-                a. Online Interactions: TFL (The Family Loop) disclaims any responsibility or liability for any online
+                a. Online Interactions: TFL (The Family Loop) disclaims any responsibility or liability for any
+                online
                 interactions that
                 occur between Subscribers. All interactions are conducted at the Subscribers' own risk.<br /><br />
 
                 **11. Game Prizes**<br /><br />
 
-                a. Withholding Prizes: TFL (The Family Loop) reserves the right to withhold game prizes in the event of
+                a. Withholding Prizes: TFL (The Family Loop) reserves the right to withhold game prizes in the event
+                of
                 suspected
                 cheating. This determination is at the sole discretion of TFL and is final.<br /><br />
                 <button class="btn btn-primary" type="button" onclick="tandcModal.hide()">close</button>
@@ -421,7 +424,8 @@
                 <h4 class="modal-title" style="text-align: center;">The plan is currently canceled</h4>
             </div>
             <div id="yourPlanIsCanceled" class="modal-body" style="text-align: center;">
-                The plan provider is no longer paying for their subscription.<br /> You are responsible for canceling
+                The plan provider is no longer paying for their subscription.<br /> You are responsible for
+                canceling
                 your own
                 subscription
             </div>
@@ -433,8 +437,12 @@
 </div>
 
 <script>
-    var changePfpModal = new bootstrap.Modal(document.getElementById('changepfpmodal'), {});
-    const userSettingsModal = new bootstrap.Modal(document.getElementById('userSettingsModal'), {});
+    try {
+        var changePfpModal = new bootstrap.Modal(document.getElementById('changepfpmodal'), {});
+        const userSettingsModal = new bootstrap.Modal(document.getElementById('userSettingsModal'), {});
+    } catch {
+        console.log("No bootstrap found")
+    }
     let p = document.getElementById('anchor')
     let c = document.getElementById('ournav')
 
@@ -478,10 +486,14 @@
     let passwordsignupinput = document.getElementById('passwordsignupinput')
     let confirmpasswordsignupinput = document.getElementById('confirmpasswordsignupinput')
 
-    var loginModal = new bootstrap.Modal(document.getElementById('login-modal'), {});
-    var payLinkModal = new bootstrap.Modal(document.getElementById('pay-regular-subscriber-modal'), {});
-    var hostpayingmodal = new bootstrap.Modal(document.getElementById('host-not-paying-modal'), {});
-    var tandcModal = new bootstrap.Modal(document.getElementById('tcmodal'), {});
+    try {
+        var loginModal = new bootstrap.Modal(document.getElementById('login-modal'), {});
+        var payLinkModal = new bootstrap.Modal(document.getElementById('pay-regular-subscriber-modal'), {});
+        var hostpayingmodal = new bootstrap.Modal(document.getElementById('host-not-paying-modal'), {});
+        var tandcModal = new bootstrap.Modal(document.getElementById('tcmodal'), {});
+    } catch {
+        console.log("no bootstrap found")
+    }
 
     var pfpChangeInput = document.getElementById('pfpchangeinput')
     var pfpChangeBtn = document.getElementById('changePfpSubmitBtn')
@@ -527,6 +539,7 @@
     var isAdmin = false
     var isLoopAdmin = false
     var cfdomain = ""
+
     p.append(c)
 
     async function fetchSeshDetails() {
@@ -764,6 +777,7 @@
                     document.getElementById('navlist').removeChild(document.getElementById("postsnavitem"))
             }
         }
+
 
     } else {
 

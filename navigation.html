@@ -766,18 +766,17 @@
 
         document.getElementById('navlist').removeChild(navItemToReplace)
 
-        navbarItems.append(divToStickNav)
         var itemsinnav = document.getElementById('navlist').children
         for (var i = 0; i < itemsinnav.length; i++) {
             if (itemsinnav[i].id !== null && itemsinnav[i].children.length === 1) {
                 if (window.location.pathname.includes(itemsinnav[i].id.replace('navitem', '')))
                     document.getElementById('navlist').removeChild(document.getElementById(`${itemsinnav[i].id}`))
-
-                else if (window.location.pathname === "/" || window.location.pathname === "")
+                else if ((window.location.pathname === "/" || window.location.pathname === "") && document.getElementById("postsnavitem") !== null)
                     document.getElementById('navlist').removeChild(document.getElementById("postsnavitem"))
             }
         }
 
+        navbarItems.append(divToStickNav)
 
     } else {
 

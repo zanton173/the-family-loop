@@ -56,7 +56,7 @@
 
     <script>
         var socket = null
-        window.location.protocol === "https:" ? socket = new WebSocket(`wss://${window.location.host}:80/ws-endpoint`) : socket = new WebSocket(`ws://${window.location.host}:80/ws-endpoint`)
+        window.location.protocol === "https:" ? socket = new WebSocket(`wss://${window.location.host}/ws-endpoint`) : socket = new WebSocket(`ws://${window.location.host}:80/ws-endpoint`)
 
         socket.onopen = () => {
             document.getElementById('connectionId').innerText = "You are connected"

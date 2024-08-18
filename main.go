@@ -15,6 +15,7 @@ import (
 	postshandler "tfl/handlers/posts"
 	tchandler "tfl/handlers/timecapsule"
 	userdatahandler "tfl/handlers/userdata"
+	wshandlers "tfl/handlers/websocket"
 	wixhandler "tfl/handlers/wix"
 	globalvars "tfl/vars"
 
@@ -201,6 +202,8 @@ func main() {
 	http.HandleFunc("/reset-password-with-code", authhandler.ResetPasswordHandler)
 	http.HandleFunc("/update-admin-pass", authhandler.UpdateAdminPassHandler)
 	http.HandleFunc("/update-fcm-token", authhandler.UpdateFCMTokenHandler)
+	/* Websocket handlers */
+	http.HandleFunc("/ws-endpoint", wshandlers.InitialHandler)
 	// NOT USING THIS RIGHT NOW
 	//http.HandleFunc("/refresh-token", refreshTokenHandler)
 	http.HandleFunc("/delete-jwt", deleteJWTHandler)

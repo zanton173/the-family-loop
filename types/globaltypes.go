@@ -1,6 +1,8 @@
 package globaltypes
 
-import "database/sql"
+import (
+	"database/sql"
+)
 
 type NotificationOpts struct {
 	NotificationPage  string

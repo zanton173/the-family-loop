@@ -285,6 +285,8 @@ func Decrypt(message string) (string, error) {
 	return string(plainText), nil
 }
 
+/* WebSocket ITEMS */
+
 /* FUNCTION ITEMS */
 func UploadFileToS3(f multipart.File, fn string, db *sql.DB, filetype string) {
 

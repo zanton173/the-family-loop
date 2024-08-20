@@ -204,6 +204,7 @@ func main() {
 	http.HandleFunc("/update-fcm-token", authhandler.UpdateFCMTokenHandler)
 	/* Websocket handlers */
 	http.HandleFunc("/ws-endpoint", wshandlers.InitialHandler)
+	http.HandleFunc("/ws-close-endpoint", wshandlers.CloseConn)
 	// NOT USING THIS RIGHT NOW
 	//http.HandleFunc("/refresh-token", refreshTokenHandler)
 	http.HandleFunc("/delete-jwt", deleteJWTHandler)

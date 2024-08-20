@@ -12,7 +12,8 @@
     <script src="/js/bootstrap.bundle.min.js"></script>
     <script src="/js/htmx.min.js"></script>
     <script src="/js/htmx_json-enc.js"></script>
-    <script src="/js/globalFunctions.js"></script>
+
+    <!--<script src="/js/globalFunctions.js"></script>-->
 </head>
 
 
@@ -28,11 +29,8 @@
                     style="font-size: xx-large; margin-top: 10%; height: 15dvh; font-weight: bolder; font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif">
                     New Game
                 </div>
-                <div id="testconn">
+                <div style='position: absolute; top: .1rem; right: .4rem' id="testconn">
                     <p id="connectionId" style="color: green"></p>
-                    <input id="wsinput" type="text" style="width: 80dvw" /><button type="button" id="sendMessage"
-                        onclick="sendMessage()">send</button>
-                    <div id="wsoutput"></div>
                 </div>
                 <div class="row-gap-5 w-35 my-5 h-20">
                     <button class="btn btn-primary p-3"
@@ -53,26 +51,151 @@
             </div>
         </div>
     </div>
+    <div id="lobbyWindow">
+        <div id="connectedPlayers">
+
+        </div>
+    </div>
+    <div id="gameWindow" style="display: none; height: 100dvh; width: 100dvw; background-image: linear-gradient(to bottom,
+            hsl(199, 90%, 65%),
+            hsl(314, 100%, 73%))">
+        <button type="button" class="btn btn-primary" style="position: absolute; top: .4rem; left: .4rem"
+            onclick="showHomeWindow()">home</button>
+        <div id="gameScreen" style="height: 50dvh; width: 300px; background: rgb(125 125 125 / 55%); margin: auto;">
+
+            <div id="playerOne"
+                style="width: 100px; height: 45px; position: relative; top: 100%; background-color: black; border-width: 2px; margin: auto; border-style: solid; border-color: white; z-index: 17;">
+            </div>
+            <div id="playerTwo"
+                style="width: 100px; height: 45px; position: relative; top: calc(0% - 90px); background-color: black; border-width: 2px; margin: auto; border-style: solid; border-color: white; z-index: 17;">
+            </div>
+        </div>
+    </div>
 
     <script>
+
         var socket = null
-        window.location.protocol === "https:" ? socket = new WebSocket(`wss://${window.location.host}/ws-endpoint`) : socket = new WebSocket(`ws://${window.location.host}:80/ws-endpoint`)
+        var playerTwoSocket = null
+        var curUserData = null
+        async function getUserData() {
+            curUserData = await fetch("/get-username-from-session", {
+                method: "GET",
+                headers: {
+                    "Content-type": "application/json"
+                }
+            }).then(async (data) => {
 
-        socket.onopen = () => {
-            document.getElementById('connectionId').innerText = "You are connected"
+                curUserData = await data.json()
+
+                /*  while (playerTwoSocket === null)
+                      window.location.protocol === "https:" ? playerTwoSocket = new WebSocket(`wss://${window.location.host}/ws-endpoint-player-two`) : playerTwoSocket = new WebSocket(`ws://${window.location.host}:80/ws-endpoint-player-two`)*/
+                return curUserData.Username
+            }).catch((failed) => {
+                console.log(failed)
+            })
+        }
+        getUserData()
+
+        function showGameWindow() {
+            while (socket === null) {
+                if (window.location.protocol === "https:") {
+                    socket = new WebSocket(`wss://${window.location.host}/ws-endpoint`);
+                    playerTwoSocket = new WebSocket(`wss://${window.location.host}/ws-endpoint`)
+                } else {
+                    socket = new WebSocket(`ws://${window.location.host}:80/ws-endpoint`)
+                    playerTwoSocket = new WebSocket(`ws://${window.location.host}:80/ws-endpoint`)
+                }
+            }
+
+            setTimeout(() => {
+                document.getElementById('homeScreen').style.display = "none"
+                document.getElementById('gameWindow').style.display = "grid"
+            }, 300)
+            socket.onopen = () => {
+                document.getElementById('connectionId').innerText = "You are connected"
+            }
+
+            playerTwoSocket.onmessage = function (event) {
+                var message = JSON.parse(event.data)
+                if (message.username != curUserData)
+                    document.getElementById('playerTwo').style.left = message.pix
+            }
+            socket.onclose = (soc, ev) => {
+                console.log(ev)
+                document.getElementById('connectionId').style.color = "red"
+                document.getElementById('connectionId').innerText = "Refresh the page to connect"
+            }
+
+            function sendMessage() {
+                socket.send(document.getElementById('wsinput').value)
+            }
+            function closeConn() {
+                socket.close()
+            }
+        }
+        document.getElementById('gameWindow')
+        const gameNet = document.getElementById('playerOne')
+        var currentGameNetPos = 50
+
+        function showHomeWindow() {
+            //closeConn()
+            socket = new WebSocket("ws://localhost/ws-close-endpoint")
+            document.getElementById('homeScreen').style.display = ""
+            document.getElementById('gameWindow').style.display = "none"
         }
 
-        socket.onmessage = function (event) {
-            console.log(event.data)
-            var newmessage = document.createElement('p')
-            newmessage.innerText = event.data
-            document.getElementById('wsoutput').append(newmessage)
-        }
 
-        function sendMessage() {
-            socket.send(document.getElementById('wsinput').value)
-        }
 
+        dragElement(document.getElementById('playerOne'));
+
+        function dragElement(elmnt) {
+
+            var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+
+            elmnt.onmousedown = dragMouseDown;
+            elmnt.ontouchstart = dragMouseDown;
+
+            function dragMouseDown(e) {
+
+                e = e || window.event;
+                e.preventDefault();
+                // get the mouse cursor position at startup:
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                document.onmousemove = elementDrag;
+                document.ontouchmove = elementDrag;
+
+                document.onmouseup = closeDragElement;
+                document.ontouchend = closeDragElement;
+            }
+
+            function elementDrag(e) {
+
+                e = e || window.event;
+                e.preventDefault() || null;
+                pos1 = pos3 - (e.clientX || e.targetTouches[0].clientX);
+
+                pos3 = e.clientX || e.targetTouches[0].clientX;
+                pos4 = e.clientY || e.targetTouches[0].clientY;
+                elmnt.style.top = (elmnt.offsetBottom - pos2) + "%";
+                //elmnt.style.top = "100%";
+                elmnt.style.left = (Number(elmnt.style.left.split("px")[0]) - pos1) + "px";
+                //document.getElementById('playerOne').dispatchEvent(new Event('onDraggedEvent'))
+                var jsonSend = {
+                    "username": curUserData,
+                    "pix": elmnt.style.left
+                }
+                socket.send(JSON.stringify(jsonSend))
+            }
+
+            function closeDragElement() {
+                document.onmouseup = null;
+                document.ontouchend = null;
+                document.onmousemove = null;
+                document.ontouchmove = null;
+                //gameNet.style.top = '100%'
+            }
+        }
 
     </script>
     <script type="module">

@@ -38,3 +38,7 @@ type SeshStruct struct {
 	LastViewedThread sql.NullString
 	IsLoopOwner      bool
 }
+type WebSocketPongMessage struct {
+	Pix    string `json:"pix"`
+	Player string `json:"username"`
+}

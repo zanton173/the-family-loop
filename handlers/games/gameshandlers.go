@@ -2,6 +2,7 @@ package gameshandler
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -388,6 +389,85 @@ func UpdateCatchitScoreHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	globalvars.Leaderboardcoll.InsertOne(context.TODO(), bson.M{"org_id": globalvars.OrgId, "game": "catchit", "score": postData.Score, "username": postData.Username, "createdOn": time.Now()})
 
+}
+func GetPongLobbyHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	dbselect, _ := globalvars.Db.Query("select player_username from tfldata.pong_game_lobby;")
+	defer dbselect.Close()
+	iter := 0
+	for dbselect.Next() {
+		iter++
+		var playername string
+		var dataStr string
+		dbselect.Scan(&playername)
+		playerid := playername
+		if playername == r.URL.Query().Get("username") {
+			playername = "<b>me</b>"
+			dataStr = fmt.Sprintf("<button id=\"readupbtn\" onclick=\"moveToStage('%s')\" type=\"button\" class=\"btn btn-success\" style=\"margin-left: 10dvw\">Ready!</button>", playerid)
+		}
+
+		if iter%2 == 0 {
+			w.Write([]byte("<li id='" + playerid + "' style='background: #5555554f'>" + playername + dataStr + "</li>"))
+		} else {
+			w.Write([]byte("<li id='" + playerid + "' style='background: #d7fff38c'>" + playername + dataStr + "</li>"))
+
+		}
+	}
+}
+func UpdatePongGameLobbyHandler(w http.ResponseWriter, r *http.Request) {
+	type pongPlayer struct {
+		Player string `json:"player"`
+	}
+	var pongPlayerData pongPlayer
+	bs, _ := io.ReadAll(r.Body)
+	json.Unmarshal(bs, &pongPlayerData)
+
+	_, inserr := globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.pong_game_lobby (player_username) values ('%s') on conflict do nothing;", pongPlayerData.Player))
+	if inserr != nil {
+		fmt.Println(inserr)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+}
+func RemoveFromPongLobbyHandler(w http.ResponseWriter, r *http.Request) {
+	globalvars.Db.Exec(fmt.Sprintf("delete from tfldata.pong_game_lobby where player_username = '%s';", r.URL.Query().Get("username")))
+}
+func FinalSetupPongGameHandler(w http.ResponseWriter, r *http.Request) {
+
+	var finalSetup struct {
+		playerOneUser      sql.NullString
+		playerTwoUser      sql.NullString
+		playerOneConnected sql.NullBool
+		playerTwoConnected sql.NullBool
+	}
+	rowout := globalvars.Db.QueryRow(fmt.Sprintf("select playerone, playertwo, playeroneconnected, playertwoconnected from tfldata.pong_game_state where id = '%s';", r.URL.Query().Get("gameid")))
+	rowout.Scan(&finalSetup)
+	fmt.Println(finalSetup)
+	if finalSetup.playerOneConnected.Valid && finalSetup.playerTwoConnected.Valid && finalSetup.playerOneUser.Valid && finalSetup.playerTwoUser.Valid {
+		w.Write([]byte("start"))
+	}
+}
+func SetupPongGameHandler(w http.ResponseWriter, r *http.Request) {
+	//w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	bs, _ := io.ReadAll(r.Body)
+	type respData struct {
+		Player []string `json:"playerjoining"`
+	}
+	var respdata respData
+	marshederr := json.Unmarshal(bs, &respdata)
+	if marshederr != nil {
+		fmt.Println(marshederr)
+	}
+	var gameId int64
+	inserr := globalvars.Db.QueryRow(fmt.Sprintf("insert into tfldata.pong_game_state(playerone, playertwo, playeroneconnected, playertwoconnected) values ('%s', '%s', true, true) RETURNING id;", respdata.Player[0], respdata.Player[1])).Scan(&gameId)
+	if inserr != nil {
+		fmt.Println(inserr)
+		if strings.ContainsAny(inserr.Error(), "violates unique constraint \"uniqueplayers\"") {
+			globalvars.Db.QueryRow(fmt.Sprintf("select id from tfldata.pong_game_state where playerone = '%s' and playertwo = '%s';", respdata.Player[0], respdata.Player[1])).Scan(&gameId)
+		}
+	}
+	strGameId := strconv.Itoa(int(gameId))
+	w.Write([]byte(strGameId))
 }
 func GetLeaderboardHandler(w http.ResponseWriter, r *http.Request) {
 	allowOrDeny, _, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)

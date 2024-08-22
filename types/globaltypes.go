@@ -39,6 +39,7 @@ type SeshStruct struct {
 	IsLoopOwner      bool
 }
 type WebSocketPongMessage struct {
-	Pix    string `json:"pix"`
+	Data   string `json:"data"`
 	Player string `json:"username"`
+	Type   string `json:"type"`
 }

@@ -181,6 +181,11 @@ func main() {
 	http.HandleFunc("/get-catchit-leaderboard", gameshandler.GetCatchitLeaderboardHandler)
 	http.HandleFunc("/get-my-personal-score-catchit", gameshandler.GetPersonalCatchitLeaderboardHandler)
 	http.HandleFunc("/update-catchit-score", gameshandler.UpdateCatchitScoreHandler)
+	http.HandleFunc("/join-pong-game-lobby", gameshandler.UpdatePongGameLobbyHandler)
+	http.HandleFunc("/get-pong-lobby", gameshandler.GetPongLobbyHandler)
+	http.HandleFunc("/delete-from-pong-lobby", gameshandler.RemoveFromPongLobbyHandler)
+	http.HandleFunc("/setup-player-pong-game-start", gameshandler.SetupPongGameHandler)
+	http.HandleFunc("/final-setup-pong-game-check", gameshandler.FinalSetupPongGameHandler)
 	/* Wix handlers */
 	http.HandleFunc("/wix-webhook-pricing-plan-changed", wixhandler.WixWebhookChangePlanHandler)
 	http.HandleFunc("/wix-webhook-update-reg-user-paid-plan", wixhandler.RegUserPaidForPlanHandler)
@@ -204,7 +209,6 @@ func main() {
 	http.HandleFunc("/update-fcm-token", authhandler.UpdateFCMTokenHandler)
 	/* Websocket handlers */
 	http.HandleFunc("/ws-endpoint", wshandlers.InitialHandler)
-	http.HandleFunc("/ws-close-endpoint", wshandlers.CloseConn)
 	// NOT USING THIS RIGHT NOW
 	//http.HandleFunc("/refresh-token", refreshTokenHandler)
 	http.HandleFunc("/delete-jwt", deleteJWTHandler)

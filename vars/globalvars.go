@@ -2,6 +2,7 @@ package vars
 
 import (
 	"database/sql"
+	"net/http"
 	"strings"
 	"time"
 
@@ -52,6 +53,7 @@ var (
 var Upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
+	CheckOrigin:     func(r *http.Request) bool { return true },
 }
 
 var S3Client *s3.Client

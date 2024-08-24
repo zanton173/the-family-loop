@@ -66,7 +66,7 @@ func InitalizeAll() {
 	globalvars.Replacer = strings.NewReplacer("'", "\\'", "\"", "\\\"")
 
 	globalvars.NyLoc, globalvars.NyLocErr = time.LoadLocation("America/New_York")
-	globalvars.FbOpts = []option.ClientOption{option.WithCredentialsFile("the-family-loop-fb0d9-firebase-adminsdk-k6sxl-14c7d4c4f7-prod.json")}
+	globalvars.FbOpts = []option.ClientOption{option.WithCredentialsFile("the-family-loop-fb0d9-firebase-adminsdk-k6sxl-14c7d4c4f7.json")}
 
 	globalvars.App, globalvars.AppErr = firebase.NewApp(context.TODO(), nil, globalvars.FbOpts...)
 

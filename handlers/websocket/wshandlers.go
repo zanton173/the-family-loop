@@ -42,10 +42,24 @@ func (c *Client) CloseConn() {
 	if err != nil {
 		fmt.Println(err)
 	}
+	var playertwodisc globaltypes.WebSocketPongMessage
 	for idx, clientval := range clients {
 		if clientval == c {
 			clients = append(clients[:idx], clients[idx+1:]...)
+			globalvars.Db.Exec(fmt.Sprintf("delete from tfldata.pong_game_state where playerone = '%s';", c.username))
+			_, playertwodisconn := globalvars.Db.Exec(fmt.Sprintf("delete from tfldata.pong_game_state where playertwo = '%s';", c.username))
+			if playertwodisconn == nil {
+				playertwodisc = globaltypes.WebSocketPongMessage{
+					Data:   c.username,
+					Type:   "playertwodisconnected",
+					Player: clientval.username,
+				}
+				fmt.Println("player two disconnected")
+				fmt.Println(playertwodisc)
+			}
+			globalvars.Db.Exec(fmt.Sprintf("delete from tfldata.pong_game_lobby where player_username = '%s';", c.username))
 		}
+		clientval.conn.WriteJSON(playertwodisc)
 	}
 
 }
@@ -106,7 +120,7 @@ func GameLoop(playerMessageFor string, msg globaltypes.WebSocketPongMessage) {
 		sendmessage := globaltypes.WebSocketPongMessage{
 			Data:   "two",
 			Player: msg.Player,
-			Type:   msg.Player,
+			Type:   stateResp.PlayerOne.String,
 		}
 		fmt.Print("send message playertwo: ")
 		fmt.Print(sendmessage)
@@ -127,9 +141,6 @@ func GameLoop(playerMessageFor string, msg globaltypes.WebSocketPongMessage) {
 		}
 	}
 
-	/*for {
-
-	}*/
 }
 func InitialHandler(w http.ResponseWriter, r *http.Request) {
 	conn, connerr := globalvars.Upgrader.Upgrade(w, r, nil)
@@ -166,15 +177,8 @@ func InitialHandler(w http.ResponseWriter, r *http.Request) {
 		var newMessage globaltypes.WebSocketPongMessage
 		json.Unmarshal(msg, &newMessage)
 
-		/*for _, sessionclient := range gamesession{
-			if newMessage.Type == "game" {
-
-			}
-		}*/
-
 		for _, client := range clients {
 			if newMessage.Type == "lobby" {
-				//CreateGameSession(newMessage, client)
 				if newMessage.Player == currentUserFromSession {
 					go GameLoop(newMessage.Player, newMessage)
 					break

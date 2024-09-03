@@ -42,8 +42,8 @@ func PagesHandler(w http.ResponseWriter, r *http.Request) {
 	case "/games/catchit":
 		tmpl := template.Must(template.ParseFiles("catchit.html"))
 		tmpl.Execute(w, nil)
-	case "/games/newgame":
-		tmpl := template.Must(template.ParseFiles("newgame.html"))
+	case "/games/pong":
+		tmpl := template.Must(template.ParseFiles("pong.html"))
 		tmpl.Execute(w, nil)
 	case "/admin-dashboard":
 		tmpl := template.Must(template.ParseFiles("admindash.html"))

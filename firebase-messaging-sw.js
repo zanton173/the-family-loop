@@ -14,6 +14,8 @@ this.addEventListener("notificationclick", (event) => {
         clients.openWindow("/calendar")
     else if ((event.notification.data !== null && event.notification.data == "posts") || (event.notification.actions[0] !== null && event.notification.actions[0].action == "posts"))
         clients.openWindow("/posts")
+    else if ((event.notification.data !== null && event.notification.data == "pong") || (event.notification.actions[0] !== null && event.notification.actions[0].action == "pong"))
+        clients.openWindow("/games/pong")
     else if ((event.notification.data !== null && event.notification.data == "groupchat") || (event.notification.actions[0] !== null && event.notification.actions[0].action == "groupchat"))
         clients.openWindow("/groupchat?thread=" + event.notification.actions[1].action)
     else

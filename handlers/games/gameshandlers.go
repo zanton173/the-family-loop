@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 	globalfunctions "tfl/functions"
+	globaltypes "tfl/types"
 	globalvars "tfl/vars"
 	"time"
 
@@ -469,6 +470,7 @@ func SetupPongGameHandler(w http.ResponseWriter, r *http.Request) {
 	strGameId := strconv.Itoa(int(gameId))
 	w.Write([]byte(strGameId))
 }
+
 func GetLeaderboardHandler(w http.ResponseWriter, r *http.Request) {
 	allowOrDeny, _, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
@@ -621,5 +623,31 @@ func UpdateSimpleShadesScoreHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 	}
 	globalvars.Leaderboardcoll.InsertOne(context.TODO(), bson.M{"org_id": globalvars.OrgId, "game": "simple_shades", "score": postData.Score, "username": postData.Username, "createdOn": time.Now()})
+
+}
+func InviteUserToPongHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	allowOrDeny, curUserFromSession, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
+
+	validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
+	if !validBool || !allowOrDeny {
+		w.Header().Set("HX-Retarget", "window")
+		w.Header().Set("HX-Trigger", h)
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	var singleUserChatMessageNotificationOpts globaltypes.NotificationOpts
+	singleUserChatMessageNotificationOpts.ExtraPayloadKey = "games"
+	singleUserChatMessageNotificationOpts.ExtraPayloadVal = "pong"
+	singleUserChatMessageNotificationOpts.NotificationPage = "pong"
+	singleUserChatMessageNotificationOpts.NotificationTitle = curUserFromSession + " just invited you to play pong!"
+	singleUserChatMessageNotificationOpts.NotificationBody = curUserFromSession + " wants to play pong"
+	var fcmToken string
+	row := globalvars.Db.QueryRow(fmt.Sprintf("select fcm_registration_id from tfldata.users where username='%s';", r.URL.Query().Get("invitee")))
+
+	scnerr := row.Scan(&fcmToken)
+	if scnerr == nil {
+		globalfunctions.SendNotificationToSingleUser(globalvars.Db, globalvars.Fb_message_client, fcmToken, singleUserChatMessageNotificationOpts)
+	}
 
 }

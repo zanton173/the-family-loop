@@ -336,6 +336,93 @@ ALTER SEQUENCE tfldata.pchat_id_seq OWNED BY tfldata.pchat.id;
 
 
 --
+-- Name: pong_game_lobby; Type: TABLE; Schema: tfldata; Owner: tfldbrole
+--
+
+CREATE TABLE tfldata.pong_game_lobby (
+    player_username character varying(13),
+    id integer NOT NULL
+);
+
+
+ALTER TABLE tfldata.pong_game_lobby OWNER TO tfldbrole;
+
+--
+-- Name: pong_game_lobby_id_seq; Type: SEQUENCE; Schema: tfldata; Owner: tfldbrole
+--
+
+CREATE SEQUENCE tfldata.pong_game_lobby_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE tfldata.pong_game_lobby_id_seq OWNER TO tfldbrole;
+
+--
+-- Name: pong_game_lobby_id_seq; Type: SEQUENCE OWNED BY; Schema: tfldata; Owner: tfldbrole
+--
+
+ALTER SEQUENCE tfldata.pong_game_lobby_id_seq OWNED BY tfldata.pong_game_lobby.id;
+
+
+--
+-- Name: pong_game_state; Type: TABLE; Schema: tfldata; Owner: tfldbrole
+--
+
+CREATE TABLE tfldata.pong_game_state (
+    id integer NOT NULL,
+    playerone character varying(13),
+    playertwo character varying(13),
+    playeroneconnected boolean,
+    playertwoconnected boolean
+);
+
+
+ALTER TABLE tfldata.pong_game_state OWNER TO tfldbrole;
+
+--
+-- Name: pong_game_state_id_seq; Type: SEQUENCE; Schema: tfldata; Owner: tfldbrole
+--
+
+CREATE SEQUENCE tfldata.pong_game_state_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE tfldata.pong_game_state_id_seq OWNER TO tfldbrole;
+
+--
+-- Name: pong_game_state_id_seq; Type: SEQUENCE OWNED BY; Schema: tfldata; Owner: tfldbrole
+--
+
+ALTER SEQUENCE tfldata.pong_game_state_id_seq OWNED BY tfldata.pong_game_state.id;
+
+
+--
+-- Name: pong_match_history; Type: TABLE; Schema: tfldata; Owner: tfldbrole
+--
+
+CREATE TABLE tfldata.pong_match_history (
+    playeronename character varying(13),
+    playertwoname character varying(13),
+    playeronescore character varying(2),
+    playertwoscore character varying(2),
+    matchid integer,
+    createdon timestamp without time zone
+);
+
+
+ALTER TABLE tfldata.pong_match_history OWNER TO tfldbrole;
+
+--
 -- Name: postfiles; Type: TABLE; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -737,6 +824,20 @@ ALTER TABLE ONLY tfldata.pchat ALTER COLUMN id SET DEFAULT nextval('tfldata.pcha
 
 
 --
+-- Name: pong_game_lobby id; Type: DEFAULT; Schema: tfldata; Owner: tfldbrole
+--
+
+ALTER TABLE ONLY tfldata.pong_game_lobby ALTER COLUMN id SET DEFAULT nextval('tfldata.pong_game_lobby_id_seq'::regclass);
+
+
+--
+-- Name: pong_game_state id; Type: DEFAULT; Schema: tfldata; Owner: tfldbrole
+--
+
+ALTER TABLE ONLY tfldata.pong_game_state ALTER COLUMN id SET DEFAULT nextval('tfldata.pong_game_state_id_seq'::regclass);
+
+
+--
 -- Name: postfiles id; Type: DEFAULT; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -858,6 +959,30 @@ ALTER TABLE ONLY tfldata.pchat
 
 
 --
+-- Name: pong_game_lobby pong_game_lobby_pkey; Type: CONSTRAINT; Schema: tfldata; Owner: tfldbrole
+--
+
+ALTER TABLE ONLY tfldata.pong_game_lobby
+    ADD CONSTRAINT pong_game_lobby_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: pong_game_state pong_game_state_pkey; Type: CONSTRAINT; Schema: tfldata; Owner: tfldbrole
+--
+
+ALTER TABLE ONLY tfldata.pong_game_state
+    ADD CONSTRAINT pong_game_state_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: pong_match_history pong_match_history_matchid_key; Type: CONSTRAINT; Schema: tfldata; Owner: tfldbrole
+--
+
+ALTER TABLE ONLY tfldata.pong_match_history
+    ADD CONSTRAINT pong_match_history_matchid_key UNIQUE (matchid);
+
+
+--
 -- Name: postfiles postfiles_pkey; Type: CONSTRAINT; Schema: tfldata; Owner: tfldbrole
 --
 
@@ -927,6 +1052,22 @@ ALTER TABLE ONLY tfldata.stack_leaderboard
 
 ALTER TABLE ONLY tfldata.threads
     ADD CONSTRAINT threads_pkey PRIMARY KEY (thread);
+
+
+--
+-- Name: pong_game_lobby unique_player; Type: CONSTRAINT; Schema: tfldata; Owner: tfldbrole
+--
+
+ALTER TABLE ONLY tfldata.pong_game_lobby
+    ADD CONSTRAINT unique_player UNIQUE (player_username);
+
+
+--
+-- Name: pong_game_state uniqueplayers; Type: CONSTRAINT; Schema: tfldata; Owner: tfldbrole
+--
+
+ALTER TABLE ONLY tfldata.pong_game_state
+    ADD CONSTRAINT uniqueplayers UNIQUE (playerone, playertwo);
 
 
 --
@@ -1022,6 +1163,20 @@ CREATE INDEX pchat_tbl_from_user_idx ON tfldata.pchat USING btree (from_user);
 --
 
 CREATE INDEX pchat_tbl_to_user_idx ON tfldata.pchat USING btree (to_user);
+
+
+--
+-- Name: pong_match_history_current_user_idx01; Type: INDEX; Schema: tfldata; Owner: tfldbrole
+--
+
+CREATE INDEX pong_match_history_current_user_idx01 ON tfldata.pong_match_history USING btree (playeronename);
+
+
+--
+-- Name: pong_match_history_current_user_two_idx01; Type: INDEX; Schema: tfldata; Owner: tfldbrole
+--
+
+CREATE INDEX pong_match_history_current_user_two_idx01 ON tfldata.pong_match_history USING btree (playertwoname);
 
 
 --

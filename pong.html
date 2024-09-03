@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset='utf-8'>
+    <link rel="manifest" href="/assets/manifest.json" />
+    <title>Pong!</title>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/custom-css.min.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/htmx.min.js"></script>
+    <script src="/js/htmx_json-enc.js"></script>
+
+    <!--<script src="/js/globalFunctions.js"></script>-->
+</head>
+
+
+<body id="pongbody" style="overflow: hidden; position: absolute; top: 0; bottom: 0; touch-action: manipulation;">
+    <!--<div id="gameNotAvailable">Game not available on this device size!
+    </div>-->
+    <div id="homeScreen" style="position: absolute; text-align: center; height: 100dvh; width: 100dvw; background-image: linear-gradient(to bottom,
+            hsl(199, 90%, 65%),
+            hsl(314, 100%, 73%))">
+        <div style="height: inherit;">
+            <div class="col h-100">
+                <div class="row-gap-lg-5"
+                    style="font-size: xx-large; margin-top: 2rem; height: 15dvh; font-weight: bolder; font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif">
+                    New Game
+                </div>
+
+                <div class="row-gap-5 w-35 my-5 h-20">
+                    <button class="btn btn-primary p-3"
+                        style="border-radius: 18px / 18px; border-width: 3px; border-style: solid; border-color: darkslategray; font-size: larger"
+                        onclick="showLobbyWindow()">start</button>
+                </div>
+                <div class="row-gap-5 w-35 my-5 h-20">
+                    <button class="btn btn-primary p-3"
+                        style="border-radius: 18px / 18px; border-width: 3px; border-style: solid; border-color: darkslategray; font-size: larger"
+                        onclick="showLeaderboardWindow()">leaderboard</button>
+                </div>
+                <div class="row-gap-5 w-35 my-5 h-20">
+                    <button class="btn btn-primary p-3"
+                        style="border-radius: 18px / 18px; border-width: 3px; border-style: solid; border-color: darkslategray; font-size: larger"
+                        onclick="location.href = '/'">tfl home</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <div id="lobbyWindow" style="display: none; height: 100dvh; width: 100dvw; background-image: linear-gradient(to bottom,
+            hsl(199, 90%, 65%),
+            hsl(314, 100%, 73%)); position: absolute;">
+        <div style='position: absolute; top: .1rem; right: .4rem' id="testconn">
+            <p id="connectionId" style="color: green"></p>
+        </div>
+        <button type="button" class="btn btn-primary" style="position: absolute; top: .4rem; left: .4rem; z-index: 15;"
+            onclick="showHomeWindow()">home</button>
+        <div>
+            <p style="text-align: center; font-size: xx-large; margin-top: 1rem">Lobby</p>
+        </div>
+        <div id="connectedPlayers" hx-get="/get-pong-lobby" hx-vals="js:{'username': curUserData}"
+            hx-trigger="onOpenLobbyWindow" hx-target="#listofplayers">
+            <ol id="listofplayers" style="width: 85dvw">
+
+            </ol>
+
+        </div>
+        <div class="p-2 m-auto" id="stagingArea">
+            <h3 style="text-align: center;">Invite a friend!</h3>
+            <div style="display: flex; justify-content: space-evenly; width: 65dvw; margin: auto">
+                <select id="inviteUsersSelect" hx-get="/get-users-chat" style="text-align: center"
+                    hx-trigger="onOpenLobbyWindow from:#connectedPlayers">
+
+                </select>
+                <button class="btn btn-success" onclick="inviteUser()">Invite!</button>
+            </div>
+        </div>
+    </div>
+    <div id="gameWindow" style="display: none; height: 100dvh; width: 100dvw; background-image: linear-gradient(to bottom,
+            hsl(199, 90%, 65%),
+            hsl(314, 100%, 73%))">
+        <div
+            style="position: absolute; display: flex; justify-content: space-around; text-align: center; width: 100dvw; margin: auto; top: 4rem">
+            <div>
+                <h3 style="text-align: center;" id="playeronename">Player one: </h3>
+                <p id="playeronepoint">0</p>
+            </div>
+            <div>
+                <h3 style="text-align: center;" id="playertwoname">Player two: </h3>
+                <p id="playertwopoint">0</p>
+            </div>
+
+        </div>
+        <div id="timerBlock"
+            style="background: rgb(185 185 185 / 35%); position: absolute; width: 100dvw; height: 100dvh; z-index: 15000;">
+            <p id="timerCountdown" style="font-size: 36pt; text-align: center; margin-top: 50dvh"></p>
+        </div>
+        <button type="button" class="btn btn-primary"
+            style="position: absolute; top: .4rem; left: .4rem; z-index: 15001"
+            onclick="window.location.reload()">home</button>
+
+        <div id="gameScreen" style="height: 300px; width: 300px; background: rgb(125 125 125 / 55%); margin: auto;">
+            <div id="winnerbanner"
+                style="display: none; z-index: 16000; background-color: rgb(180 255 180 / 31%); width: 100dvw; height: 100dvh; position: absolute; top: 0; left: 0;">
+                <p id="winnermessage" style="color: white; font-size: 20pt; margin-top: 40dvh; text-align: center;"></p>
+            </div>
+            <div id="playerOne"
+                style="width: 50px; height: 45px; position: relative; top: 100%; background-color: black; border-width: 2px; margin: auto; border-style: solid; border-color: white; z-index: 17;">
+            </div>
+            <div id="playerTwo"
+                style="display: none; width: 50px; height: 45px; position: relative; top: calc(0% - 90px); background-color: black; border-width: 2px; margin: auto; border-style: solid; border-color: white; z-index: 17; font-size: .6rem">
+                <p id="playerTwoId" style="text-align: center; color: white; margin-top: .5rem"></p>
+            </div>
+            <div id="gameBall"
+                style="width: 15px; height: 15px; background: green; position: relative; border-radius: 15px; top: 45px; left: 0%; border-width: thin; border-color: white; box-shadow: 1px 1px 4px black;">
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        if (window.navigator.userAgent.includes("iPhone")) {
+            //alert("not currently available for iPhones")
+            //window.location.href = '/'
+        }
+        var socket = null
+        var curUserData = null
+        var gameStateId = null
+        var currentPlayerReady = false
+        const delay = 1000
+        var timer = 4000
+        var ballspeed = 12
+        var xdirection = .17
+        var ydirection = 0
+        var ydirectionmultiplier = 0
+        var timerInit = null
+        var elapsed_time_in_seconds = null
+        var changeSpeedTicker = 1
+
+        var playerOne = document.getElementById('playerOne')
+        var playerTwo = document.getElementById('playerTwo')
+        var gamerunning = false
+        var gameInterval = null
+        var ctimer = null
+
+        gameBall.addEventListener("change", () => {
+            throwGameball()
+        })
+        function changeSpeed() {
+            console.log(ballspeed)
+            console.log(ydirectionmultiplier)
+            ballspeed = Math.floor(ballspeed / 1.4)
+            if (ballspeed === 0)
+                ydirectionmultiplier += .5
+            // document.getElementById('ymulti').innerText = ydirectionmultiplier
+            clearInterval(gameInterval)
+
+            gameInterval = setInterval(() => {
+                gameBall.dispatchEvent(new Event('change'))
+            }, ballspeed)
+        }
+        function countDownTimer() {
+            timer -= delay
+            document.getElementById('timerCountdown').innerText = (timer / 1000).toString()
+            if (timer === 0) {
+                for (var i = 0; i < 99999; i++) {
+                    clearInterval(i);
+                }
+                //timerInit = new Date()
+                document.getElementById('timerBlock').style.display = "none"
+
+                gameInterval = setInterval(() => {
+                    /*var tick = new Date()
+                    elapsed_time_in_seconds = (tick.getTime() - timerInit.getTime()) / 1000;
+                    console.log(Math.floor(elapsed_time_in_seconds))*/
+                    gameBall.dispatchEvent(new Event('change'))
+                }, ballspeed)
+                document.getElementById('timerCountdown').innerText = '3'
+                timer = 3000
+            }
+        }
+        function throwGameball() {
+            gameBall.style.left = (Number(gameBall.style.left.split('%')[0]) + xdirection).toString() + "%"
+
+            gameBall.style.top = (Number(gameBall.style.top.split('px')[0]) + ydirection).toString() + "px"
+
+            if (Number(gameBall.style.left.split("%")[0]) <= 0)
+                xdirection = .17
+            else if (Number(gameBall.style.left.split("%")[0]) > 95)
+                xdirection = -.26
+            if (Number(gameBall.style.top.split('px')[0]) >= 195) {
+                if (gameBall.offsetLeft > (playerOne.offsetLeft - 15) && gameBall.offsetLeft < (playerOne.offsetLeft + 50)) {
+                    ballWasPonged()
+                    socket.send(JSON.stringify({ "username": curUserData, "data": gameBall.style.left, "type": "resetypos" }))
+                } else {
+                    console.log("player wins point")
+                    socket.send(JSON.stringify({ "username": curUserData, "data": 'thisplayerdropped', "type": "playerpoint" }))
+                    ydirectionmultiplier = 0
+                }
+                ydirection = -1 - ydirectionmultiplier
+            } else if (Number(gameBall.style.top.split('px')[0]) < -89) {
+                ydirection = 1 + ydirectionmultiplier
+                /*if (gameBall.offsetLeft > (playerTwo.offsetLeft - 15) && gameBall.offsetLeft < (playerTwo.offsetLeft + 50))
+                    ballWasPonged()*/
+
+            }
+        }
+        async function inviteUser() {
+            await fetch(`/invite-user-to-pong?invitee=${inviteUsersSelect.value}`, {
+                method: "GET",
+                headers: {
+                    "Content-type": "application/json"
+                }
+            }).then((data) => {
+                if (data.status === 200)
+                    alert("invite sent!")
+            })
+        }
+        function ballWasPonged() {
+            socket.send(JSON.stringify({ "username": curUserData, "data": "na", "type": "setspeed" }))
+            //console.log("speed now: " + changeSpeedTicker)
+
+        }
+        async function getUserData() {
+            curUserData = await fetch("/get-username-from-session", {
+                method: "GET",
+                headers: {
+                    "Content-type": "application/json"
+                }
+            }).then(async (data) => {
+                if (data.status != 200)
+                    window.location.href = "/"
+                curUserData = await data.json()
+
+                return curUserData.Username
+            }).catch((failed) => {
+                console.log(failed)
+            })
+        }
+        getUserData()
+
+        async function showLobbyWindow() {
+            document.getElementById('connectedPlayers').setAttribute("hx-trigger", "onOpenLobbyWindow, every 2s")
+            htmx.process("#connectedPlayers")
+            document.getElementById('connectedPlayers').dispatchEvent(new Event('onOpenLobbyWindow'))
+            document.getElementById('homeScreen').style.display = "none"
+            document.getElementById('lobbyWindow').style.display = ""
+            while (socket === null)
+                window.location.protocol === "https:" ? socket = new WebSocket(`wss://${window.location.host}/ws-endpoint`) : socket = new WebSocket(`ws://${window.location.host}:80/ws-endpoint`)
+
+            await fetch("/join-pong-game-lobby", {
+                method: "POST",
+                headers: {
+                    "Content-type": "application/json"
+                },
+                body: JSON.stringify({ "player": curUserData })
+            }).then((data) => {
+                if (data.status != 200)
+                    alert("Cannot join lobby at this time")
+                try {
+                    socket.send(JSON.stringify({ "username": curUserData, "data": "true", "type": "lobbyjoin" }))
+                }
+                catch (err) {
+                    console.log(err)
+                }
+                document.getElementById('connectedPlayers').dispatchEvent(new Event('onOpenLobbyWindow'))
+            })
+            socket.onopen = () => {
+                document.getElementById('connectionId').style.color = "green"
+                document.getElementById('connectionId').innerText = "You are connected"
+            }
+            socket.onmessage = async function (event) {
+
+                var message = JSON.parse(event.data)
+
+                if (message.type === "game") {
+
+                    //if (message.username != curUserData)
+                    document.getElementById('playerTwo').style.left = message.data
+                } /*else if (message.type === "lobby") {
+                    console.log(message)
+                    showGameWindow()
+
+                }*/ else if (message.type === curUserData && message.data === "single") {
+                    showGameWindow()
+                    document.getElementById('playeronename').innerText = curUserData + ":"
+                    //setTimeout(() => { alert('waiting for 2nd player') }, 400)
+                } else if (message.data === "two") {
+                    console.log(message)
+                    if (document.getElementById('gameWindow').style.display === "none")
+                        showGameWindow()
+                    curUserData === message.type ? ydirection = 1 + ydirectionmultiplier : ydirection = -1 - ydirectionmultiplier
+                    document.getElementById('playerTwo').style.display = ""
+                    document.getElementById('playeronename').innerText = curUserData + ":"
+                    if (curUserData === message.username) {
+                        document.getElementById('playerTwoId').innerText = message.type
+                        document.getElementById('playertwoname').innerText = curUserData + ":"
+                        document.getElementById('playeronename').innerText = message.type + ":"
+                    } else {
+                        document.getElementById('playerTwoId').innerText = message.username
+                        document.getElementById('playertwoname').innerText = message.username + ":"
+                    }
+
+                    ctimer = setInterval(countDownTimer, delay)
+                } else if (message.type === "lobbyjoin") {
+                    document.getElementById('connectedPlayers').dispatchEvent(new Event('onOpenLobbyWindow'))
+                } else if (message.type === "playertwodisconnected") {
+                    alert(message.username + " disconnected")
+                    window.location.reload()
+                } /*else if (message.type === "begin") {
+                        if (gamerunning === false)
+                            gamerunning = true
+                    }
+                 else if (message.type === "joinstart") {
+                    console.log('teststart')
+                } else if (message.type === "changespeed") {
+                        changeSpeed()
+                    }*/
+                else if (message.type === "getspeed") {
+                    console.log(message)
+                    changeSpeedTicker = Number(message.data)
+                } else if (message.type === "updatespeed") {
+                    changeSpeed()
+                } else if (message.type === "gameBallUpdateSpeedMsg") {
+                    window.location.reload()
+                }
+                else if (message.type === "resetypos" && message.username !== curUserData) {
+                    gameBall.style.top = "-90px"
+                    gameBall.style.left = message.data
+                } else if (message.type === "playerpoint") {
+                    if (message.username !== curUserData)
+                        ydirection = 1
+                    else
+                        ydirection = -1
+                    if (Number(document.getElementById('playertwoname').nextElementSibling.innerText) === 12) {
+                        ballspeed = 3000
+                        socket.send(JSON.stringify({ "username": curUserData, "data": document.getElementById('playeronename').innerText.split(":")[0] + "," + document.getElementById('playertwoname').innerText.split(":")[0] + "," + Number(document.getElementById('playeronename').nextElementSibling.innerText).toString() + "," + (Number(document.getElementById('playertwoname').nextElementSibling.innerText) + 1).toString(), "type": "postmatchscore" }))
+                        document.getElementById('winnerbanner').style.display = ""
+                        document.getElementById('winnermessage').innerText = document.getElementById('playertwoname').innerText.split(':')[0] + " wins!"
+                        window.setTimeout(() => {
+                            window.location.reload()
+                        }, 2700)
+                        return
+                    } else if (Number(document.getElementById('playeronename').nextElementSibling.innerText) === 12) {
+                        ballspeed = 3000
+                        socket.send(JSON.stringify({ "username": curUserData, "data": document.getElementById('playeronename').innerText.split(":")[0] + "," + document.getElementById('playertwoname').innerText.split(":")[0] + "," + (Number(document.getElementById('playeronename').nextElementSibling.innerText) + 1).toString() + "," + Number(document.getElementById('playertwoname').nextElementSibling.innerText).toString(), "type": "postmatchscore" }))
+                        document.getElementById('winnerbanner').style.display = ""
+                        document.getElementById('winnermessage').innerText = document.getElementById('playeronename').innerText.split(':')[0] + " wins!"
+                        window.setTimeout(() => {
+                            window.location.reload()
+                        }, 2700)
+                        return
+                    }
+
+                    ballspeed = 12
+                    ydirectionmultiplier = 0
+                    clearInterval(gameInterval)
+                    document.getElementById('timerBlock').style.display = ""
+                    ctimer = setInterval(countDownTimer, delay)
+                    if (message.username === curUserData) {
+                        if (document.getElementById('playeronename').innerText.split(":")[0] === curUserData)
+                            document.getElementById('playertwoname').nextElementSibling.innerText = (Number(document.getElementById('playertwoname').nextElementSibling.innerText) + 1).toString()
+                        else if (document.getElementById('playertwoname').innerText.split(":")[0] === curUserData)
+                            document.getElementById('playeronename').nextElementSibling.innerText = (Number(document.getElementById('playeronename').nextElementSibling.innerText) + 1).toString()
+                    } else {
+                        if (document.getElementById('playeronename').innerText.split(":")[0] === curUserData)
+                            document.getElementById('playeronename').nextElementSibling.innerText = (Number(document.getElementById('playeronename').nextElementSibling.innerText) + 1).toString()
+                        else if (document.getElementById('playertwoname').innerText.split(":")[0] === curUserData)
+                            document.getElementById('playertwoname').nextElementSibling.innerText = (Number(document.getElementById('playertwoname').nextElementSibling.innerText) + 1).toString()
+                    }
+                    gameBall.style.top = "45px"
+                    gameBall.style.left = "0%"
+                }
+
+            }
+            socket.onclose = (soc, ev) => {
+                fetch(`/delete-from-pong-lobby?username=${curUserData}`, {
+                    method: "DELETE",
+                })
+                document.getElementById('connectionId').style.color = "red"
+                document.getElementById('connectionId').innerText = "Refresh the page to connect"
+            }
+            function closeConn() {
+                socket.close()
+            }
+        }
+        function moveToStage(playername) {
+
+            socket.send(JSON.stringify({ "username": playername, "data": "true", "type": "lobby" }))
+
+        }
+        function showGameWindow() {
+            document.getElementById('connectedPlayers').setAttribute("hx-trigger", "onOpenLobbyWindow")
+            htmx.process("#connectedPlayers")
+            setTimeout(() => {
+                document.getElementById('homeScreen').style.display = "none"
+                document.getElementById('lobbyWindow').style.display = "none"
+                document.getElementById('gameWindow').style.display = "grid"
+            }, 300)
+
+        }
+
+        document.getElementById('gameWindow')
+        const gameNet = document.getElementById('playerOne')
+        var currentGameNetPos = 50
+
+        function showHomeWindow() {
+            //closeConn()
+            document.getElementById('connectedPlayers').setAttribute("hx-trigger", "onOpenLobbyWindow")
+            htmx.process("#connectedPlayers")
+            fetch(`/delete-from-pong-lobby?username=${curUserData}`, {
+                method: "DELETE",
+            })
+            socket.close()
+            socket = null
+            document.getElementById('homeScreen').style.display = ""
+            document.getElementById('gameWindow').style.display = "none"
+            document.getElementById('lobbyWindow').style.display = "none"
+        }
+
+        dragElement(gameNet);
+        function dragElement(elmnt) {
+
+            var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+
+            elmnt.onmousedown = dragMouseDown;
+            elmnt.ontouchstart = dragMouseDown;
+
+            function dragMouseDown(e) {
+
+                e = e || window.event;
+                e.preventDefault();
+                // get the mouse cursor position at startup:
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                document.onmousemove = elementDrag;
+                document.ontouchmove = elementDrag;
+
+                document.onmouseup = closeDragElement;
+                document.ontouchend = closeDragElement;
+            }
+
+            function elementDrag(e) {
+
+                e = e || window.event;
+                e.preventDefault() || null;
+                pos1 = pos3 - (e.clientX || e.targetTouches[0].clientX);
+
+                pos3 = e.clientX || e.targetTouches[0].clientX;
+                pos4 = e.clientY || e.targetTouches[0].clientY;
+                elmnt.style.top = (elmnt.offsetBottom - pos2) + "%";
+
+                elmnt.style.left = (Number(elmnt.style.left.split("px")[0]) - pos1) + "px";
+
+                socket.send(JSON.stringify({
+                    "username": curUserData,
+                    "data": elmnt.style.left,
+                    "type": "game"
+                }))
+
+            }
+
+            function closeDragElement() {
+                document.onmouseup = null;
+                document.ontouchend = null;
+                document.onmousemove = null;
+                document.ontouchmove = null;
+                dragcounter = 0
+                //gameNet.style.top = '100%'
+            }
+        }
+
+    </script>
+    <script type="module">
+
+        import { logoutFunction } from "/js/globalFunctions.js"
+
+        document.addEventListener("onUnauthorizedEvent", () => {
+
+            logoutFunction()
+            location.href = "../"
+        })
+    </script>
+</body>
+
+</html>

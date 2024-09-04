@@ -187,6 +187,7 @@ func main() {
 	http.HandleFunc("/setup-player-pong-game-start", gameshandler.SetupPongGameHandler)
 	http.HandleFunc("/final-setup-pong-game-check", gameshandler.FinalSetupPongGameHandler)
 	http.HandleFunc("/invite-user-to-pong", gameshandler.InviteUserToPongHandler)
+	http.HandleFunc("/get-pong-matches", gameshandler.GetPongMatchHistoryHandler)
 	/* Wix handlers */
 	http.HandleFunc("/wix-webhook-pricing-plan-changed", wixhandler.WixWebhookChangePlanHandler)
 	http.HandleFunc("/wix-webhook-update-reg-user-paid-plan", wixhandler.RegUserPaidForPlanHandler)

@@ -27,7 +27,7 @@
             <div class="col h-100">
                 <div class="row-gap-lg-5"
                     style="font-size: xx-large; margin-top: 2rem; height: 15dvh; font-weight: bolder; font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif">
-                    New Game
+                    Pong!
                 </div>
 
                 <div class="row-gap-5 w-35 my-5 h-20">
@@ -38,7 +38,7 @@
                 <div class="row-gap-5 w-35 my-5 h-20">
                     <button class="btn btn-primary p-3"
                         style="border-radius: 18px / 18px; border-width: 3px; border-style: solid; border-color: darkslategray; font-size: larger"
-                        onclick="showLeaderboardWindow()">leaderboard</button>
+                        onclick="showLeaderboardWindow()">match history</button>
                 </div>
                 <div class="row-gap-5 w-35 my-5 h-20">
                     <button class="btn btn-primary p-3"
@@ -119,7 +119,31 @@
             </div>
         </div>
     </div>
-
+    <div id="matchHistoryWindow" style="display: none; height: 100dvh; width: 100dvw; background-image: linear-gradient(to bottom,
+            hsl(199, 90%, 65%),
+            hsl(314, 100%, 73%)); position: absolute;">
+        <div>
+            <button type="button" class="btn btn-primary"
+                style="position: absolute; top: .4rem; left: .4rem; z-index: 15001"
+                onclick="window.location.reload()">home</button>
+            <h1 style="text-align: center">Match History</h1>
+        </div>
+        <div id="loadMatcheshere" hx-get="/get-pong-matches" hx-on::after-request="checkForNothing(event)"
+            hx-trigger="loadmatches" hx-target="#tablebody">
+            <table class="table" style="table-layout: fixed; margin-top: 1rem">
+                <thead>
+                    <tr style="background-color: white; font-size: 2.2vw">
+                        <th>Me</th>
+                        <th>Player Two</th>
+                        <th>Played on</th>
+                        <th>Winner</th>
+                        <th>Score</th>
+                    </tr>
+                </thead>
+                <tbody id="tablebody" style="font-size: smaller; border: black; border-width: thin;"></tbody>
+            </table>
+        </div>
+    </div>
     <script>
         if (window.navigator.userAgent.includes("iPhone")) {
             //alert("not currently available for iPhones")
@@ -168,13 +192,11 @@
                 for (var i = 0; i < 99999; i++) {
                     clearInterval(i);
                 }
-                //timerInit = new Date()
+
                 document.getElementById('timerBlock').style.display = "none"
 
                 gameInterval = setInterval(() => {
-                    /*var tick = new Date()
-                    elapsed_time_in_seconds = (tick.getTime() - timerInit.getTime()) / 1000;
-                    console.log(Math.floor(elapsed_time_in_seconds))*/
+
                     gameBall.dispatchEvent(new Event('change'))
                 }, ballspeed)
                 document.getElementById('timerCountdown').innerText = '3'
@@ -286,9 +308,9 @@
                 }*/ else if (message.type === curUserData && message.data === "single") {
                     showGameWindow()
                     document.getElementById('playeronename').innerText = curUserData + ":"
-                    //setTimeout(() => { alert('waiting for 2nd player') }, 400)
+
                 } else if (message.data === "two") {
-                    console.log(message)
+
                     if (document.getElementById('gameWindow').style.display === "none")
                         showGameWindow()
                     curUserData === message.type ? ydirection = 1 + ydirectionmultiplier : ydirection = -1 - ydirectionmultiplier
@@ -335,7 +357,7 @@
                     else
                         ydirection = -1
                     if (Number(document.getElementById('playertwoname').nextElementSibling.innerText) === 12) {
-                        ballspeed = 3000
+                        gameBall.style.display = "none"
                         socket.send(JSON.stringify({ "username": curUserData, "data": document.getElementById('playeronename').innerText.split(":")[0] + "," + document.getElementById('playertwoname').innerText.split(":")[0] + "," + Number(document.getElementById('playeronename').nextElementSibling.innerText).toString() + "," + (Number(document.getElementById('playertwoname').nextElementSibling.innerText) + 1).toString(), "type": "postmatchscore" }))
                         document.getElementById('winnerbanner').style.display = ""
                         document.getElementById('winnermessage').innerText = document.getElementById('playertwoname').innerText.split(':')[0] + " wins!"
@@ -344,7 +366,7 @@
                         }, 2700)
                         return
                     } else if (Number(document.getElementById('playeronename').nextElementSibling.innerText) === 12) {
-                        ballspeed = 3000
+                        gameBall.style.display = "none"
                         socket.send(JSON.stringify({ "username": curUserData, "data": document.getElementById('playeronename').innerText.split(":")[0] + "," + document.getElementById('playertwoname').innerText.split(":")[0] + "," + (Number(document.getElementById('playeronename').nextElementSibling.innerText) + 1).toString() + "," + Number(document.getElementById('playertwoname').nextElementSibling.innerText).toString(), "type": "postmatchscore" }))
                         document.getElementById('winnerbanner').style.display = ""
                         document.getElementById('winnermessage').innerText = document.getElementById('playeronename').innerText.split(':')[0] + " wins!"
@@ -402,12 +424,18 @@
 
         }
 
-        document.getElementById('gameWindow')
-        const gameNet = document.getElementById('playerOne')
-        var currentGameNetPos = 50
+        async function checkForNothing(evt) {
+            console.log(evt.detail.xhr.status)
+            //alert(JSON.stringify(evt.detail.elt))
+            if (evt.detail.xhr.status === 204) {
+                tablebody.innerHTML = "<div style='background: white; text-align: center; padding: 1rem'>no matches found</div>"
+            } else if (evt.detail.xhr.status !== 200) {
+                tablebody.innerText = "some error occurred"
+            }
+        }
 
         function showHomeWindow() {
-            //closeConn()
+
             document.getElementById('connectedPlayers').setAttribute("hx-trigger", "onOpenLobbyWindow")
             htmx.process("#connectedPlayers")
             fetch(`/delete-from-pong-lobby?username=${curUserData}`, {
@@ -419,6 +447,14 @@
             document.getElementById('gameWindow').style.display = "none"
             document.getElementById('lobbyWindow').style.display = "none"
         }
+
+        function showLeaderboardWindow() {
+            homeScreen.style.display = 'none'
+            matchHistoryWindow.style.display = ""
+            loadMatcheshere.dispatchEvent(new Event("loadmatches"))
+        }
+        const gameNet = document.getElementById('playerOne')
+        var currentGameNetPos = 50
 
         dragElement(gameNet);
         function dragElement(elmnt) {

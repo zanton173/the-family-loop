@@ -194,7 +194,7 @@ func InitialHandler(w http.ResponseWriter, r *http.Request) {
 
 			gameCounter++
 
-			if gameCounter%5 == 0 {
+			if gameCounter%4 == 0 {
 				clients[0].mutex.Lock()
 				clients[1].mutex.Lock()
 				gameBallUpdateSpeedMsg := globaltypes.WebSocketPongMessage{

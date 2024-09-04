@@ -101,7 +101,7 @@
             <div id="post-comments" class="modal-content p-1"
                 style="border-radius: 15px / 15px; background-color: rgb(148 148 148 / 77%);">
                 <div class="modal-content my-1" id="modal-post-reactions" hx-target="#reactionContent"
-                    hx-trigger="getReactionsEvent" hx-on::after-request="document.body.style.height = '100%'" hx-get="
+                    hx-trigger="getReactionsEvent" hx-on::after-request="changeBodyHeight(event)" hx-get="
                     /get-posts-reactions" hx-vals="js:{'selectedPostId': selectedPostId, 'username': username}"
                     hx-ext="json-enc">
                     <div id="reactionContent">
@@ -546,15 +546,13 @@
         openPostModalObj.toggle()
 
     }
-
-    /* openPostModalEle.addEventListener('shown.bs.modal', function modalOpen(event) {
- 
-     })
- 
-     openPostModalEle.addEventListener('hidden.bs.modal', function modalClosed(event) {
-         //console.log('hidden')
- 
-     })*/
+    openPostModal.addEventListener('hidden.bs.modal', () => {
+        document.body.style.overflow = 'scroll'
+        if (document.body.querySelectorAll('div.card').length === 2)
+            document.getElementById('posts-div').style.height = '100dvh'
+        else
+            document.body.style.height = ''
+    })
     function sendEventToLoad() {
         document.getElementById('divofposts').dispatchEvent(new Event('anotherCustomEvent'))
 

@@ -625,6 +625,65 @@ func UpdateSimpleShadesScoreHandler(w http.ResponseWriter, r *http.Request) {
 	globalvars.Leaderboardcoll.InsertOne(context.TODO(), bson.M{"org_id": globalvars.OrgId, "game": "simple_shades", "score": postData.Score, "username": postData.Username, "createdOn": time.Now()})
 
 }
+func GetPongMatchHistoryHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	allowOrDeny, curUserFromSession, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
+
+	validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
+	if !validBool || !allowOrDeny {
+		w.Header().Set("HX-Retarget", "window")
+		w.Header().Set("HX-Trigger", h)
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	type historyStruct struct {
+		curUser        string
+		playerTwo      string
+		playerOneScore int
+		playerTwoScore int
+		playedOn       time.Time
+	}
+	var historyData historyStruct
+	rows, rowserr := globalvars.Db.Query(fmt.Sprintf("select playeronename,playertwoname,playeronescore::integer,playertwoscore::integer,createdon from tfldata.pong_match_history where playeronename = '%s' or playertwoname = '%s';", curUserFromSession, curUserFromSession))
+	if rowserr != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	defer rows.Close()
+	if !rows.Next() {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+	for rows.Next() {
+
+		var playerone string
+		var playertwo string
+		var formatTime string
+		var winner string
+		var score string
+		rows.Scan(&playerone, &playertwo, &historyData.playerOneScore, &historyData.playerTwoScore, &historyData.playedOn)
+		formatTime = time.DateOnly
+		score = strconv.Itoa(historyData.playerOneScore) + " - " + strconv.Itoa(historyData.playerTwoScore)
+		if historyData.playerOneScore > historyData.playerTwoScore {
+			winner = playerone
+		} else {
+			winner = playertwo
+		}
+		if playerone == curUserFromSession {
+			historyData.curUser = curUserFromSession
+			historyData.playerTwo = playertwo
+		} else if playertwo == curUserFromSession {
+			historyData.curUser = curUserFromSession
+			historyData.playerTwo = playerone
+		}
+		if winner == curUserFromSession {
+			winner = "<b>me</b>"
+		}
+		dataStr := fmt.Sprintf("<tr style='font-size: 2.1vw'><td>me</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>", historyData.playerTwo, historyData.playedOn.Format(formatTime), winner, score)
+		w.Write([]byte(dataStr))
+	}
+}
 func InviteUserToPongHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	allowOrDeny, curUserFromSession, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)

@@ -428,7 +428,7 @@
             console.log(evt.detail.xhr.status)
             //alert(JSON.stringify(evt.detail.elt))
             if (evt.detail.xhr.status === 204) {
-                tablebody.innerHTML = "<div style='background: white; text-align: center; padding: 1rem'>no matches found</div>"
+                tablebody.innerHTML = "<div style='background: white; text-align: center; padding: 1rem; width: 100dvw'>no matches found</div>"
             } else if (evt.detail.xhr.status !== 200) {
                 tablebody.innerText = "some error occurred"
             }

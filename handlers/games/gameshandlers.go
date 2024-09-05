@@ -626,7 +626,7 @@ func UpdateSimpleShadesScoreHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 func GetPongMatchHistoryHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+
 	allowOrDeny, curUserFromSession, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
 
 	validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
@@ -651,10 +651,7 @@ func GetPongMatchHistoryHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	defer rows.Close()
-	if !rows.Next() {
-		w.WriteHeader(http.StatusNoContent)
-		return
-	}
+	iter := 0
 	for rows.Next() {
 
 		var playerone string
@@ -682,6 +679,11 @@ func GetPongMatchHistoryHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		dataStr := fmt.Sprintf("<tr style='font-size: 2.1vw'><td>me</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>", historyData.playerTwo, historyData.playedOn.Format(formatTime), winner, score)
 		w.Write([]byte(dataStr))
+		iter++
+	}
+	if iter == 0 {
+		w.WriteHeader(http.StatusNoContent)
+		return
 	}
 }
 func InviteUserToPongHandler(w http.ResponseWriter, r *http.Request) {

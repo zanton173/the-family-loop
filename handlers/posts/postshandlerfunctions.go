@@ -6,7 +6,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
+	"strconv"
 	"strings"
 	"text/template"
 	"time"
@@ -173,12 +175,12 @@ func GetPostsHandler(w http.ResponseWriter, r *http.Request) {
 	var output *sql.Rows
 	var outerr error
 	if r.URL.Query().Get("page") == "null" {
-		output, outerr = globalvars.Db.Query(fmt.Sprintf("select id, \"title\", description, author, post_files_key, createdon at time zone (select mytz from tfldata.users where username='%s') from tfldata.posts where title ilike '%s' or description ilike '%s' or author ilike '%s' order by createdon DESC limit 2;", currentUserFromSession, "%"+r.URL.Query().Get("search")+"%", "%"+r.URL.Query().Get("search")+"%", "%"+r.URL.Query().Get("search")+"%"))
+		output, outerr = globalvars.Db.Query(fmt.Sprintf("select id, \"title\", description, author, post_files_key, createdon at time zone (select mytz from tfldata.users where username='%s') from tfldata.posts where (title ilike '%s' or description ilike '%s' or author ilike '%s') and available = true order by createdon DESC limit 2;", currentUserFromSession, "%"+r.URL.Query().Get("search")+"%", "%"+r.URL.Query().Get("search")+"%", "%"+r.URL.Query().Get("search")+"%"))
 	} else if r.URL.Query().Get("limit") == "current" {
 		w.Header().Set("HX-Reswap", "innerHTML")
-		output, outerr = globalvars.Db.Query(fmt.Sprintf("select id, \"title\", description, author, post_files_key, createdon at time zone (select mytz from tfldata.users where username='%s') from tfldata.posts where id >= %s and (title ilike '%s' or description ilike '%s' or author ilike '%s') order by createdon DESC;", currentUserFromSession, r.URL.Query().Get("page"), "%"+r.URL.Query().Get("search")+"%", "%"+r.URL.Query().Get("search")+"%", "%"+r.URL.Query().Get("search")+"%"))
+		output, outerr = globalvars.Db.Query(fmt.Sprintf("select id, \"title\", description, author, post_files_key, createdon at time zone (select mytz from tfldata.users where username='%s') from tfldata.posts where id >= %s and (title ilike '%s' or description ilike '%s' or author ilike '%s') and available = true order by createdon DESC;", currentUserFromSession, r.URL.Query().Get("page"), "%"+r.URL.Query().Get("search")+"%", "%"+r.URL.Query().Get("search")+"%", "%"+r.URL.Query().Get("search")+"%"))
 	} else {
-		output, outerr = globalvars.Db.Query(fmt.Sprintf("select id, \"title\", description, author, post_files_key, createdon at time zone (select mytz from tfldata.users where username='%s') from tfldata.posts where id < %s and (title ilike '%s' or description ilike '%s' or author ilike '%s') order by createdon DESC limit 2;", currentUserFromSession, r.URL.Query().Get("page"), "%"+r.URL.Query().Get("search")+"%", "%"+r.URL.Query().Get("search")+"%", "%"+r.URL.Query().Get("search")+"%"))
+		output, outerr = globalvars.Db.Query(fmt.Sprintf("select id, \"title\", description, author, post_files_key, createdon at time zone (select mytz from tfldata.users where username='%s') from tfldata.posts where id < %s and (title ilike '%s' or description ilike '%s' or author ilike '%s') and available = true order by createdon DESC limit 2;", currentUserFromSession, r.URL.Query().Get("page"), "%"+r.URL.Query().Get("search")+"%", "%"+r.URL.Query().Get("search")+"%", "%"+r.URL.Query().Get("search")+"%"))
 	}
 
 	var dataStr string
@@ -360,21 +362,41 @@ func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	postFilesKey := uuid.NewString()
+	var postid sql.NullInt64
+	insrow := globalvars.Db.QueryRow(fmt.Sprintf("insert into tfldata.posts(\"title\", \"description\", \"author\", \"post_files_key\", \"createdon\", available) values(E'%s', E'%s', '%s', '%s', now(), false) RETURNING id;", globalvars.Replacer.Replace(r.PostFormValue("title")), globalvars.Replacer.Replace(r.PostFormValue("description")), currentUserFromSession, postFilesKey))
 
-	parseerr := r.ParseMultipartForm(10 << 20)
+	insrow.Scan(&postid)
+	if !postid.Valid {
+		fmt.Println("post id not valid")
+	}
+
+	if insrow.Err() != nil {
+		fmt.Println(insrow.Err())
+		activityStr := "insert into posts table createPostHandler"
+		globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", insrow.Err(), time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	parseerr := r.ParseMultipartForm(64 << 20)
 	if parseerr != nil {
 		// handle error
 		globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\") values('memory error multi file upload %s');", parseerr.Error()))
 	}
-	// upload, filename, errfile := r.FormFile("file_name")
+	lengthofpostsmedia := len(r.MultipartForm.File["file_name"])
+	sem := make(chan struct{}, lengthofpostsmedia)
 
-	//for _, fh := range r.MultipartForm.File["file_name"] {
-	for i := 0; i < len(r.MultipartForm.File["file_name"]); i++ {
+	for i := 0; i < lengthofpostsmedia; i++ {
 
 		fh := r.MultipartForm.File["file_name"][i]
+
+		sem <- struct{}{}
+
+		fmt.Printf("Attempting to open file: %s\n", fh.Filename)
 		f, err := fh.Open()
 		if err != nil {
-			fmt.Println(err)
+			//fmt.Println(err)
+			fmt.Printf("Error opening file: %s, size: %d, error: %v\n", fh.Filename, fh.Size, err)
 			activityStr := fmt.Sprintf("Open multipart file in createPostHandler - %s", currentUserFromSession)
 			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", err, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
 			w.WriteHeader(http.StatusBadRequest)
@@ -401,31 +423,31 @@ func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 
 		fileContents := make([]byte, fh.Size)
 
-		f.Read(fileContents)
+		_, filereadingerr := f.Read(fileContents)
+		if filereadingerr != nil {
+			fmt.Print("err reading file: ")
+			fmt.Println(filereadingerr)
+			return
+		}
 
 		filetype := http.DetectContentType(fileContents)
 
 		f.Seek(0, 0)
-
-		globalfunctions.UploadFileToS3(f, tmpFileName, globalvars.Db, filetype)
-
-		_, errinsert := globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.postfiles(\"file_name\", \"file_type\", \"post_files_key\") values('%s', '%s', '%s');", fh.Filename, filetype, postFilesKey))
+		_, errinsert := globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.postfiles(\"file_name\", \"file_type\", \"post_files_key\") values(concat('postid_%s/','%s'), '%s', '%s');", strconv.Itoa(int(postid.Int64)), fh.Filename, filetype, postFilesKey))
 
 		if errinsert != nil {
 			activityStr := fmt.Sprintf("insert into postfiles table createPostHander - %s", currentUserFromSession)
 			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", errinsert, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
 		}
+		go func(fh *multipart.FileHeader) {
 
-		defer f.Close()
-	}
-	_, errinsert := globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.posts(\"title\", \"description\", \"author\", \"post_files_key\", \"createdon\") values(E'%s', E'%s', '%s', '%s', now());", globalvars.Replacer.Replace(r.PostFormValue("title")), globalvars.Replacer.Replace(r.PostFormValue("description")), currentUserFromSession, postFilesKey))
+			defer func() {
+				<-sem
+			}()
+			globalfunctions.UploadFileToS3(f, fmt.Sprintf("postid_%s/%s", strconv.Itoa(int(postid.Int64)), fh.Filename), globalvars.Db, filetype, lengthofpostsmedia, postid.Int64)
 
-	if errinsert != nil {
-		fmt.Println(errinsert)
-		activityStr := "insert into posts table createPostHandler"
-		globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", errinsert, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))
-		w.WriteHeader(http.StatusBadRequest)
-		return
+			defer f.Close()
+		}(fh)
 	}
 
 	var chatMessageNotificationOpts globaltypes.NotificationOpts

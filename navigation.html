@@ -235,7 +235,7 @@
                         </div>
                         <a hx-prompt="What is your email associated with the account?" hx-post="/reset-password"
                             hx-ext="json-enc" hx-on::after-request="showResetLink(event)" hx-swap="none"
-                            style="right: 20%; position: relative; left: 65%" class="link" id="resetPassLink">forgot
+                            style="right: 20%; position: relative; left: 62%" class="link" id="resetPassLink">forgot
                             password</a>
                     </form>
                     <form class="form" hx-post="/signup" id="sign-up-form" hx-trigger="submit"
@@ -901,10 +901,9 @@
     function showSignUpForm() {
 
         if (parentauth.childElementCount >= 1) {
-            signupbtn.setAttribute('class', 'btn px-5 btn-secondary')
+            signupbtn.setAttribute('class', 'btn px-4 btn-secondary')
 
-
-            loginbtn.setAttribute('class', 'btn px-5 btn-outline-secondary')
+            loginbtn.setAttribute('class', 'btn px-4 btn-outline-secondary')
             signup.setAttribute("style", "display: inherit")
             //parentauth.appendChild(signup)
             if (parentauth.contains(loginele)) {
@@ -942,8 +941,8 @@
     })
     function showLoginForm() {
         if (parentauth.childElementCount >= 1) {
-            loginbtn.setAttribute('class', 'btn px-5 btn-secondary')
-            signupbtn.setAttribute('class', 'btn px-5 btn-outline-secondary')
+            loginbtn.setAttribute('class', 'btn px-4 btn-secondary')
+            signupbtn.setAttribute('class', 'btn px-4 btn-outline-secondary')
             if (parentauth.contains(signup)) {
                 //parentauth.removeChild(signup)
                 signup.setAttribute("style", "display: none")

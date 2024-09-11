@@ -14,6 +14,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -66,7 +67,7 @@ func InitalizeAll() {
 	globalvars.Replacer = strings.NewReplacer("'", "\\'", "\"", "\\\"")
 
 	globalvars.NyLoc, globalvars.NyLocErr = time.LoadLocation("America/New_York")
-	globalvars.FbOpts = []option.ClientOption{option.WithCredentialsFile("the-family-loop-fb0d9-firebase-adminsdk-k6sxl-14c7d4c4f7.json")}
+	globalvars.FbOpts = []option.ClientOption{option.WithCredentialsFile("the-family-loop-fb0d9-firebase-adminsdk-k6sxl-14c7d4c4f7-prod.json")}
 
 	globalvars.App, globalvars.AppErr = firebase.NewApp(context.TODO(), nil, globalvars.FbOpts...)
 
@@ -288,7 +289,7 @@ func Decrypt(message string) (string, error) {
 /* WebSocket ITEMS */
 
 /* FUNCTION ITEMS */
-func UploadFileToS3(f multipart.File, fn string, db *sql.DB, filetype string) {
+func UploadFileToS3(f multipart.File, fn string, db *sql.DB, filetype string, lengthOfPost int, postid int64) {
 
 	if strings.Contains(filetype, "image") {
 
@@ -322,10 +323,11 @@ func UploadFileToS3(f multipart.File, fn string, db *sql.DB, filetype string) {
 			if encerr != nil {
 				fmt.Println(encerr)
 			}
+			f.Seek(0, 0)
 			_, err4 := globalvars.S3Client.PutObject(context.TODO(), &s3.PutObjectInput{
 				Bucket:       aws.String(globalvars.S3Domain),
-				Key:          aws.String("posts/images/" + fn),
-				Body:         &compfile,
+				Key:          aws.String(fmt.Sprintf("posts/images/%s", fn)),
+				Body:         f,
 				ContentType:  &filetype,
 				CacheControl: aws.String("max-age=31536000"),
 			})
@@ -333,6 +335,24 @@ func UploadFileToS3(f multipart.File, fn string, db *sql.DB, filetype string) {
 			if err4 != nil {
 				fmt.Println("error on upload")
 				fmt.Println(err4.Error())
+			} else {
+				listobjects, listerr := globalvars.S3Client.ListObjectsV2(context.TODO(), &s3.ListObjectsV2Input{
+					Bucket: aws.String(globalvars.S3Domain),
+					Prefix: aws.String("posts/images/" + "postid_" + strconv.Itoa(int(postid)) + "/"),
+				})
+				if listerr != nil {
+					fmt.Print("this can probably be ignored: ")
+					fmt.Println(listerr)
+				}
+				fmt.Print("number of keys: ")
+				fmt.Println(*listobjects.KeyCount)
+				if int64(lengthOfPost) == int64(*listobjects.KeyCount) {
+					_, uperr := db.Exec(fmt.Sprintf("update tfldata.posts set available = true where id = %d;", postid))
+					if uperr != nil {
+						db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage,activity,createdon) values ('%s', 'updating posts table after s3upload images no rotate', now());", uperr.Error()))
+					}
+				}
+
 			}
 
 		} else {
@@ -382,10 +402,11 @@ func UploadFileToS3(f multipart.File, fn string, db *sql.DB, filetype string) {
 			if encerr != nil {
 				fmt.Println(encerr)
 			}
+			f.Seek(0, 0)
 			_, err4 := globalvars.S3Client.PutObject(context.TODO(), &s3.PutObjectInput{
 				Bucket:       aws.String(globalvars.S3Domain),
-				Key:          aws.String("posts/images/" + fn),
-				Body:         &compfile,
+				Key:          aws.String(fmt.Sprintf("posts/images/%s", fn)),
+				Body:         f,
 				ContentType:  &filetype,
 				CacheControl: aws.String("max-age=31536000"),
 			})
@@ -393,6 +414,24 @@ func UploadFileToS3(f multipart.File, fn string, db *sql.DB, filetype string) {
 			if err4 != nil {
 				fmt.Println("error on upload")
 				fmt.Println(err4.Error())
+			} else {
+				listobjects, listerr := globalvars.S3Client.ListObjectsV2(context.TODO(), &s3.ListObjectsV2Input{
+					Bucket: aws.String(globalvars.S3Domain),
+					Prefix: aws.String("posts/images/" + "postid_" + strconv.Itoa(int(postid)) + "/"),
+				})
+				if listerr != nil {
+					fmt.Print("this can probably be ignored: ")
+					fmt.Println(listerr)
+				}
+				fmt.Print("number of keys: ")
+				fmt.Println(*listobjects.KeyCount)
+				if int64(lengthOfPost) == int64(*listobjects.KeyCount) {
+					_, uperr := db.Exec(fmt.Sprintf("update tfldata.posts set available = true where id = %d;", postid))
+					if uperr != nil {
+						db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage,activity,createdon) values ('%s', 'updating posts table after s3upload image rotate', now());", uperr.Error()))
+					}
+				}
+
 			}
 
 		}
@@ -400,7 +439,7 @@ func UploadFileToS3(f multipart.File, fn string, db *sql.DB, filetype string) {
 
 		_, err4 := globalvars.S3Client.PutObject(context.TODO(), &s3.PutObjectInput{
 			Bucket:       aws.String(globalvars.S3Domain),
-			Key:          aws.String("posts/videos/" + fn),
+			Key:          aws.String(fmt.Sprintf("posts/videos/%s", fn)),
 			Body:         f,
 			ContentType:  &filetype,
 			CacheControl: aws.String("max-age=31536000"),
@@ -409,6 +448,24 @@ func UploadFileToS3(f multipart.File, fn string, db *sql.DB, filetype string) {
 		if err4 != nil {
 			fmt.Println("error on upload")
 			fmt.Println(err4.Error())
+		} else {
+			listobjects, listerr := globalvars.S3Client.ListObjectsV2(context.TODO(), &s3.ListObjectsV2Input{
+				Bucket: aws.String(globalvars.S3Domain),
+				Prefix: aws.String("posts/videos/" + "postid_" + strconv.Itoa(int(postid)) + "/"),
+			})
+			if listerr != nil {
+				fmt.Print("this can probably be ignored: ")
+				fmt.Println(listerr)
+			}
+			fmt.Print("number of keys: ")
+			fmt.Println(*listobjects.KeyCount)
+			if int64(lengthOfPost) == int64(*listobjects.KeyCount) {
+				_, uperr := db.Exec(fmt.Sprintf("update tfldata.posts set available = true where id = %d;", postid))
+				if uperr != nil {
+					db.Exec(fmt.Sprintf("insert into tfldata.errlog(errmessage,activity,createdon) values ('%s', 'updating posts table after s3upload video', now());", uperr.Error()))
+				}
+			}
+
 		}
 
 	}

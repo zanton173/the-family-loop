@@ -126,7 +126,7 @@
             <button type="button" class="btn btn-primary"
                 style="position: absolute; top: .4rem; left: .4rem; z-index: 15001"
                 onclick="window.location.reload()">home</button>
-            <h1 style="text-align: center">Match History</h1>
+            <h2 style="text-align: center">Match History</h2>
         </div>
         <div id="loadMatcheshere" hx-get="/get-pong-matches" hx-on::after-request="checkForNothing(event)"
             hx-trigger="loadmatches" hx-target="#tablebody">

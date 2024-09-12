@@ -119,6 +119,7 @@ func main() {
 	http.HandleFunc("/get-selected-post", postshandler.GetSelectedPostsComments)
 	http.HandleFunc("/get-posts-reactions", postshandler.GetPostsReactionsHandler)
 	http.HandleFunc("/get-post-images", postshandler.GetPostImagesHandler)
+	http.HandleFunc("/get-my-loading-posts", postshandler.GetMyLoadingPosts)
 	/* chat handlers */
 	http.HandleFunc("/get-selected-chat", chathandler.GetSelectedChatHandler)
 	http.HandleFunc("/get-selected-pchat", chathandler.GetSelectedPChatHandler)

@@ -10,7 +10,17 @@
 </head>
 
 <body style="background: linear-gradient(rgb(11 8 0 / 76%), rgb(225, 225, 225) 55%); height: 100dvh">
-
+    <div id="postisuploadingdiv" style="position: absolute; top: .5rem; right: 4rem; z-index: 1022; display: none"
+        hx-get="/get-my-loading-posts" hx-swap="none" hx-trigger="afterLogin from:#divofposts"
+        hx-on::after-request="showLoadingPosts(event)" onclick="openLoadingPostsModal()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="23" height="23" fill="white" class="bi bi-cloud-upload"
+            viewBox="0 0 16 16">
+            <path fill-rule="evenodd"
+                d="M4.406 1.342A5.53 5.53 0 0 1 8 0c2.69 0 4.923 2 5.166 4.579C14.758 4.804 16 6.137 16 7.773 16 9.569 14.502 11 12.687 11H10a.5.5 0 0 1 0-1h2.688C13.979 10 15 8.988 15 7.773c0-1.216-1.02-2.228-2.313-2.228h-.5v-.5C12.188 2.825 10.328 1 8 1a4.53 4.53 0 0 0-2.941 1.1c-.757.652-1.153 1.438-1.153 2.055v.448l-.445.049C2.064 4.805 1 5.952 1 7.318 1 8.785 2.23 10 3.781 10H6a.5.5 0 0 1 0 1H3.781C1.708 11 0 9.366 0 7.318c0-1.763 1.266-3.223 2.942-3.593.143-.863.698-1.723 1.464-2.383" />
+            <path fill-rule="evenodd"
+                d="M7.646 4.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 5.707V14.5a.5.5 0 0 1-1 0V5.707L5.354 7.854a.5.5 0 1 1-.708-.708z" />
+        </svg>
+    </div>
     <div onclick="window.location.href='https\:\/\/the-family-loop.com/release-notes'"
         style="width: 32px; height: 32px; position: absolute; top: .1rem; right: .4rem; z-index: 1022;">
         <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="bi bi-card-heading"
@@ -144,6 +154,32 @@
         </div>
     </div>
 
+
+    <div class="modal" id="openLoadingPostsmodal" tabindex="-1" aria-labelledby="openLoadingPostsmodal"
+        aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content p-2">
+                <h3 style="text-align: center">Uploading...</h3>
+                <table class="table" style="table-layout: fixed; margin-top: 1rem">
+                    <thead>
+                        <tr style="background-color: white; font-size: 2.2vw; width: 90dvw">
+                            <th style="width: 25dvw">Title</th>
+                            <th style="width: 25dvw">Description</th>
+                            <th style="width: 20dvw">Created</th>
+                            <th style="width: 10dvw">Delete</th>
+                        </tr>
+                    </thead>
+                    <tbody id="loadingPostsModalContent" style="font-size: smaller; border: black; border-width: thin;">
+                    </tbody>
+                </table>
+                <button style="width: 100%; background-color: rgb(0, 0, 78);" style="justify-content: center;"
+                    type="button" class="btn btn-dark col" data-bs-dismiss="modal">close</button>
+            </div>
+
+
+
+        </div>
+    </div>
     <!--<div class="modal" id="installmodal" tabindex="-1" aria-labelledby="installmodal" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content p-3">
@@ -226,6 +262,7 @@
     var biggerPfpImgModal = new bootstrap.Modal(document.getElementById('openPfpImgBigger'), {});
     var listOfUsersArr = []
     var taggedUser = []
+    var listOfLoadingPostIds = null
     var newInput = ""
 
     const reactIcons = document.getElementById('reactionicons')
@@ -276,7 +313,7 @@
         else
             document.body.style.height = '100dvh'
     }
-    window.addEventListener("load", () => {
+    window.addEventListener("load", async () => {
 
         if (document.cookie.includes("session_id="))
             document.getElementById('divofposts').dispatchEvent(new Event('afterLogin'))
@@ -292,9 +329,52 @@
         }*/
     })
 
-    var createPostModalObj = new bootstrap.Modal(document.getElementById('createPostModal'), {});
+    function showLoadingPosts(event) {
+        var loadingposts = event.detail.xhr.response.split(",")
+        loadingposts = loadingposts.filter((data) => data !== '')
+        listOfLoadingPostIds = JSON.parse(loadingposts)
+        if (listOfLoadingPostIds.length > 0)
+            postisuploadingdiv.style.display = ""
+        else
+            postisuploadingdiv.style.display = "none"
 
-    var openPostModalObj = new bootstrap.Modal(document.getElementById('openPostModal'), {});
+        listOfLoadingPostIds.forEach((item) => {
+            console.log(item)
+            var row = document.createElement('tr')
+            row.id = item.id
+            var rowTitleData = document.createElement('td')
+            rowTitleData.innerText = item.title
+            rowTitleData.style.overflow = "auto"
+            rowTitleData.style.textWrap = "nowrap"
+            var rowDescriptionData = document.createElement('td')
+            rowDescriptionData.innerText = item.description
+            rowDescriptionData.style.overflow = "auto"
+            rowDescriptionData.style.textWrap = "nowrap"
+            var rowDateData = document.createElement('td')
+            rowDateData.innerText = item.created.split("T")[0]
+            rowDateData.style.padding = '0%'
+            rowDateData.style.alignContent = "center"
+            rowDateData.style.textAlign = 'center'
+            var deleteBtnRow = document.createElement('td')
+            var rowDeleteBtn = document.createElement('button')
+            rowDeleteBtn.innerText = "X"
+            rowDeleteBtn.classList = ["btn btn-danger"]
+            rowDeleteBtn.style = "border-radius: 35px 35px 35px 35px; box-shadow: black 1px 1px 4px; background: #970202; border-color: black; padding-top: 0%; padding-bottom: 0%; padding-left: .8rem; padding-right: .8rem; margin: auto"
+            deleteBtnRow.append(rowDeleteBtn)
+            row.append(rowTitleData)
+            row.append(rowDescriptionData)
+            row.append(rowDateData)
+            row.append(deleteBtnRow)
+            loadingPostsModalContent.append(row)
+        })
+
+    }
+
+    var createPostModalObj = new bootstrap.Modal(createPostModal, {});
+
+    var openPostModalObj = new bootstrap.Modal(openPostModal, {});
+
+    var loadingPosts = new bootstrap.Modal(openLoadingPostsmodal, {});
 
 
     var openPostModalEle = document.getElementById('openPostModal')
@@ -394,6 +474,9 @@
             document.getElementById('commentnote').value = ''
             taggedUser = []
         }
+    }
+    function openLoadingPostsModal() {
+        loadingPosts.show()
     }
     var iter = 0
     var currentlySelectedIterId = ""

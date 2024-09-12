@@ -350,6 +350,49 @@ func GetPostsReactionsHandler(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("&nbsp;&nbsp;" + outAuthor + "&nbsp; - " + outReaction + "<br/>"))
 	}
 }
+func GetMyLoadingPosts(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
+
+	validBool := globalfunctions.ValidateJWTToken(globalvars.JwtSignKey, r)
+	if !validBool || !allowOrDeny {
+		w.Header().Set("HX-Retarget", "window")
+		w.Header().Set("HX-Trigger", h)
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	type loadingPostsType struct {
+		Id        string `json:"id"`
+		Title     string `json:"title"`
+		Desc      string `json:"description"`
+		CreatedOn string `json:"created"`
+	}
+	rows, rowerr := globalvars.Db.Query(fmt.Sprintf("select id::text,title,description,createdon at time zone (select mytz from tfldata.users where username='%s') from tfldata.posts where available = false and author = '%s';", currentUserFromSession, currentUserFromSession))
+	if rowerr != nil {
+		fmt.Println(rowerr)
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+	var postDataJson []loadingPostsType
+	for rows.Next() {
+		var postData loadingPostsType
+		var tempdescnull sql.NullString
+		rows.Scan(&postData.Id, &postData.Title, &tempdescnull, &postData.CreatedOn)
+		if !tempdescnull.Valid {
+			postData.Desc = ""
+		} else {
+			postData.Desc = tempdescnull.String
+		}
+		postDataJson = append(postDataJson, postData)
+	}
+	jsonMarshed, marsherr := json.Marshal(postDataJson)
+	if marsherr != nil {
+		fmt.Print(marsherr)
+		return
+	}
+	w.Write(jsonMarshed)
+
+}
 func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 
 	allowOrDeny, currentUserFromSession, h := globalfunctions.ValidateCurrentSessionId(globalvars.Db, r)
@@ -392,10 +435,9 @@ func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 
 		sem <- struct{}{}
 
-		fmt.Printf("Attempting to open file: %s\n", fh.Filename)
 		f, err := fh.Open()
 		if err != nil {
-			//fmt.Println(err)
+
 			fmt.Printf("Error opening file: %s, size: %d, error: %v\n", fh.Filename, fh.Size, err)
 			activityStr := fmt.Sprintf("Open multipart file in createPostHandler - %s", currentUserFromSession)
 			globalvars.Db.Exec(fmt.Sprintf("insert into tfldata.errlog(\"errmessage\", \"createdon\", \"activity\") values(substr('%s',0,105), '%s', substr('%s',0,105));", err, time.Now().In(globalvars.NyLoc).Format(time.DateTime), activityStr))

@@ -165,7 +165,7 @@
                         <tr style="background-color: white; font-size: 2.2vw; width: 90dvw">
                             <th style="width: 25dvw">Title</th>
                             <th style="width: 25dvw">Description</th>
-                            <th style="width: 20dvw">Created</th>
+                            <th style="width: 20dvw; text-align: center">Created</th>
                             <th style="width: 10dvw">Delete</th>
                         </tr>
                     </thead>
@@ -360,6 +360,13 @@
             rowDeleteBtn.innerText = "X"
             rowDeleteBtn.classList = ["btn btn-danger"]
             rowDeleteBtn.style = "border-radius: 35px 35px 35px 35px; box-shadow: black 1px 1px 4px; background: #970202; border-color: black; padding-top: 0%; padding-bottom: 0%; padding-left: .8rem; padding-right: .8rem; margin: auto"
+            rowDeleteBtn.setAttribute("hx-post", "/delete-this-post")
+            rowDeleteBtn.setAttribute("hx-swap", "none")
+            rowDeleteBtn.setAttribute("hx-on::after-request", "window.location.reload()")
+            rowDeleteBtn.setAttribute("hx-vals", `js:{'deletionID': ${item.id}}`)
+            rowDeleteBtn.setAttribute("hx-ext", "json-enc")
+            rowDeleteBtn.setAttribute("hx-confirm", "This post is still uploading. If it has been a day or two and it is still uploading, it can be deleted and might have failed uploading at some point. Please submit an issue in the customer support page if an upload is taking a long time.")
+            htmx.process(rowDeleteBtn)
             deleteBtnRow.append(rowDeleteBtn)
             row.append(rowTitleData)
             row.append(rowDescriptionData)

@@ -221,8 +221,8 @@ func main() {
 
 	http.HandleFunc("/jwt-validation-endpoint", validateJWTHandler)
 
-	http.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("css"))))
-	http.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir("js"))))
+	//http.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("css"))))
+	//http.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir("js"))))
 	http.Handle("/assets/", http.StripPrefix("/assets/", http.FileServer(http.Dir("assets"))))
 
 	log.Fatal(http.ListenAndServe(":80", nil))

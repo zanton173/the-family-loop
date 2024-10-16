@@ -48,7 +48,7 @@
                         href="/customersupport" style="color: rgb(200, 210, 230)"><i
                             class="bi bi-person-raised-hand"></i>&nbsp;&nbsp;Customer
                         Support</a></li>
-                <li class="nav-item" id="navitemforwelcome"><button id="loginlogoutnav" class="nav-link"
+                <li class="nav-item" id="navitemforwelcome"><button class="nav-link"
                         onclick='{loginModal.toggle(); showLoginForm()}'>login</button>
                 </li>
                 <li><i onclick="userSettingsModal.toggle()" id="settingsBtn" class="bi bi-gear"></i></li>
@@ -164,9 +164,9 @@
             <div class="modal-body">
 
                 <div style="display: flex; justify-content: space-around;">
-                    <button class="btn px-4 btn-outline-secondary" id="login-button"
+                    <button class="btn px-4 btn-outline-secondary" id="loginbutton"
                         onclick='showLoginForm()'>Login</button>
-                    <button class="btn px-4 btn-outline-secondary" id="signup-button"
+                    <button class="btn px-4 btn-outline-secondary" id="signupbutton"
                         onclick='showSignUpForm()'>Sign-up</button>
                 </div>
                 <div id="togglesignuplogin">
@@ -217,7 +217,7 @@
                         <p id="passworddonotmatchresetadmin" style="color: red;"></p>
                         <p id="passwordnotstrongresetadmin" style="color: red">
                     </form>
-                    <form class="form" id="login-form" name="loginform" hx-post="/login"
+                    <form class="form" id="loginform" name="loginform" hx-post="/login"
                         hx-vals="js:{'mytz': Intl.DateTimeFormat().resolvedOptions().timeZone}" hx-trigger="submit"
                         hx-on::after-request="loginFunction(event)" hx-swap="none" hx-indicator="#loadingspinner">
                         <div class="p-4">
@@ -238,7 +238,7 @@
                             style="right: 20%; position: relative; left: 62%" class="link" id="resetPassLink">forgot
                             password</a>
                     </form>
-                    <form class="form" hx-post="/signup" id="sign-up-form" hx-trigger="submit"
+                    <form class="form" hx-post="/signup" id="signupform" hx-trigger="submit"
                         hx-encoding="multipart/form-data" hx-swap="none"
                         hx-vals="js:{'mytz': Intl.DateTimeFormat().resolvedOptions().timeZone}" hx-target="this"
                         hx-indicator="#loadingspinner">
@@ -445,24 +445,16 @@
 
 <script>
     try {
-        var changePfpModal = new bootstrap.Modal(document.getElementById('changepfpmodal'), {});
+        var changePfpModal = new bootstrap.Modal(changepfpmodal, {});
         const userSettingsModal = new bootstrap.Modal(document.getElementById('userSettingsModal'), {});
     } catch {
         console.log("No bootstrap found")
     }
-    let p = document.getElementById('anchor')
-    let c = document.getElementById('ournav')
 
     var usernameToResetPass = null
     var emailToResetPass = null
-    var signup = document.getElementById('sign-up-form')
-    var loginele = document.getElementById('login-form')
-    const changeAdminPassForm = document.getElementById('changeAdminPassForm')
-    const changePassForm = document.getElementById('resetPassForm')
-    let parentauth = document.getElementById('togglesignuplogin')
+
     //let parentauth = document.getElementById('loginSignupForm')
-    let loginbtn = document.getElementById('login-button')
-    let signupbtn = document.getElementById('signup-button')
 
     let gologin = document.createElement('button')
     let gosignup = document.createElement('button')
@@ -470,7 +462,6 @@
     gosignup.setAttribute("id", 'signupgobutton')
     gosignup.setAttribute("class", "btn btn-outline-success")
     gosignup.setAttribute("data-bs-dismiss", "modal")
-
     gosignup.innerHTML = "Go!"
 
     var todaysDate = new Date().toISOString().split("T")[0]
@@ -479,19 +470,6 @@
 
     birthdayInputSignup.setAttribute("max", todaysDate)
     birthdayInputSignup.setAttribute("min", "1900-12-20")
-
-    let usernamelogininput = document.getElementById('usernamelogininput')
-    let passwordlogininput = document.getElementById('passwordlogininput')
-
-    let changeAdminPassIn = document.getElementById('newadminpassin')
-    let confirmChangeAdminPassIn = document.getElementById('confirmnewadminpassin')
-    let changeResetPassIn = document.getElementById('resetnewpassin')
-    let confirmChangeResetPassIn = document.getElementById('resetconfirmnewpassin')
-
-    let usernamesignupinput = document.getElementById('usernamesignupinput')
-    let emailsignupinput = document.getElementById("emailsignupinput")
-    let passwordsignupinput = document.getElementById('passwordsignupinput')
-    let confirmpasswordsignupinput = document.getElementById('confirmpasswordsignupinput')
 
     try {
         var loginModal = new bootstrap.Modal(document.getElementById('login-modal'), {});
@@ -502,15 +480,6 @@
         console.log("no bootstrap found")
     }
 
-    var pfpChangeInput = document.getElementById('pfpchangeinput')
-    var pfpChangeBtn = document.getElementById('changePfpSubmitBtn')
-    var updatePfpForm = document.getElementById('updatepfpform')
-    var invisibleInputForUsername = document.getElementById('invisibleusernameinput')
-
-    var navbarItems = document.getElementById('navbarText')
-
-    var navItemToReplace = document.getElementById('navitemforwelcome')
-    var navInnerToReplace = document.getElementById('loginlogoutnav')
 
     const adminPassSubmitBtn = document.createElement('button')
     adminPassSubmitBtn.setAttribute("class", "btn btn-success")
@@ -547,7 +516,7 @@
     var isLoopAdmin = false
     var cfdomain = ""
 
-    p.append(c)
+    anchor.append(ournav)
 
     async function fetchSeshDetails() {
 
@@ -699,17 +668,17 @@
     })*/
     function checkPfpChangeValidity() {
 
-        invisibleInputForUsername.value = username
-        if (pfpChangeInput.value.length > 1) {
+        invisibleusernameinput.value = username
+        if (pfpchangeinput.value.length > 1) {
             document.getElementById("changePfpSubmitBtn").disabled = false
-            pfpChangeBtn.className = "btn btn-success col my-2"
+            changePfpSubmitBtn.className = "btn btn-success col my-2"
         }
 
     }
     updatepfpform.addEventListener('htmx:afterRequest', async function setPfp(event) {
-        pfpChangeBtn.setAttribute("disabled", "true")
+        changePfpSubmitBtn.setAttribute("disabled", "true")
 
-        pfpChangeBtn.removeEventListener('click', setPfp)
+        changePfpSubmitBtn.removeEventListener('click', setPfp)
 
         if (event.detail.xhr.status == 200)
             window.location.reload()
@@ -726,18 +695,18 @@
         showChangePassForm(parseJson.user, parseJson.email)
     }
     function showChangePassForm(username, email) {
-        changePassForm.style.display = "block"
+        resetPassForm.style.display = "block"
         usernameToResetPass = username
         emailToResetPass = email
-        loginbtn.disabled = true
-        signupbtn.disabled = true
-        loginele.style.display = "none"
+        loginbutton.disabled = true
+        signupbutton.disabled = true
+        loginform.style.display = "none"
         document.getElementById('loginModalHeader').innerHTML = "Change password"
     }
-    loginele.addEventListener("changeAdminPassword", () => {
+    loginform.addEventListener("changeAdminPassword", () => {
         alert("Please create a new personal password")
-        loginbtn.disabled = true
-        signupbtn.disabled = true
+        loginbutton.disabled = true
+        signupbutton.disabled = true
         document.getElementById('loginModalHeader').innerHTML = "Change password"
         document.getElementById('resetPassLink').remove()
         updateAdminPassword()
@@ -745,16 +714,16 @@
     function updateAdminPassword() {
 
         loginModal.toggle()
-        loginele.style.display = "none"
+        loginform.style.display = "none"
         changeAdminPassForm.style.display = "block"
     }
     function afterResetRequest(event) {
         if (event.detail.xhr.status == 200) {
             alert("Success")
-            loginbtn.disabled = false
-            signupbtn.disabled = false
-            loginele.style.display = "block"
-            changePassForm.style.display = "none"
+            loginbutton.disabled = false
+            signupbutton.disabled = false
+            loginform.style.display = "block"
+            resetPassForm.style.display = "none"
             document.getElementById('loginModalHeader').innerHTML = "Login or Sign Up"
             showLoginForm();
         } else if (event.detail.xhr.status == 400) {
@@ -771,7 +740,7 @@
         divToStickNav.append(navItemWelcomeAvatar)
         divToStickNav.append(logoutButton)
 
-        document.getElementById('navlist').removeChild(navItemToReplace)
+        document.getElementById('navlist').removeChild(navitemforwelcome)
 
         var itemsinnav = document.getElementById('navlist').children
         for (var i = 0; i < itemsinnav.length; i++) {
@@ -783,7 +752,7 @@
             }
         }
 
-        navbarItems.append(divToStickNav)
+        navbarText.append(divToStickNav)
 
     } else {
 
@@ -798,23 +767,23 @@
 
     function checkForValidAdminPassChange() {
 
-        if (changeAdminPassIn.value !== confirmChangeAdminPassIn.value) {
+        if (newadminpassin.value !== confirmnewadminpassin.value) {
             document.getElementById('passworddonotmatchresetadmin').innerHTML = "Passwords do not match!"
             if (changeAdminPassForm.contains(adminPassSubmitBtn))
                 changeAdminPassForm.removeChild(adminPassSubmitBtn)
         } else
             document.getElementById('passworddonotmatchresetadmin').innerHTML = ""
 
-        if (changeAdminPassIn.value.length < 7 || changeAdminPassIn.value.match(/[!$@#%^&*()_+|~=`{}\[\]:";'<>?,.]/) == null) {
+        if (newadminpassin.value.length < 7 || newadminpassin.value.match(/[!$@#%^&*()_+|~=`{}\[\]:";'<>?,.]/) == null) {
             document.getElementById('passwordnotstrongresetadmin').innerHTML = "Password needs at least 8 characters and a special character (!@#$^&*)"
             if (changeAdminPassForm.contains(adminPassSubmitBtn))
                 changeAdminPassForm.removeChild(adminPassSubmitBtn)
         } else
             document.getElementById('passwordnotstrongresetadmin').innerHTML = ""
 
-        if (changeAdminPassIn.value == confirmChangeAdminPassIn.value && changeAdminPassIn.value.length > 7) {
+        if (newadminpassin.value == confirmnewadminpassin.value && newadminpassin.value.length > 7) {
             changeAdminPassForm.append(adminPassSubmitBtn)
-        } else if (changeAdminPassIn.value !== confirmChangeAdminPassIn.value && changeAdminPassForm.contains(adminPassSubmitBtn)) {
+        } else if (newadminpassin.value !== confirmnewadminpassin.value && changeAdminPassForm.contains(adminPassSubmitBtn)) {
 
             changeAdminPassForm.removeChild(adminPassSubmitBtn)
         }
@@ -822,25 +791,25 @@
     }
     function checkForValidResetPassChange() {
 
-        if (changeResetPassIn.value !== confirmChangeResetPassIn.value) {
+        if (resetnewpassin.value !== resetconfirmnewpassin.value) {
             document.getElementById('passworddonotmatchreset').innerHTML = "Passwords do not match!"
-            if (changePassForm.contains(resetPassSubmitBtn))
-                changePassForm.removeChild(resetPassSubmitBtn)
+            if (resetPassForm.contains(resetPassSubmitBtn))
+                resetPassForm.removeChild(resetPassSubmitBtn)
         } else
             document.getElementById('passworddonotmatchreset').innerHTML = ""
 
-        if (changeResetPassIn.value.length < 7 || changeResetPassIn.value.match(/[!$@#%^&*()_+|~=`{}\[\]:";'<>?,.]/) == null) {
+        if (resetnewpassin.value.length < 7 || resetnewpassin.value.match(/[!$@#%^&*()_+|~=`{}\[\]:";'<>?,.]/) == null) {
             document.getElementById('passwordnotstrongreset').innerHTML = "Password needs at least 8 characters and a special character (!@#$^&*)"
-            if (changePassForm.contains(resetPassSubmitBtn))
-                changePassForm.removeChild(resetPassSubmitBtn)
+            if (resetPassForm.contains(resetPassSubmitBtn))
+                resetPassForm.removeChild(resetPassSubmitBtn)
         } else
             document.getElementById('passwordnotstrongreset').innerHTML = ""
 
-        if (changeResetPassIn.value == confirmChangeResetPassIn.value && changeResetPassIn.value.length > 7) {
-            changePassForm.append(resetPassSubmitBtn)
-        } else if (changeAdminPassIn.value !== confirmChangeResetPassIn.value && changePassForm.contains(resetPassSubmitBtn)) {
+        if (resetnewpassin.value == resetconfirmnewpassin.value && resetnewpassin.value.length > 7) {
+            resetPassForm.append(resetPassSubmitBtn)
+        } else if (newadminpassin.value !== resetconfirmnewpassin.value && resetPassForm.contains(resetPassSubmitBtn)) {
 
-            changePassForm.removeChild(resetPassSubmitBtn)
+            resetPassForm.removeChild(resetPassSubmitBtn)
         }
 
     }
@@ -857,9 +826,9 @@
             gologin.style.width = "25%"
             gologin.innerHTML = "Go!"
 
-            loginele.append(gologin)
-        } else if ((usernamelogininput.value == '' || passwordlogininput.value == '') && loginele.contains(gologin)) {
-            loginele.removeChild(gologin)
+            loginform.append(gologin)
+        } else if ((usernamelogininput.value == '' || passwordlogininput.value == '') && loginform.contains(gologin)) {
+            loginform.removeChild(gologin)
         }
     }
     function checkforValidEmailSubmission() {
@@ -871,48 +840,48 @@
     function checkForValidSignUpSubmission() {
         if (passwordsignupinput.value !== confirmpasswordsignupinput.value) {
             document.getElementById('passworddonotmatch').innerHTML = "Passwords do not match!"
-            if (signup.contains(gosignup))
-                signup.removeChild(gosignup)
+            if (signupform.contains(gosignup))
+                signupform.removeChild(gosignup)
         } else
             document.getElementById('passworddonotmatch').innerHTML = ""
 
         if (passwordsignupinput.value.length < 7 || passwordsignupinput.value.match(/[!$@#%^&*()_+|~=`{}\[\]:";'<>?,.]/) == null) {
             document.getElementById('passwordnotstrong').innerHTML = "Password needs at least 8 characters and a special character (!@#$^&*)"
-            if (signup.contains(gosignup))
-                signup.removeChild(gosignup)
+            if (signupform.contains(gosignup))
+                signupform.removeChild(gosignup)
         } else
             document.getElementById('passwordnotstrong').innerHTML = ""
 
         if (((new Date() - new Date(birthdayInputSignup.value)) / 1000 / 24 / 60 / 60) <= (365 * 13) || birthdayInputSignup.value.length == 0) {
             document.getElementById('invalidBirthday').innerHTML = "You must be 13 years or older to sign up"
-            if (signup.contains(gosignup))
-                signup.removeChild(gosignup)
+            if (signupform.contains(gosignup))
+                signupform.removeChild(gosignup)
         } else
             document.getElementById('invalidBirthday').innerHTML = ""
         if (document.getElementById('pfpimage').value.length > 1 && document.getElementById('accepttandcinput').checked && usernamesignupinput.value > '' && passwordsignupinput.value > '' && passwordsignupinput.value === confirmpasswordsignupinput.value && document.getElementById('orgidinput').value.length > 1 && passwordsignupinput.value.length > 7 && confirmpasswordsignupinput.value.length > 7 && emailsignupinput.value.match(/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/) && (birthdayInputSignup.value.length >= 0 && ((new Date() - new Date(birthdayInputSignup.value)) / 1000 / 24 / 60 / 60) >= (365 * 13))) {
-            signup.append(gosignup)
+            signupform.append(gosignup)
 
         } else if (passwordsignupinput.value !== confirmpasswordsignupinput.value && usernamesignupinput.value == '' || document.getElementById('pfpimage').value.length == 0 || !document.getElementById('accepttandcinput').checked || emailsignupinput.value == '' || passwordsignupinput.value == '' || confirmpasswordsignupinput.value == '' || !emailsignupinput.value.match(/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/) || (birthdayInputSignup.value.length == 0 && ((new Date() - new Date(birthdayInputSignup.value)) / 1000 / 24 / 60 / 60) <= (365 * 13))) {
-            if (signup.contains(gosignup))
-                signup.removeChild(gosignup)
+            if (signupform.contains(gosignup))
+                signupform.removeChild(gosignup)
         }
     }
 
     function showSignUpForm() {
 
-        if (parentauth.childElementCount >= 1) {
-            signupbtn.setAttribute('class', 'btn px-4 btn-secondary')
+        if (togglesignuplogin.childElementCount >= 1) {
+            signupbutton.setAttribute('class', 'btn px-4 btn-secondary')
 
-            loginbtn.setAttribute('class', 'btn px-4 btn-outline-secondary')
-            signup.setAttribute("style", "display: inherit")
-            //parentauth.appendChild(signup)
-            if (parentauth.contains(loginele)) {
-                parentauth.removeChild(loginele)
-            }
+            loginbutton.setAttribute('class', 'btn px-4 btn-outline-secondary')
+            signupform.style.display = ""
+
+            if (togglesignuplogin.contains(loginform))
+                loginform.style.display = "none"
+
         }
 
     }
-    htmx.on("#sign-up-form", "htmx:afterRequest", function (event) {
+    htmx.on("#signupform", "htmx:afterRequest", function (event) {
 
         if (event.detail.xhr.status == 400) {
             alert("Are you trying to bypass client side validation??!?!?!")
@@ -940,15 +909,16 @@
 
     })
     function showLoginForm() {
-        if (parentauth.childElementCount >= 1) {
-            loginbtn.setAttribute('class', 'btn px-4 btn-secondary')
-            signupbtn.setAttribute('class', 'btn px-4 btn-outline-secondary')
-            if (parentauth.contains(signup)) {
-                //parentauth.removeChild(signup)
-                signup.setAttribute("style", "display: none")
-            }
 
-            parentauth.appendChild(loginele)
+        if (togglesignuplogin.childElementCount >= 1) {
+            loginbutton.setAttribute('class', 'btn px-4 btn-secondary')
+            signupbutton.setAttribute('class', 'btn px-4 btn-outline-secondary')
+            if (togglesignuplogin.contains(signupform))
+                signupform.style.display = "none"
+
+
+            if (loginform.style.display = "none")
+                loginform.style.display = ""
         }
     }
 
@@ -967,10 +937,10 @@
 <script type="module">
     import { logoutFunction, getNotified } from "/js/globalFunctions.js"
 
-    if (document.getElementById("logoutButtonOnNav"))
-        document.getElementById("logoutButtonOnNav").addEventListener("click", logoutFunction)
-    if (document.getElementById("notifydiv"))
-        document.getElementById("notifydiv").addEventListener("click", getNotified)
+    if (logoutButton)
+        logoutButton.addEventListener("click", logoutFunction)
+    if (notifydiv)
+        notifydiv.addEventListener("click", getNotified)
 
     window.addEventListener("onUnauthorizedEvent", () => {
         logoutFunction()

@@ -5,7 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,height=device-height, initial-scale=1.0">
     <link rel="manifest" href="assets/manifest.json" />
+    <link rel="preconnect" href="https://www.gstatic.com" />
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" />
 
+    <script async defer src="js/bootstrap.bundle.min.js"></script>
     <title>The Family Loop</title>
 </head>
 
@@ -235,8 +238,8 @@
 
     </div>
 
-    <script src="js/bootstrap.bundle.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <!--<script async defer src="js/bootstrap.bundle.min.js"></script>-->
+    <link async rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 
     <link async href="css/bootstrap.min.css" rel="stylesheet">
     <link async href="css/custom-css.min.css" rel="stylesheet">
@@ -333,48 +336,49 @@
         var loadingposts = event.detail.xhr.response.split(",")
         loadingposts = loadingposts.filter((data) => data !== '')
         listOfLoadingPostIds = JSON.parse(loadingposts)
-        if (listOfLoadingPostIds.length > 0)
-            postisuploadingdiv.style.display = ""
-        else
-            postisuploadingdiv.style.display = "none"
 
-        listOfLoadingPostIds.forEach((item) => {
-            console.log(item)
-            var row = document.createElement('tr')
-            row.id = item.id
-            var rowTitleData = document.createElement('td')
-            rowTitleData.innerText = item.title
-            rowTitleData.style.overflow = "auto"
-            rowTitleData.style.textWrap = "nowrap"
-            var rowDescriptionData = document.createElement('td')
-            rowDescriptionData.innerText = item.description
-            rowDescriptionData.style.overflow = "auto"
-            rowDescriptionData.style.textWrap = "nowrap"
-            var rowDateData = document.createElement('td')
-            rowDateData.innerText = item.created.split("T")[0]
-            rowDateData.style.padding = '0%'
-            rowDateData.style.alignContent = "center"
-            rowDateData.style.textAlign = 'center'
-            var deleteBtnRow = document.createElement('td')
-            var rowDeleteBtn = document.createElement('button')
-            rowDeleteBtn.innerText = "X"
-            rowDeleteBtn.classList = ["btn btn-danger"]
-            rowDeleteBtn.style = "border-radius: 35px 35px 35px 35px; box-shadow: black 1px 1px 4px; background: #970202; border-color: black; padding-top: 0%; padding-bottom: 0%; padding-left: .8rem; padding-right: .8rem; margin: auto"
-            rowDeleteBtn.setAttribute("hx-post", "/delete-this-post")
-            rowDeleteBtn.setAttribute("hx-swap", "none")
-            rowDeleteBtn.setAttribute("hx-on::after-request", "window.location.reload()")
-            rowDeleteBtn.setAttribute("hx-vals", `js:{'deletionID': ${item.id}}`)
-            rowDeleteBtn.setAttribute("hx-ext", "json-enc")
-            rowDeleteBtn.setAttribute("hx-confirm", "This post is still uploading. If it has been a day or two and it is still uploading, it can be deleted and might have failed uploading at some point. Please submit an issue in the customer support page if an upload is taking a long time.")
-            htmx.process(rowDeleteBtn)
-            deleteBtnRow.append(rowDeleteBtn)
-            row.append(rowTitleData)
-            row.append(rowDescriptionData)
-            row.append(rowDateData)
-            row.append(deleteBtnRow)
-            loadingPostsModalContent.append(row)
-        })
+        if (listOfLoadingPostIds !== null) {
+            if (listOfLoadingPostIds.length > 0)
+                postisuploadingdiv.style.display = ""
+            else
+                postisuploadingdiv.style.display = "none"
 
+            listOfLoadingPostIds.forEach((item) => {
+                var row = document.createElement('tr')
+                row.id = item.id
+                var rowTitleData = document.createElement('td')
+                rowTitleData.innerText = item.title
+                rowTitleData.style.overflow = "auto"
+                rowTitleData.style.textWrap = "nowrap"
+                var rowDescriptionData = document.createElement('td')
+                rowDescriptionData.innerText = item.description
+                rowDescriptionData.style.overflow = "auto"
+                rowDescriptionData.style.textWrap = "nowrap"
+                var rowDateData = document.createElement('td')
+                rowDateData.innerText = item.created.split("T")[0]
+                rowDateData.style.padding = '0%'
+                rowDateData.style.alignContent = "center"
+                rowDateData.style.textAlign = 'center'
+                var deleteBtnRow = document.createElement('td')
+                var rowDeleteBtn = document.createElement('button')
+                rowDeleteBtn.innerText = "X"
+                rowDeleteBtn.classList = ["btn btn-danger"]
+                rowDeleteBtn.style = "border-radius: 35px 35px 35px 35px; box-shadow: black 1px 1px 4px; background: #970202; border-color: black; padding-top: 0%; padding-bottom: 0%; padding-left: .8rem; padding-right: .8rem; margin: auto"
+                rowDeleteBtn.setAttribute("hx-post", "/delete-this-post")
+                rowDeleteBtn.setAttribute("hx-swap", "none")
+                rowDeleteBtn.setAttribute("hx-on::after-request", "window.location.reload()")
+                rowDeleteBtn.setAttribute("hx-vals", `js:{'deletionID': ${item.id}}`)
+                rowDeleteBtn.setAttribute("hx-ext", "json-enc")
+                rowDeleteBtn.setAttribute("hx-confirm", "This post is still uploading. If it has been a day or two and it is still uploading, it can be deleted and might have failed uploading at some point. Please submit an issue in the customer support page if an upload is taking a long time.")
+                htmx.process(rowDeleteBtn)
+                deleteBtnRow.append(rowDeleteBtn)
+                row.append(rowTitleData)
+                row.append(rowDescriptionData)
+                row.append(rowDateData)
+                row.append(deleteBtnRow)
+                loadingPostsModalContent.append(row)
+            })
+        }
     }
 
     var createPostModalObj = new bootstrap.Modal(createPostModal, {});

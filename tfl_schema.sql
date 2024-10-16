@@ -468,7 +468,8 @@ CREATE TABLE tfldata.posts (
     description character varying(420),
     author character varying(15),
     post_files_key uuid,
-    createdon timestamp without time zone
+    createdon timestamp without time zone,
+    available boolean
 );
 
 
@@ -725,34 +726,6 @@ ALTER TABLE tfldata.users_id_seq OWNER TO tfldbrole;
 
 ALTER SEQUENCE tfldata.users_id_seq OWNED BY tfldata.users.id;
 
-
---
--- Name: users_pk_issue; Type: TABLE; Schema: tfldata; Owner: tfldbrole
---
-
-CREATE TABLE tfldata.users_pk_issue (
-    id integer,
-    username character varying(15),
-    password character varying(4096),
-    orgid character varying(256),
-    pfp_name character varying(128),
-    session_token uuid,
-    email character varying(64),
-    fcm_registration_id character varying(168),
-    gchat_bg_theme character varying(65),
-    last_sign_on timestamp without time zone,
-    gchat_order_option boolean,
-    cf_domain_name character varying(30),
-    is_admin boolean,
-    last_pass_reset timestamp without time zone,
-    mytz character varying(30),
-    last_viewed_pchat character varying(15),
-    last_viewed_gchat character varying(32),
-    is_paying_subscriber boolean
-);
-
-
-ALTER TABLE tfldata.users_pk_issue OWNER TO tfldbrole;
 
 --
 -- Name: users_to_threads; Type: TABLE; Schema: tfldata; Owner: tfldbrole
@@ -1177,6 +1150,13 @@ CREATE INDEX pong_match_history_current_user_idx01 ON tfldata.pong_match_history
 --
 
 CREATE INDEX pong_match_history_current_user_two_idx01 ON tfldata.pong_match_history USING btree (playertwoname);
+
+
+--
+-- Name: postfiles_file_name_idx; Type: INDEX; Schema: tfldata; Owner: tfldbrole
+--
+
+CREATE INDEX postfiles_file_name_idx ON tfldata.postfiles USING btree (file_name);
 
 
 --

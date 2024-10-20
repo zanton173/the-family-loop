@@ -67,9 +67,9 @@
             ]
         },
         {
-            "name": "Bug",
-            "url": "/bugreport",
-            "description": "report a bug",
+            "name": "Customer Support",
+            "url": "/customersupport",
+            "description": "help",
             "icons": [
                 {
                     "src": "icon-192x192.png",
